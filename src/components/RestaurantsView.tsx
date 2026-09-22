@@ -10,7 +10,10 @@ import {
   Save, 
   QrCode,
   CheckCircle2,
-  Clock
+  Clock,
+  Bike,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory } from '../types';
 
@@ -21,7 +24,7 @@ interface RestaurantsViewProps {
   onUpdateRestaurant: (updated: Restaurant) => void;
   onUpdateMenuItem: (updated: MenuItem) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
-  onOpenCustomerPreview: (restaurant: Restaurant) => void;
+  onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
 }
 
 export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
@@ -42,6 +45,10 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [editableSlug, setEditableSlug] = useState<string>(currentRestaurant.slug);
   const [slugSaved, setSlugSaved] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedRestId, setCopiedRestId] = useState<string | null>(null);
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
+  const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug}`;
 
   // Palette editing
   const [primaryColor, setPrimaryColor] = useState(currentRestaurant.branding.primaryColor);
@@ -218,22 +225,23 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
           </div>
         </div>
 
-        {/* Tab 1: Unique Slug Link */}
+        {/* Tab 1: Unique Slug Link & Customer Testing */}
         {activeTab === 'link' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <h3 className="text-sm font-bold text-white">
-                Enlace Único de la Carta
+                Enlace Único de la Carta y Acceso de Pruebas
               </h3>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Dirección web pública personalizada para menús QR y redes sociales.
+                Dirección web pública personalizada para menús QR, redes sociales y pedidos de comensales.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-black border border-neutral-800 space-y-4">
+            {/* Link Configuration Box */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-black border border-neutral-800 space-y-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 flex-1 focus-within:border-white transition">
-                  <span className="text-xs text-neutral-400 font-mono">https://micarta.io/r/</span>
+                <div className="flex items-center bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2.5 flex-1 focus-within:border-white transition">
+                  <span className="text-xs text-neutral-400 font-mono">{origin}/?r=</span>
                   <input
                     type="text"
                     value={editableSlug}
@@ -244,38 +252,199 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
 
                 <button
                   onClick={handleSaveSlug}
-                  className="px-4 py-2 rounded-lg bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer shrink-0"
                 >
                   Guardar Slug
                 </button>
               </div>
 
               {slugSaved && (
-                <p className="text-xs text-neutral-300 flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-white" />
-                  <span>Enlace actualizado a <strong>https://micarta.io/r/{currentRestaurant.slug}</strong></span>
+                <p className="text-xs text-emerald-400 flex items-center gap-1.5 animate-in fade-in">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Enlace actualizado a <strong>{origin}/?r={currentRestaurant.slug}</strong></span>
                 </p>
               )}
 
-              <div className="pt-3 border-t border-neutral-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-neutral-400">
-                  <QrCode className="w-4 h-4 text-white" />
-                  <span>QR de mesa sincronizado con este link</span>
+              {/* Action Buttons for Testing as Customer */}
+              <div className="p-4 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Pruebas Inmediatas como Cliente ({currentRestaurant.name})</span>
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Links Habilitados
+                  </span>
                 </div>
 
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://micarta.io/r/${currentRestaurant.slug}`);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="flex items-center gap-1 text-xs text-neutral-300 hover:text-white font-medium cursor-pointer"
-                >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? 'Copiado' : 'Copiar URL'}</span>
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '01')}
+                    className="p-3 rounded-xl bg-neutral-950 hover:bg-amber-400 hover:text-black text-white text-xs font-bold border border-neutral-800 hover:border-amber-400 transition cursor-pointer flex items-center justify-between group shadow"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Utensils className="w-4 h-4 text-amber-400 group-hover:text-black" />
+                      <span>Probar Mesa 01 (Salón)</span>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '04')}
+                    className="p-3 rounded-xl bg-neutral-950 hover:bg-amber-400 hover:text-black text-white text-xs font-bold border border-neutral-800 hover:border-amber-400 transition cursor-pointer flex items-center justify-between group shadow"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Utensils className="w-4 h-4 text-amber-400 group-hover:text-black" />
+                      <span>Probar Mesa 04 (Salón)</span>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onOpenCustomerPreview(currentRestaurant, 'DELIVERY')}
+                    className="p-3 rounded-xl bg-neutral-950 hover:bg-sky-400 hover:text-black text-white text-xs font-bold border border-neutral-800 hover:border-sky-400 transition cursor-pointer flex items-center justify-between group shadow"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Bike className="w-4 h-4 text-sky-400 group-hover:text-black" />
+                      <span>Probar Modo Delivery</span>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Direct Link Toolbar */}
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-neutral-300 font-mono text-[11px] truncate">
+                  <span className="text-neutral-500">URL Pública:</span>
+                  <strong className="text-white truncate">{currentLiveUrl}</strong>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(currentLiveUrl);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs text-neutral-200 hover:text-white font-medium cursor-pointer border border-neutral-700 transition"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedLink ? '¡Copiado!' : 'Copiar URL'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '01')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-xs text-black font-bold cursor-pointer transition shadow"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Abrir en Pantalla</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Quick Multi-Restaurant Testing Hub */}
+            <div className="space-y-3 pt-4 border-t border-neutral-800">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-amber-400" />
+                  <span>Enlaces Directos de Todos los Restaurantes ({restaurants.length} Sedes)</span>
+                </h4>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Haz clic en cualquier enlace para ingresar inmediatamente a la carta digital como cliente anónimo y realizar pruebas de pedidos.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {restaurants.map(r => {
+                  const restUrl = `${origin}/?r=${r.slug}`;
+                  const isCopied = copiedRestId === r.id;
+
+                  return (
+                    <div
+                      key={r.id}
+                      className={`p-4 rounded-2xl border transition flex flex-col justify-between gap-3 ${
+                        r.id === currentRestaurant.id
+                          ? 'bg-neutral-900 border-amber-500/50 shadow-md'
+                          : 'bg-black/60 border-neutral-800 hover:border-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={r.logoUrl}
+                            alt={r.name}
+                            className="w-11 h-11 rounded-xl object-cover border border-neutral-700 shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="text-sm font-bold text-white">{r.name}</h5>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-mono">
+                                {r.cuisineType}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-mono text-amber-400 block mt-0.5">
+                              /?r={r.slug}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                          r.isOpen ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-neutral-800 text-neutral-400'
+                        }`}>
+                          {r.isOpen ? 'Activo' : 'Cerrado'}
+                        </span>
+                      </div>
+
+                      {/* Direct Test Links */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/80">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(restUrl);
+                            setCopiedRestId(r.id);
+                            setTimeout(() => setCopiedRestId(null), 2500);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-medium border border-neutral-700 flex items-center gap-1.5 cursor-pointer"
+                          title="Copiar URL completa"
+                        >
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
+                          <span>{isCopied ? '¡Copiado!' : 'Copiar Link'}</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onOpenCustomerPreview(r, 'DELIVERY')}
+                            className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-sky-400 hover:text-black text-neutral-300 text-xs font-medium transition cursor-pointer flex items-center gap-1"
+                            title="Probar pedido para delivery"
+                          >
+                            <Bike className="w-3.5 h-3.5 text-sky-400" />
+                            <span>Delivery</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onOpenCustomerPreview(r, 'DINE_IN', '01')}
+                            className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-bold transition cursor-pointer shadow flex items-center gap-1.5"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Probar Carta</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
           </div>
         )}
 

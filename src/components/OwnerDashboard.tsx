@@ -885,20 +885,34 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   </div>
 
                   <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
-                    <div>
-                      <span className="text-neutral-500 block">Plantilla</span>
-                      <span className="text-amber-400 font-semibold">{assignedTemplate.badge}</span>
+                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                      <span className="text-amber-400 font-bold">Link:</span>
+                      <span className="text-neutral-300">/?r={rest.slug}</span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenCustomerPreview(rest);
-                      }}
-                      className="flex items-center gap-1 text-xs font-semibold text-white hover:text-amber-400 transition cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Ver Carta</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${rest.slug}`;
+                          navigator.clipboard?.writeText(url);
+                          showToast(`Link de ${rest.name} copiado al portapapeles.`);
+                        }}
+                        className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition cursor-pointer"
+                        title="Copiar link para probar como cliente"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenCustomerPreview(rest, 'DINE_IN', '01');
+                        }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-white text-black font-bold text-[11px] hover:bg-neutral-200 transition cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Probar</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -933,18 +947,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Configurando permisos y accesos para esta sede
+                Configurando permisos y accesos para esta sede · <span className="font-mono text-amber-400 font-bold">/?r={currentRestaurant.slug}</span>
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => onOpenCustomerPreview(currentRestaurant)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Previsualizar Carta de Este Local</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button
+              onClick={() => {
+                const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${currentRestaurant.slug}`;
+                navigator.clipboard?.writeText(url);
+                showToast(`Link de ${currentRestaurant.name} copiado: ${url}`);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold transition cursor-pointer"
+              title="Copiar Link para pruebas como cliente"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copiar Link</span>
+            </button>
+
+            <button
+              onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '01')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0 shadow"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Probar Carta como Cliente</span>
+            </button>
+          </div>
         </div>
 
         {/* 8 Access Navigation SubTabs */}

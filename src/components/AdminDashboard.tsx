@@ -20,7 +20,8 @@ import {
   Building2,
   Palette,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Copy
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
 
@@ -32,7 +33,7 @@ interface AdminDashboardProps {
   onUpdateUser: (updated: User) => void;
   onAddUser: (newUser: User) => void;
   onUpdateTemplate: (updated: MenuTemplate) => void;
-  onOpenCustomerPreview: (restaurant: Restaurant) => void;
+  onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
   onSwitchToOwnerView: () => void;
 }
 
@@ -515,6 +516,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <span className="font-semibold text-neutral-200 block">
                           {rest.metrics.totalTables} Mesas ({rest.metrics.occupancyRate}%)
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Direct Customer Testing Link Bar */}
+                    <div className="mt-3 pt-2.5 border-t border-neutral-800/80 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-neutral-400 font-mono text-[11px] truncate">
+                        <span className="text-amber-400 font-bold">Link:</span>
+                        <span className="text-neutral-200 truncate">/?r={rest.slug}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${rest.slug}`;
+                            navigator.clipboard?.writeText(url);
+                          }}
+                          className="p-1.5 rounded-md bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 transition cursor-pointer"
+                          title="Copiar Link Directo"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onOpenCustomerPreview(rest, 'DINE_IN', '01')}
+                          className="px-2.5 py-1 rounded-md bg-amber-400/10 hover:bg-amber-400 hover:text-black text-amber-300 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Probar como Cliente</span>
+                        </button>
                       </div>
                     </div>
                   </div>
