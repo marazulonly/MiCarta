@@ -126,6 +126,44 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(restaurant.branding.primaryColor || '#D4AF37');
   const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding.darkBgColor || '#071A14');
   const [brandSecondaryColor, setBrandSecondaryColor] = useState(restaurant.branding.secondaryColor || '#FFFFFF');
+  const [brandButtonColor, setBrandButtonColor] = useState(restaurant.branding.buttonColor || restaurant.branding.accentColor || '#38bdf8');
+  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant.branding.dishNameFont || 'inherit');
+  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant.branding.dishDescFont || 'inherit');
+  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant.branding.dishPriceFont || 'monospace');
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 5MB. Por favor selecciona una más liviana.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setBrandLogoUrl(reader.result);
+        showToast('✓ Logo cargado desde el disco.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setBrandCoverUrl(reader.result);
+        showToast('✓ Portada cargada desde el disco.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Quick edit modal states for instant price & photo tweaking
   const [quickPriceItem, setQuickPriceItem] = useState<MenuItem | null>(null);
@@ -181,6 +219,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     setBrandPrimaryColor(restaurant.branding.primaryColor || '#D4AF37');
     setBrandDarkBgColor(restaurant.branding.darkBgColor || '#071A14');
     setBrandSecondaryColor(restaurant.branding.secondaryColor || '#FFFFFF');
+    setBrandButtonColor(restaurant.branding.buttonColor || restaurant.branding.accentColor || '#38bdf8');
+    setBrandDishNameFont(restaurant.branding.dishNameFont || 'inherit');
+    setBrandDishDescFont(restaurant.branding.dishDescFont || 'inherit');
+    setBrandDishPriceFont(restaurant.branding.dishPriceFont || 'monospace');
     if (restaurant.menuAccessSettings) {
       setMenuSettings(restaurant.menuAccessSettings);
     }
@@ -369,14 +411,19 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     const updatedRest: Restaurant = {
       ...restaurant,
       name: brandName.trim() || restaurant.name,
-      tagline: brandTagline.trim() || restaurant.tagline,
-      logoUrl: brandLogoUrl.trim() || restaurant.logoUrl,
-      coverUrl: brandCoverUrl.trim() || restaurant.coverUrl,
+      tagline: brandTagline.trim(),
+      logoUrl: brandLogoUrl.trim(),
+      coverUrl: brandCoverUrl.trim(),
       branding: {
         ...restaurant.branding,
         primaryColor: brandPrimaryColor,
         darkBgColor: brandDarkBgColor,
         secondaryColor: brandSecondaryColor,
+        buttonColor: brandButtonColor,
+        accentColor: brandButtonColor,
+        dishNameFont: brandDishNameFont,
+        dishDescFont: brandDishDescFont,
+        dishPriceFont: brandDishPriceFont,
       },
       menuAccessSettings: {
         ...menuSettings,
@@ -385,7 +432,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       },
     };
     onUpdateRestaurant(updatedRest);
-    showToast('✓ Personalización de carta, marca y canales guardada exitosamente (plantilla original del sistema protegida).');
+    showToast('✓ Personalización de carta, marca y canales guardada exitosamente.');
   };
 
   const handleResetToOriginalTemplate = () => {
@@ -890,21 +937,32 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 {/* Input & Presets */}
                 <div className="flex-1 space-y-2 w-full">
                   <div className="flex items-center gap-2">
+                    <label className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition flex items-center gap-1.5 shrink-0">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Subir logo del disco</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleLogoFileUpload} 
+                      />
+                    </label>
                     <input
                       type="text"
                       value={brandLogoUrl}
                       onChange={(e) => setBrandLogoUrl(e.target.value)}
-                      placeholder="URL personalizada del logo (https://...)"
+                      placeholder="O URL de logo (https://...)"
                       className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
                     />
                     {brandLogoUrl && (
                       <button
                         type="button"
                         onClick={() => setBrandLogoUrl('')}
-                        className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white text-xs cursor-pointer"
+                        className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-rose-400 hover:text-rose-300 text-xs font-bold cursor-pointer flex items-center gap-1"
                         title="Quitar logo"
                       >
                         <X className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Quitar logo</span>
                       </button>
                     )}
                   </div>
@@ -970,21 +1028,32 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <label className="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold text-xs cursor-pointer border border-neutral-700 transition flex items-center gap-1.5 shrink-0">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Subir portada del disco</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleCoverFileUpload} 
+                    />
+                  </label>
                   <input
                     type="text"
                     value={brandCoverUrl}
                     onChange={(e) => setBrandCoverUrl(e.target.value)}
-                    placeholder="URL de foto de portada/banner (https://...)"
+                    placeholder="O URL de portada/banner (https://...)"
                     className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
                   />
                   {brandCoverUrl && (
                     <button
                       type="button"
                       onClick={() => setBrandCoverUrl('')}
-                      className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white text-xs cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-rose-400 hover:text-rose-300 text-xs font-bold cursor-pointer flex items-center gap-1"
                       title="Quitar portada"
                     >
                       <X className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Quitar portada</span>
                     </button>
                   )}
                 </div>
@@ -1020,7 +1089,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
               </div>
             </div>
 
-            {/* Name, Tagline & Accent Colors */}
+            {/* Name, Tagline & Custom Colors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-800">
               <div>
                 <label className="text-xs font-bold text-neutral-200 block mb-1">
@@ -1050,41 +1119,101 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
               <div>
                 <label className="text-xs font-bold text-neutral-200 block mb-1">
-                  Color Primario de Acento
+                  Color de Fondo de la Carta
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={brandPrimaryColor}
-                    onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                    value={brandDarkBgColor}
+                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
                     className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
                   />
                   <input
                     type="text"
-                    value={brandPrimaryColor}
-                    onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                    value={brandDarkBgColor}
+                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
                     className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-neutral-200 block mb-1">
-                  Fondo Base Oscuro
+                <label className="text-xs font-bold text-amber-300 block mb-1">
+                  Color de Botones y Borde de Platos
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={brandDarkBgColor}
-                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
+                    value={brandButtonColor}
+                    onChange={(e) => setBrandButtonColor(e.target.value)}
                     className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
                   />
                   <input
                     type="text"
-                    value={brandDarkBgColor}
-                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
+                    value={brandButtonColor}
+                    onChange={(e) => setBrandButtonColor(e.target.value)}
                     className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
                   />
+                </div>
+                <span className="text-[10px] text-neutral-400 block mt-0.5">
+                  El borde de cada recuadro de plato coincidirá con este color.
+                </span>
+              </div>
+            </div>
+
+            {/* Typography Customizer Section */}
+            <div className="pt-3 border-t border-neutral-800 space-y-3">
+              <label className="text-xs font-bold text-amber-300 block">
+                ✏️ Fuentes y Tipografía de Platos (Nombre, Descripción y Precio)
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-300 block mb-1">Nombre del Plato</label>
+                  <select
+                    value={brandDishNameFont}
+                    onChange={(e) => setBrandDishNameFont(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs outline-none focus:border-amber-400"
+                  >
+                    <option value="inherit">Por defecto (Estilo de Plantilla)</option>
+                    <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Limpia (Moderna / Inter)</option>
+                    <option value="ui-serif, Georgia, Cambria, serif">Serif Elegante (Playfair / Georgia)</option>
+                    <option value="'Montserrat', sans-serif">Montserrat (Urbana / Vanguardia)</option>
+                    <option value="'Oswald', sans-serif">Oswald (Impacto / Condensada)</option>
+                    <option value="'Cinzel', serif">Cinzel (Clásica / Alta Cocina)</option>
+                    <option value="ui-monospace, monospace">Monospace (Técnica / Pizarra)</option>
+                    <option value="cursive">Pacifico / Cursiva (Gourmet / Cárnica)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-300 block mb-1">Descripción del Plato</label>
+                  <select
+                    value={brandDishDescFont}
+                    onChange={(e) => setBrandDishDescFont(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs outline-none focus:border-amber-400"
+                  >
+                    <option value="inherit">Por defecto (Estilo de Plantilla)</option>
+                    <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Lectura Cómoda</option>
+                    <option value="ui-serif, Georgia, serif">Serif Descriptiva</option>
+                    <option value="'Montserrat', sans-serif">Montserrat Suave</option>
+                    <option value="ui-monospace, monospace">Monospace Detallado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-amber-300 block mb-1">Precio del Plato</label>
+                  <select
+                    value={brandDishPriceFont}
+                    onChange={(e) => setBrandDishPriceFont(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs outline-none focus:border-amber-400"
+                  >
+                    <option value="ui-monospace, monospace">Monospace (Destacado Claro)</option>
+                    <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Negrita</option>
+                    <option value="ui-serif, Georgia, serif">Serif Tradicional</option>
+                    <option value="'Oswald', sans-serif">Oswald Numérico</option>
+                    <option value="'Montserrat', sans-serif">Montserrat Precio</option>
+                  </select>
                 </div>
               </div>
             </div>

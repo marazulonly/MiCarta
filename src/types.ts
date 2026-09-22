@@ -29,6 +29,10 @@ export interface RestaurantBranding {
   cardBgColor: string;        // Fondo de tarjetas
   textColor: string;          // Color principal de texto
   fontDisplay: string;        // Tipografía para encabezados
+  buttonColor?: string;       // Color de los botones y del borde del recuadro del plato
+  dishNameFont?: string;      // Tipo de letra para el nombre del plato
+  dishDescFont?: string;      // Tipo de letra para la descripción del plato
+  dishPriceFont?: string;     // Tipo de letra para el precio del plato
 }
 
 export interface RestaurantMetrics {

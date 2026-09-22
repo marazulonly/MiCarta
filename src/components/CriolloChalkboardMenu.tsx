@@ -385,10 +385,16 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                 <div className="space-y-3">
                   {cat.items.map(item => {
                     const inCart = cart.find(c => c.item.id === item.id);
+                    const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#f59e0b';
+                    const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
+                    const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
+                    const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
+
                     return (
                       <div 
                         key={item.id}
-                        className="relative p-3 rounded-xl bg-black/40 border border-neutral-800 hover:border-neutral-700 transition flex items-center justify-between gap-3 group"
+                        style={{ borderColor: btnColor ? `${btnColor}80` : undefined }}
+                        className="relative p-3 rounded-xl bg-black/40 border hover:border-neutral-700 transition flex items-center justify-between gap-3 group"
                       >
                         {/* Live Edit Action Badges */}
                         {isLiveEditActive && (
@@ -438,13 +444,22 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                             referrerPolicy="no-referrer"
                           />
                           <div>
-                            <h3 className="text-xs sm:text-sm font-bold text-white">
+                            <h3 
+                              style={{ fontFamily: dishNameFont }}
+                              className="text-xs sm:text-sm font-bold text-white"
+                            >
                               {item.name}
                             </h3>
-                            <p className="text-[11px] text-neutral-400 line-clamp-1">
+                            <p 
+                              style={{ fontFamily: dishDescFont }}
+                              className="text-[11px] text-neutral-400 line-clamp-1"
+                            >
                               {item.description}
                             </p>
-                            <span className="text-xs font-mono font-black text-amber-300 mt-0.5 block">
+                            <span 
+                              style={{ fontFamily: dishPriceFont }}
+                              className="text-xs font-black text-amber-300 mt-0.5 block"
+                            >
                               S/ {item.price.toFixed(2)}
                             </span>
                           </div>
@@ -452,7 +467,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
                         <button
                           onClick={() => setSelectedItemForCustomization(item)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow"
+                          style={{ backgroundColor: btnColor }}
+                          className="px-3 py-1.5 rounded-lg text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow hover:brightness-110"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -497,8 +513,11 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleConfirmItemUnits}
-          themeAccentColor="#f59e0b"
-          themeDarkBg="#141716"
+          themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#f59e0b'}
+          themeDarkBg={restaurant.branding?.darkBgColor || '#141716'}
+          dishNameFont={restaurant.branding?.dishNameFont}
+          dishDescFont={restaurant.branding?.dishDescFont}
+          dishPriceFont={restaurant.branding?.dishPriceFont}
         />
       )}
 

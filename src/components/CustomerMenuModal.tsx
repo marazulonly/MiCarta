@@ -92,8 +92,46 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant.logoUrl || '');
   const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant.coverUrl || '');
   const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding?.darkBgColor || '#071A14');
+  const [brandButtonColor, setBrandButtonColor] = useState(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
+  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant.branding?.dishNameFont || 'inherit');
+  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant.branding?.dishDescFont || 'inherit');
+  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant.branding?.dishPriceFont || 'monospace');
   const [enableDineIn, setEnableDineIn] = useState(restaurant.menuAccessSettings?.enableDineIn !== false);
   const [enableDelivery, setEnableDelivery] = useState(restaurant.menuAccessSettings?.enableDelivery !== false);
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 5MB. Selecciona una más liviana.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setBrandLogoUrl(reader.result);
+        showToast('✓ Logo subido desde el disco.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setBrandCoverUrl(reader.result);
+        showToast('✓ Portada subida desde el disco.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // New item form state
   const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
@@ -265,6 +303,10 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setBrandLogoUrl(restaurant.logoUrl || '');
     setBrandCoverUrl(restaurant.coverUrl || '');
     setBrandDarkBgColor(restaurant.branding?.darkBgColor || '#071A14');
+    setBrandButtonColor(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
+    setBrandDishNameFont(restaurant.branding?.dishNameFont || 'inherit');
+    setBrandDishDescFont(restaurant.branding?.dishDescFont || 'inherit');
+    setBrandDishPriceFont(restaurant.branding?.dishPriceFont || 'monospace');
     setEnableDineIn(restaurant.menuAccessSettings?.enableDineIn !== false);
     setEnableDelivery(restaurant.menuAccessSettings?.enableDelivery !== false);
     setIsBrandingModalOpen(true);
@@ -277,11 +319,16 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       ...restaurant,
       name: brandName.trim() || restaurant.name,
       tagline: brandTagline.trim(),
-      logoUrl: brandLogoUrl.trim() || restaurant.logoUrl,
-      coverUrl: brandCoverUrl.trim() || restaurant.coverUrl,
+      logoUrl: brandLogoUrl.trim(),
+      coverUrl: brandCoverUrl.trim(),
       branding: {
         ...restaurant.branding,
         darkBgColor: brandDarkBgColor,
+        buttonColor: brandButtonColor,
+        accentColor: brandButtonColor,
+        dishNameFont: brandDishNameFont,
+        dishDescFont: brandDishDescFont,
+        dishPriceFont: brandDishPriceFont,
       },
       menuAccessSettings: {
         ...restaurant.menuAccessSettings,
@@ -291,7 +338,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     };
     onUpdateRestaurant(updatedRest);
     setIsBrandingModalOpen(false);
-    showToast('✓ Personalización de marca, fondos y canales guardada.');
+    showToast('✓ Personalización de marca, colores, fuentes y canales guardada.');
   };
 
   const handleSaveToFirebase = async () => {
@@ -664,62 +711,228 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       {/* MODAL 4: BRAND & CHANNELS CUSTOMIZER */}
       {isBrandingModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl bg-neutral-900 border border-neutral-700 shadow-2xl text-white p-5 space-y-4">
+          <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl bg-neutral-900 border border-neutral-700 shadow-2xl text-white p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-bold">Personalizar Marca & Canales de la Carta</h3>
+                <h3 className="text-sm font-bold">Personalizar Marca, Colores & Fuentes</h3>
               </div>
               <button 
                 onClick={() => setIsBrandingModalOpen(false)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+                className="p-1 rounded-lg text-neutral-400 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBranding} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-neutral-400 font-mono mb-1">Nombre del Restaurante</label>
-                <input
-                  type="text"
-                  required
-                  value={brandName}
-                  onChange={e => setBrandName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-mono mb-1">Eslogan / Subtítulo</label>
-                <input
-                  type="text"
-                  value={brandTagline}
-                  onChange={e => setBrandTagline(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-mono mb-1">URL del Logo</label>
-                <input
-                  type="url"
-                  value={brandLogoUrl}
-                  onChange={e => setBrandLogoUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none font-mono text-[11px]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-mono mb-1">Color de Fondo Oscuro</label>
-                <div className="flex items-center gap-2">
+            <form onSubmit={handleSaveBranding} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-300 font-mono mb-1 font-bold">Nombre del Restaurante</label>
                   <input
-                    type="color"
-                    value={brandDarkBgColor}
-                    onChange={e => setBrandDarkBgColor(e.target.value)}
-                    className="w-10 h-8 rounded-lg bg-neutral-800 border border-neutral-700 cursor-pointer p-0.5"
+                    type="text"
+                    required
+                    value={brandName}
+                    onChange={e => setBrandName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none"
                   />
-                  <span className="font-mono text-neutral-300">{brandDarkBgColor}</span>
+                </div>
+
+                <div>
+                  <label className="block text-neutral-300 font-mono mb-1 font-bold">Eslogan / Subtítulo</label>
+                  <input
+                    type="text"
+                    value={brandTagline}
+                    onChange={e => setBrandTagline(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Logo Upload Section */}
+              <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-neutral-200 font-bold font-mono">Logo del Restaurante</label>
+                  {brandLogoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setBrandLogoUrl('')}
+                      className="text-[10px] text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Quitar logo</span>
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {brandLogoUrl ? (
+                    <img 
+                      src={brandLogoUrl} 
+                      alt="Logo preview" 
+                      className="w-12 h-12 rounded-xl object-cover border border-amber-400/50 shrink-0" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-dashed border-neutral-700 flex items-center justify-center text-[10px] text-neutral-500 shrink-0">
+                      Sin Logo
+                    </div>
+                  )}
+
+                  <div className="flex-1 space-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Subir logo desde el disco</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleLogoFileUpload} 
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="O pega URL de imagen (https://...)"
+                      value={brandLogoUrl}
+                      onChange={e => setBrandLogoUrl(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-[11px] font-mono outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cover Photo Section */}
+              <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-neutral-200 font-bold font-mono">Portada / Banner de la Carta</label>
+                  {brandCoverUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setBrandCoverUrl('')}
+                      className="text-[10px] text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Quitar portada</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-700 hover:bg-neutral-600 text-amber-300 font-bold text-xs cursor-pointer border border-neutral-600 shadow transition">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Subir portada desde el disco</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleCoverFileUpload} 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Color Customization */}
+              <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700 space-y-3">
+                <span className="block font-mono text-xs font-bold text-amber-300 border-b border-neutral-700 pb-1">
+                  🎨 Colores de la Carta
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color de Fondo</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandDarkBgColor}
+                        onChange={e => setBrandDarkBgColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brandDarkBgColor}
+                        onChange={e => setBrandDarkBgColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color de Botones y Borde de Platos</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandButtonColor}
+                        onChange={e => setBrandButtonColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brandButtonColor}
+                        onChange={e => setBrandButtonColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-amber-200/80">
+                  💡 El color elegido de los botones será exactamente el mismo que enmarcará los bordes del recuadro de cada plato.
+                </p>
+              </div>
+
+              {/* Font Customization */}
+              <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700 space-y-3">
+                <span className="block font-mono text-xs font-bold text-amber-300 border-b border-neutral-700 pb-1">
+                  ✏️ Tipografía y Fuentes
+                </span>
+
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-neutral-300 text-[11px] font-mono mb-1">Tipo de letra para el Nombre del Plato</label>
+                    <select
+                      value={brandDishNameFont}
+                      onChange={e => setBrandDishNameFont(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs outline-none"
+                    >
+                      <option value="inherit">Por defecto (Estilo de Plantilla)</option>
+                      <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Limpia (Moderna / Inter)</option>
+                      <option value="ui-serif, Georgia, Cambria, serif">Serif Elegante (Playfair / Georgia)</option>
+                      <option value="'Montserrat', sans-serif">Montserrat (Urbana / Vanguardia)</option>
+                      <option value="'Oswald', sans-serif">Oswald (Impacto / Condensada)</option>
+                      <option value="'Cinzel', serif">Cinzel (Clásica / Alta Cocina)</option>
+                      <option value="ui-monospace, monospace">Monospace (Técnica / Pizarra)</option>
+                      <option value="cursive">Pacifico / Cursiva (Gourmet / Cárnica)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 text-[11px] font-mono mb-1">Tipo de letra para la Descripción</label>
+                    <select
+                      value={brandDishDescFont}
+                      onChange={e => setBrandDishDescFont(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs outline-none"
+                    >
+                      <option value="inherit">Por defecto (Estilo de Plantilla)</option>
+                      <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Lectura Cómoda</option>
+                      <option value="ui-serif, Georgia, serif">Serif Descriptiva</option>
+                      <option value="'Montserrat', sans-serif">Montserrat Suave</option>
+                      <option value="ui-monospace, monospace">Monospace Detallado</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 text-[11px] font-mono mb-1 font-bold text-amber-300">Tipo de letra para el Precio</label>
+                    <select
+                      value={brandDishPriceFont}
+                      onChange={e => setBrandDishPriceFont(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs outline-none"
+                    >
+                      <option value="ui-monospace, monospace">Monospace (Destacado Claro)</option>
+                      <option value="ui-sans-serif, system-ui, sans-serif">Sans-Serif Negrita</option>
+                      <option value="ui-serif, Georgia, serif">Serif Tradicional</option>
+                      <option value="'Oswald', sans-serif">Oswald Numérico</option>
+                      <option value="'Montserrat', sans-serif">Montserrat Precio</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -758,13 +971,13 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsBrandingModalOpen(false)}
-                  className="px-3 py-2 rounded-xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                  className="px-3 py-2 rounded-xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold flex items-center gap-1 shadow transition"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold flex items-center gap-1 shadow transition cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5 stroke-[3]" />
                   <span>Aplicar a la Carta</span>

@@ -509,6 +509,14 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                   const inCart = cart.find(c => c.item.id === item.id);
                   const isEven = idx % 2 === 0;
 
+                  const customButtonColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor;
+                  const dishNameFont = restaurant.branding?.dishNameFont && restaurant.branding.dishNameFont !== 'inherit' ? restaurant.branding.dishNameFont : "'Cinzel', 'Playfair Display', serif";
+                  const dishDescFont = restaurant.branding?.dishDescFont && restaurant.branding.dishDescFont !== 'inherit' ? restaurant.branding.dishDescFont : 'inherit';
+                  const dishPriceFont = restaurant.branding?.dishPriceFont || 'inherit';
+
+                  const cardBorderStyle = customButtonColor ? { borderColor: `${customButtonColor}a0` } : undefined;
+                  const btnStyle = customButtonColor ? { backgroundColor: customButtonColor, color: '#000' } : undefined;
+
                   return (
                     <div key={item.id} className="relative group">
                       
@@ -568,16 +576,22 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex-1 pl-8 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left">
+                          <div 
+                            style={cardBorderStyle}
+                            className="flex-1 pl-8 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
+                          >
                             <div className="flex flex-col justify-between h-full space-y-1.5">
                               <div>
                                 <h3 
                                   className="text-sm sm:text-base font-semibold text-[#fffdfa] leading-tight flex items-center justify-between"
-                                  style={{ fontFamily: "'Cinzel', 'Playfair Display', serif" }}
+                                  style={{ fontFamily: dishNameFont }}
                                 >
                                   <span>{item.name}</span>
                                 </h3>
-                                <p className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed">
+                                <p 
+                                  style={{ fontFamily: dishDescFont }}
+                                  className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed"
+                                >
                                   {item.description}
                                 </p>
                               </div>
@@ -591,12 +605,16 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                  <span className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight">
+                                  <span 
+                                    style={{ fontFamily: dishPriceFont }}
+                                    className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight"
+                                  >
                                     S/ {item.price.toFixed(2)}
                                   </span>
 
                                   <button
                                     onClick={() => handleOpenItemCustomizer(item)}
+                                    style={btnStyle}
                                     className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
                                   >
                                     <Plus className="w-3 h-3" />
@@ -610,16 +628,22 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                       ) : (
                         /* LAYOUT B: Odd Items (Card Left, Circle Right) */
                         <div className="flex items-center">
-                          <div className="flex-1 pr-8 sm:pr-10 pl-3 sm:pl-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left">
+                          <div 
+                            style={cardBorderStyle}
+                            className="flex-1 pr-8 sm:pr-10 pl-3 sm:pl-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
+                          >
                             <div className="flex flex-col justify-between h-full space-y-1.5">
                               <div>
                                 <h3 
                                   className="text-sm sm:text-base font-semibold text-[#fffdfa] leading-tight flex items-center justify-between"
-                                  style={{ fontFamily: "'Cinzel', 'Playfair Display', serif" }}
+                                  style={{ fontFamily: dishNameFont }}
                                 >
                                   <span>{item.name}</span>
                                 </h3>
-                                <p className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed">
+                                <p 
+                                  style={{ fontFamily: dishDescFont }}
+                                  className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed"
+                                >
                                   {item.description}
                                 </p>
                               </div>
@@ -633,12 +657,16 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                  <span className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight">
+                                  <span 
+                                    style={{ fontFamily: dishPriceFont }}
+                                    className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight"
+                                  >
                                     S/ {item.price.toFixed(2)}
                                   </span>
 
                                   <button
                                     onClick={() => handleOpenItemCustomizer(item)}
+                                    style={btnStyle}
                                     className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
                                   >
                                     <Plus className="w-3 h-3" />
@@ -707,8 +735,11 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleConfirmItemUnits}
-          themeAccentColor="#dfb86c"
-          themeDarkBg="#051813"
+          themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c'}
+          themeDarkBg={restaurant.branding?.darkBgColor || '#051813'}
+          dishNameFont={restaurant.branding?.dishNameFont}
+          dishDescFont={restaurant.branding?.dishDescFont}
+          dishPriceFont={restaurant.branding?.dishPriceFont}
         />
       )}
 

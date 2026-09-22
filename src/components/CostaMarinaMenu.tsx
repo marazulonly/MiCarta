@@ -395,10 +395,16 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {displayedItems.map(item => {
                 const inCart = cart.find(c => c.item.id === item.id);
+                const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8';
+                const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
+                const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
+                const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
+
                 return (
                   <div
                     key={item.id}
-                    className="relative p-3.5 rounded-2xl bg-[#031521]/90 border border-sky-900/40 hover:border-sky-700/60 transition flex flex-col justify-between space-y-3 shadow-lg group"
+                    style={{ borderColor: btnColor ? `${btnColor}80` : undefined }}
+                    className="relative p-3.5 rounded-2xl bg-[#031521]/90 border transition flex flex-col justify-between space-y-3 shadow-lg group"
                   >
                     {/* Live Edit Action Badges */}
                     {isLiveEditActive && (
@@ -449,16 +455,25 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                           className="w-full h-full object-cover"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-sky-300 font-mono text-xs font-bold border border-sky-500/30">
+                        <div 
+                          style={{ fontFamily: dishPriceFont }}
+                          className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-white text-xs font-bold border border-white/20 shadow"
+                        >
                           S/ {item.price.toFixed(2)}
                         </div>
                       </div>
 
                       <div>
-                        <h3 className="text-sm font-bold text-white">
+                        <h3 
+                          style={{ fontFamily: dishNameFont }}
+                          className="text-sm font-bold text-white"
+                        >
                           {item.name}
                         </h3>
-                        <p className="text-xs text-sky-200/70 line-clamp-2 mt-0.5">
+                        <p 
+                          style={{ fontFamily: dishDescFont }}
+                          className="text-xs text-sky-200/70 line-clamp-2 mt-0.5"
+                        >
                           {item.description}
                         </p>
                       </div>
@@ -470,7 +485,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       </span>
                       <button
                         onClick={() => setSelectedItemForCustomization(item)}
-                        className="px-3 py-1.5 rounded-lg bg-sky-400 hover:bg-sky-300 text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow"
+                        style={{ backgroundColor: btnColor }}
+                        className="px-3 py-1.5 rounded-lg text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow hover:brightness-110"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -515,8 +531,11 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleConfirmItemUnits}
-          themeAccentColor="#38bdf8"
-          themeDarkBg="#041824"
+          themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8'}
+          themeDarkBg={restaurant.branding?.darkBgColor || '#031521'}
+          dishNameFont={restaurant.branding?.dishNameFont}
+          dishDescFont={restaurant.branding?.dishDescFont}
+          dishPriceFont={restaurant.branding?.dishPriceFont}
         />
       )}
 
