@@ -280,14 +280,36 @@ export async function loadAllDataFromFirebase(): Promise<{
       }
     }
 
+    // 4. Fallback y consolidación de usuarios (dueños, meseros, repartidores) desde la colección 'users'
+    const usersMap = new Map<string, User>();
+    snapshotUsers.forEach(u => {
+      if (u && u.id) usersMap.set(u.id, u);
+    });
+
+    try {
+      const userColl = collection(db, 'users');
+      const userDocs = await withTimeout(getDocs(userColl), 5000);
+      userDocs.forEach(d => {
+        const u = d.data() as User;
+        const id = u.id || d.id;
+        if (id) {
+          const existing = usersMap.get(id);
+          usersMap.set(id, { ...existing, ...u, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading users collection:', e);
+    }
+
+    const consolidatedUsers = Array.from(usersMap.values());
     const consolidatedItems = Array.from(itemsMap.values());
 
-    if (consolidatedItems.length > 0 || snapshotRestaurants.length > 0) {
+    if (consolidatedItems.length > 0 || snapshotRestaurants.length > 0 || consolidatedUsers.length > 0) {
       return {
         restaurants: snapshotRestaurants,
         items: consolidatedItems,
         categories: snapshotCategories,
-        users: snapshotUsers,
+        users: consolidatedUsers,
         orders: snapshotOrders,
       };
     }
@@ -352,7 +374,7 @@ export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<
 }
 
 /**
- * Deletes a single restaurant from Firestore and system snapshot
+ * Deletes a single restaurant from Firestore and system snapshot WITHOUT deleting or affecting owners
  */
 export async function deleteRestaurantFromFirebase(restaurantId: string): Promise<boolean> {
   if (!db) return false;
@@ -360,7 +382,7 @@ export async function deleteRestaurantFromFirebase(restaurantId: string): Promis
     const restRef = doc(db, 'restaurants', restaurantId);
     await withTimeout(deleteDoc(restRef), 6000);
 
-    // Also remove from snapshot in background
+    // Also update snapshot in background preserving all users and owners intact
     try {
       const metaRef = doc(db, 'system_snapshot', 'latest');
       const snap = await withTimeout(getDoc(metaRef), 3000).catch(() => null);
@@ -372,6 +394,13 @@ export async function deleteRestaurantFromFirebase(restaurantId: string): Promis
         const updatedItems = currentItems.filter(i => i.restaurantId !== restaurantId);
         const currentCategories: MenuCategory[] = snapData.categories || [];
         const updatedCategories = currentCategories.filter(c => c.restaurantId !== restaurantId);
+        
+        // Preserve all owners and users, only unlinking this restaurant from their restaurantIds
+        const currentUsers: User[] = snapData.users || [];
+        const updatedUsers = currentUsers.map(u => ({
+          ...u,
+          restaurantIds: (u.restaurantIds || []).filter(id => id !== restaurantId)
+        }));
 
         await setDoc(metaRef, {
           restaurants: updatedRests,
@@ -380,6 +409,8 @@ export async function deleteRestaurantFromFirebase(restaurantId: string): Promis
           itemCount: updatedItems.length,
           categories: updatedCategories,
           categoryCount: updatedCategories.length,
+          users: updatedUsers,
+          userCount: updatedUsers.length,
           updatedAt: new Date().toISOString()
         }, { merge: true });
       }

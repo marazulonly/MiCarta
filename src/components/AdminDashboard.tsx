@@ -475,17 +475,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <span className="text-[11px] text-neutral-400 block font-medium mb-1.5">
                       Restaurantes Asignados ({ownedRests.length}):
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ownedRests.map(r => (
-                        <span 
-                          key={r.id} 
-                          className="px-2 py-1 rounded bg-black border border-neutral-800 text-[11px] text-neutral-200 flex items-center gap-1.5 font-medium"
-                        >
-                          <Store className="w-3 h-3 text-neutral-400" />
-                          <span>{r.name}</span>
+                    {ownedRests.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {ownedRests.map(r => (
+                          <span 
+                            key={r.id} 
+                            className="px-2 py-1 rounded bg-black border border-neutral-800 text-[11px] text-neutral-200 flex items-center gap-1.5 font-medium"
+                          >
+                            <Store className="w-3 h-3 text-neutral-400" />
+                            <span>{r.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-950 border border-neutral-800">
+                        <span className="text-[11px] text-amber-400/90 font-medium flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>Sin restaurantes asignados (Cuenta de dueño conservada)</span>
                         </span>
-                      ))}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditError(null);
+                            setEditingOwner(owner);
+                          }}
+                          className="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-white font-bold transition cursor-pointer shrink-0"
+                        >
+                          + Asignar Sede
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
