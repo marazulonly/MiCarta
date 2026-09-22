@@ -32,8 +32,11 @@ try {
     app = getApp();
   }
 
-  // Use initializeFirestore with experimentalAutoDetectLongPolling to prevent WebSocket connection failures in preview iFrames
-  const firestoreSettings = { experimentalAutoDetectLongPolling: true };
+  // Use initializeFirestore with long polling settings to prevent WebSocket / HTTP2 connection failures in preview iFrames
+  const firestoreSettings = { 
+    experimentalAutoDetectLongPolling: true,
+    experimentalForceLongPolling: true,
+  };
 
   if (rawConfig.firestoreDatabaseId) {
     try {
