@@ -28,6 +28,30 @@ import { RoleHeader } from './components/RoleHeader';
 import { Bell, CheckCircle2 } from 'lucide-react';
 import { saveAllDataToFirebase, loadAllDataFromFirebase } from './lib/firebase';
 
+// Parse initial URL search parameters synchronously before first render
+const getInitialUrlParams = () => {
+  if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const };
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const rSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
+    const table = urlParams.get('mesa') || urlParams.get('table') || urlParams.get('m') || undefined;
+    const mode = urlParams.get('mode') === 'DELIVERY' ? ('DELIVERY' as const) : ('DINE_IN' as const);
+    return {
+      isQr: Boolean(rSlug),
+      restSlug: rSlug,
+      table,
+      mode
+    };
+  } catch {
+    return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const };
+  }
+};
+
+const initParams = getInitialUrlParams();
+const initialFoundRest = initParams.restSlug 
+  ? (INITIAL_RESTAURANTS.find(r => r.slug === initParams.restSlug || r.id === initParams.restSlug) || INITIAL_RESTAURANTS[0])
+  : INITIAL_RESTAURANTS[0];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
@@ -49,10 +73,10 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
 
   // Customer preview modal
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(INITIAL_RESTAURANTS[0]);
-  const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>('DINE_IN');
-  const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(undefined);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(initParams.isQr);
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(initialFoundRest);
+  const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
+  const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
 
   // Firebase state
   const [isSavingFirebase, setIsSavingFirebase] = useState(false);
@@ -328,6 +352,41 @@ export default function App() {
 
   // 1. Initial State: Prompt for DNI and Password if not logged in
   if (!currentUser) {
+    // If an anonymous guest arrives via QR code / direct link or clicked "Probar Carta"
+    if (isCustomerModalOpen) {
+      return (
+        <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+          <CustomerMenuModal
+            isOpen={true}
+            onClose={() => setIsCustomerModalOpen(false)}
+            restaurant={previewRestaurant}
+            categories={categories}
+            items={menuItems}
+            onOrderCreated={handleCreateOrder}
+            initialMode={previewMode}
+            initialTableNumber={previewTableNumber}
+            onUpdateRestaurant={handleUpdateRestaurant}
+            onUpdateMenuItem={handleUpdateMenuItem}
+            onAddMenuItem={handleAddMenuItem}
+            onDeleteMenuItem={handleDeleteMenuItem}
+            onUpdateCategory={handleUpdateCategory}
+            onAddCategory={handleAddCategory}
+            isOwnerOrAdmin={false}
+          />
+
+          {/* Floating Toast Notification */}
+          {toastMessage && (
+            <div className="fixed top-6 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
+              <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{toastMessage}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         <LoginScreen
@@ -335,25 +394,6 @@ export default function App() {
           onLogin={handleLogin}
           restaurants={restaurants}
           onOpenCustomerPreview={handleOpenCustomerPreview}
-        />
-
-        {/* Interactive Public Digital Menu Preview Modal for Customers if triggered */}
-        <CustomerMenuModal
-          isOpen={isCustomerModalOpen}
-          onClose={() => setIsCustomerModalOpen(false)}
-          restaurant={previewRestaurant}
-          categories={categories}
-          items={menuItems}
-          onOrderCreated={handleCreateOrder}
-          initialMode={previewMode}
-          initialTableNumber={previewTableNumber}
-          onUpdateRestaurant={handleUpdateRestaurant}
-          onUpdateMenuItem={handleUpdateMenuItem}
-          onAddMenuItem={handleAddMenuItem}
-          onDeleteMenuItem={handleDeleteMenuItem}
-          onUpdateCategory={handleUpdateCategory}
-          onAddCategory={handleAddCategory}
-          isOwnerOrAdmin={true}
         />
 
         {/* Floating Toast Notification */}
@@ -661,7 +701,7 @@ export default function App() {
         onDeleteMenuItem={handleDeleteMenuItem}
         onUpdateCategory={handleUpdateCategory}
         onAddCategory={handleAddCategory}
-        isOwnerOrAdmin={true}
+        isOwnerOrAdmin={Boolean(currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER'))}
       />
 
       {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}

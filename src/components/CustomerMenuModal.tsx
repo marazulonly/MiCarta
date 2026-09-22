@@ -69,10 +69,10 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   onDeleteMenuItem,
   onUpdateCategory,
   onAddCategory,
-  isOwnerOrAdmin = true,
+  isOwnerOrAdmin = false,
 }) => {
-  // Live Editing Modes
-  const [isLiveEditActive, setIsLiveEditActive] = useState(true);
+  // Live Editing Mode (ONLY accessible to verified Owner or Admin, default false)
+  const [isLiveEditActive, setIsLiveEditActive] = useState(false);
   
   // Modals for live editing
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -300,15 +300,15 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     (!restaurant.templateId && (restaurant.id === 'rest-criollo' || restaurant.slug === 'criollo-tradicion' || restaurant.name.toLowerCase().includes('criollo')));
 
   const liveEditProps = {
-    isLiveEditActive: isOwnerOrAdmin && isLiveEditActive,
+    isLiveEditActive: Boolean(isOwnerOrAdmin && isLiveEditActive),
     onToggleLiveEdit: isOwnerOrAdmin ? handleToggleLiveEdit : undefined,
-    onEditItem: handleOpenEditItem,
-    onQuickPriceItem: handleOpenQuickPrice,
-    onQuickPhotoItem: handleOpenQuickPhoto,
-    onToggleAvailability: handleToggleAvailability,
-    onAddNewItem: handleOpenAddItem,
-    onEditBranding: handleOpenBranding,
-    onSaveToFirebase: handleSaveToFirebase,
+    onEditItem: isOwnerOrAdmin ? handleOpenEditItem : undefined,
+    onQuickPriceItem: isOwnerOrAdmin ? handleOpenQuickPrice : undefined,
+    onQuickPhotoItem: isOwnerOrAdmin ? handleOpenQuickPhoto : undefined,
+    onToggleAvailability: isOwnerOrAdmin ? handleToggleAvailability : undefined,
+    onAddNewItem: isOwnerOrAdmin ? handleOpenAddItem : undefined,
+    onEditBranding: isOwnerOrAdmin ? handleOpenBranding : undefined,
+    onSaveToFirebase: isOwnerOrAdmin ? handleSaveToFirebase : undefined,
     isSavingFirebase: isSavingFirebase,
   };
 
