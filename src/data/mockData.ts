@@ -392,10 +392,11 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   { id: 'cat-l2', restaurantId: 'rest-loop', name: 'Subs & Chicken', description: 'Pan brioche horneado a diario y pollo crocante', sortOrder: 2, iconName: 'Wheat' },
   { id: 'cat-l3', restaurantId: 'rest-loop', name: 'Fries & Sides', description: 'Papas sazonadas y dips adictivos', sortOrder: 3, iconName: 'Sparkles' },
 
-  // Costa Marina
+  // Costa Marina / Cevichito Pliz
   { id: 'cat-m1', restaurantId: 'rest-costa', name: 'Ceviches & Tiraditos', description: 'Pesca artesanal fresca del litoral', sortOrder: 1, iconName: 'Fish' },
   { id: 'cat-m2', restaurantId: 'rest-costa', name: 'Chicharrones & Wok', description: 'Frituras crocantes y arroces marineros', sortOrder: 2, iconName: 'Waves' },
-  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 3, iconName: 'GlassWater' }
+  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 3, iconName: 'GlassWater' },
+  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 4, iconName: 'GlassWater' }
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
@@ -753,7 +754,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Ceviche Mixto Cevichito Pliz',
     description: 'Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja. Aliñado con leche de tigre clásica al ají limo, apio y zumo de limón piurano.',
     price: 48.00,
-    imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
     isChefSpecial: true,
@@ -768,7 +769,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Tiradito Ahumado al Ají Amarillo & Maracuyá',
     description: 'Láminas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte. Bañado en emulsión sedosa de ají amarillo soasado con reducción de maracuyá y oliva virgen.',
     price: 42.00,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
     prepTimeMinutes: 8,
@@ -782,7 +783,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Ceviche Apaltado con Pulpo a la Brasa',
     description: 'Pesca blanca del día y tentáculo entero de pulpo sellado a la brasa. Acompañado de abanico de palta hass y canchita chulpi serrana. Sazonado con leche de tigre cremosa al rocoto ahumado y chimichurri parrillero.',
     price: 52.00,
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isChefSpecial: true,
     prepTimeMinutes: 12,
@@ -796,7 +797,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Tiradito Nikkei de Atún Aleta Amarilla',
     description: 'Cortes seleccionados de atún rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjolí tostado. Aliñado con salsa ponzu artesanal de kion, shoyu añejo y gotas de aceite de sésamo prensado en frío.',
     price: 45.00,
-    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     prepTimeMinutes: 8,
     allergens: ['Pescado', 'Soya'],
@@ -811,7 +812,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Arroz con Mariscos Meloso al Wok de Leña',
     description: 'Langostinos jumbo, anillas de calamar tierno, pulpo y conchas de abanico flameados al pisco. Montado sobre arroz meloso con arvejas y pimientos asados. Con reducción de bisque de cangrejos y salsa criolla al ají limo.',
     price: 54.00,
-    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
     isChefSpecial: true,
@@ -826,7 +827,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Chicharrón de Corvina & Calamar Crocante',
     description: 'Filetes tiernos de corvina y anillas de calamar en rebozado ligero y crujiente. Guarnecido con bastones de yuca frita dorada y zarandaja aliñada. Acompañado de salsa tártara de la casa con alcaparras y crema de rocoto carretillero.',
     price: 46.00,
-    imageUrl: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
     prepTimeMinutes: 14,
@@ -840,7 +841,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'Chaufa Marino Especial al Carbón',
     description: 'Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazmín salteado al wok con cebollita china fresca y tortilla de huevo. Bañado en salsa de ostión, sillao de hongo y ajonjolí tostado.',
     price: 49.00,
-    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     prepTimeMinutes: 15,
     allergens: ['Mariscos', 'Pescado', 'Soya', 'Huevo'],
@@ -879,7 +880,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m10',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m3',
+    categoryId: 'cat-m4',
     name: 'Limonada de Hierba Luisa & Jengibre (Jarra 1L)',
     description: 'Zumo fresco de limones sutiles colado al momento con infusión helada de hierba luisa y jengibre fresco rallado. Endulzada con miel de caña natural y hojas de menta del huerto.',
     price: 24.00,
@@ -956,7 +957,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-chicha',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m3',
+    categoryId: 'cat-m4',
     name: 'Chicha Morada Tradicional de la Casa (Jarra 1L)',
     description: 'Elaborada artesanalmente con maíz morado selecto, piña dulce madura, manzana israel, membrillo, canela en rama y clavo de olor, con toque de limón sutil al momento.',
     price: 18.00,

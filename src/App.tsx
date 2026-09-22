@@ -168,39 +168,14 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
   return Array.from(map.values());
 }
 
-// Load cached initial state synchronously before React component initializes
-const getInitialStateFromStorage = () => {
-  let cachedRests = INITIAL_RESTAURANTS;
-  let cachedCategories = INITIAL_CATEGORIES;
-  let cachedItems = INITIAL_MENU_ITEMS;
-  let cachedUsers = INITIAL_USERS;
-  let cachedOrders = INITIAL_ORDERS;
-
-  if (typeof window !== 'undefined') {
-    try {
-      const cached = localStorage.getItem('micarta_system_state_v1');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.restaurants?.length) {
-          cachedRests = sanitizeRestaurants(parsed.restaurants);
-        }
-        if (parsed.categories?.length) cachedCategories = parsed.categories;
-        if (parsed.items?.length) {
-          const stored = sanitizeMenuItems(parsed.items);
-          // Always merge to guarantee recovered manual dishes in INITIAL_MENU_ITEMS are retained
-          cachedItems = mergeMenuItemsById(INITIAL_MENU_ITEMS, stored);
-        }
-        if (parsed.users?.length) cachedUsers = parsed.users;
-        if (parsed.orders?.length) cachedOrders = parsed.orders;
-      }
-    } catch {
-      // Storage read error
-    }
-  }
-  return { cachedRests, cachedCategories, cachedItems, cachedUsers, cachedOrders };
+// Initial default state without reading device localStorage
+const initialState = {
+  cachedRests: sanitizeRestaurants(INITIAL_RESTAURANTS),
+  cachedCategories: INITIAL_CATEGORIES,
+  cachedItems: sanitizeMenuItems(INITIAL_MENU_ITEMS),
+  cachedUsers: INITIAL_USERS,
+  cachedOrders: INITIAL_ORDERS,
 };
-
-const initialState = getInitialStateFromStorage();
 const initParams = getInitialUrlParams();
 
 const initialRequestedSlug = initParams.restSlug;
@@ -276,43 +251,22 @@ export default function App() {
     }
   }, [restaurants]);
 
-  // Load from Firebase and LocalStorage fallback on initial mount if data exists
+  // Pure direct remote download from Firebase Firestore without reading device localStorage
   useEffect(() => {
-    // 1. First try loading from LocalStorage for instant zero-latency load
-    try {
-      const cached = localStorage.getItem('micarta_system_state_v1');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.restaurants?.length) {
-          const cleanRests = sanitizeRestaurants(parsed.restaurants);
-          setRestaurants(cleanRests);
-        }
-        if (parsed.items?.length) {
-          const cleanItems = sanitizeMenuItems(parsed.items);
-          setMenuItems(prev => mergeMenuItemsById(INITIAL_MENU_ITEMS, cleanItems));
-        }
-        if (parsed.categories?.length) setCategories(parsed.categories);
-        if (parsed.users?.length) setUsers(parsed.users);
-        if (parsed.orders?.length) setOrders(parsed.orders);
-      }
-    } catch {
-      // Local storage read error
-    }
-
-    // 2. Sync with remote Firebase Firestore database
     loadAllDataFromFirebase().then(remoteData => {
-      if (remoteData) {
+      if (remoteData && (remoteData.restaurants?.length > 0 || remoteData.items?.length > 0)) {
         if (remoteData.restaurants?.length) {
           const cleanRests = sanitizeRestaurants(remoteData.restaurants);
           setRestaurants(cleanRests);
         }
+        if (remoteData.categories?.length) {
+          setCategories(remoteData.categories);
+        }
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(prev => mergeMenuItemsById(prev, cleanItems));
+          setMenuItems(cleanItems);
         }
-        if (remoteData.categories?.length) setCategories(remoteData.categories);
         if (remoteData.users?.length) {
-          // Merge remote users with initial users to guarantee no accounts are lost
           setUsers(prev => {
             const map = new Map<string, User>();
             prev.forEach(u => map.set(u.id, u));
@@ -320,28 +274,23 @@ export default function App() {
             return Array.from(map.values());
           });
         }
-        if (remoteData.orders?.length) setOrders(remoteData.orders);
-        showToast(`✓ Sincronizado con Firebase Firestore (${remoteData.items?.length || 0} platos activos)`);
+        if (remoteData.orders?.length) {
+          setOrders(remoteData.orders);
+        }
+      } else {
+        // Auto-seed to Firebase Firestore on first run to ensure cloud database has all restaurants and items
+        saveAllDataToFirebase({
+          restaurants: sanitizeRestaurants(INITIAL_RESTAURANTS),
+          items: sanitizeMenuItems(INITIAL_MENU_ITEMS),
+          categories: INITIAL_CATEGORIES,
+          users: INITIAL_USERS,
+          orders: INITIAL_ORDERS
+        }).catch(() => {});
       }
     }).catch(err => {
-      console.warn('Could not auto-load from Firebase:', err);
+      console.warn('[Firebase] Notice during initial remote fetch:', err);
     });
   }, []);
-
-  // Save to LocalStorage whenever critical data changes as backup
-  useEffect(() => {
-    try {
-      localStorage.setItem('micarta_system_state_v1', JSON.stringify({
-        restaurants,
-        items: menuItems,
-        categories,
-        users,
-        orders,
-      }));
-    } catch {
-      // Storage quota error ignored
-    }
-  }, [restaurants, menuItems, categories, users, orders]);
 
   const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
 
@@ -549,19 +498,7 @@ export default function App() {
     const nextRestaurants = restaurants.filter(r => r.id !== restaurantId);
     setRestaurants(nextRestaurants);
 
-    // 2. Clear from localStorage immediately
-    try {
-      const cached = localStorage.getItem('micarta_system_state_v1');
-      const parsed = cached ? JSON.parse(cached) : {};
-      localStorage.setItem('micarta_system_state_v1', JSON.stringify({
-        ...parsed,
-        restaurants: nextRestaurants,
-        items: menuItems.filter(i => i.restaurantId !== restaurantId),
-        categories: categories.filter(c => c.restaurantId !== restaurantId)
-      }));
-    } catch {}
-
-    // 3. If previewing or selected, reset
+    // 2. If previewing or selected, reset
     if (selectedRestaurantId === restaurantId) {
       setSelectedRestaurantId(nextRestaurants[0]?.id || '');
     }
@@ -569,7 +506,7 @@ export default function App() {
       setPreviewRestaurant(null);
     }
 
-    // 4. Clean user restaurant assignments
+    // 3. Clean user restaurant assignments
     setUsers(prevUsers => {
       return prevUsers.map(u => {
         if (u.restaurantIds && u.restaurantIds.includes(restaurantId)) {
@@ -591,50 +528,26 @@ export default function App() {
       } : null);
     }
 
-    // 5. Delete from Firebase
+    // 4. Delete from Firebase
     deleteRestaurantFromFirebase(restaurantId);
 
     showToast(`Restaurante "${restName}" eliminado exitosamente.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {
-    setMenuItems(prev => {
-      const next = prev.map(i => i.id === updated.id ? updated : i);
-      try {
-        const cached = localStorage.getItem('micarta_system_state_v1');
-        const parsed = cached ? JSON.parse(cached) : {};
-        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
-      } catch {}
-      return next;
-    });
+    setMenuItems(prev => prev.map(i => i.id === updated.id ? updated : i));
     saveMenuItemToFirebase(updated);
-    showToast(`Plato "${updated.name}" actualizado y guardado.`);
+    showToast(`Plato "${updated.name}" actualizado y guardado en Firebase.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
-    setMenuItems(prev => {
-      const next = [newItem, ...prev];
-      try {
-        const cached = localStorage.getItem('micarta_system_state_v1');
-        const parsed = cached ? JSON.parse(cached) : {};
-        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
-      } catch {}
-      return next;
-    });
+    setMenuItems(prev => [newItem, ...prev]);
     saveMenuItemToFirebase(newItem);
-    showToast(`Nuevo plato "${newItem.name}" guardado permanentemente.`);
+    showToast(`Nuevo plato "${newItem.name}" guardado permanentemente en Firebase.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
-    setMenuItems(prev => {
-      const next = prev.filter(i => i.id !== itemId);
-      try {
-        const cached = localStorage.getItem('micarta_system_state_v1');
-        const parsed = cached ? JSON.parse(cached) : {};
-        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
-      } catch {}
-      return next;
-    });
+    setMenuItems(prev => prev.filter(i => i.id !== itemId));
     deleteMenuItemFromFirebase(itemId);
     showToast(`Plato eliminado.`);
   };

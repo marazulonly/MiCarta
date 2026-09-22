@@ -140,58 +140,21 @@ export async function saveAllDataToFirebase(data: {
       }
     }
 
-    // 5. Merge seguro en snapshot global para jamás borrar platos de otros restaurantes
+    // 5. Guardar snapshot global limpio y actualizado
     try {
       const metaRef = doc(db, 'system_snapshot', 'latest');
-      const existingSnap = await withTimeout(getDoc(metaRef), 4000).catch(() => null);
-
-      let mergedRestaurants = data.restaurants;
-      let mergedItems = data.items;
-      let mergedCategories = data.categories;
-      let mergedUsers = data.users || [];
-      let mergedOrders = data.orders || [];
-
-      if (existingSnap && existingSnap.exists()) {
-        const snapData = existingSnap.data();
-        if (snapData) {
-          // Merge restaurants
-          const restMap = new Map<string, Restaurant>();
-          (snapData.restaurants || []).forEach((r: Restaurant) => restMap.set(r.id, r));
-          data.restaurants.forEach(r => restMap.set(r.id, r));
-          mergedRestaurants = Array.from(restMap.values());
-
-          // Merge items (never drop existing items)
-          const itemsMap = new Map<string, MenuItem>();
-          (snapData.items || []).forEach((it: MenuItem) => itemsMap.set(it.id, it));
-          data.items.forEach(it => itemsMap.set(it.id, it));
-          mergedItems = Array.from(itemsMap.values());
-
-          // Merge categories
-          const catMap = new Map<string, MenuCategory>();
-          (snapData.categories || []).forEach((c: MenuCategory) => catMap.set(c.id, c));
-          data.categories.forEach(c => catMap.set(c.id, c));
-          mergedCategories = Array.from(catMap.values());
-
-          // Merge users
-          const userMap = new Map<string, User>();
-          (snapData.users || []).forEach((u: User) => userMap.set(u.id, u));
-          (data.users || []).forEach(u => userMap.set(u.id, u));
-          mergedUsers = Array.from(userMap.values());
-        }
-      }
-
       await setDoc(metaRef, {
         updatedAt: now,
-        restaurantCount: mergedRestaurants.length,
-        itemCount: mergedItems.length,
-        categoryCount: mergedCategories.length,
-        userCount: mergedUsers.length,
-        orderCount: mergedOrders.length,
-        restaurants: mergedRestaurants,
-        items: mergedItems,
-        categories: mergedCategories,
-        users: mergedUsers,
-        orders: mergedOrders,
+        restaurantCount: data.restaurants.length,
+        itemCount: data.items.length,
+        categoryCount: data.categories.length,
+        userCount: (data.users || []).length,
+        orderCount: (data.orders || []).length,
+        restaurants: data.restaurants,
+        items: data.items,
+        categories: data.categories,
+        users: data.users || [],
+        orders: data.orders || [],
       }, { merge: true });
     } catch (e) {
       console.warn('[Firebase] Warning saving system_snapshot:', e);
@@ -331,7 +294,44 @@ export async function loadAllDataFromFirebase(): Promise<{
 
     return null;
   } catch (err) {
-    console.warn('[Firebase] No se pudieron cargar datos remotos (usando caché local):', err);
+    console.warn('[Firebase] No se pudieron cargar datos remotos:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetches restaurant menu data directly from Firebase Firestore (pure cloud download, no localStorage)
+ */
+export async function fetchRestaurantMenuDirectFromFirebase(slugOrId: string): Promise<{
+  restaurant: Restaurant;
+  categories: MenuCategory[];
+  items: MenuItem[];
+} | null> {
+  if (!db) return null;
+  try {
+    const allData = await loadAllDataFromFirebase();
+    if (!allData || !allData.restaurants.length) return null;
+
+    const targetSlug = slugOrId.toLowerCase().trim();
+    const rest = allData.restaurants.find(r => 
+      r.id === targetSlug || 
+      (r.slug && r.slug.toLowerCase().trim() === targetSlug) ||
+      (r.name && r.name.toLowerCase().trim() === targetSlug) ||
+      (targetSlug.includes('cevichito') && (r.id === 'rest-costa' || r.slug?.includes('cevichito')))
+    );
+
+    if (!rest) return null;
+
+    const categories = allData.categories.filter(c => c.restaurantId === rest.id);
+    const items = allData.items.filter(i => i.restaurantId === rest.id);
+
+    return {
+      restaurant: rest,
+      categories,
+      items
+    };
+  } catch (err) {
+    console.warn('[Firebase] Error fetching direct restaurant menu:', err);
     return null;
   }
 }
