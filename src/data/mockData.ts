@@ -314,13 +314,18 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     ownerId: 'u-3',
     templateId: 'tmpl-marine',
     branding: {
-      primaryColor: '#0284C7',       // Azul Pacífico
-      secondaryColor: '#0369A1',     // Azul marino profundo
-      accentColor: '#06B6D4',        // Turquesa salino
-      darkBgColor: '#082F49',        // Océano nocturno
-      cardBgColor: '#0C4A6E',
-      textColor: '#F0F9FF',
-      fontDisplay: 'Plus Jakarta Sans, sans-serif'
+      primaryColor: '#0e4858',       // Azul petróleo profundo (marco y barra superior)
+      secondaryColor: '#145362',     // Subtítulos y descripciones
+      accentColor: '#d8724e',        // Coral terracota
+      darkBgColor: '#ebe8dc',        // Pergamino crema claro (fondo de la carta)
+      cardBgColor: '#ebe8dc',
+      dishCardBgColor: '#ebe8dc',    // Fondo de tarjetas de platos
+      textColor: '#0a3d4c',          // Texto azul marino profundo (platos y títulos)
+      fontDisplay: 'Outfit, sans-serif',
+      buttonColor: '#d8724e',       // Botón Pedir coral terracota
+      buttonTextColor: '#ffffff',   // Texto blanco en botones
+      restaurantNameFont: 'Outfit, sans-serif',
+      restaurantNameColor: '#0a3d4c' // Nombre "Cevichito Pliz" en azul marino
     },
     metrics: {
       dailyRevenue: 4150.20,

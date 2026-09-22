@@ -82,7 +82,20 @@ const getInitialStateFromStorage = () => {
       const cached = localStorage.getItem('micarta_system_state_v1');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed.restaurants?.length) cachedRests = parsed.restaurants;
+        if (parsed.restaurants?.length) {
+          cachedRests = parsed.restaurants.map((r: Restaurant) => {
+            if (r.id === 'rest-costa') {
+              const defaultCosta = INITIAL_RESTAURANTS.find(ir => ir.id === 'rest-costa');
+              if (defaultCosta && (r.branding?.darkBgColor === '#082F49' || !r.branding?.buttonColor)) {
+                return {
+                  ...r,
+                  branding: { ...defaultCosta.branding }
+                };
+              }
+            }
+            return r;
+          });
+        }
         if (parsed.categories?.length) cachedCategories = parsed.categories;
         if (parsed.items?.length) cachedItems = parsed.items;
         if (parsed.users?.length) cachedUsers = parsed.users;
