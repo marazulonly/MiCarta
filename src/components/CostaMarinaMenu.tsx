@@ -192,7 +192,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {/* Top Bar */}
           <div 
             style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
-            className="relative z-30 px-4 py-2.5 border-b flex items-center justify-between text-xs"
+            className="relative z-30 px-2.5 py-1.5 border-b flex items-center justify-between text-xs"
           >
             <div className="flex items-center gap-2">
               <span 
@@ -353,7 +353,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
           {/* Marine Body */}
           <div 
-            className="relative flex-1 overflow-y-auto p-4 sm:p-5 pb-28 space-y-5"
+            className="relative flex-1 overflow-y-auto p-2 sm:p-2.5 pb-24 space-y-3"
             style={marineStyle}
           >
             {/* Header */}
@@ -454,7 +454,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             </div>
 
             {/* Dishes list */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {displayedItems.map(item => {
                 const inCart = cart.find(c => c.item.id === item.id);
                 const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
@@ -469,7 +469,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       borderColor: COLOR_OLIVE,
                       color: COLOR_TEAL
                     }}
-                    className="relative p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 shadow-md group"
+                    className="relative p-2 rounded-2xl border transition flex flex-col justify-between space-y-2 shadow-md group"
                   >
                     {/* Live Edit Action Badges */}
                     {isLiveEditActive && (
