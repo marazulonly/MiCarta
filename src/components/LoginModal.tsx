@@ -13,7 +13,8 @@ import {
   Eye, 
   EyeOff,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Flame
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -79,6 +80,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     ADMIN: { label: 'Administrador', icon: Shield, color: 'bg-white text-black' },
     OWNER: { label: 'Dueño', icon: Building2, color: 'bg-amber-400 text-black' },
     RESTAURANT_MANAGER: { label: 'Gerente', icon: Building2, color: 'bg-emerald-400 text-black' },
+    KITCHEN: { label: 'Cocina (KDS)', icon: Flame, color: 'bg-orange-500 text-white' },
     WAITER: { label: 'Mesero', icon: ChefHat, color: 'bg-sky-400 text-black' },
     DELIVERY: { label: 'Repartidor', icon: Bike, color: 'bg-purple-400 text-black' },
     CUSTOMER: { label: 'Cliente', icon: UserCheck, color: 'bg-neutral-200 text-black' },

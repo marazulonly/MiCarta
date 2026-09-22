@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   INITIAL_RESTAURANTS, 
   INITIAL_CATEGORIES, 
@@ -20,8 +20,13 @@ import { LoginModal } from './components/LoginModal';
 import { WaiterView } from './components/WaiterView';
 import { DeliveryView } from './components/DeliveryView';
 import { CustomerPortalView } from './components/CustomerPortalView';
+import { KitchenView } from './components/KitchenView';
 import { AdminSimulationView } from './components/AdminSimulationView';
+import { OwnerDashboard } from './components/OwnerDashboard';
+import { LoginScreen } from './components/LoginScreen';
+import { RoleHeader } from './components/RoleHeader';
 import { Bell, CheckCircle2 } from 'lucide-react';
+import { saveAllDataToFirebase, loadAllDataFromFirebase } from './lib/firebase';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -36,11 +41,11 @@ export default function App() {
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('rest-brasas');
   
-  // Authenticated user state: default to Admin (Carlos Mendoza, DNI: 10203040)
-  const [currentUser, setCurrentUser] = useState<User | null>(INITIAL_USERS[0]);
+  // Authenticated user state: default to null (prompts for DNI and password upon entry)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // 6 Access Levels Simulator (synced with currentUser)
+  // Active Role Simulator (synced with currentUser)
   const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
 
   // Customer preview modal
@@ -48,19 +53,59 @@ export default function App() {
   const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(INITIAL_RESTAURANTS[0]);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>('DINE_IN');
 
+  // Firebase state
+  const [isSavingFirebase, setIsSavingFirebase] = useState(false);
+
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Load from Firebase on initial mount if data exists
+  useEffect(() => {
+    loadAllDataFromFirebase().then(remoteData => {
+      if (remoteData) {
+        if (remoteData.restaurants?.length) setRestaurants(remoteData.restaurants);
+        if (remoteData.items?.length) setMenuItems(remoteData.items);
+        if (remoteData.categories?.length) setCategories(remoteData.categories);
+        if (remoteData.orders?.length) setOrders(remoteData.orders);
+        showToast('✓ Datos de restaurantes y cartas cargados desde Firebase');
+      }
+    }).catch(err => {
+      console.warn('Could not auto-load from Firebase:', err);
+    });
+  }, []);
+
+  // Global save to Firebase handler
+  const handleSaveAllToFirebase = async () => {
+    setIsSavingFirebase(true);
+    try {
+      const result = await saveAllDataToFirebase({
+        restaurants,
+        items: menuItems,
+        categories,
+        orders,
+      });
+      if (result.success) {
+        showToast('✓ ' + result.message);
+      } else {
+        showToast('⚠️ ' + result.message);
+      }
+    } catch (err: any) {
+      showToast('Error al guardar en Firebase: ' + (err.message || 'Error'));
+    } finally {
+      setIsSavingFirebase(false);
+    }
   };
 
   // Login handler
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setActiveRole(user.role);
-    if (user.role === 'WAITER' || user.role === 'DELIVERY' || user.role === 'CUSTOMER') {
+    if (user.role === 'WAITER' || user.role === 'DELIVERY' || user.role === 'CUSTOMER' || user.role === 'KITCHEN') {
       setActiveTab('home');
     }
     showToast(`Sesión iniciada: ${user.name} (${user.role}) - DNI: ${user.dni}`);
@@ -220,6 +265,7 @@ export default function App() {
 
   // Effective role user for specific role components
   const effectiveWaiterUser = currentUser?.role === 'WAITER' ? currentUser : (users.find(u => u.role === 'WAITER') || users[0]);
+  const effectiveKitchenUser = currentUser?.role === 'KITCHEN' ? currentUser : (users.find(u => u.role === 'KITCHEN') || users[0]);
   const effectiveDeliveryUser = currentUser?.role === 'DELIVERY' ? currentUser : (users.find(u => u.role === 'DELIVERY') || users[0]);
   const effectiveCustomerUser = currentUser?.role === 'CUSTOMER' ? currentUser : (users.find(u => u.role === 'CUSTOMER') || users[0]);
 
@@ -227,6 +273,179 @@ export default function App() {
   const currentSelectedRest = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
+  // 1. Initial State: Prompt for DNI and Password if not logged in
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+        <LoginScreen
+          users={users}
+          onLogin={handleLogin}
+        />
+
+        {/* Interactive Public Digital Menu Preview Modal for Customers if triggered */}
+        <CustomerMenuModal
+          isOpen={isCustomerModalOpen}
+          onClose={() => setIsCustomerModalOpen(false)}
+          restaurant={previewRestaurant}
+          categories={categories}
+          items={menuItems}
+          onOrderCreated={handleCreateOrder}
+          initialMode={previewMode}
+          onUpdateRestaurant={handleUpdateRestaurant}
+          onUpdateMenuItem={handleUpdateMenuItem}
+          onAddMenuItem={handleAddMenuItem}
+          onDeleteMenuItem={handleDeleteMenuItem}
+          onUpdateCategory={handleUpdateCategory}
+          onAddCategory={handleAddCategory}
+          isOwnerOrAdmin={true}
+        />
+
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-6 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>{toastMessage}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. Non-Admin Role Views: "Las vistas deberán corresponder al rol del usuario que se loguee"
+  // "La vista actual, solo será vista cuando el que se loguee sea un administrador"
+  if (currentUser.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+        
+        {/* Dedicated Role Header with User Profile, Restaurant and Logout */}
+        <RoleHeader
+          currentUser={currentUser}
+          restaurant={currentSelectedRest}
+          onLogout={handleLogout}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onOpenCustomerPreview={() => handleOpenCustomerPreview()}
+        />
+
+        {/* Role-Specific View Container */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-20">
+          
+          {/* OWNER & RESTAURANT MANAGER: Full Owner Dashboard with Menus, Tables/QR, Staff, Shifts, Schedules */}
+          {(currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && (
+            <OwnerDashboard
+              restaurants={restaurants}
+              users={users}
+              templates={templates}
+              menuItems={menuItems}
+              categories={categories}
+              onUpdateRestaurant={handleUpdateRestaurant}
+              onAddRestaurant={handleAddRestaurant}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+              onAddMenuItem={handleAddMenuItem}
+              onUpdateMenuItem={handleUpdateMenuItem}
+              onDeleteMenuItem={handleDeleteMenuItem}
+              onAddCategory={handleAddCategory}
+              onUpdateCategory={handleUpdateCategory}
+              onDeleteCategory={handleDeleteCategory}
+              onOpenCustomerPreview={handleOpenCustomerPreview}
+              onSwitchToAdminView={() => {
+                showToast('Se requieren credenciales de Administrador (DNI: 00448157) para acceder a la vista global SaaS.');
+                setIsLoginModalOpen(true);
+              }}
+            />
+          )}
+
+          {/* KITCHEN: Dedicated Kitchen Display System (KDS) & Dish 86 toggle */}
+          {currentUser.role === 'KITCHEN' && (
+            <KitchenView
+              currentUser={currentUser}
+              restaurants={restaurants}
+              orders={orders}
+              menuItems={menuItems}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+            />
+          )}
+
+          {/* WAITER: Table management, live orders, waiter call service */}
+          {currentUser.role === 'WAITER' && (
+            <WaiterView
+              currentUser={currentUser}
+              restaurants={restaurants}
+              orders={orders}
+              menuItems={menuItems}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+              onSimulateNewOrder={handleSimulateNewOrder}
+              onOpenCustomerPreview={handleOpenCustomerPreview}
+            />
+          )}
+
+          {/* DELIVERY: Real-time dispatch, route assignments, driver status */}
+          {currentUser.role === 'DELIVERY' && (
+            <DeliveryView
+              currentUser={currentUser}
+              restaurants={restaurants}
+              orders={orders}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+            />
+          )}
+
+          {/* CUSTOMER: Digital dining portal, QR scan, order history */}
+          {currentUser.role === 'CUSTOMER' && (
+            <CustomerPortalView
+              currentUser={currentUser}
+              restaurants={restaurants}
+              orders={orders}
+              onOpenCustomerPreview={handleOpenCustomerPreview}
+            />
+          )}
+
+        </main>
+
+        {/* Interactive Public Digital Menu Preview Modal for Customers */}
+        <CustomerMenuModal
+          isOpen={isCustomerModalOpen}
+          onClose={() => setIsCustomerModalOpen(false)}
+          restaurant={previewRestaurant}
+          categories={categories}
+          items={menuItems}
+          onOrderCreated={handleCreateOrder}
+          initialMode={previewMode}
+          onUpdateRestaurant={handleUpdateRestaurant}
+          onUpdateMenuItem={handleUpdateMenuItem}
+          onAddMenuItem={handleAddMenuItem}
+          onDeleteMenuItem={handleDeleteMenuItem}
+          onUpdateCategory={handleUpdateCategory}
+          onAddCategory={handleAddCategory}
+          isOwnerOrAdmin={currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'}
+        />
+
+        {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          users={users}
+          currentUser={currentUser}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
+
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-16 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
+              <span>{toastMessage}</span>
+            </div>
+          </div>
+        )}
+
+      </div>
+    );
+  }
+
+  // 3. ADMIN ROLE VIEW: "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   return (
     <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
       
@@ -238,7 +457,7 @@ export default function App() {
         activeRole={activeRole}
         onRoleChange={(role) => {
           setActiveRole(role);
-          // Also set a representative user matching this role if current user has different role
+          // When admin previews another role in the dropdown
           const roleUser = users.find(u => u.role === role);
           if (roleUser) {
             setCurrentUser(roleUser);
@@ -254,15 +473,21 @@ export default function App() {
         onOpenCustomerPreview={() => handleOpenCustomerPreview()}
         currentUser={currentUser}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
         isSimulationActive={isSimulationActive}
         onToggleSimulation={(active) => {
           setIsSimulationActive(active);
           if (active) {
-            showToast('🖥️ Modo Simulación Multi-Pantalla activado (Vista para PC)');
+            setActiveRole('ADMIN');
+            const adminUser = users.find(u => u.role === 'ADMIN') || users[0];
+            if (adminUser) setCurrentUser(adminUser);
+            showToast('🖥️ Modo Simulación Multi-Pantalla activado (Vista Administrador para PC)');
           } else {
             showToast('Modo Simulación desactivado');
           }
         }}
+        onSaveFirebase={handleSaveAllToFirebase}
+        isSavingFirebase={isSavingFirebase}
       />
 
       {/* Main Content Area */}
@@ -288,93 +513,32 @@ export default function App() {
           />
         ) : (
           <>
-            {/* Active Role Notification if not ADMIN */}
-            {activeRole !== 'ADMIN' && (
-              <div className="mb-6 p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between text-xs text-neutral-300">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span>
-                    Accediendo como <strong>{currentUser?.name || activeRole}</strong> (DNI: <strong className="font-mono text-white">{currentUser?.dni || '---'}</strong> - Rol: <strong className="text-amber-300">{activeRole}</strong>). 
-                    {activeRole === 'WAITER' && ' Vista especializada para atención de mesas, cartas digitales y comandas.'}
-                    {activeRole === 'DELIVERY' && ' Vista especializada para despacho de pedidos y rutas de reparto.'}
-                    {activeRole === 'CUSTOMER' && ' Vista de portal de comensal con acceso a cartas por QR/enlace y seguimiento de pedidos.'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 ml-2">
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="text-amber-400 hover:underline font-bold cursor-pointer"
-                  >
-                    Cambiar Usuario
-                  </button>
-                  <button
-                    onClick={() => {
-                      const adminUser = users.find(u => u.role === 'ADMIN') || users[0];
-                      setCurrentUser(adminUser);
-                      setActiveRole('ADMIN');
-                    }}
-                    className="text-white underline font-bold hover:text-neutral-300 cursor-pointer"
-                  >
-                    Restaurar Admin
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* View Switching & RBAC Dynamic Routing */}
+            {/* View Switching & RBAC Dynamic Routing for Admin */}
             {activeTab === 'home' && (
-              <>
-                {activeRole === 'WAITER' ? (
-                  <WaiterView
-                    currentUser={effectiveWaiterUser}
-                    restaurants={restaurants}
-                    orders={orders}
-                    menuItems={menuItems}
-                    onUpdateOrderStatus={handleUpdateOrderStatus}
-                    onSimulateNewOrder={handleSimulateNewOrder}
-                    onOpenCustomerPreview={handleOpenCustomerPreview}
-                  />
-                ) : activeRole === 'DELIVERY' ? (
-                  <DeliveryView
-                    currentUser={effectiveDeliveryUser}
-                    restaurants={restaurants}
-                    orders={orders}
-                    onUpdateOrderStatus={handleUpdateOrderStatus}
-                  />
-                ) : activeRole === 'CUSTOMER' ? (
-                  <CustomerPortalView
-                    currentUser={effectiveCustomerUser}
-                    restaurants={restaurants}
-                    orders={orders}
-                    onOpenCustomerPreview={handleOpenCustomerPreview}
-                  />
-                ) : (
-                  <HomeView
-                    restaurants={restaurants}
-                    orders={orders}
-                    users={users}
-                    templates={templates}
-                    categories={categories}
-                    menuItems={menuItems}
-                    activeRole={activeRole}
-                    onRoleChange={setActiveRole}
-                    onNavigateToRestaurants={() => setActiveTab('restaurants')}
-                    onNavigateToOrders={() => setActiveTab('orders')}
-                    onOpenCustomerPreview={handleOpenCustomerPreview}
-                    onUpdateRestaurant={handleUpdateRestaurant}
-                    onAddRestaurant={handleAddRestaurant}
-                    onUpdateUser={handleUpdateUser}
-                    onAddUser={handleAddUser}
-                    onUpdateTemplate={handleUpdateTemplate}
-                    onAddMenuItem={handleAddMenuItem}
-                    onUpdateMenuItem={handleUpdateMenuItem}
-                    onDeleteMenuItem={handleDeleteMenuItem}
-                    onAddCategory={handleAddCategory}
-                    onUpdateCategory={handleUpdateCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                  />
-                )}
-              </>
+              <HomeView
+                restaurants={restaurants}
+                orders={orders}
+                users={users}
+                templates={templates}
+                categories={categories}
+                menuItems={menuItems}
+                activeRole={activeRole}
+                onRoleChange={setActiveRole}
+                onNavigateToRestaurants={() => setActiveTab('restaurants')}
+                onNavigateToOrders={() => setActiveTab('orders')}
+                onOpenCustomerPreview={handleOpenCustomerPreview}
+                onUpdateRestaurant={handleUpdateRestaurant}
+                onAddRestaurant={handleAddRestaurant}
+                onUpdateUser={handleUpdateUser}
+                onAddUser={handleAddUser}
+                onUpdateTemplate={handleUpdateTemplate}
+                onAddMenuItem={handleAddMenuItem}
+                onUpdateMenuItem={handleUpdateMenuItem}
+                onDeleteMenuItem={handleDeleteMenuItem}
+                onAddCategory={handleAddCategory}
+                onUpdateCategory={handleUpdateCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
             )}
 
             {activeTab === 'restaurants' && (
@@ -415,7 +579,7 @@ export default function App() {
 
       </main>
 
-      {/* Floating Bottom Navigation Bar strictly based on reference image curves */}
+      {/* Floating Bottom Navigation Bar strictly for Admin */}
       <FloatingNavBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -431,6 +595,13 @@ export default function App() {
         items={menuItems}
         onOrderCreated={handleCreateOrder}
         initialMode={previewMode}
+        onUpdateRestaurant={handleUpdateRestaurant}
+        onUpdateMenuItem={handleUpdateMenuItem}
+        onAddMenuItem={handleAddMenuItem}
+        onDeleteMenuItem={handleDeleteMenuItem}
+        onUpdateCategory={handleUpdateCategory}
+        onAddCategory={handleAddCategory}
+        isOwnerOrAdmin={true}
       />
 
       {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}

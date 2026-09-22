@@ -37,7 +37,8 @@ import {
   Layers,
   Users,
   Copy,
-  Printer
+  Printer,
+  Flame
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -45,6 +46,7 @@ import {
   MenuTemplate, 
   WaiterPermissions, 
   DeliveryPermissions, 
+  KitchenPermissions,
   CustomerAccessSettings, 
   UserRole, 
   MenuItem, 
@@ -78,7 +80,7 @@ interface OwnerDashboardProps {
   onSwitchToAdminView: () => void;
 }
 
-type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'waiters' | 'delivery' | 'customers' | 'templates';
+type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates';
 
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   restaurants,
@@ -137,6 +139,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       canSplitBills: true,
       requireSupervisorPin: true,
       maxActiveTables: 6
+    }
+  );
+
+  const [kitchenPerms, setKitchenPerms] = useState<KitchenPermissions>(
+    currentRestaurant.kitchenPermissions || {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Todas las estaciones'
     }
   );
 
@@ -209,9 +223,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [newRestTemplateId, setNewRestTemplateId] = useState('tmpl-marine');
   const [restError, setRestError] = useState<string | null>(null);
 
-  // --- Modal: Crear Usuario (Mesero, Repartidor, Cliente) ---
+  // --- Modal: Crear Usuario (Mesero, Repartidor, Cliente, Cocina) ---
   const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const [newUserRole, setNewUserRole] = useState<'WAITER' | 'DELIVERY' | 'CUSTOMER'>('WAITER');
+  const [newUserRole, setNewUserRole] = useState<'WAITER' | 'DELIVERY' | 'CUSTOMER' | 'KITCHEN'>('WAITER');
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('+51 987 000 111');
@@ -220,6 +234,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [newUserRestId, setNewUserRestId] = useState<string>(ownedRestaurants[0]?.id || currentRestaurant.id);
   const [newUserShift, setNewUserShift] = useState<'MANANA' | 'TARDE' | 'NOCHE' | 'COMPLETO'>('TARDE');
   const [newUserPin, setNewUserPin] = useState('1234');
+  const [newUserKitchenStation, setNewUserKitchenStation] = useState('Parrilla & Brasas');
   const [newUserVehicle, setNewUserVehicle] = useState<'MOTO' | 'BICI' | 'AUTO'>('MOTO');
   const [newUserPlate, setNewUserPlate] = useState('MT-8822');
   const [newUserVipTier, setNewUserVipTier] = useState<'STANDARD' | 'SILVER' | 'GOLD' | 'BLACK_VIP'>('STANDARD');
@@ -235,6 +250,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     const target = restaurants.find(r => r.id === restId);
     if (target) {
       if (target.waiterPermissions) setWaiterPerms(target.waiterPermissions);
+      if (target.kitchenPermissions) setKitchenPerms(target.kitchenPermissions);
       if (target.deliveryPermissions) setDeliveryPerms(target.deliveryPermissions);
       if (target.customerAccessSettings) setCustomerSettings(target.customerAccessSettings);
       setScheduleState(target.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
@@ -246,11 +262,24 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   // Waiters assigned to this restaurant
   const assignedWaiters = users.filter(u => u.role === 'WAITER' && u.restaurantIds.includes(currentRestaurant.id));
   
+  // Kitchen staff assigned to this restaurant
+  const assignedKitchen = users.filter(u => u.role === 'KITCHEN' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all')));
+
   // Delivery assigned to this restaurant
   const assignedRiders = users.filter(u => u.role === 'DELIVERY' && u.restaurantIds.includes(currentRestaurant.id));
 
   // Customers (either assigned to this restaurant or global clients)
   const assignedCustomers = users.filter(u => u.role === 'CUSTOMER' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all') || u.restaurantIds.length === 0));
+
+  // Save Kitchen Permissions
+  const handleSaveKitchenPerms = () => {
+    const updated: Restaurant = {
+      ...currentRestaurant,
+      kitchenPermissions: kitchenPerms
+    };
+    onUpdateRestaurant(updated);
+    showToast('Permisos y configuración de Cocina / KDS actualizados.');
+  };
 
   // Save Waiter Permissions
   const handleSaveWaiterPerms = () => {
@@ -537,6 +566,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         requireSupervisorPin: true,
         maxActiveTables: 6
       },
+      kitchenPermissions: {
+        canMarkReady: true,
+        canRejectItems: true,
+        canManageStockOut: true,
+        canReorderQueue: true,
+        autoPrintTickets: true,
+        soundAlerts: true,
+        stationFilter: 'Todas las estaciones'
+      },
       deliveryPermissions: {
         canAcceptCash: true,
         maxActiveOrders: 3,
@@ -602,6 +640,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       status: 'active',
       avatar: newUserRole === 'WAITER' 
         ? 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150&auto=format&fit=crop&q=80'
+        : newUserRole === 'KITCHEN'
+        ? 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150&auto=format&fit=crop&q=80'
         : newUserRole === 'DELIVERY'
         ? 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=150&auto=format&fit=crop&q=80'
         : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -610,8 +650,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       password: newUserPassword.trim() || '12345678',
       lastActive: 'Hace un momento',
       createdByOwnerId: currentOwner.id,
-      assignedShift: newUserRole === 'WAITER' ? newUserShift : undefined,
-      pinCode: newUserRole === 'WAITER' ? newUserPin : undefined,
+      assignedShift: (newUserRole === 'WAITER' || newUserRole === 'KITCHEN') ? newUserShift : undefined,
+      pinCode: (newUserRole === 'WAITER' || newUserRole === 'KITCHEN') ? newUserPin : undefined,
+      kitchenStation: newUserRole === 'KITCHEN' ? newUserKitchenStation : undefined,
+      kitchenPermissions: newUserRole === 'KITCHEN' ? kitchenPerms : undefined,
       vehicleType: newUserRole === 'DELIVERY' ? newUserVehicle : undefined,
       licensePlate: newUserRole === 'DELIVERY' ? newUserPlate : undefined,
       vipTier: newUserRole === 'CUSTOMER' ? newUserVipTier : undefined,
@@ -895,6 +937,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveSubTab('kitchen')}
+            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
+              activeSubTab === 'kitchen'
+                ? 'border-orange-500 text-white bg-neutral-900/80'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
+            }`}
+          >
+            <Flame className="w-4 h-4 text-orange-400 shrink-0" />
+            <span className="truncate">Cocina ({assignedKitchen.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('waiters')}
             className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
               activeSubTab === 'waiters'
@@ -952,6 +1006,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               restaurant={currentRestaurant}
               categories={categories}
               items={menuItems}
+              templates={templates}
               onUpdateRestaurant={onUpdateRestaurant}
               onAddMenuItem={onAddMenuItem || (() => {})}
               onUpdateMenuItem={onUpdateMenuItem || (() => {})}
@@ -1435,6 +1490,243 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* ============================================================= */}
+        {/* SUBTAB: GESTIÓN DE COCINA & PANTALLAS KDS                     */}
+        {/* ============================================================= */}
+        {activeSubTab === 'kitchen' && (
+          <div className="p-5 sm:p-6 space-y-6">
+            
+            {/* Header & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span>Gestión del Rol Cocina & Pantalla KDS ({currentRestaurant.name})</span>
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Gestiona jefes de cocina, cocineros de partida, permisos de pase de salón y control de inventario de platos agotados (Lista 86).
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setNewUserRole('KITCHEN');
+                    setNewUserName('');
+                    setNewUserDni('');
+                    setNewUserEmail('');
+                    setNewUserPhone('+51 988 000 222');
+                    setNewUserKitchenStation('Parrilla & Carnes');
+                    setNewUserShift('TARDE');
+                    setIsCreatingUser(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 hover:bg-orange-500/30 text-xs font-bold transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Alta Personal Cocina</span>
+                </button>
+
+                <button
+                  onClick={handleSaveKitchenPerms}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 text-xs font-bold transition shadow cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Guardar Configuración Cocina</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Assigned Kitchen Staff Cards */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>Equipo de Cocina Asignado ({assignedKitchen.length})</span>
+                </h4>
+              </div>
+
+              {assignedKitchen.length === 0 ? (
+                <div className="p-6 rounded-xl border border-dashed border-neutral-800 text-center text-xs text-neutral-500">
+                  <Flame className="w-6 h-6 text-neutral-600 mx-auto mb-2" />
+                  <p>No hay cocineros o jefes de cocina asignados a esta sede.</p>
+                  <button
+                    onClick={() => {
+                      setNewUserRole('KITCHEN');
+                      setIsCreatingUser(true);
+                    }}
+                    className="mt-2 text-orange-400 font-bold hover:underline cursor-pointer"
+                  >
+                    + Registrar primer personal de cocina
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {assignedKitchen.map((chef) => (
+                    <div key={chef.id} className="p-3.5 rounded-xl bg-neutral-950/70 border border-neutral-800 hover:border-neutral-700 transition flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={chef.avatar || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=120&auto=format&fit=crop&q=80'} 
+                          alt={chef.name} 
+                          className="w-10 h-10 rounded-xl object-cover border border-neutral-700 shrink-0" 
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-white">{chef.name}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 font-mono">
+                              KDS
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1.5">
+                            <span>DNI: <strong className="font-mono text-neutral-300">{chef.dni}</strong></span>
+                            <span>•</span>
+                            <span className="text-orange-300 font-medium">{chef.kitchenStation || 'Cocina General'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setEditingUser(chef)}
+                        className="px-2.5 py-1 rounded bg-neutral-900 border border-neutral-700 hover:border-white text-[11px] text-white font-medium transition cursor-pointer shrink-0"
+                      >
+                        Permisos
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Master Kitchen Permissions & Policies */}
+            <div>
+              <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-orange-400" />
+                <span>Políticas y Facultades del Rol Cocina</span>
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* canMarkReady */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Marcar Platos Listos para Servir</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Permite al personal de cocina cambiar el estado de platos a "Listo" y notificar automáticamente al mozo o pase de salón.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.canMarkReady}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, canMarkReady: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+                {/* canManageStockOut (Lista 86) */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Control de Lista 86 (Platos Agotados)</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Faculta a cocina para agotar platos al instante cuando se terminan insumos, ocultándolos inmediatamente de las cartas QR.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.canManageStockOut}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, canManageStockOut: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+                {/* canRejectItems */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Observaciones y Ajustes con Salón</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Permite solicitar rectificación o confirmación al mozo respecto a términos de cocción o alergias de la mesa.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.canRejectItems}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, canRejectItems: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+                {/* canReorderQueue */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Reordenar Cola de Comandas en Pantalla</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Permite al Jefe de Cocina priorizar tickets por orden de llegada, marcha de entradas o cortes a punto.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.canReorderQueue}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, canReorderQueue: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+                {/* autoPrintTickets */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Recepción Inmediata en KDS</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Las comandas generadas por clientes vía QR o mozos ingresan al instante a la pantalla de cocina sin retardo.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.autoPrintTickets}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, autoPrintTickets: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+                {/* soundAlerts */}
+                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-white">Campana Acústica de Nueva Comanda</div>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Emite un timbre sonoro en el dispositivo de cocina cada vez que ingresa un nuevo pedido de salón o delivery.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={kitchenPerms.soundAlerts}
+                    onChange={(e) => setKitchenPerms({ ...kitchenPerms, soundAlerts: e.target.checked })}
+                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                  />
+                </div>
+
+              </div>
+            </div>
+
+            {/* Default Station Filter */}
+            <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-white block">Estación Predeterminada del Local</span>
+                <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                  Filtro visual por defecto que se aplicará a la vista KDS para este restaurante.
+                </span>
+              </div>
+              <select
+                value={kitchenPerms.stationFilter || 'Todas las estaciones'}
+                onChange={(e) => setKitchenPerms({ ...kitchenPerms, stationFilter: e.target.value })}
+                className="px-3 py-1.5 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-orange-500 cursor-pointer"
+              >
+                <option value="Todas las estaciones">Todas las estaciones</option>
+                <option value="Parrilla & Carnes">Parrilla & Carnes</option>
+                <option value="Cocina Caliente & Wok">Cocina Caliente & Wok</option>
+                <option value="Barra Marina & Cebichería">Barra Marina & Cebichería</option>
+                <option value="Plancha Smash & Frituras">Plancha Smash & Frituras</option>
+              </select>
+            </div>
+
           </div>
         )}
 
@@ -2172,9 +2464,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <label className="text-xs font-semibold text-neutral-300 block mb-1">Rol a Asignar *</label>
                 <select
                   value={newUserRole}
-                  onChange={(e) => setNewUserRole(e.target.value as 'WAITER' | 'DELIVERY' | 'CUSTOMER')}
+                  onChange={(e) => setNewUserRole(e.target.value as 'WAITER' | 'DELIVERY' | 'CUSTOMER' | 'KITCHEN')}
                   className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
                 >
+                  <option value="KITCHEN">Cocina / Jefe de Partida / KDS</option>
                   <option value="WAITER">Mesero / Camarero</option>
                   <option value="DELIVERY">Repartidor / Motorizado</option>
                   <option value="CUSTOMER">Cliente Registrado</option>
@@ -2241,6 +2534,36 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   ))}
                 </select>
               </div>
+
+              {newUserRole === 'KITCHEN' && (
+                <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-black/40 border border-neutral-800">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-300 block mb-1">Estación de Cocina</label>
+                    <select
+                      value={newUserKitchenStation}
+                      onChange={(e) => setNewUserKitchenStation(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs text-white"
+                    >
+                      <option value="Parrilla & Carnes">Parrilla & Carnes</option>
+                      <option value="Cocina Caliente & Wok">Cocina Caliente & Wok</option>
+                      <option value="Barra Marina & Cebichería">Barra Marina & Cebichería</option>
+                      <option value="Plancha Smash & Frituras">Plancha Smash & Frituras</option>
+                      <option value="Postres & Pastelería">Postres & Pastelería</option>
+                      <option value="Jefe de Cocina (Todas)">Jefe de Cocina (Todas)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-300 block mb-1">PIN KDS (4 d.)</label>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      value={newUserPin}
+                      onChange={(e) => setNewUserPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs font-mono text-white text-center"
+                    />
+                  </div>
+                </div>
+              )}
 
               {newUserRole === 'WAITER' && (
                 <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-black/40 border border-neutral-800">

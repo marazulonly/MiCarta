@@ -74,6 +74,17 @@ export const generateShiftsForRestaurant = (
     roleTarget: 'DELIVERY',
     assignedUserIds: riderIds,
     colorBadge: '#10B981'
+  },
+  {
+    id: `shift-${restaurantId}-4`,
+    restaurantId,
+    name: 'Turno Cocina & Comandas (KDS)',
+    startTime: '11:00',
+    endTime: '23:30',
+    applicableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+    roleTarget: 'KITCHEN',
+    assignedUserIds: ['u-k1'],
+    colorBadge: '#F97316'
   }
 ];
 
@@ -121,6 +132,15 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       canSplitBills: true,
       requireSupervisorPin: true,
       maxActiveTables: 6
+    },
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Parrilla & Carnes'
     },
     deliveryPermissions: {
       canAcceptCash: true,
@@ -183,6 +203,15 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       requireSupervisorPin: false,
       maxActiveTables: 8
     },
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Cocina Caliente & Guisos'
+    },
     deliveryPermissions: {
       canAcceptCash: true,
       maxActiveOrders: 4,
@@ -244,6 +273,15 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       requireSupervisorPin: false,
       maxActiveTables: 5
     },
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Plancha Smash & Frituras'
+    },
     deliveryPermissions: {
       canAcceptCash: false,
       maxActiveOrders: 5,
@@ -304,6 +342,15 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       canSplitBills: true,
       requireSupervisorPin: true,
       maxActiveTables: 6
+    },
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Barra Marina & Cebichería'
     },
     deliveryPermissions: {
       canAcceptCash: true,
@@ -842,6 +889,19 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
 
 export const INITIAL_USERS: User[] = [
   {
+    id: 'u-admin-herly',
+    name: 'Herly Lizarazo',
+    email: 'herly.lizarazo@micarta.pe',
+    dni: '00448157',
+    password: 'password',
+    role: 'ADMIN',
+    phone: '952341165',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['all'],
+    status: 'active',
+    lastActive: 'En línea'
+  },
+  {
     id: 'u-1',
     name: 'Carlos Mendoza',
     email: 'carlos.mendoza@micarta.io',
@@ -1056,6 +1116,110 @@ export const INITIAL_USERS: User[] = [
       autoAssignZone: true,
       gpsSpeedTracking: true,
       allowedZones: ['Miraflores', 'San Isidro', 'Barranco']
+    }
+  },
+  {
+    id: 'u-k1',
+    name: 'Chef Walter Ramos',
+    email: 'walter.cocina@brasasfuego.pe',
+    dni: '70102030',
+    password: '12345678',
+    role: 'KITCHEN',
+    phone: '+51 988 554 433',
+    avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-brasas'],
+    status: 'active',
+    lastActive: 'Parrilla activa - 4 comandas en fuego',
+    assignedShift: 'TARDE',
+    pinCode: '7010',
+    createdByOwnerId: 'u-2',
+    kitchenStation: 'Parrilla & Cortes Angus',
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Parrilla & Carnes'
+    }
+  },
+  {
+    id: 'u-k2',
+    name: 'Chef Mario Silva',
+    email: 'mario.ceviche@costamarina.pe',
+    dni: '70203040',
+    password: '12345678',
+    role: 'KITCHEN',
+    phone: '+51 977 443 322',
+    avatar: 'https://images.unsplash.com/photo-1583394293214-28ded15ee548?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-costa'],
+    status: 'active',
+    lastActive: 'Barra marina activa - ceviches al momento',
+    assignedShift: 'MANANA',
+    pinCode: '7020',
+    createdByOwnerId: 'u-3',
+    kitchenStation: 'Barra Marina & Cebichería',
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Barra Marina & Cebichería'
+    }
+  },
+  {
+    id: 'u-k3',
+    name: 'Chef Rocío Morales',
+    email: 'rocio.sazon@tradicioncriolla.pe',
+    dni: '70304050',
+    password: '12345678',
+    role: 'KITCHEN',
+    phone: '+51 966 332 211',
+    avatar: 'https://images.unsplash.com/photo-1581299894007-aaa50297cf16?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-criollo'],
+    status: 'active',
+    lastActive: 'Ollas y guisos en punto',
+    assignedShift: 'COMPLETO',
+    pinCode: '7030',
+    createdByOwnerId: 'u-3',
+    kitchenStation: 'Cocina Caliente & Guisos',
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Cocina Caliente & Guisos'
+    }
+  },
+  {
+    id: 'u-k4',
+    name: 'Diego Montes',
+    email: 'diego.smash@loopburgers.pe',
+    dni: '70405060',
+    password: '12345678',
+    role: 'KITCHEN',
+    phone: '+51 955 221 100',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-loop'],
+    status: 'active',
+    lastActive: 'Plancha smash al rojo vivo',
+    assignedShift: 'NOCHE',
+    pinCode: '7040',
+    createdByOwnerId: 'u-2',
+    kitchenStation: 'Plancha Smash & Frituras',
+    kitchenPermissions: {
+      canMarkReady: true,
+      canRejectItems: true,
+      canManageStockOut: true,
+      canReorderQueue: true,
+      autoPrintTickets: true,
+      soundAlerts: true,
+      stationFilter: 'Plancha Smash & Frituras'
     }
   },
   {

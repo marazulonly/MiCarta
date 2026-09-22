@@ -19,9 +19,10 @@ const ROLES_INFO: { role: UserRole; title: string; desc: string }[] = [
   { role: 'ADMIN', title: '1. Administrador', desc: 'Control global del SaaS, base de datos y multi-tenants.' },
   { role: 'OWNER', title: '2. Dueño', desc: 'Supervisión de marcas y reportes consolidados.' },
   { role: 'RESTAURANT_MANAGER', title: '3. Restaurante', desc: 'Gestión operativa del local, carta y personal.' },
-  { role: 'WAITER', title: '4. Mesero', desc: 'Atención en salón, comandas y asignación de mesas.' },
-  { role: 'DELIVERY', title: '5. Repartidor', desc: 'Despacho motorizado y confirmación de entrega.' },
-  { role: 'CUSTOMER', title: '6. Cliente', desc: 'Acceso por QR a la carta digital del local.' },
+  { role: 'KITCHEN', title: '4. Cocina', desc: 'Gestión de comandas, estaciones de preparación y disponibilidad de platos.' },
+  { role: 'WAITER', title: '5. Mesero', desc: 'Atención en salón, comandas y asignación de mesas.' },
+  { role: 'DELIVERY', title: '6. Repartidor', desc: 'Despacho motorizado y confirmación de entrega.' },
+  { role: 'CUSTOMER', title: '7. Cliente', desc: 'Acceso por QR a la carta digital del local.' },
 ];
 
 export const UsersView: React.FC<UsersViewProps> = ({
@@ -316,7 +317,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
               </div>
 
               <div>
-                <label className="text-xs text-neutral-400 block mb-1">Rol de Acceso (6 Niveles)</label>
+                <label className="text-xs text-neutral-400 block mb-1">Rol de Acceso (7 Niveles)</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as UserRole)}

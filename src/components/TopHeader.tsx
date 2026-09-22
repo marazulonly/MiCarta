@@ -7,7 +7,10 @@ import {
   LogIn,
   KeyRound,
   Sparkles,
-  User as UserIcon
+  User as UserIcon,
+  LogOut,
+  UploadCloud,
+  Check
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 
@@ -22,17 +25,21 @@ interface TopHeaderProps {
   onOpenCustomerPreview: () => void;
   currentUser?: User | null;
   onOpenLoginModal?: () => void;
+  onLogout?: () => void;
   isSimulationActive?: boolean;
   onToggleSimulation?: (active: boolean) => void;
+  onSaveFirebase?: () => void;
+  isSavingFirebase?: boolean;
 }
 
 const ROLES_LIST: { role: UserRole; label: string }[] = [
   { role: 'ADMIN', label: '1. Administrador' },
   { role: 'OWNER', label: '2. Dueño' },
   { role: 'RESTAURANT_MANAGER', label: '3. Restaurante' },
-  { role: 'WAITER', label: '4. Mesero' },
-  { role: 'DELIVERY', label: '5. Repartidor' },
-  { role: 'CUSTOMER', label: '6. Cliente' },
+  { role: 'KITCHEN', label: '4. Cocina (KDS)' },
+  { role: 'WAITER', label: '5. Mesero' },
+  { role: 'DELIVERY', label: '6. Repartidor' },
+  { role: 'CUSTOMER', label: '7. Cliente' },
 ];
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
@@ -46,8 +53,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenCustomerPreview,
   currentUser,
   onOpenLoginModal,
+  onLogout,
   isSimulationActive = false,
   onToggleSimulation,
+  onSaveFirebase,
+  isSavingFirebase = false,
 }) => {
   const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
@@ -141,7 +151,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               id="header-btn-login-modal"
               onClick={onOpenLoginModal}
               className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-neutral-700 transition cursor-pointer text-white shadow-sm"
-              title="Iniciar Sesión con DNI y Clave de Acceso"
+              title="Cambiar Usuario o Ver Credenciales"
             >
               {currentUser ? (
                 <div className="flex items-center gap-2">
@@ -167,6 +177,19 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               )}
             </button>
 
+            {/* Logout Button */}
+            {currentUser && onLogout && (
+              <button
+                id="header-btn-logout"
+                onClick={onLogout}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-red-900/50 bg-red-950/40 hover:bg-red-900/50 hover:border-red-700 text-red-300 transition cursor-pointer"
+                title="Cerrar Sesión y Regresar al Login"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
+            )}
+
             {/* DB & Prisma Technical Deliverable */}
             <button
               id="header-btn-architecture"
@@ -180,6 +203,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <Database className="w-3.5 h-3.5" />
               <span>Esquema DB</span>
             </button>
+
+            {/* Firebase Cloud Save Button */}
+            {onSaveFirebase && (
+              <button
+                id="header-btn-save-firebase"
+                onClick={onSaveFirebase}
+                disabled={isSavingFirebase}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-amber-400 hover:bg-amber-300 text-black transition cursor-pointer shadow disabled:opacity-50"
+                title="Guardar todos los datos, cartas y configuraciones en Firebase Firestore"
+              >
+                <UploadCloud className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline">{isSavingFirebase ? 'Guardando...' : 'Guardar Firebase'}</span>
+              </button>
+            )}
 
             {/* Customer Digital Menu Preview */}
             <button

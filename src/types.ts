@@ -4,6 +4,7 @@ export type UserRole =
   | 'ADMIN'               // Superadministrador de la plataforma SaaS
   | 'OWNER'               // Propietarios de franquicias o cadenas
   | 'RESTAURANT_MANAGER'  // Administrador / Gerente de sede o restaurante
+  | 'KITCHEN'             // Cocina / Chef de estación o KDS
   | 'WAITER'              // Mesero / Mozo para toma de comandas en mesa
   | 'DELIVERY'            // Repartidor motorizado para entregas
   | 'CUSTOMER';           // Cliente final (carta digital, pedidos QR)
@@ -46,6 +47,16 @@ export interface WaiterPermissions {
   canSplitBills: boolean;
   requireSupervisorPin: boolean;
   maxActiveTables: number;
+}
+
+export interface KitchenPermissions {
+  canMarkReady: boolean;           // Puede marcar comandas como listas para servir/despachar
+  canRejectItems: boolean;          // Puede solicitar anulación o rectificación al mozo
+  canManageStockOut: boolean;       // Puede marcar platos agotados (Lista 86) en la carta
+  canReorderQueue: boolean;         // Puede alterar prioridades de preparación
+  autoPrintTickets: boolean;        // Envío de impresión automática de comanda
+  soundAlerts: boolean;             // Alertas audibles con campana al ingresar pedido
+  stationFilter?: string;           // Estación asignada (Parrilla, Calientes, Fríos, etc.)
 }
 
 export interface DeliveryPermissions {
@@ -135,7 +146,7 @@ export interface StaffShift {
   startTime: string;   // e.g. "11:00"
   endTime: string;     // e.g. "17:00"
   applicableDays: DayOfWeek[];
-  roleTarget: 'WAITER' | 'DELIVERY' | 'ALL';
+  roleTarget: 'WAITER' | 'DELIVERY' | 'KITCHEN' | 'ALL';
   assignedUserIds: string[];
   colorBadge?: string;
 }
@@ -159,6 +170,8 @@ export interface RestaurantTable {
 
 export interface MenuAccessSettings {
   menuMode: 'SAME' | 'SEPARATE';          // Misma carta o cartas independientes para salón y delivery
+  enableDineIn?: boolean;                 // Checkbox: Habilitar canal Salón (Presencial / Mozos)
+  enableDelivery?: boolean;               // Checkbox: Habilitar canal Delivery (A Domicilio / Motorizados)
   presentialTitle?: string;
   presentialBgType?: 'color' | 'image' | 'gradient' | 'theme';
   presentialBgValue?: string;              // Hex, URL de imagen o gradiente
@@ -190,6 +203,7 @@ export interface Restaurant {
   templateId?: string;
   menuAccessSettings?: MenuAccessSettings; // Configuración de cartas Salón vs Delivery y fondos
   waiterPermissions?: WaiterPermissions;
+  kitchenPermissions?: KitchenPermissions;
   deliveryPermissions?: DeliveryPermissions;
   customerAccessSettings?: CustomerAccessSettings;
   weeklySchedule?: DaySchedule[];
@@ -212,6 +226,8 @@ export interface User {
   lastActive: string;
   createdByOwnerId?: string;  // Registra qué dueño creó este usuario
   waiterPermissions?: WaiterPermissions;
+  kitchenPermissions?: KitchenPermissions;
+  kitchenStation?: string;    // Estación de cocina (Parrilla, Fríos, Calientes, etc.)
   deliveryPermissions?: DeliveryPermissions;
   vipTier?: 'STANDARD' | 'SILVER' | 'GOLD' | 'BLACK_VIP';
   vehicleType?: 'MOTO' | 'BICI' | 'AUTO';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Trash2, 
@@ -18,20 +18,27 @@ import {
   Clock,
   CheckCircle2,
   FolderPlus,
-  Compass
+  Compass,
+  RotateCcw,
+  ShieldCheck,
+  UploadCloud,
+  FileText
 } from 'lucide-react';
 import { 
   Restaurant, 
   MenuItem, 
   MenuCategory, 
   DishAddon, 
-  MenuAccessSettings 
+  MenuAccessSettings,
+  MenuTemplate
 } from '../types';
+import { saveAllDataToFirebase } from '../lib/firebase';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
   categories: MenuCategory[];
   items: MenuItem[];
+  templates?: MenuTemplate[];
   onUpdateRestaurant: (updated: Restaurant) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
   onUpdateMenuItem: (updatedItem: MenuItem) => void;
@@ -46,6 +53,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   restaurant,
   categories,
   items,
+  templates = [],
   onUpdateRestaurant,
   onAddMenuItem,
   onUpdateMenuItem,
@@ -58,11 +66,103 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSavingFirebase, setIsSavingFirebase] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
+
+  const handleSaveToFirebase = async () => {
+    setIsSavingFirebase(true);
+    try {
+      const res = await saveAllDataToFirebase({
+        restaurants: [restaurant],
+        items: items.filter(i => i.restaurantId === restaurant.id),
+        categories: categories.filter(c => c.restaurantId === restaurant.id),
+      });
+      if (res.success) {
+        showToast('✓ ' + res.message);
+      } else {
+        showToast('⚠️ ' + res.message);
+      }
+    } catch (e: any) {
+      showToast('Error al conectar con Firebase: ' + (e.message || 'Error'));
+    } finally {
+      setIsSavingFirebase(false);
+    }
+  };
+
+  // Find linked system template (reference only - never mutated)
+  const baseSystemTemplate = templates.find(t => t.id === restaurant.templateId) || templates[0];
+
+  // Restaurant Brand and Visual Customization State (Isolated per restaurant)
+  const [brandName, setBrandName] = useState(restaurant.name);
+  const [brandTagline, setBrandTagline] = useState(restaurant.tagline || '');
+  const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant.logoUrl || '');
+  const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant.coverUrl || '');
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState(restaurant.branding.primaryColor || '#D4AF37');
+  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding.darkBgColor || '#071A14');
+  const [brandSecondaryColor, setBrandSecondaryColor] = useState(restaurant.branding.secondaryColor || '#FFFFFF');
+
+  // Quick edit modal states for instant price & photo tweaking
+  const [quickPriceItem, setQuickPriceItem] = useState<MenuItem | null>(null);
+  const [quickPriceValue, setQuickPriceValue] = useState<number>(0);
+
+  const [quickPhotoItem, setQuickPhotoItem] = useState<MenuItem | null>(null);
+  const [quickPhotoUrl, setQuickPhotoUrl] = useState<string>('');
+
+  // Curated Gastronomy Presets for quick brand identity setup
+  const PRESET_LOGOS = [
+    { label: 'Brasas & Parrilla', url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80' },
+    { label: 'Cevichería Puerto', url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200&auto=format&fit=crop&q=80' },
+    { label: 'Sazón Criolla', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&auto=format&fit=crop&q=80' },
+    { label: 'Craft Burgers', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format&fit=crop&q=80' },
+    { label: 'Bistró & Cava', url: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=200&auto=format&fit=crop&q=80' },
+  ];
+
+  const PRESET_COVERS = [
+    { label: 'Fuego y Asador', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Marea y Océano', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Pizarra Colonial', url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Lounge Nocturno', url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Mármol & Luces', url: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&auto=format&fit=crop&q=80' },
+  ];
+
+  const PRESET_BACKGROUND_TEXTURES = [
+    { label: 'Mármol Esmeralda & Oro', url: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Madera Caoba Rústica', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Pizarra Grafito Mate', url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Océano Azul Profundo', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Cuero Noir & Asfalto', url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80' },
+    { label: 'Pergamino Marfil', url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=1200&auto=format&fit=crop&q=80' },
+  ];
+
+  // Pre-selected stock photos for rapid dish creation & editing
+  const STOCK_PHOTOS = [
+    { label: 'Parrilla / Carnes', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Cortes Angus', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Anticuchos / Brochetas', url: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Ceviche Fresco', url: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Smash Burger', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Cóctel de Autor', url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Arroz con Mariscos', url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80' },
+    { label: 'Lomo Saltado', url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80' },
+  ];
+
+  // Synchronize state when restaurant prop changes
+  useEffect(() => {
+    setBrandName(restaurant.name);
+    setBrandTagline(restaurant.tagline || '');
+    setBrandLogoUrl(restaurant.logoUrl || '');
+    setBrandCoverUrl(restaurant.coverUrl || '');
+    setBrandPrimaryColor(restaurant.branding.primaryColor || '#D4AF37');
+    setBrandDarkBgColor(restaurant.branding.darkBgColor || '#071A14');
+    setBrandSecondaryColor(restaurant.branding.secondaryColor || '#FFFFFF');
+    if (restaurant.menuAccessSettings) {
+      setMenuSettings(restaurant.menuAccessSettings);
+    }
+  }, [restaurant]);
 
   // Filter categories and items for this restaurant
   const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
@@ -91,16 +191,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState<number>(4);
   const [newObsText, setNewObsText] = useState('');
-
-  // Pre-selected stock photos for rapid dish creation
-  const STOCK_PHOTOS = [
-    { label: 'Parrilla / Carnes', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80' },
-    { label: 'Cortes Angus', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80' },
-    { label: 'Anticuchos / Brochetas', url: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80' },
-    { label: 'Ceviche Fresco', url: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80' },
-    { label: 'Smash Burger', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
-    { label: 'Cóctel de Autor', url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
-  ];
 
   const handleOpenNewItemModal = () => {
     setEditingItem(null);
@@ -239,6 +329,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   // --- Configuración de Cartas y Fondos (Presencial vs Delivery) ---
   const initialSettings: MenuAccessSettings = restaurant.menuAccessSettings || {
     menuMode: 'SAME',
+    enableDineIn: true,
+    enableDelivery: true,
     presentialTitle: `Carta Salón - ${restaurant.name}`,
     presentialBgType: 'theme',
     presentialBgValue: restaurant.branding.darkBgColor || '#071A14',
@@ -251,13 +343,86 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
   const [menuSettings, setMenuSettings] = useState<MenuAccessSettings>(initialSettings);
 
-  const handleSaveMenuSettings = () => {
+  const handleSaveCustomization = () => {
     const updatedRest: Restaurant = {
       ...restaurant,
-      menuAccessSettings: menuSettings,
+      name: brandName.trim() || restaurant.name,
+      tagline: brandTagline.trim() || restaurant.tagline,
+      logoUrl: brandLogoUrl.trim() || restaurant.logoUrl,
+      coverUrl: brandCoverUrl.trim() || restaurant.coverUrl,
+      branding: {
+        ...restaurant.branding,
+        primaryColor: brandPrimaryColor,
+        darkBgColor: brandDarkBgColor,
+        secondaryColor: brandSecondaryColor,
+      },
+      menuAccessSettings: {
+        ...menuSettings,
+        enableDineIn: menuSettings.enableDineIn !== false,
+        enableDelivery: menuSettings.enableDelivery !== false,
+      },
     };
     onUpdateRestaurant(updatedRest);
-    showToast('Configuración de cartas, accesos y fondos guardada con éxito');
+    showToast('✓ Personalización de carta, marca y canales guardada exitosamente (plantilla original del sistema protegida).');
+  };
+
+  const handleResetToOriginalTemplate = () => {
+    if (!baseSystemTemplate) return;
+    setBrandPrimaryColor(baseSystemTemplate.primaryColor);
+    setBrandDarkBgColor(baseSystemTemplate.darkBgColor);
+    const resetSettings: MenuAccessSettings = {
+      ...menuSettings,
+      presentialBgType: 'theme',
+      presentialBgValue: baseSystemTemplate.darkBgColor,
+      deliveryBgType: 'gradient',
+      deliveryBgValue: `linear-gradient(180deg, ${baseSystemTemplate.darkBgColor} 0%, #0F2D24 100%)`,
+    };
+    setMenuSettings(resetSettings);
+    const updatedRest: Restaurant = {
+      ...restaurant,
+      branding: {
+        ...restaurant.branding,
+        primaryColor: baseSystemTemplate.primaryColor,
+        darkBgColor: baseSystemTemplate.darkBgColor,
+      },
+      menuAccessSettings: resetSettings,
+    };
+    onUpdateRestaurant(updatedRest);
+    showToast(`✓ Se han restaurado los colores y fondos originales de la plantilla "${baseSystemTemplate.name}".`);
+  };
+
+  const handleToggleItemAvailability = (item: MenuItem) => {
+    const updated: MenuItem = {
+      ...item,
+      isAvailable: !item.isAvailable,
+    };
+    onUpdateMenuItem(updated);
+    showToast(`Plato marcado como ${updated.isAvailable ? 'Disponible' : 'Agotado (Lista 86)'}`);
+  };
+
+  const handleQuickSavePrice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPriceItem) return;
+    const updated: MenuItem = {
+      ...quickPriceItem,
+      price: Number(quickPriceValue),
+    };
+    onUpdateMenuItem(updated);
+    setQuickPriceItem(null);
+    showToast(`✓ Precio de "${updated.name}" actualizado a S/ ${updated.price.toFixed(2)}`);
+  };
+
+  const handleQuickSavePhoto = (photoUrlToSave?: string) => {
+    if (!quickPhotoItem) return;
+    const targetUrl = photoUrlToSave || quickPhotoUrl;
+    if (!targetUrl.trim()) return;
+    const updated: MenuItem = {
+      ...quickPhotoItem,
+      imageUrl: targetUrl.trim(),
+    };
+    onUpdateMenuItem(updated);
+    setQuickPhotoItem(null);
+    showToast(`✓ Foto del plato "${updated.name}" actualizada con éxito`);
   };
 
   return (
@@ -294,6 +459,16 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           >
             <Eye className="w-3.5 h-3.5 text-sky-400" />
             <span>Ver Carta Delivery</span>
+          </button>
+
+          <button
+            onClick={handleSaveToFirebase}
+            disabled={isSavingFirebase}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            title="Guardar restaurante y platos en Firebase Cloud Firestore"
+          >
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>{isSavingFirebase ? 'Guardando...' : 'Guardar Firebase'}</span>
           </button>
 
           <button
@@ -430,19 +605,47 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       </div>
 
                       <div className="absolute top-2 right-2">
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold font-mono ${
-                          item.isAvailable 
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                        }`}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleItemAvailability(item)}
+                          className={`text-[10px] px-2 py-0.5 rounded font-bold font-mono transition cursor-pointer hover:scale-105 ${
+                            item.isAvailable 
+                              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/40' 
+                              : 'bg-rose-500/25 text-rose-300 border border-rose-500/50 hover:bg-rose-500/40'
+                          }`}
+                          title="Clic para cambiar disponibilidad (Disponible / Agotado)"
+                        >
                           {item.isAvailable ? 'Disponible' : 'Agotado'}
-                        </span>
+                        </button>
                       </div>
 
-                      <div className="absolute bottom-2 left-3 right-3 flex items-baseline justify-between">
-                        <span className="text-lg font-black text-amber-400 font-mono">
-                          S/ {item.price.toFixed(2)}
-                        </span>
+                      {/* Quick Photo Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickPhotoItem(item);
+                          setQuickPhotoUrl(item.imageUrl);
+                        }}
+                        className="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-black/80 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1 border border-neutral-700 backdrop-blur-md cursor-pointer transition shadow"
+                        title="Cambiar foto de este plato"
+                      >
+                        <ImageIcon className="w-3 h-3 text-amber-400" />
+                        <span>Cambiar Foto</span>
+                      </button>
+
+                      <div className="absolute bottom-2 left-3 flex items-baseline gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickPriceItem(item);
+                            setQuickPriceValue(item.price);
+                          }}
+                          className="text-lg font-black text-amber-400 font-mono hover:text-amber-300 flex items-center gap-1 cursor-pointer transition group"
+                          title="Clic para editar precio rápidamente"
+                        >
+                          <span>S/ {item.price.toFixed(2)}</span>
+                          <Edit3 className="w-3 h-3 text-amber-400/50 group-hover:text-amber-300" />
+                        </button>
                         {item.prepTimeMinutes && (
                           <span className="text-[10px] text-neutral-400 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -480,7 +683,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       className="flex-1 py-1.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Editar Plato</span>
+                      <span>Editar Todo</span>
                     </button>
 
                     <button
@@ -585,11 +788,288 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         </div>
       )}
 
-      {/* SUBTAB 3: PERSONALIZACIÓN DE CARTAS: SALÓN VS DELIVERY & FONDOS */}
+      {/* SUBTAB 3: PERSONALIZACIÓN DE CARTA: FONDOS, LOGO, PORTADA Y MARCA */}
       {subTab === 'backgrounds' && (
         <div className="space-y-6">
           
-          {/* Card: Modalidad de Carta (Misma carta o Cartas separadas) */}
+          {/* Card 1: Garantía del Sistema - Plantilla Original Inmutable */}
+          <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">
+                      Plantilla Maestra del Sistema Protegida (Inmutable)
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      ✓ Aislamiento Seguro
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Plantilla asignada: <span className="text-amber-400 font-bold">{baseSystemTemplate?.name || 'Brasas Luxury Noir'}</span> ({baseSystemTemplate?.category || 'Gourmet'})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetToOriginalTemplate}
+                className="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-neutral-700 cursor-pointer self-start sm:self-auto"
+                title="Restaura los colores y fondos a los predeterminados de la plantilla original"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Restablecer a Valores de Fábrica</span>
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-black/40 border border-neutral-800/80 text-xs text-neutral-300 leading-relaxed space-y-1">
+              <p className="font-semibold text-white">
+                Regla de personalización independiente:
+              </p>
+              <p className="text-neutral-400 text-[11px]">
+                Cada Dueño puede editar libremente su propia carta (fondos, fotos de platos, descripción del plato, precios, logo, portada y colores) para <strong className="text-white">{restaurant.name}</strong>. Estos cambios se guardan en el perfil único de tu restaurante y <span className="text-emerald-400 font-medium">no alteran la plantilla original del sistema</span> ni afectan a otros restaurantes.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Identidad Visual del Restaurante (Logo, Portada, Nombre y Eslogan) */}
+          <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-5">
+            <div className="flex items-center gap-2 pb-2 border-b border-neutral-800">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-bold text-white">
+                Identidad Visual, Logo y Portada de la Carta
+              </h3>
+            </div>
+
+            {/* Logo Customizer */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-neutral-200 block">
+                Logo del Restaurante
+              </label>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                {/* Logo Live Preview */}
+                <div className="w-20 h-20 rounded-2xl bg-black border border-neutral-700 overflow-hidden flex items-center justify-center shrink-0 shadow-lg relative group">
+                  {brandLogoUrl ? (
+                    <img 
+                      src={brandLogoUrl} 
+                      alt="Logo preview" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="text-center p-1 text-[10px] text-neutral-500 font-mono">Sin Logo</div>
+                  )}
+                </div>
+
+                {/* Input & Presets */}
+                <div className="flex-1 space-y-2 w-full">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={brandLogoUrl}
+                      onChange={(e) => setBrandLogoUrl(e.target.value)}
+                      placeholder="URL personalizada del logo (https://...)"
+                      className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                    />
+                    {brandLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setBrandLogoUrl('')}
+                        className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white text-xs cursor-pointer"
+                        title="Quitar logo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Preset Logos */}
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block mb-1">
+                      O selecciona un estilo de logo gastronómico predeterminado:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRESET_LOGOS.map((preset, pIdx) => (
+                        <button
+                          key={pIdx}
+                          type="button"
+                          onClick={() => setBrandLogoUrl(preset.url)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition flex items-center gap-1.5 cursor-pointer ${
+                            brandLogoUrl === preset.url
+                              ? 'bg-amber-400 text-black border-amber-400 shadow'
+                              : 'bg-black text-neutral-300 border-neutral-800 hover:border-neutral-700 hover:text-white'
+                          }`}
+                        >
+                          <img 
+                            src={preset.url} 
+                            alt="" 
+                            className="w-3.5 h-3.5 rounded object-cover" 
+                            referrerPolicy="no-referrer"
+                          />
+                          <span>{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cover / Banner Customizer */}
+            <div className="space-y-3 pt-3 border-t border-neutral-800">
+              <label className="text-xs font-bold text-neutral-200 block">
+                Foto de Portada / Banner de Cabecera
+              </label>
+
+              <div className="space-y-2">
+                {/* Live Banner Preview */}
+                <div className="w-full h-24 rounded-2xl bg-black border border-neutral-700 overflow-hidden relative shadow-lg">
+                  {brandCoverUrl ? (
+                    <img 
+                      src={brandCoverUrl} 
+                      alt="Cover preview" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-neutral-500 font-mono">
+                      Sin foto de portada (Usa el fondo de la carta)
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3">
+                    <span className="text-xs font-bold text-white drop-shadow">
+                      {brandName} {brandTagline ? `· ${brandTagline}` : ''}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={brandCoverUrl}
+                    onChange={(e) => setBrandCoverUrl(e.target.value)}
+                    placeholder="URL de foto de portada/banner (https://...)"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                  />
+                  {brandCoverUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setBrandCoverUrl('')}
+                      className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white text-xs cursor-pointer"
+                      title="Quitar portada"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Preset Covers */}
+                <div>
+                  <span className="text-[10px] text-neutral-400 block mb-1">
+                    Portadas fotográficas recomendadas:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_COVERS.map((preset, cIdx) => (
+                      <button
+                        key={cIdx}
+                        type="button"
+                        onClick={() => setBrandCoverUrl(preset.url)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition flex items-center gap-1.5 cursor-pointer ${
+                          brandCoverUrl === preset.url
+                            ? 'bg-amber-400 text-black border-amber-400 shadow'
+                            : 'bg-black text-neutral-300 border-neutral-800 hover:border-neutral-700 hover:text-white'
+                        }`}
+                      >
+                        <img 
+                          src={preset.url} 
+                          alt="" 
+                          className="w-3.5 h-3.5 rounded object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
+                        <span>{preset.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Name, Tagline & Accent Colors */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-800">
+              <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Nombre Comercial en la Carta *
+                </label>
+                <input
+                  type="text"
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs focus:border-amber-400 transition"
+                  placeholder="Ej: Brasas & Carbón Gourmet"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Eslogan / Subtítulo Gastronómico
+                </label>
+                <input
+                  type="text"
+                  value={brandTagline}
+                  onChange={(e) => setBrandTagline(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs focus:border-amber-400 transition"
+                  placeholder="Ej: Fuego a la Leña & Alta Cocina Criolla"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Color Primario de Acento
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandPrimaryColor}
+                    onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={brandPrimaryColor}
+                    onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Fondo Base Oscuro
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandDarkBgColor}
+                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={brandDarkBgColor}
+                    onChange={(e) => setBrandDarkBgColor(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Card 3: Modalidad de Carta (Misma carta o Cartas separadas) */}
           <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -638,23 +1118,103 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </p>
               </button>
             </div>
+
+            {/* Check para Salón y Check para Delivery */}
+            <div className="pt-4 border-t border-neutral-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Habilitación de Canales de Atención</span>
+                  </h4>
+                  <p className="text-[11px] text-neutral-400">
+                    Marca o desmarca los checks para habilitar o suspender cada canal en tu restaurante.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Checkbox Salón */}
+                <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer select-none ${
+                  menuSettings.enableDineIn !== false
+                    ? 'bg-amber-500/10 border-amber-500/50 text-white shadow-sm'
+                    : 'bg-black/40 border-neutral-800 text-neutral-500 hover:border-neutral-700'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={menuSettings.enableDineIn !== false}
+                    onChange={(e) => setMenuSettings(prev => ({ ...prev, enableDineIn: e.target.checked }))}
+                    className="mt-0.5 w-4 h-4 rounded text-amber-500 focus:ring-amber-400 bg-neutral-900 border-neutral-700 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-bold">Carta Salón (Atención Presencial)</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                        menuSettings.enableDineIn !== false ? 'bg-amber-400 text-black' : 'bg-neutral-800 text-neutral-500'
+                      }`}>
+                        {menuSettings.enableDineIn !== false ? 'HABILITADO' : 'DESHABILITADO'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 leading-relaxed">
+                      Atención para comensales en mesas, barra y terraza. Permite a los mozos tomar comandas en el salón.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Checkbox Delivery */}
+                <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer select-none ${
+                  menuSettings.enableDelivery !== false
+                    ? 'bg-purple-500/10 border-purple-500/50 text-white shadow-sm'
+                    : 'bg-black/40 border-neutral-800 text-neutral-500 hover:border-neutral-700'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={menuSettings.enableDelivery !== false}
+                    onChange={(e) => setMenuSettings(prev => ({ ...prev, enableDelivery: e.target.checked }))}
+                    className="mt-0.5 w-4 h-4 rounded text-purple-500 focus:ring-purple-400 bg-neutral-900 border-neutral-700 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-bold">Carta Delivery (Pedidos a Domicilio)</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                        menuSettings.enableDelivery !== false ? 'bg-purple-400 text-black' : 'bg-neutral-800 text-neutral-500'
+                      }`}>
+                        {menuSettings.enableDelivery !== false ? 'HABILITADO' : 'DESHABILITADO'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 leading-relaxed">
+                      Pedidos a domicilio para clientes externos, cálculo de despacho y entrega por repartidores motorizados.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
 
-          {/* Dual Customization Panes */}
+          {/* Dual Customization Panes: Salón vs Delivery */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* 1. Carta Presencial / Salón */}
-            <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4">
+            <div className={`p-5 rounded-2xl border space-y-4 transition ${
+              menuSettings.enableDineIn !== false ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-950/70 border-neutral-800/60 opacity-80'
+            }`}>
               <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span className={`w-2.5 h-2.5 rounded-full ${menuSettings.enableDineIn !== false ? 'bg-amber-400' : 'bg-neutral-600'}`} />
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                     Carta Presencial / Salón
                   </h4>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">
-                  Atención: Mozos
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
+                    menuSettings.enableDineIn !== false ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-neutral-900 text-neutral-500 border border-neutral-800'
+                  }`}>
+                    {menuSettings.enableDineIn !== false ? 'Habilitado' : 'Deshabilitado'}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">
+                    Atención: Mozos
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -675,9 +1235,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <label className="text-[11px] font-bold text-neutral-300 block mb-1">
                     Tipo de Fondo Personalizado
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { id: 'theme', label: 'Tema Plantilla' },
+                      { id: 'theme', label: 'Plantilla' },
+                      { id: 'image', label: 'Foto/Textura' },
                       { id: 'color', label: 'Color Sólido' },
                       { id: 'gradient', label: 'Gradiente' },
                     ].map(t => (
@@ -685,9 +1246,9 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                         key={t.id}
                         type="button"
                         onClick={() => setMenuSettings(prev => ({ ...prev, presentialBgType: t.id as any }))}
-                        className={`p-2 rounded-lg text-center font-bold text-[11px] border transition cursor-pointer ${
+                        className={`p-2 rounded-lg text-center font-bold text-[10px] border transition cursor-pointer ${
                           menuSettings.presentialBgType === t.id
-                            ? 'bg-amber-400 text-black border-amber-400'
+                            ? 'bg-amber-400 text-black border-amber-400 shadow'
                             : 'bg-black text-neutral-400 border-neutral-800 hover:text-white'
                         }`}
                       >
@@ -697,17 +1258,61 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   </div>
                 </div>
 
-                {menuSettings.presentialBgType !== 'theme' && (
-                  <div>
-                    <label className="text-[11px] font-bold text-neutral-300 block mb-1">
-                      Valor de Color / Gradiente CSS
+                {/* Si es imagen/textura */}
+                {menuSettings.presentialBgType === 'image' && (
+                  <div className="space-y-2 pt-1">
+                    <label className="text-[11px] font-bold text-neutral-300 block">
+                      URL de Imagen de Fondo para Salón
                     </label>
                     <input
                       type="text"
                       value={menuSettings.presentialBgValue || ''}
                       onChange={(e) => setMenuSettings(prev => ({ ...prev, presentialBgValue: e.target.value }))}
                       className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
-                      placeholder="Ej: #071A14 o linear-gradient(180deg, #071A14, #0F2D24)"
+                      placeholder="https://... (textura o fondo fotográfico)"
+                    />
+                    <div>
+                      <span className="text-[10px] text-neutral-400 block mb-1">
+                        Texturas gastronómicas recomendadas:
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {PRESET_BACKGROUND_TEXTURES.map((tex, tIdx) => (
+                          <button
+                            key={tIdx}
+                            type="button"
+                            onClick={() => setMenuSettings(prev => ({ ...prev, presentialBgValue: tex.url }))}
+                            className={`p-1.5 rounded-lg border text-left flex items-center gap-1.5 cursor-pointer transition ${
+                              menuSettings.presentialBgValue === tex.url
+                                ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                                : 'bg-black border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                            }`}
+                          >
+                            <img 
+                              src={tex.url} 
+                              alt="" 
+                              className="w-4 h-4 rounded object-cover shrink-0" 
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="text-[9px] font-bold truncate">{tex.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Si es color o gradiente */}
+                {(menuSettings.presentialBgType === 'color' || menuSettings.presentialBgType === 'gradient') && (
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-300 block mb-1">
+                      {menuSettings.presentialBgType === 'color' ? 'Código Hexadecimal del Color' : 'Valor de Gradiente CSS'}
+                    </label>
+                    <input
+                      type="text"
+                      value={menuSettings.presentialBgValue || ''}
+                      onChange={(e) => setMenuSettings(prev => ({ ...prev, presentialBgValue: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                      placeholder={menuSettings.presentialBgType === 'color' ? '#071A14' : 'linear-gradient(180deg, #071A14, #0F2D24)'}
                     />
                   </div>
                 )}
@@ -716,7 +1321,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenCustomerPreview(restaurant, 'DINE_IN')}
-                    className="w-full py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer border border-neutral-700"
                   >
                     <Eye className="w-3.5 h-3.5 text-amber-400" />
                     <span>Previsualizar Carta Salón</span>
@@ -726,17 +1331,26 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             </div>
 
             {/* 2. Carta Delivery */}
-            <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4">
+            <div className={`p-5 rounded-2xl border space-y-4 transition ${
+              menuSettings.enableDelivery !== false ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-950/70 border-neutral-800/60 opacity-80'
+            }`}>
               <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                  <span className={`w-2.5 h-2.5 rounded-full ${menuSettings.enableDelivery !== false ? 'bg-purple-400' : 'bg-neutral-600'}`} />
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                     Carta Delivery a Domicilio
                   </h4>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono">
-                  Gestión: Repartidores
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
+                    menuSettings.enableDelivery !== false ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-neutral-900 text-neutral-500 border border-neutral-800'
+                  }`}>
+                    {menuSettings.enableDelivery !== false ? 'Habilitado' : 'Deshabilitado'}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono">
+                    Gestión: Repartidores
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -782,9 +1396,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <label className="text-[11px] font-bold text-neutral-300 block mb-1">
                     Tipo de Fondo Personalizado
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { id: 'theme', label: 'Tema Plantilla' },
+                      { id: 'theme', label: 'Plantilla' },
+                      { id: 'image', label: 'Foto/Textura' },
                       { id: 'color', label: 'Color Sólido' },
                       { id: 'gradient', label: 'Gradiente' },
                     ].map(t => (
@@ -792,9 +1407,9 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                         key={t.id}
                         type="button"
                         onClick={() => setMenuSettings(prev => ({ ...prev, deliveryBgType: t.id as any }))}
-                        className={`p-2 rounded-lg text-center font-bold text-[11px] border transition cursor-pointer ${
+                        className={`p-2 rounded-lg text-center font-bold text-[10px] border transition cursor-pointer ${
                           menuSettings.deliveryBgType === t.id
-                            ? 'bg-purple-400 text-black border-purple-400'
+                            ? 'bg-purple-400 text-black border-purple-400 shadow'
                             : 'bg-black text-neutral-400 border-neutral-800 hover:text-white'
                         }`}
                       >
@@ -804,17 +1419,61 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   </div>
                 </div>
 
-                {menuSettings.deliveryBgType !== 'theme' && (
-                  <div>
-                    <label className="text-[11px] font-bold text-neutral-300 block mb-1">
-                      Valor de Color / Gradiente CSS
+                {/* Si es imagen/textura */}
+                {menuSettings.deliveryBgType === 'image' && (
+                  <div className="space-y-2 pt-1">
+                    <label className="text-[11px] font-bold text-neutral-300 block">
+                      URL de Imagen de Fondo para Delivery
                     </label>
                     <input
                       type="text"
                       value={menuSettings.deliveryBgValue || ''}
                       onChange={(e) => setMenuSettings(prev => ({ ...prev, deliveryBgValue: e.target.value }))}
                       className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-purple-400 transition"
-                      placeholder="Ej: #18181B o linear-gradient(180deg, #18181B, #09090B)"
+                      placeholder="https://... (textura o fondo)"
+                    />
+                    <div>
+                      <span className="text-[10px] text-neutral-400 block mb-1">
+                        Texturas recomendadas:
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {PRESET_BACKGROUND_TEXTURES.map((tex, tIdx) => (
+                          <button
+                            key={tIdx}
+                            type="button"
+                            onClick={() => setMenuSettings(prev => ({ ...prev, deliveryBgValue: tex.url }))}
+                            className={`p-1.5 rounded-lg border text-left flex items-center gap-1.5 cursor-pointer transition ${
+                              menuSettings.deliveryBgValue === tex.url
+                                ? 'bg-purple-400/20 border-purple-400 text-purple-300'
+                                : 'bg-black border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                            }`}
+                          >
+                            <img 
+                              src={tex.url} 
+                              alt="" 
+                              className="w-4 h-4 rounded object-cover shrink-0" 
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="text-[9px] font-bold truncate">{tex.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Si es color o gradiente */}
+                {(menuSettings.deliveryBgType === 'color' || menuSettings.deliveryBgType === 'gradient') && (
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-300 block mb-1">
+                      {menuSettings.deliveryBgType === 'color' ? 'Código Hexadecimal del Color' : 'Valor de Gradiente CSS'}
+                    </label>
+                    <input
+                      type="text"
+                      value={menuSettings.deliveryBgValue || ''}
+                      onChange={(e) => setMenuSettings(prev => ({ ...prev, deliveryBgValue: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-purple-400 transition"
+                      placeholder={menuSettings.deliveryBgType === 'color' ? '#18181B' : 'linear-gradient(180deg, #18181B, #09090B)'}
                     />
                   </div>
                 )}
@@ -823,7 +1482,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenCustomerPreview(restaurant, 'DELIVERY')}
-                    className="w-full py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer border border-neutral-700"
                   >
                     <Eye className="w-3.5 h-3.5 text-purple-400" />
                     <span>Previsualizar Carta Delivery</span>
@@ -834,16 +1493,32 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleSaveMenuSettings}
-              className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs transition flex items-center gap-2 shadow-xl cursor-pointer"
-            >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>Guardar Personalización de Cartas y Fondos</span>
-            </button>
+          {/* Action Buttons: Save Customization */}
+          <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs text-neutral-400">
+              Presiona guardar para actualizar el logo, portada, títulos, colores y fondos de <strong className="text-white">{restaurant.name}</strong>.
+            </div>
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleSaveToFirebase}
+                disabled={isSavingFirebase}
+                className="w-full sm:w-auto px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-amber-500/30 cursor-pointer disabled:opacity-50"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>{isSavingFirebase ? 'Guardando en la Nube...' : 'Guardar en Firebase'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveCustomization}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs transition flex items-center justify-center gap-2 shadow-xl cursor-pointer"
+              >
+                <Check className="w-4 h-4 stroke-[3]" />
+                <span>Guardar Personalización</span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -1231,6 +1906,204 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CAMBIO RÁPIDO DE PRECIO */}
+      {quickPriceItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-neutral-950 border border-neutral-800 text-white shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400 block font-bold">
+                  Precio Rápido
+                </span>
+                <h3 className="text-sm font-bold text-white truncate max-w-[240px]">
+                  {quickPriceItem.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickPriceItem(null)}
+                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickSavePrice} className="p-5 space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                <img
+                  src={quickPriceItem.imageUrl}
+                  alt={quickPriceItem.name}
+                  className="w-12 h-12 rounded-lg object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="text-xs">
+                  <span className="text-neutral-400 block">Precio anterior:</span>
+                  <span className="font-mono font-bold text-neutral-300">S/ {quickPriceItem.price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  Nuevo Precio (S/) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-amber-400 font-mono font-bold text-xs">S/</span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    autoFocus
+                    required
+                    value={quickPriceValue}
+                    onChange={(e) => setQuickPriceValue(Number(e.target.value))}
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-base font-bold font-mono focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Quick increments */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-neutral-500 mr-1">Ajuste rápido:</span>
+                {[-5, -2, -1, 1, 2, 5].map((delta) => (
+                  <button
+                    key={delta}
+                    type="button"
+                    onClick={() => setQuickPriceValue((prev) => Math.max(0, prev + delta))}
+                    className="px-2 py-1 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[10px] font-mono text-neutral-300 cursor-pointer"
+                  >
+                    {delta > 0 ? `+${delta}` : delta}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickPriceItem(null)}
+                  className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-neutral-300 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold flex items-center gap-1.5 shadow-lg cursor-pointer"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>Guardar Precio</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CAMBIO RÁPIDO DE FOTO DE PLATO */}
+      {quickPhotoItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-neutral-950 border border-neutral-800 text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-5 py-4 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400 block font-bold">
+                  Personalizar Foto de Plato
+                </span>
+                <h3 className="text-sm font-bold text-white truncate max-w-[280px]">
+                  {quickPhotoItem.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickPhotoItem(null)}
+                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto">
+              {/* Photo Live Preview */}
+              <div className="relative h-44 rounded-xl overflow-hidden bg-black border border-neutral-800">
+                <img
+                  src={quickPhotoUrl || quickPhotoItem.imageUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                  <span className="text-xs font-bold text-white drop-shadow">
+                    {quickPhotoItem.name} — S/ {quickPhotoItem.price.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Direct URL input */}
+              <div>
+                <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  URL de Imagen Personalizada
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={quickPhotoUrl}
+                    onChange={(e) => setQuickPhotoUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com/... o enlace de tu imagen"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white font-mono focus:border-amber-400 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleQuickSavePhoto()}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold shrink-0 cursor-pointer shadow"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              </div>
+
+              {/* Stock Photo Gallery */}
+              <div className="space-y-2 pt-2 border-t border-neutral-800">
+                <span className="text-xs font-bold text-neutral-300 block">
+                  Galería Gastronómica Rápida (1 Clic):
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {STOCK_PHOTOS.map((stock, sIdx) => (
+                    <button
+                      key={sIdx}
+                      type="button"
+                      onClick={() => {
+                        setQuickPhotoUrl(stock.url);
+                        handleQuickSavePhoto(stock.url);
+                      }}
+                      className="group text-left rounded-xl overflow-hidden border border-neutral-800 hover:border-amber-400 transition p-1 bg-black cursor-pointer"
+                    >
+                      <div className="h-16 w-full rounded-lg overflow-hidden bg-neutral-900 mb-1">
+                        <img
+                          src={stock.url}
+                          alt={stock.label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-neutral-300 group-hover:text-amber-300 block truncate px-1">
+                        {stock.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setQuickPhotoItem(null)}
+                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-neutral-300 cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
