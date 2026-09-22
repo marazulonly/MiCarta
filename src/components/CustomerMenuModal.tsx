@@ -422,6 +422,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
           {...liveEditProps}
         />
       ) : isCriolloTemplate ? (
@@ -434,6 +435,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
           {...liveEditProps}
         />
       ) : (
@@ -446,6 +448,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
           {...liveEditProps}
         />
       )}

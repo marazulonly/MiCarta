@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ShoppingBag, 
@@ -31,6 +31,7 @@ interface CostaMarinaMenuProps {
   onOrderCreated?: (newOrder: Order) => void;
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
+  isOwnerOrAdmin?: boolean;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -59,6 +60,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   onOrderCreated,
   initialMode = 'DINE_IN',
   initialTableNumber,
+  isOwnerOrAdmin = false,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -90,6 +92,16 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     currentCategories[0]?.id || 'cat-m1'
   );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -180,7 +192,12 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+      <div 
+        onClick={(e) => {
+          if (e.target === e.currentTarget && onClose) onClose();
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto"
+      >
         
         {/* Outer Shell Marine Theme */}
         <div 
@@ -189,118 +206,120 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
           } rounded-2xl overflow-hidden flex flex-col shadow-2xl border transition-all duration-300`}
         >
-          {/* Top Bar */}
-          <div 
-            style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
-            className="relative z-30 px-2.5 py-1.5 border-b flex items-center justify-between text-xs"
-          >
-            <div className="flex items-center gap-2">
-              <span 
-                style={{ color: COLOR_CREAM }}
-                className="font-mono tracking-wider uppercase text-[11px] font-bold"
-              >
-                COSTA MARINA · {restaurant.name}
-              </span>
-              
-              {/* Channel switcher */}
-              <div 
-                style={{ backgroundColor: `${COLOR_TEAL}e6`, borderColor: COLOR_OLIVE }}
-                className="flex items-center gap-1 p-0.5 rounded-lg border"
-              >
-                <button
-                  disabled={!isDineInEnabled}
-                  onClick={() => setActiveChannel('DINE_IN')}
-                  style={
-                    activeChannel === 'DINE_IN'
-                      ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
-                      : { backgroundColor: 'transparent', color: COLOR_CREAM }
-                  }
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
-                    !isDineInEnabled ? 'opacity-40 cursor-not-allowed' : ''
-                  }`}
-                  title={!isDineInEnabled ? 'Canal Salón desactivado' : 'Carta Salón'}
+          {/* Top Bar - Únicamente visible para administradores y dueños, oculto para comensales y clientes anónimos */}
+          {isOwnerOrAdmin && (
+            <div 
+              style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+              className="relative z-30 px-2.5 py-1.5 border-b flex items-center justify-between text-xs"
+            >
+              <div className="flex items-center gap-2">
+                <span 
+                  style={{ color: COLOR_CREAM }}
+                  className="font-mono tracking-wider uppercase text-[11px] font-bold"
                 >
-                  <ChefHat className="w-2.5 h-2.5" />
-                  <span>{isDineInEnabled ? 'Salón' : 'Salón (Pausado)'}</span>
+                  {restaurant.name.toUpperCase()} · CARTA DIGITAL
+                </span>
+                
+                {/* Channel switcher */}
+                <div 
+                  style={{ backgroundColor: `${COLOR_TEAL}e6`, borderColor: COLOR_OLIVE }}
+                  className="flex items-center gap-1 p-0.5 rounded-lg border"
+                >
+                  <button
+                    disabled={!isDineInEnabled}
+                    onClick={() => setActiveChannel('DINE_IN')}
+                    style={
+                      activeChannel === 'DINE_IN'
+                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
+                        : { backgroundColor: 'transparent', color: COLOR_CREAM }
+                    }
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
+                      !isDineInEnabled ? 'opacity-40 cursor-not-allowed' : ''
+                    }`}
+                    title={!isDineInEnabled ? 'Canal Salón desactivado' : 'Carta Salón'}
+                  >
+                    <ChefHat className="w-2.5 h-2.5" />
+                    <span>{isDineInEnabled ? 'Salón' : 'Salón (Pausado)'}</span>
+                  </button>
+                  <button
+                    disabled={!isDeliveryEnabled}
+                    onClick={() => setActiveChannel('DELIVERY')}
+                    style={
+                      activeChannel === 'DELIVERY'
+                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
+                        : { backgroundColor: 'transparent', color: COLOR_CREAM }
+                    }
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
+                      !isDeliveryEnabled ? 'opacity-40 cursor-not-allowed' : ''
+                    }`}
+                    title={!isDeliveryEnabled ? 'Canal Delivery desactivado' : 'Carta Delivery'}
+                  >
+                    <Bike className="w-2.5 h-2.5" />
+                    <span>{isDeliveryEnabled ? 'Delivery' : 'Delivery (Pausado)'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {onToggleLiveEdit && (
+                  <button
+                    onClick={onToggleLiveEdit}
+                    style={
+                      isLiveEditActive
+                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM, borderColor: COLOR_CREAM }
+                        : { backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }
+                    }
+                    className="px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    title="Habilita la edición de la carta directamente sobre esta vista"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
+                  </button>
+                )}
+
+                {initialTableNumber && (
+                  <span 
+                    style={{ backgroundColor: `${COLOR_OLIVE}30`, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
+                    className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    <span>Mesa {initialTableNumber}</span>
+                  </span>
+                )}
+                <button
+                  onClick={() => setIsScheduleModalOpen(true)}
+                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
+                  title="Ver Horarios de Atención"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-[10px]">Horarios</span>
                 </button>
                 <button
-                  disabled={!isDeliveryEnabled}
-                  onClick={() => setActiveChannel('DELIVERY')}
-                  style={
-                    activeChannel === 'DELIVERY'
-                      ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
-                      : { backgroundColor: 'transparent', color: COLOR_CREAM }
-                  }
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
-                    !isDeliveryEnabled ? 'opacity-40 cursor-not-allowed' : ''
-                  }`}
-                  title={!isDeliveryEnabled ? 'Canal Delivery desactivado' : 'Carta Delivery'}
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
                 >
-                  <Bike className="w-2.5 h-2.5" />
-                  <span>{isDeliveryEnabled ? 'Delivery' : 'Delivery (Pausado)'}</span>
+                  {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={copyUrl}
+                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline text-[10px]">{copiedLink ? 'Copiado' : 'Compartir'}</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              {onToggleLiveEdit && (
-                <button
-                  onClick={onToggleLiveEdit}
-                  style={
-                    isLiveEditActive
-                      ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM, borderColor: COLOR_CREAM }
-                      : { backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }
-                  }
-                  className="px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  title="Habilita la edición de la carta directamente sobre esta vista"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
-                </button>
-              )}
-
-              {initialTableNumber && (
-                <span 
-                  style={{ backgroundColor: `${COLOR_OLIVE}30`, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
-                  className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
-                >
-                  <MapPin className="w-3 h-3" />
-                  <span>Mesa {initialTableNumber}</span>
-                </span>
-              )}
-              <button
-                onClick={() => setIsScheduleModalOpen(true)}
-                style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
-                className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
-                title="Ver Horarios de Atención"
-              >
-                <Clock className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-[10px]">Horarios</span>
-              </button>
-              <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
-                className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
-              >
-                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                onClick={copyUrl}
-                style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
-                className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline text-[10px]">{copiedLink ? 'Copiado' : 'Compartir'}</span>
-              </button>
-              <button
-                onClick={onClose}
-                style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
-                className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Live Edit Mode Floating Banner */}
           {isLiveEditActive && (
@@ -357,7 +376,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             style={marineStyle}
           >
             {/* Header */}
-            <div className="text-center space-y-1.5">
+            <div className={`text-center space-y-1.5 ${!isOwnerOrAdmin ? 'pt-3 sm:pt-4' : ''}`}>
               {restaurant.logoUrl && (
                 <div className="flex justify-center mb-1">
                   <img 
@@ -388,8 +407,20 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 style={{ color: COLOR_TEAL }}
                 className="text-xs font-semibold"
               >
-                {restaurant.tagline || '¡Tenemos como ballenas!'}
+                {restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}
               </p>
+
+              {initialTableNumber && (
+                <div className="flex justify-center pt-0.5">
+                  <span 
+                    style={{ backgroundColor: `${COLOR_OLIVE}20`, color: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[11px] font-bold font-mono shadow-sm"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Mesa {initialTableNumber}</span>
+                  </span>
+                </div>
+              )}
 
               {isLiveEditActive && onEditBranding && (
                 <div className="flex justify-center pt-1">

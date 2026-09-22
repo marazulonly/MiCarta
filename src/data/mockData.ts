@@ -301,8 +301,8 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
   },
   {
     id: 'rest-costa',
-    name: 'Costa Marina',
-    tagline: 'Cevichito Pliz - Cevichería Contemporánea & Pesca Artesanal del Día',
+    name: 'Cevichito Pliz',
+    tagline: 'Cevichería Contemporánea & Pesca Artesanal del Día',
     cuisineType: 'Cevichería & Mariscos',
     slug: 'cevichito-pliz',
     address: 'Malecón de la Reserva 102, Miraflores',
@@ -370,8 +370,8 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       allowCashAtTable: true,
       vipDiscountPercent: 12,
       maxOrderAmount: 600,
-      welcomeMessage: 'Pesca artesanal del litoral peruano y ceviches al momento.',
-      wifiPassword: 'CostaMarina2026'
+      welcomeMessage: 'Bienvenidos a Cevichito Pliz - Pesca artesanal del litoral peruano y ceviches al momento.',
+      wifiPassword: 'CevichitoPliz2026'
     }
   }
 ];
@@ -745,12 +745,12 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     tags: ['Para Compartir']
   },
 
-  // Costa Marina
+  // Cevichito Pliz
   {
     id: 'item-m1',
     restaurantId: 'rest-costa',
     categoryId: 'cat-m1',
-    name: 'Ceviche Mixto Costa Marina',
+    name: 'Ceviche Mixto Cevichito Pliz',
     description: 'Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja. Aliñado con leche de tigre clásica al ají limo, apio y zumo de limón piurano.',
     price: 48.00,
     imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
@@ -847,12 +847,12 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     tags: ['Wok Candente', 'Chaufa Especial']
   },
 
-  // Costa Marina - Coctelería de Autor & Bebidas
+  // Cevichito Pliz - Coctelería de Autor & Bebidas
   {
     id: 'item-m8',
     restaurantId: 'rest-costa',
     categoryId: 'cat-m3',
-    name: 'Pisco Sour Catedral Costa Marina (Copa Doble)',
+    name: 'Pisco Sour Catedral Cevichito Pliz (Copa Doble)',
     description: 'Destilado puro de uva Quebranta iqueña (4 oz) batido vigorosamente con clara de huevo fresca. Con zumo de limón piurano recién exprimido, jarabe simple aromático y gotas aromáticas de bitter Angostura.',
     price: 32.00,
     imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',

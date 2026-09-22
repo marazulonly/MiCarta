@@ -35,6 +35,7 @@ interface BrasasLuxuryMenuProps {
   onOrderCreated?: (newOrder: Order) => void;
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
+  isOwnerOrAdmin?: boolean;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -63,6 +64,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
   onOrderCreated,
   initialMode = 'DINE_IN',
   initialTableNumber,
+  isOwnerOrAdmin = false,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -214,103 +216,105 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
           style={customBgStyle}
         >
           
-          {/* Top Operational Bar */}
-          <div className="relative z-30 px-4 py-2.5 bg-[#03110d]/90 border-b border-[#b88e3d]/30 flex items-center justify-between text-xs backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#dfb86c] animate-pulse" />
-              <span className="text-[#dfb86c] font-serif tracking-widest uppercase text-[11px] font-semibold">
-                Micarta · {restaurant.name}
-              </span>
-              
-              {/* Channel switcher badge */}
-              <div className="flex items-center gap-1 bg-[#092b22] p-0.5 rounded-lg border border-[#b88e3d]/30">
+          {/* Top Operational Bar - Únicamente para dueños/administradores, oculto para clientes anónimos */}
+          {isOwnerOrAdmin && (
+            <div className="relative z-30 px-4 py-2.5 bg-[#03110d]/90 border-b border-[#b88e3d]/30 flex items-center justify-between text-xs backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#dfb86c] animate-pulse" />
+                <span className="text-[#dfb86c] font-serif tracking-widest uppercase text-[11px] font-semibold">
+                  Micarta · {restaurant.name}
+                </span>
+                
+                {/* Channel switcher badge */}
+                <div className="flex items-center gap-1 bg-[#092b22] p-0.5 rounded-lg border border-[#b88e3d]/30">
+                  <button
+                    disabled={!isDineInEnabled}
+                    onClick={() => setActiveChannel('DINE_IN')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
+                      !isDineInEnabled
+                        ? 'opacity-40 cursor-not-allowed text-neutral-500'
+                        : activeChannel === 'DINE_IN'
+                        ? 'bg-[#dfb86c] text-black font-bold'
+                        : 'text-[#ecd8a5] hover:text-white'
+                    }`}
+                    title={!isDineInEnabled ? 'Canal Salón desactivado en la configuración' : 'Carta Salón'}
+                  >
+                    <ChefHat className="w-2.5 h-2.5" />
+                    <span>{isDineInEnabled ? 'Salón' : 'Salón (Pausado)'}</span>
+                  </button>
+                  <button
+                    disabled={!isDeliveryEnabled}
+                    onClick={() => setActiveChannel('DELIVERY')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
+                      !isDeliveryEnabled
+                        ? 'opacity-40 cursor-not-allowed text-neutral-500'
+                        : activeChannel === 'DELIVERY'
+                        ? 'bg-[#dfb86c] text-black font-bold'
+                        : 'text-[#ecd8a5] hover:text-white'
+                    }`}
+                    title={!isDeliveryEnabled ? 'Canal Delivery desactivado en la configuración' : 'Carta Delivery'}
+                  >
+                    <Bike className="w-2.5 h-2.5" />
+                    <span>{isDeliveryEnabled ? 'Delivery' : 'Delivery (Pausado)'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {onToggleLiveEdit && (
+                  <button
+                    onClick={onToggleLiveEdit}
+                    className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm ${
+                      isLiveEditActive
+                        ? 'bg-amber-400 text-black border-amber-300 ring-2 ring-amber-400/50'
+                        : 'bg-[#092b22] text-[#dfb86c] border-[#dfb86c]/40 hover:bg-[#0c392c]'
+                    }`}
+                    title="Habilita la edición de la carta directamente sobre esta vista"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
+                  </button>
+                )}
+
+                {initialTableNumber && (
+                  <span className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-[#dfb86c] border border-amber-500/40 text-[10px] font-bold font-mono">
+                    <MapPin className="w-3 h-3 text-amber-400" />
+                    <span>Mesa {initialTableNumber}</span>
+                  </span>
+                )}
                 <button
-                  disabled={!isDineInEnabled}
-                  onClick={() => setActiveChannel('DINE_IN')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
-                    !isDineInEnabled
-                      ? 'opacity-40 cursor-not-allowed text-neutral-500'
-                      : activeChannel === 'DINE_IN'
-                      ? 'bg-[#dfb86c] text-black font-bold'
-                      : 'text-[#ecd8a5] hover:text-white'
-                  }`}
-                  title={!isDineInEnabled ? 'Canal Salón desactivado en la configuración' : 'Carta Salón'}
+                  onClick={() => setIsScheduleModalOpen(true)}
+                  className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer flex items-center gap-1"
+                  title="Ver Horarios de Atención"
                 >
-                  <ChefHat className="w-2.5 h-2.5" />
-                  <span>{isDineInEnabled ? 'Salón' : 'Salón (Pausado)'}</span>
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline text-[10px] font-medium">Horarios</span>
                 </button>
                 <button
-                  disabled={!isDeliveryEnabled}
-                  onClick={() => setActiveChannel('DELIVERY')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
-                    !isDeliveryEnabled
-                      ? 'opacity-40 cursor-not-allowed text-neutral-500'
-                      : activeChannel === 'DELIVERY'
-                      ? 'bg-[#dfb86c] text-black font-bold'
-                      : 'text-[#ecd8a5] hover:text-white'
-                  }`}
-                  title={!isDeliveryEnabled ? 'Canal Delivery desactivado en la configuración' : 'Carta Delivery'}
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
+                  title={isFullscreen ? 'Reducir tamaño' : 'Pantalla completa'}
                 >
-                  <Bike className="w-2.5 h-2.5" />
-                  <span>{isDeliveryEnabled ? 'Delivery' : 'Delivery (Pausado)'}</span>
+                  {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={copyUrl}
+                  className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer flex items-center gap-1"
+                  title="Copiar URL del Menú"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline text-[10px] font-medium">{copiedLink ? 'Copiado' : 'Compartir'}</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
+                  title="Cerrar"
+                >
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              {onToggleLiveEdit && (
-                <button
-                  onClick={onToggleLiveEdit}
-                  className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm ${
-                    isLiveEditActive
-                      ? 'bg-amber-400 text-black border-amber-300 ring-2 ring-amber-400/50'
-                      : 'bg-[#092b22] text-[#dfb86c] border-[#dfb86c]/40 hover:bg-[#0c392c]'
-                  }`}
-                  title="Habilita la edición de la carta directamente sobre esta vista"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
-                </button>
-              )}
-
-              {initialTableNumber && (
-                <span className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-[#dfb86c] border border-amber-500/40 text-[10px] font-bold font-mono">
-                  <MapPin className="w-3 h-3 text-amber-400" />
-                  <span>Mesa {initialTableNumber}</span>
-                </span>
-              )}
-              <button
-                onClick={() => setIsScheduleModalOpen(true)}
-                className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer flex items-center gap-1"
-                title="Ver Horarios de Atención"
-              >
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline text-[10px] font-medium">Horarios</span>
-              </button>
-              <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
-                title={isFullscreen ? 'Reducir tamaño' : 'Pantalla completa'}
-              >
-                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                onClick={copyUrl}
-                className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer flex items-center gap-1"
-                title="Copiar URL del Menú"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline text-[10px] font-medium">{copiedLink ? 'Copiado' : 'Compartir'}</span>
-              </button>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
-                title="Cerrar"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Live Edit Mode Floating Banner */}
           {isLiveEditActive && (

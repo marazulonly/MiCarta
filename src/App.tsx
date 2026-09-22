@@ -119,6 +119,42 @@ const getInitialUrlParams = () => {
   }
 };
 
+// Robust sanitization to guarantee Cevichito Pliz brand name, slug and dishes across all caches
+function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
+  return rests.map(r => {
+    if (
+      r.id === 'rest-costa' || 
+      r.name === 'Costa Marina' || 
+      r.slug === 'costa-marina' || 
+      r.slug === 'cevichito-pliz' ||
+      r.name?.toLowerCase().includes('costa marina')
+    ) {
+      const defaultCosta = INITIAL_RESTAURANTS.find(ir => ir.id === 'rest-costa');
+      return {
+        ...r,
+        id: 'rest-costa',
+        name: 'Cevichito Pliz',
+        slug: 'cevichito-pliz',
+        tagline: 'Cevichería Contemporánea & Pesca Artesanal del Día',
+        branding: defaultCosta?.branding ? { ...defaultCosta.branding } : r.branding
+      };
+    }
+    return r;
+  });
+}
+
+function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
+  return items.map(it => {
+    if (it.restaurantId === 'rest-costa' || it.name.includes('Costa Marina')) {
+      return {
+        ...it,
+        name: it.name.replace(/Costa Marina/gi, 'Cevichito Pliz')
+      };
+    }
+    return it;
+  });
+}
+
 // Load cached initial state synchronously before React component initializes
 const getInitialStateFromStorage = () => {
   let cachedRests = INITIAL_RESTAURANTS;
@@ -133,21 +169,12 @@ const getInitialStateFromStorage = () => {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed.restaurants?.length) {
-          cachedRests = parsed.restaurants.map((r: Restaurant) => {
-            if (r.id === 'rest-costa') {
-              const defaultCosta = INITIAL_RESTAURANTS.find(ir => ir.id === 'rest-costa');
-              if (defaultCosta && (r.branding?.primaryColor !== '#1B667A' || r.branding?.darkBgColor !== '#EAEBDC')) {
-                return {
-                  ...r,
-                  branding: { ...defaultCosta.branding }
-                };
-              }
-            }
-            return r;
-          });
+          cachedRests = sanitizeRestaurants(parsed.restaurants);
         }
         if (parsed.categories?.length) cachedCategories = parsed.categories;
-        if (parsed.items?.length) cachedItems = parsed.items;
+        if (parsed.items?.length) {
+          cachedItems = sanitizeMenuItems(parsed.items);
+        }
         if (parsed.users?.length) cachedUsers = parsed.users;
         if (parsed.orders?.length) cachedOrders = parsed.orders;
       }
@@ -241,8 +268,14 @@ export default function App() {
       const cached = localStorage.getItem('micarta_system_state_v1');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed.restaurants?.length) setRestaurants(parsed.restaurants);
-        if (parsed.items?.length) setMenuItems(parsed.items);
+        if (parsed.restaurants?.length) {
+          const cleanRests = sanitizeRestaurants(parsed.restaurants);
+          setRestaurants(cleanRests);
+        }
+        if (parsed.items?.length) {
+          const cleanItems = sanitizeMenuItems(parsed.items);
+          setMenuItems(cleanItems);
+        }
         if (parsed.categories?.length) setCategories(parsed.categories);
         if (parsed.users?.length) setUsers(parsed.users);
         if (parsed.orders?.length) setOrders(parsed.orders);
@@ -254,8 +287,14 @@ export default function App() {
     // 2. Sync with remote Firebase Firestore database
     loadAllDataFromFirebase().then(remoteData => {
       if (remoteData) {
-        if (remoteData.restaurants?.length) setRestaurants(remoteData.restaurants);
-        if (remoteData.items?.length) setMenuItems(remoteData.items);
+        if (remoteData.restaurants?.length) {
+          const cleanRests = sanitizeRestaurants(remoteData.restaurants);
+          setRestaurants(cleanRests);
+        }
+        if (remoteData.items?.length) {
+          const cleanItems = sanitizeMenuItems(remoteData.items);
+          setMenuItems(cleanItems);
+        }
         if (remoteData.categories?.length) setCategories(remoteData.categories);
         if (remoteData.users?.length) {
           // Merge remote users with initial users to guarantee no accounts are lost
