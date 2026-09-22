@@ -316,6 +316,9 @@ export default function App() {
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
     setRestaurants(prev => prev.map(r => r.id === updated.id ? updated : r));
+    if (previewRestaurant && previewRestaurant.id === updated.id) {
+      setPreviewRestaurant(updated);
+    }
     saveRestaurantToFirebase(updated);
     showToast(`Restaurante "${updated.name}" actualizado.`);
   };
