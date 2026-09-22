@@ -35,31 +35,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
     { unitNumber: 1, observation: '', selectedAddons: [] }
   ]);
 
-  // Default suggested observations if not configured
-  const defaultSuggestedObs = [
-    'Término 3/4',
-    'Bien cocido',
-    'Término medio',
-    'Sin cebolla',
-    'Salsa aparte',
-    'Bajo en sal',
-    'Poco picante'
-  ];
-
-  // Default addons if none configured
-  const defaultAddons: DishAddon[] = [
-    { id: 'def-add-1', name: 'Porción de Papas Extra', price: 8.0 },
-    { id: 'def-add-2', name: 'Huevo Frito Artesanal', price: 3.5 },
-    { id: 'def-add-3', name: 'Salsa Especial de la Casa', price: 4.0 },
-  ];
-
-  const availableAddons = (item?.availableAddons && item.availableAddons.length > 0)
-    ? item.availableAddons
-    : defaultAddons;
-
-  const suggestedObs = (item?.suggestedObservations && item.suggestedObservations.length > 0)
-    ? item.suggestedObservations
-    : defaultSuggestedObs;
+  const availableAddons = item?.availableAddons || [];
+  const suggestedObs = item?.suggestedObservations || [];
 
   // Reset when item opens
   useEffect(() => {
@@ -273,42 +250,44 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             </div>
 
             {/* 1. Adicionales de esta unidad */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-white flex items-center justify-between">
-                <span>Adicionales Opcionales</span>
-                <span className="text-[10px] text-neutral-400 font-normal">Cargados a este plato</span>
-              </label>
+            {availableAddons.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white flex items-center justify-between">
+                  <span>Adicionales Opcionales</span>
+                  <span className="text-[10px] text-neutral-400 font-normal">Cargados a este plato</span>
+                </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {availableAddons.map(addon => {
-                  const isSelected = (currentUnit.selectedAddons || []).some(a => a.id === addon.id || a.name === addon.name);
-                  return (
-                    <button
-                      key={addon.id || addon.name}
-                      type="button"
-                      onClick={() => handleToggleAddon(activeUnitTab, addon)}
-                      className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-500/10 border-amber-500/50 text-white shadow-sm'
-                          : 'bg-black/50 border-neutral-800 text-neutral-300 hover:border-neutral-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                          isSelected ? 'bg-amber-400 border-amber-400 text-black' : 'border-neutral-700 bg-neutral-900'
-                        }`}>
-                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableAddons.map(addon => {
+                    const isSelected = (currentUnit.selectedAddons || []).some(a => a.id === addon.id || a.name === addon.name);
+                    return (
+                      <button
+                        key={addon.id || addon.name}
+                        type="button"
+                        onClick={() => handleToggleAddon(activeUnitTab, addon)}
+                        className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500/10 border-amber-500/50 text-white shadow-sm'
+                            : 'bg-black/50 border-neutral-800 text-neutral-300 hover:border-neutral-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            isSelected ? 'bg-amber-400 border-amber-400 text-black' : 'border-neutral-700 bg-neutral-900'
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                          <span className="text-xs font-medium">{addon.name}</span>
                         </div>
-                        <span className="text-xs font-medium">{addon.name}</span>
-                      </div>
-                      <span className={`text-xs font-mono font-bold ${isSelected ? 'text-amber-400' : 'text-neutral-400'}`}>
-                        +S/ {addon.price.toFixed(2)}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className={`text-xs font-mono font-bold ${isSelected ? 'text-amber-400' : 'text-neutral-400'}`}>
+                          +S/ {addon.price.toFixed(2)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 2. Observaciones / Instrucciones de preparación de esta unidad */}
             <div className="space-y-2 pt-2 border-t border-neutral-800/80">
@@ -317,29 +296,31 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                   <MessageSquare className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Observaciones para cocina</span>
                 </span>
-                <span className="text-[10px] text-neutral-400 font-normal">Término, alergias, preferencias</span>
+                <span className="text-[10px] text-neutral-400 font-normal">Alergias, preferencias, sin ingredientes</span>
               </label>
 
               {/* Quick suggestion chips */}
-              <div className="flex flex-wrap gap-1.5">
-                {suggestedObs.map((chip, cIdx) => {
-                  const isChipActive = currentUnit.observation?.includes(chip);
-                  return (
-                    <button
-                      key={cIdx}
-                      type="button"
-                      onClick={() => handleAddChipToObservation(activeUnitTab, chip)}
-                      className={`text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer ${
-                        isChipActive
-                          ? 'bg-amber-400 text-black font-bold border-amber-400'
-                          : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800 hover:border-neutral-700'
-                      }`}
-                    >
-                      {chip}
-                    </button>
-                  );
-                })}
-              </div>
+              {suggestedObs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedObs.map((chip, cIdx) => {
+                    const isChipActive = currentUnit.observation?.includes(chip);
+                    return (
+                      <button
+                        key={cIdx}
+                        type="button"
+                        onClick={() => handleAddChipToObservation(activeUnitTab, chip)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                          isChipActive
+                            ? 'bg-amber-400 text-black font-bold border-amber-400'
+                            : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800 hover:border-neutral-700'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Text Input for Custom Observation */}
               <textarea
