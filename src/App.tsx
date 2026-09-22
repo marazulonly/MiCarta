@@ -112,20 +112,60 @@ export default function App() {
     }
   }, [restaurants]);
 
-  // Load from Firebase on initial mount if data exists
+  // Load from Firebase and LocalStorage fallback on initial mount if data exists
   useEffect(() => {
+    // 1. First try loading from LocalStorage for instant zero-latency load
+    try {
+      const cached = localStorage.getItem('micarta_system_state_v1');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.restaurants?.length) setRestaurants(parsed.restaurants);
+        if (parsed.items?.length) setMenuItems(parsed.items);
+        if (parsed.categories?.length) setCategories(parsed.categories);
+        if (parsed.users?.length) setUsers(parsed.users);
+        if (parsed.orders?.length) setOrders(parsed.orders);
+      }
+    } catch {
+      // Local storage read error
+    }
+
+    // 2. Sync with remote Firebase Firestore database
     loadAllDataFromFirebase().then(remoteData => {
       if (remoteData) {
         if (remoteData.restaurants?.length) setRestaurants(remoteData.restaurants);
         if (remoteData.items?.length) setMenuItems(remoteData.items);
         if (remoteData.categories?.length) setCategories(remoteData.categories);
+        if (remoteData.users?.length) {
+          // Merge remote users with initial users to guarantee no accounts are lost
+          setUsers(prev => {
+            const map = new Map<string, User>();
+            prev.forEach(u => map.set(u.id, u));
+            remoteData.users.forEach(u => map.set(u.id, u));
+            return Array.from(map.values());
+          });
+        }
         if (remoteData.orders?.length) setOrders(remoteData.orders);
-        showToast('✓ Datos de restaurantes y cartas cargados desde Firebase');
+        showToast('✓ Estado de restaurantes, dueños y cartas sincronizado con Firebase');
       }
     }).catch(err => {
       console.warn('Could not auto-load from Firebase:', err);
     });
   }, []);
+
+  // Save to LocalStorage whenever critical data changes as backup
+  useEffect(() => {
+    try {
+      localStorage.setItem('micarta_system_state_v1', JSON.stringify({
+        restaurants,
+        items: menuItems,
+        categories,
+        users,
+        orders,
+      }));
+    } catch {
+      // Storage quota error ignored
+    }
+  }, [restaurants, menuItems, categories, users, orders]);
 
   // Global save to Firebase handler
   const handleSaveAllToFirebase = async () => {
@@ -135,6 +175,7 @@ export default function App() {
         restaurants,
         items: menuItems,
         categories,
+        users,
         orders,
       });
       if (result.success) {

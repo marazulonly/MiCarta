@@ -10,7 +10,7 @@ import {
   deleteDoc,
   writeBatch
 } from 'firebase/firestore';
-import { Restaurant, MenuItem, MenuCategory, Order } from '../types';
+import { Restaurant, MenuItem, MenuCategory, Order, User } from '../types';
 import rawConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App singleton
@@ -55,12 +55,13 @@ export interface FirebaseSaveResult {
 }
 
 /**
- * Saves all system restaurants, items, categories and orders to Firestore
+ * Saves all system restaurants, items, categories, users and orders to Firestore
  */
 export async function saveAllDataToFirebase(data: {
   restaurants: Restaurant[];
   items: MenuItem[];
   categories: MenuCategory[];
+  users?: User[];
   orders?: Order[];
 }): Promise<FirebaseSaveResult> {
   if (!db) {
@@ -93,17 +94,25 @@ export async function saveAllDataToFirebase(data: {
       batch.set(itemRef, { ...item, updatedAt: now }, { merge: true });
     }
 
-    // 4. Guardar snapshot global
+    // 4. Guardar Usuarios y Dueños
+    for (const user of data.users || []) {
+      const userRef = doc(db, 'users', user.id);
+      batch.set(userRef, { ...user, updatedAt: now }, { merge: true });
+    }
+
+    // 5. Guardar snapshot global
     const metaRef = doc(db, 'system_snapshot', 'latest');
     batch.set(metaRef, {
       updatedAt: now,
       restaurantCount: data.restaurants.length,
       itemCount: data.items.length,
       categoryCount: data.categories.length,
+      userCount: (data.users || []).length,
       orderCount: data.orders?.length || 0,
       restaurants: data.restaurants,
       items: data.items,
       categories: data.categories,
+      users: data.users || [],
       orders: data.orders || [],
     });
 
@@ -111,7 +120,7 @@ export async function saveAllDataToFirebase(data: {
 
     return {
       success: true,
-      message: 'Todos los datos de la página se han guardado exitosamente en Firebase Firestore.',
+      message: 'Todos los datos (restaurantes, dueños, usuarios y cartas) se han guardado exitosamente en Firebase Firestore.',
       timestamp: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
   } catch (err: any) {
@@ -131,6 +140,7 @@ export async function loadAllDataFromFirebase(): Promise<{
   restaurants: Restaurant[];
   items: MenuItem[];
   categories: MenuCategory[];
+  users: User[];
   orders: Order[];
 } | null> {
   if (!db) return null;
@@ -147,6 +157,7 @@ export async function loadAllDataFromFirebase(): Promise<{
           restaurants: data.restaurants as Restaurant[],
           items: (data.items || []) as MenuItem[],
           categories: (data.categories || []) as MenuCategory[],
+          users: (data.users || []) as User[],
           orders: (data.orders || []) as Order[],
         };
       }
@@ -166,10 +177,15 @@ export async function loadAllDataFromFirebase(): Promise<{
       const catDocs = await getDocs(catColl);
       const categories = catDocs.docs.map(d => d.data() as MenuCategory);
 
+      const usersColl = collection(db, 'users');
+      const userDocs = await getDocs(usersColl);
+      const users = userDocs.docs.map(d => d.data() as User);
+
       return {
         restaurants,
         items,
         categories,
+        users,
         orders: [],
       };
     }
