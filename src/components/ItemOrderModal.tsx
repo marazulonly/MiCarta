@@ -21,9 +21,24 @@ interface ItemOrderModalProps {
   themeDarkBg?: string;
   buttonTextColor?: string;
   textColor?: string;
+  secondaryColor?: string;
   dishNameFont?: string;
   dishDescFont?: string;
   dishPriceFont?: string;
+}
+
+function isLightColor(colorStr?: string): boolean {
+  if (!colorStr) return false;
+  let hex = colorStr.replace('#', '').trim();
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('');
+  }
+  if (hex.length !== 6) return false;
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 160;
 }
 
 export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
@@ -31,10 +46,11 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   onClose,
   item,
   onConfirm,
-  themeAccentColor = '#EAB308',
-  themeDarkBg = '#171717',
-  buttonTextColor = '#000000',
+  themeAccentColor = '#D98262',
+  themeDarkBg = '#EAEBDC',
+  buttonTextColor = '#EAEBDC',
   textColor,
+  secondaryColor,
   dishNameFont,
   dishDescFont,
   dishPriceFont,
@@ -47,6 +63,24 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
 
   const availableAddons = item?.availableAddons || [];
   const suggestedObs = item?.suggestedObservations || [];
+
+  // Color calculation for clean contrast
+  const modalBg = themeDarkBg || '#EAEBDC';
+  const bgIsLight = isLightColor(modalBg);
+
+  const primaryText = textColor || (bgIsLight ? '#1B667A' : '#EAEBDC');
+  const subText = secondaryColor || (bgIsLight ? '#8A9B57' : '#B0C4DE');
+  const accentColor = themeAccentColor || '#D98262';
+  const btnTextColor = buttonTextColor || '#EAEBDC';
+
+  const cardBg = bgIsLight ? 'rgba(27, 102, 122, 0.05)' : 'rgba(255, 255, 255, 0.06)';
+  const cardBorder = bgIsLight ? 'rgba(138, 155, 87, 0.4)' : 'rgba(255, 255, 255, 0.15)';
+  
+  const inputBg = bgIsLight ? '#FFFFFF' : 'rgba(0, 0, 0, 0.4)';
+  const inputBorder = bgIsLight ? 'rgba(27, 102, 122, 0.3)' : 'rgba(255, 255, 255, 0.2)';
+  const inputText = bgIsLight ? primaryText : '#FFFFFF';
+
+  const footerBg = bgIsLight ? '#E3E4D6' : 'rgba(0, 0, 0, 0.5)';
 
   // Reset when item opens
   useEffect(() => {
@@ -111,11 +145,9 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
       const next = [...prev];
       const currentObs = next[unitIdx].observation || '';
       if (currentObs.includes(chipText)) {
-        // remove chip
         const cleaned = currentObs.replace(chipText, '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
         next[unitIdx] = { ...next[unitIdx], observation: cleaned };
       } else {
-        // add chip
         const updated = currentObs ? `${currentObs}, ${chipText}` : chipText;
         next[unitIdx] = { ...next[unitIdx], observation: updated };
       }
@@ -134,12 +166,13 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const currentUnit = units[activeUnitTab] || units[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl border text-white"
+        className="relative w-full max-w-xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl border transition-all duration-300"
         style={{ 
-          backgroundColor: themeDarkBg,
-          borderColor: themeAccentColor ? `${themeAccentColor}60` : 'rgba(255,255,255,0.15)' 
+          backgroundColor: modalBg,
+          borderColor: cardBorder,
+          color: primaryText
         }}
       >
         
@@ -153,42 +186,42 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           />
           <div 
             className="absolute inset-0"
-            style={{ backgroundImage: `linear-gradient(to top, ${themeDarkBg} 0%, rgba(0,0,0,0.6) 60%, transparent 100%)` }} 
+            style={{ backgroundImage: `linear-gradient(to top, rgba(14, 38, 48, 0.95) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)` }} 
           />
           
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 p-2 rounded-full bg-black/70 hover:bg-black text-neutral-300 hover:text-white border border-neutral-700 backdrop-blur-md transition cursor-pointer"
+            style={{ backgroundColor: primaryText, color: modalBg }}
+            className="absolute top-3 right-3 p-2 rounded-full shadow-md transition cursor-pointer hover:scale-105"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
 
-          <div className="absolute bottom-3 left-4 right-4">
+          <div className="absolute bottom-3 left-4 right-4 text-white">
             <span 
               style={{
-                backgroundColor: themeAccentColor ? `${themeAccentColor}25` : undefined,
-                color: themeAccentColor || '#f59e0b',
-                borderColor: themeAccentColor ? `${themeAccentColor}60` : undefined
+                backgroundColor: accentColor,
+                color: btnTextColor,
               }}
-              className="text-[10px] uppercase tracking-wider font-mono font-bold px-2 py-0.5 rounded border inline-block mb-1"
+              className="text-[10px] uppercase tracking-wider font-mono font-bold px-2.5 py-0.5 rounded-md inline-block mb-1 shadow"
             >
               Personalizar Pedido
             </span>
             <h2 
-              style={{ fontFamily: dishNameFont, color: textColor || '#ffffff' }}
-              className="text-base sm:text-lg font-bold leading-tight"
+              style={{ fontFamily: dishNameFont }}
+              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-sm"
             >
               {item.name}
             </h2>
             <div className="flex items-center gap-3 mt-1">
               <span 
-                style={{ color: themeAccentColor, fontFamily: dishPriceFont }}
-                className="text-sm font-black font-mono"
+                style={{ color: '#EAEBDC', fontFamily: dishPriceFont }}
+                className="text-sm font-black font-mono bg-black/40 px-2 py-0.5 rounded border border-white/20"
               >
                 S/ {item.price.toFixed(2)} c/u
               </span>
               {item.prepTimeMinutes && (
-                <span className="text-[11px] text-neutral-300">
+                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1">
                   ⏱ {item.prepTimeMinutes} min de preparación
                 </span>
               )}
@@ -202,14 +235,14 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           {/* Quantity Selector Banner */}
           <div 
             style={{ 
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderColor: themeAccentColor ? `${themeAccentColor}35` : 'rgba(255,255,255,0.1)'
+              backgroundColor: cardBg,
+              borderColor: cardBorder
             }}
-            className="p-3 rounded-xl border flex items-center justify-between"
+            className="p-3.5 rounded-xl border flex items-center justify-between shadow-sm"
           >
             <div>
-              <span className="text-xs font-bold text-white block">Cantidad de platos</span>
-              <span className="text-[11px] text-neutral-300 block">
+              <span style={{ color: primaryText }} className="text-xs font-black block">Cantidad de platos</span>
+              <span style={{ color: subText }} className="text-[11px] font-medium block mt-0.5">
                 {quantity === 1 ? '1 plato individual' : `${quantity} platos (personalizables por separado)`}
               </span>
             </div>
@@ -218,16 +251,18 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
               <button
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= 1}
-                className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 text-white flex items-center justify-center transition cursor-pointer"
+                style={{ backgroundColor: primaryText, color: modalBg }}
+                className="w-8 h-8 rounded-lg disabled:opacity-30 font-bold flex items-center justify-center transition cursor-pointer shadow-sm hover:brightness-110"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
-              <span className="w-8 text-center font-black text-sm font-mono text-white">
+              <span style={{ color: primaryText }} className="w-8 text-center font-black text-base font-mono">
                 {quantity}
               </span>
               <button
                 onClick={() => handleQuantityChange(quantity + 1)}
-                className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition cursor-pointer"
+                style={{ backgroundColor: primaryText, color: modalBg }}
+                className="w-8 h-8 rounded-lg font-bold flex items-center justify-center transition cursor-pointer shadow-sm hover:brightness-110"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -238,12 +273,12 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           {quantity > 1 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5" style={{ color: themeAccentColor }} />
+                <label style={{ color: primaryText }} className="text-xs font-bold flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" style={{ color: accentColor }} />
                   <span>Selecciona la unidad a personalizar:</span>
                 </label>
-                <span className="text-[10px] text-neutral-400 font-mono">
-                  Observaciones y adicionales independientes
+                <span style={{ color: subText }} className="text-[10px] font-mono font-medium">
+                  Independientes por cada plato
                 </span>
               </div>
               
@@ -259,18 +294,18 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                       onClick={() => setActiveUnitTab(idx)}
                       style={
                         isSelectedTab 
-                          ? { backgroundColor: themeAccentColor, color: buttonTextColor, borderColor: themeAccentColor } 
-                          : { backgroundColor: 'rgba(0,0,0,0.4)', color: themeAccentColor, borderColor: `${themeAccentColor}60` }
+                          ? { backgroundColor: accentColor, color: btnTextColor, borderColor: accentColor } 
+                          : { backgroundColor: cardBg, color: primaryText, borderColor: cardBorder }
                       }
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
-                        isSelectedTab ? 'shadow-md' : 'hover:brightness-125'
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                        isSelectedTab ? 'shadow-md scale-[1.02]' : 'hover:brightness-95'
                       }`}
                     >
                       <span>Plato {idx + 1}</span>
                       {(hasAddons || hasObs) && (
                         <span 
-                          className="w-1.5 h-1.5 rounded-full" 
-                          style={isSelectedTab ? { backgroundColor: buttonTextColor } : { backgroundColor: themeAccentColor }} 
+                          className="w-2 h-2 rounded-full" 
+                          style={isSelectedTab ? { backgroundColor: btnTextColor } : { backgroundColor: accentColor }} 
                         />
                       )}
                     </button>
@@ -283,17 +318,17 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           {/* Active Unit Configuration Card */}
           <div 
             style={{ 
-              backgroundColor: 'rgba(0,0,0,0.3)',
-              borderColor: themeAccentColor ? `${themeAccentColor}40` : 'rgba(255,255,255,0.1)'
+              backgroundColor: cardBg,
+              borderColor: cardBorder
             }}
-            className="p-4 rounded-xl border space-y-4"
+            className="p-4 rounded-xl border space-y-4 shadow-sm"
           >
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <span className="text-xs font-bold flex items-center gap-1.5" style={{ color: themeAccentColor }}>
-                <Utensils className="w-3.5 h-3.5" />
+            <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pb-2 border-b">
+              <span className="text-xs font-black flex items-center gap-1.5" style={{ color: primaryText }}>
+                <Utensils className="w-3.5 h-3.5" style={{ color: accentColor }} />
                 <span>Configuración de Plato #{activeUnitTab + 1}</span>
               </span>
-              <span className="text-[10px] text-neutral-400 font-mono">
+              <span style={{ color: subText }} className="text-[10px] font-mono font-bold">
                 {quantity > 1 ? `Plato ${activeUnitTab + 1} de ${quantity}` : 'Plato único'}
               </span>
             </div>
@@ -301,9 +336,9 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             {/* 1. Adicionales de esta unidad */}
             {availableAddons.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white flex items-center justify-between">
+                <label style={{ color: primaryText }} className="text-xs font-bold flex items-center justify-between">
                   <span>Adicionales Opcionales</span>
-                  <span className="text-[10px] text-neutral-400 font-normal">Cargados a este plato</span>
+                  <span style={{ color: subText }} className="text-[10px] font-medium">Cargados a este plato</span>
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -315,27 +350,28 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                         type="button"
                         onClick={() => handleToggleAddon(activeUnitTab, addon)}
                         style={isSelected ? {
-                          backgroundColor: `${themeAccentColor}20`,
-                          borderColor: themeAccentColor,
-                        } : undefined}
-                        className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
-                          !isSelected ? 'bg-black/50 border-neutral-800 text-neutral-300 hover:border-neutral-700' : 'text-white shadow-sm'
-                        }`}
+                          backgroundColor: `${accentColor}18`,
+                          borderColor: accentColor,
+                          color: primaryText
+                        } : {
+                          backgroundColor: bgIsLight ? '#FFFFFF' : 'rgba(0,0,0,0.2)',
+                          borderColor: cardBorder,
+                          color: primaryText
+                        }}
+                        className="p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer shadow-sm hover:brightness-105"
                       >
                         <div className="flex items-center gap-2">
                           <div 
-                            style={isSelected ? { backgroundColor: themeAccentColor, borderColor: themeAccentColor } : undefined}
-                            className={`w-4 h-4 rounded flex items-center justify-center border ${
-                              !isSelected ? 'border-neutral-700 bg-neutral-900' : ''
-                            }`}
+                            style={isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : { borderColor: cardBorder }}
+                            className="w-4 h-4 rounded flex items-center justify-center border transition"
                           >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: buttonTextColor }} />}
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: btnTextColor }} />}
                           </div>
-                          <span className="text-xs font-medium">{addon.name}</span>
+                          <span className="text-xs font-bold">{addon.name}</span>
                         </div>
                         <span 
-                          style={{ color: isSelected ? themeAccentColor : undefined, fontFamily: dishPriceFont }}
-                          className={`text-xs font-mono font-bold ${!isSelected ? 'text-neutral-400' : ''}`}
+                          style={{ color: accentColor, fontFamily: dishPriceFont }}
+                          className="text-xs font-mono font-black"
                         >
                           +S/ {addon.price.toFixed(2)}
                         </span>
@@ -347,13 +383,13 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             )}
 
             {/* 2. Observaciones / Instrucciones de preparación de esta unidad */}
-            <div className="space-y-2 pt-2 border-t border-white/10">
-              <label className="text-xs font-bold text-white flex items-center justify-between">
+            <div style={{ borderColor: cardBorder }} className="space-y-2 pt-2 border-t">
+              <label style={{ color: primaryText }} className="text-xs font-bold flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5" style={{ color: themeAccentColor }} />
+                  <MessageSquare className="w-3.5 h-3.5" style={{ color: accentColor }} />
                   <span>Observaciones para cocina</span>
                 </span>
-                <span className="text-[10px] text-neutral-400 font-normal">Alergias, preferencias, sin ingredientes</span>
+                <span style={{ color: subText }} className="text-[10px] font-medium">Sin sal, ají aparte, etc.</span>
               </label>
 
               {/* Quick suggestion chips */}
@@ -367,19 +403,15 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                         type="button"
                         onClick={() => handleAddChipToObservation(activeUnitTab, chip)}
                         style={isChipActive ? {
-                          backgroundColor: themeAccentColor,
-                          borderColor: themeAccentColor,
-                          color: buttonTextColor
+                          backgroundColor: accentColor,
+                          borderColor: accentColor,
+                          color: btnTextColor
                         } : {
-                          backgroundColor: 'rgba(0,0,0,0.5)',
-                          borderColor: `${themeAccentColor}60`,
-                          color: themeAccentColor
+                          backgroundColor: bgIsLight ? '#FFFFFF' : 'rgba(0,0,0,0.3)',
+                          borderColor: cardBorder,
+                          color: primaryText
                         }}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer ${
-                          !isChipActive
-                            ? 'hover:brightness-125'
-                            : 'font-bold shadow-sm'
-                        }`}
+                        className="text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer font-bold shadow-sm hover:scale-105"
                       >
                         {chip}
                       </button>
@@ -394,15 +426,27 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 value={currentUnit.observation || ''}
                 onChange={(e) => handleSetObservation(activeUnitTab, e.target.value)}
                 placeholder="Escribe detalles específicos de este plato (ej: término de cocción, sin sal, ají aparte...)"
-                style={{ fontFamily: dishDescFont }}
-                className="w-full px-3 py-2 rounded-xl bg-black/80 border border-neutral-700 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 transition resize-none"
+                style={{ 
+                  fontFamily: dishDescFont,
+                  backgroundColor: inputBg,
+                  borderColor: inputBorder,
+                  color: inputText
+                }}
+                className="w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none transition resize-none font-medium shadow-inner"
               />
             </div>
           </div>
 
           {/* Informative notice */}
-          <div className="p-3 rounded-xl bg-black/30 border border-white/10 flex items-start gap-2.5 text-[11px] text-neutral-300">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: themeAccentColor }} />
+          <div 
+            style={{ 
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+              color: primaryText
+            }}
+            className="p-3 rounded-xl border flex items-start gap-2.5 text-[11px] font-medium shadow-sm"
+          >
+            <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
             <span>
               Las observaciones y adicionales ingresados serán enviados a cocina y comandas detallados por cada plato individual para una atención personalizada.
             </span>
@@ -411,21 +455,27 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
         </div>
 
         {/* Footer with Price calculation and Confirm button */}
-        <div className="p-4 bg-black/80 border-t border-white/10 flex items-center justify-between gap-3">
+        <div 
+          style={{ 
+            backgroundColor: footerBg,
+            borderColor: cardBorder
+          }}
+          className="p-4 border-t flex flex-wrap items-center justify-between gap-3"
+        >
           <div>
-            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono block">
+            <span style={{ color: subText }} className="text-[10px] uppercase tracking-wider font-mono font-bold block">
               Subtotal ({quantity} {quantity === 1 ? 'plato' : 'platos'})
             </span>
             <div className="flex items-baseline gap-1.5">
               <span 
-                style={{ color: themeAccentColor, fontFamily: dishPriceFont }}
-                className="text-lg font-black font-mono"
+                style={{ color: accentColor, fontFamily: dishPriceFont }}
+                className="text-xl font-black font-mono"
               >
                 S/ {grandTotal.toFixed(2)}
               </span>
               {addonsTotal > 0 && (
-                <span className="text-[11px] text-neutral-400 font-mono">
-                  (incluye +S/ {addonsTotal.toFixed(2)} en extras)
+                <span style={{ color: subText }} className="text-[11px] font-mono font-bold">
+                  (incluye +S/ {addonsTotal.toFixed(2)} extras)
                 </span>
               )}
             </div>
@@ -434,7 +484,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3.5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white text-xs font-bold transition cursor-pointer"
+              style={{ backgroundColor: bgIsLight ? '#DCDED0' : 'rgba(255,255,255,0.1)', color: primaryText }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer hover:brightness-90"
             >
               Cancelar
             </button>
@@ -443,10 +494,10 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 onConfirm(item, quantity, units);
                 onClose();
               }}
-              style={{ backgroundColor: themeAccentColor, color: buttonTextColor }}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95"
+              style={{ backgroundColor: accentColor, color: btnTextColor }}
+              className="px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4 stroke-[3]" />
               <span>Agregar al Pedido</span>
             </button>
           </div>
@@ -456,3 +507,4 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
     </div>
   );
 };
+
