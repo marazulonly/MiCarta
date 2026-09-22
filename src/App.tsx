@@ -37,6 +37,19 @@ import {
   saveOrderToFirebase
 } from './lib/firebase';
 
+// Helper function to normalize slugs for matching URLs, names, and IDs
+export const normalizeSlug = (str?: string): string => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
+
 // Parse initial URL search parameters synchronously before first render
 const getInitialUrlParams = () => {
   if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const };
@@ -56,23 +69,55 @@ const getInitialUrlParams = () => {
   }
 };
 
+// Load cached initial state synchronously before React component initializes
+const getInitialStateFromStorage = () => {
+  let cachedRests = INITIAL_RESTAURANTS;
+  let cachedCategories = INITIAL_CATEGORIES;
+  let cachedItems = INITIAL_MENU_ITEMS;
+  let cachedUsers = INITIAL_USERS;
+  let cachedOrders = INITIAL_ORDERS;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('micarta_system_state_v1');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.restaurants?.length) cachedRests = parsed.restaurants;
+        if (parsed.categories?.length) cachedCategories = parsed.categories;
+        if (parsed.items?.length) cachedItems = parsed.items;
+        if (parsed.users?.length) cachedUsers = parsed.users;
+        if (parsed.orders?.length) cachedOrders = parsed.orders;
+      }
+    } catch {
+      // Storage read error
+    }
+  }
+  return { cachedRests, cachedCategories, cachedItems, cachedUsers, cachedOrders };
+};
+
+const initialState = getInitialStateFromStorage();
 const initParams = getInitialUrlParams();
+
 const initialFoundRest = initParams.restSlug 
-  ? (INITIAL_RESTAURANTS.find(r => r.slug === initParams.restSlug || r.id === initParams.restSlug) || INITIAL_RESTAURANTS[0])
-  : INITIAL_RESTAURANTS[0];
+  ? (initialState.cachedRests.find(r => 
+      normalizeSlug(r.slug) === normalizeSlug(initParams.restSlug!) || 
+      normalizeSlug(r.id) === normalizeSlug(initParams.restSlug!) ||
+      normalizeSlug(r.name) === normalizeSlug(initParams.restSlug!)
+    ) || initialState.cachedRests[0])
+  : initialState.cachedRests[0];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(INITIAL_RESTAURANTS);
-  const [categories, setCategories] = useState<MenuCategory[]>(INITIAL_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialState.cachedRests);
+  const [categories, setCategories] = useState<MenuCategory[]>(initialState.cachedCategories);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
+  const [users, setUsers] = useState<User[]>(initialState.cachedUsers);
+  const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
   
   // Selected restaurant filter context (or 'all')
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('rest-brasas');
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(initialState.cachedRests[0]?.id || 'rest-brasas');
   
   // Authenticated user state: default to null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -98,22 +143,27 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Check URL search parameters on initial mount for QR scanning (e.g. ?r=brasas-y-fuegos&mesa=04&mode=DINE_IN)
+  // Check URL search parameters on initial mount or when restaurants change for QR scanning
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const restaurantSlug = urlParams.get('r');
-      const table = urlParams.get('mesa');
+      const restaurantSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
+      const table = urlParams.get('mesa') || urlParams.get('table');
       const mode = urlParams.get('mode') as 'DINE_IN' | 'DELIVERY' | null;
 
       if (restaurantSlug) {
-        const foundRest = restaurants.find(r => r.slug === restaurantSlug || r.id === restaurantSlug) || restaurants[0];
+        const targetSlug = normalizeSlug(restaurantSlug);
+        const foundRest = restaurants.find(r => 
+          normalizeSlug(r.slug) === targetSlug || 
+          normalizeSlug(r.id) === targetSlug || 
+          normalizeSlug(r.name) === targetSlug
+        );
+
         if (foundRest) {
           setPreviewRestaurant(foundRest);
           setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
           if (table) setPreviewTableNumber(table);
           setIsCustomerModalOpen(true);
-          showToast(`📱 Carta QR detectada: ${foundRest.name} ${table ? `(Mesa ${table})` : ''}`);
         }
       }
     } catch {

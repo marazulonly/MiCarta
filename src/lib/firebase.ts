@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { 
+  initializeFirestore,
   getFirestore, 
   Firestore, 
   doc, 
@@ -31,21 +32,38 @@ try {
     app = getApp();
   }
 
-  // Use the custom firestoreDatabaseId if provided, or default database
+  // Use initializeFirestore with experimentalAutoDetectLongPolling to prevent WebSocket connection failures in preview iFrames
+  const firestoreSettings = { experimentalAutoDetectLongPolling: true };
+
   if (rawConfig.firestoreDatabaseId) {
     try {
+      db = initializeFirestore(app, firestoreSettings, rawConfig.firestoreDatabaseId);
+    } catch {
       db = getFirestore(app, rawConfig.firestoreDatabaseId);
+    }
+  } else {
+    try {
+      db = initializeFirestore(app, firestoreSettings);
     } catch {
       db = getFirestore(app);
     }
-  } else {
-    db = getFirestore(app);
   }
 } catch (err) {
   console.warn('[Firebase] Initialization notice:', err);
 }
 
 export { db };
+
+// Helper to wrap firestore operations with a timeout so offline/unavailable connections fall back gracefully
+function withTimeout<T>(promise: Promise<T>, ms: number = 4000): Promise<T> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error('Firebase network timeout'));
+    }, ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+}
 
 export interface FirebaseSaveResult {
   success: boolean;
@@ -116,7 +134,7 @@ export async function saveAllDataToFirebase(data: {
       orders: data.orders || [],
     });
 
-    await batch.commit();
+    await withTimeout(batch.commit(), 5000);
 
     return {
       success: true,
@@ -124,10 +142,10 @@ export async function saveAllDataToFirebase(data: {
       timestamp: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
   } catch (err: any) {
-    console.error('[Firebase] Error saving all data:', err);
+    console.warn('[Firebase] Warning saving to Firestore (using local cache fallback):', err.message);
     return {
       success: false,
-      message: 'Ocurrió un error al guardar en Firebase: ' + (err.message || 'Error desconocido'),
+      message: 'Ocurrió un aviso al guardar en Firebase (los datos permanecen respaldados localmente).',
       error: err.message
     };
   }
@@ -146,9 +164,9 @@ export async function loadAllDataFromFirebase(): Promise<{
   if (!db) return null;
 
   try {
-    // Primero intenta leer el snapshot más reciente
+    // Primero intenta leer el snapshot más reciente con tiempo límite
     const metaRef = doc(db, 'system_snapshot', 'latest');
-    const snap = await getDoc(metaRef);
+    const snap = await withTimeout(getDoc(metaRef), 3500);
 
     if (snap.exists()) {
       const data = snap.data();
@@ -165,20 +183,20 @@ export async function loadAllDataFromFirebase(): Promise<{
 
     // Fallback: leer colecciones individuales
     const restColl = collection(db, 'restaurants');
-    const restDocs = await getDocs(restColl);
+    const restDocs = await withTimeout(getDocs(restColl), 3500);
     if (!restDocs.empty) {
       const restaurants = restDocs.docs.map(d => d.data() as Restaurant);
 
       const itemsColl = collection(db, 'items');
-      const itemDocs = await getDocs(itemsColl);
+      const itemDocs = await withTimeout(getDocs(itemsColl), 3500);
       const items = itemDocs.docs.map(d => d.data() as MenuItem);
 
       const catColl = collection(db, 'categories');
-      const catDocs = await getDocs(catColl);
+      const catDocs = await withTimeout(getDocs(catColl), 3500);
       const categories = catDocs.docs.map(d => d.data() as MenuCategory);
 
       const usersColl = collection(db, 'users');
-      const userDocs = await getDocs(usersColl);
+      const userDocs = await withTimeout(getDocs(usersColl), 3500);
       const users = userDocs.docs.map(d => d.data() as User);
 
       return {
@@ -192,7 +210,7 @@ export async function loadAllDataFromFirebase(): Promise<{
 
     return null;
   } catch (err) {
-    console.warn('[Firebase] No se pudieron cargar datos remotos, usando estado local:', err);
+    console.warn('[Firebase] No se pudieron cargar datos remotos (usando caché local):', err);
     return null;
   }
 }
@@ -204,10 +222,10 @@ export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<
   if (!db) return false;
   try {
     const restRef = doc(db, 'restaurants', restaurant.id);
-    await setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true });
+    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error saving restaurant:', err);
+    console.warn('[Firebase] Notice saving restaurant offline:', err);
     return false;
   }
 }
@@ -219,10 +237,10 @@ export async function saveMenuItemToFirebase(item: MenuItem): Promise<boolean> {
   if (!db) return false;
   try {
     const itemRef = doc(db, 'items', item.id);
-    await setDoc(itemRef, { ...item, updatedAt: new Date().toISOString() }, { merge: true });
+    await withTimeout(setDoc(itemRef, { ...item, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error saving item:', err);
+    console.warn('[Firebase] Notice saving item offline:', err);
     return false;
   }
 }
@@ -234,10 +252,10 @@ export async function deleteMenuItemFromFirebase(itemId: string): Promise<boolea
   if (!db) return false;
   try {
     const itemRef = doc(db, 'items', itemId);
-    await deleteDoc(itemRef);
+    await withTimeout(deleteDoc(itemRef), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error deleting item:', err);
+    console.warn('[Firebase] Notice deleting item offline:', err);
     return false;
   }
 }
@@ -249,10 +267,10 @@ export async function saveCategoryToFirebase(category: MenuCategory): Promise<bo
   if (!db) return false;
   try {
     const catRef = doc(db, 'categories', category.id);
-    await setDoc(catRef, { ...category, updatedAt: new Date().toISOString() }, { merge: true });
+    await withTimeout(setDoc(catRef, { ...category, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error saving category:', err);
+    console.warn('[Firebase] Notice saving category offline:', err);
     return false;
   }
 }
@@ -264,10 +282,10 @@ export async function saveUserToFirebase(user: User): Promise<boolean> {
   if (!db) return false;
   try {
     const userRef = doc(db, 'users', user.id);
-    await setDoc(userRef, { ...user, updatedAt: new Date().toISOString() }, { merge: true });
+    await withTimeout(setDoc(userRef, { ...user, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error saving user:', err);
+    console.warn('[Firebase] Notice saving user offline:', err);
     return false;
   }
 }
@@ -279,10 +297,10 @@ export async function deleteUserFromFirebase(userId: string): Promise<boolean> {
   if (!db) return false;
   try {
     const userRef = doc(db, 'users', userId);
-    await deleteDoc(userRef);
+    await withTimeout(deleteDoc(userId ? userRef : userRef), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error deleting user:', err);
+    console.warn('[Firebase] Notice deleting user offline:', err);
     return false;
   }
 }
@@ -294,10 +312,10 @@ export async function saveOrderToFirebase(order: Order): Promise<boolean> {
   if (!db) return false;
   try {
     const orderRef = doc(db, 'orders', order.id);
-    await setDoc(orderRef, { ...order, updatedAt: new Date().toISOString() }, { merge: true });
+    await withTimeout(setDoc(orderRef, { ...order, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
     return true;
   } catch (err) {
-    console.error('[Firebase] Error saving order:', err);
+    console.warn('[Firebase] Notice saving order offline:', err);
     return false;
   }
 }
