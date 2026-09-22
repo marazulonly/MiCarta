@@ -19,6 +19,8 @@ interface ItemOrderModalProps {
   onConfirm: (item: MenuItem, quantity: number, units: OrderItemUnit[]) => void;
   themeAccentColor?: string;
   themeDarkBg?: string;
+  buttonTextColor?: string;
+  textColor?: string;
   dishNameFont?: string;
   dishDescFont?: string;
   dishPriceFont?: string;
@@ -31,6 +33,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   onConfirm,
   themeAccentColor = '#EAB308',
   themeDarkBg = '#171717',
+  buttonTextColor = '#000000',
+  textColor,
   dishNameFont,
   dishDescFont,
   dishPriceFont,
@@ -431,7 +435,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 onConfirm(item, quantity, units);
                 onClose();
               }}
-              style={{ backgroundColor: themeAccentColor, color: '#000' }}
+              style={{ backgroundColor: themeAccentColor, color: buttonTextColor }}
               className="px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95"
             >
               <Check className="w-4 h-4" />

@@ -397,9 +397,12 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                 )}
 
                 <div 
-                  className="text-[#eed799] tracking-normal font-normal text-2xl sm:text-3xl select-none relative z-10"
+                  className="tracking-normal font-normal text-2xl sm:text-3xl select-none relative z-10"
                   style={{
-                    fontFamily: "'Alex Brush', 'Dancing Script', cursive",
+                    fontFamily: restaurant.branding?.restaurantNameFont && restaurant.branding.restaurantNameFont !== 'inherit'
+                      ? restaurant.branding.restaurantNameFont
+                      : "'Alex Brush', 'Dancing Script', cursive",
+                    color: restaurant.branding?.restaurantNameColor || '#eed799',
                     textShadow: '0 2px 8px rgba(0,0,0,0.8)'
                   }}
                 >
@@ -511,12 +514,21 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                   const isEven = idx % 2 === 0;
 
                   const customButtonColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor;
+                  const customButtonTextColor = restaurant.branding?.buttonTextColor || '#000000';
+                  const customTextColor = restaurant.branding?.textColor;
+                  const customDishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor;
                   const dishNameFont = restaurant.branding?.dishNameFont && restaurant.branding.dishNameFont !== 'inherit' ? restaurant.branding.dishNameFont : "'Cinzel', 'Playfair Display', serif";
                   const dishDescFont = restaurant.branding?.dishDescFont && restaurant.branding.dishDescFont !== 'inherit' ? restaurant.branding.dishDescFont : 'inherit';
                   const dishPriceFont = restaurant.branding?.dishPriceFont || 'inherit';
 
-                  const cardBorderStyle = customButtonColor ? { borderColor: `${customButtonColor}a0` } : undefined;
-                  const btnStyle = customButtonColor ? { backgroundColor: customButtonColor, color: '#000' } : undefined;
+                  const cardBorderStyle = {
+                    backgroundColor: customDishCardBgColor || 'rgba(10, 39, 32, 0.85)',
+                    borderColor: customButtonColor ? `${customButtonColor}a0` : undefined,
+                    color: customTextColor || undefined
+                  };
+                  const btnStyle = customButtonColor 
+                    ? { backgroundColor: customButtonColor, color: customButtonTextColor } 
+                    : { color: customButtonTextColor };
 
                   return (
                     <div key={item.id} className="relative group">
@@ -738,6 +750,8 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
           onConfirm={handleConfirmItemUnits}
           themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c'}
           themeDarkBg={restaurant.branding?.darkBgColor || '#051813'}
+          buttonTextColor={restaurant.branding?.buttonTextColor || '#000000'}
+          textColor={restaurant.branding?.textColor}
           dishNameFont={restaurant.branding?.dishNameFont}
           dishDescFont={restaurant.branding?.dishDescFont}
           dishPriceFont={restaurant.branding?.dishPriceFont}

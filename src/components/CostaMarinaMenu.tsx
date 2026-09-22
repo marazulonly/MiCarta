@@ -345,7 +345,13 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               <span className="text-[11px] font-mono tracking-widest text-sky-400 uppercase">
                 {activeChannel === 'DELIVERY' ? 'Cevichería Delivery Express' : 'Cevichería & Cocina Marina'}
               </span>
-              <h1 className="text-3xl font-black text-white font-serif">
+              <h1 
+                style={{ 
+                  fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
+                  color: restaurant.branding?.restaurantNameColor || undefined
+                }}
+                className="text-3xl font-black text-white"
+              >
                 {restaurant.name}
               </h1>
               <p className="text-xs text-sky-200/80">
@@ -400,6 +406,9 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               {displayedItems.map(item => {
                 const inCart = cart.find(c => c.item.id === item.id);
                 const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8';
+                const btnTextColor = restaurant.branding?.buttonTextColor || '#000000';
+                const textColor = restaurant.branding?.textColor;
+                const dishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor;
                 const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
                 const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
                 const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
@@ -407,8 +416,12 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 return (
                   <div
                     key={item.id}
-                    style={{ borderColor: btnColor ? `${btnColor}80` : undefined }}
-                    className="relative p-3.5 rounded-2xl bg-[#031521]/90 border transition flex flex-col justify-between space-y-3 shadow-lg group"
+                    style={{ 
+                      backgroundColor: dishCardBgColor || 'rgba(3, 21, 33, 0.90)', 
+                      borderColor: btnColor ? `${btnColor}80` : undefined,
+                      color: textColor || undefined
+                    }}
+                    className="relative p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 shadow-lg group"
                   >
                     {/* Live Edit Action Badges */}
                     {isLiveEditActive && (
@@ -469,13 +482,13 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                       <div>
                         <h3 
-                          style={{ fontFamily: dishNameFont }}
-                          className="text-sm font-bold text-white"
+                          style={{ fontFamily: dishNameFont, color: textColor || '#ffffff' }}
+                          className="text-sm font-bold"
                         >
                           {item.name}
                         </h3>
                         <p 
-                          style={{ fontFamily: dishDescFont }}
+                          style={{ fontFamily: dishDescFont, color: textColor ? `${textColor}cc` : undefined }}
                           className="text-xs text-sky-200/70 line-clamp-2 mt-0.5"
                         >
                           {item.description}
@@ -489,8 +502,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       </span>
                       <button
                         onClick={() => setSelectedItemForCustomization(item)}
-                        style={{ backgroundColor: btnColor }}
-                        className="px-3 py-1.5 rounded-lg text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow hover:brightness-110"
+                        style={{ backgroundColor: btnColor, color: btnTextColor }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow hover:brightness-110"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -537,6 +550,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           onConfirm={handleConfirmItemUnits}
           themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8'}
           themeDarkBg={restaurant.branding?.darkBgColor || '#031521'}
+          buttonTextColor={restaurant.branding?.buttonTextColor || '#000000'}
+          textColor={restaurant.branding?.textColor}
           dishNameFont={restaurant.branding?.dishNameFont}
           dishDescFont={restaurant.branding?.dishDescFont}
           dishPriceFont={restaurant.branding?.dishPriceFont}

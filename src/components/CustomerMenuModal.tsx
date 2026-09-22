@@ -93,6 +93,11 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant.coverUrl || '');
   const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding?.darkBgColor || '#071A14');
   const [brandButtonColor, setBrandButtonColor] = useState(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
+  const [brandButtonTextColor, setBrandButtonTextColor] = useState(restaurant.branding?.buttonTextColor || '#000000');
+  const [brandTextColor, setBrandTextColor] = useState(restaurant.branding?.textColor || '#ffffff');
+  const [brandRestaurantNameFont, setBrandRestaurantNameFont] = useState(restaurant.branding?.restaurantNameFont || 'inherit');
+  const [brandRestaurantNameColor, setBrandRestaurantNameColor] = useState(restaurant.branding?.restaurantNameColor || '#ffffff');
+  const [brandDishCardBgColor, setBrandDishCardBgColor] = useState(restaurant.branding?.dishCardBgColor || '');
   const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant.branding?.dishNameFont || 'inherit');
   const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant.branding?.dishDescFont || 'inherit');
   const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant.branding?.dishPriceFont || 'monospace');
@@ -304,6 +309,11 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setBrandCoverUrl(restaurant.coverUrl || '');
     setBrandDarkBgColor(restaurant.branding?.darkBgColor || '#071A14');
     setBrandButtonColor(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
+    setBrandButtonTextColor(restaurant.branding?.buttonTextColor || '#000000');
+    setBrandTextColor(restaurant.branding?.textColor || '#ffffff');
+    setBrandRestaurantNameFont(restaurant.branding?.restaurantNameFont || 'inherit');
+    setBrandRestaurantNameColor(restaurant.branding?.restaurantNameColor || '#ffffff');
+    setBrandDishCardBgColor(restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor || '');
     setBrandDishNameFont(restaurant.branding?.dishNameFont || 'inherit');
     setBrandDishDescFont(restaurant.branding?.dishDescFont || 'inherit');
     setBrandDishPriceFont(restaurant.branding?.dishPriceFont || 'monospace');
@@ -325,7 +335,12 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
         ...restaurant.branding,
         darkBgColor: brandDarkBgColor,
         buttonColor: brandButtonColor,
+        buttonTextColor: brandButtonTextColor,
         accentColor: brandButtonColor,
+        textColor: brandTextColor,
+        restaurantNameFont: brandRestaurantNameFont,
+        restaurantNameColor: brandRestaurantNameColor,
+        dishCardBgColor: brandDishCardBgColor,
         dishNameFont: brandDishNameFont,
         dishDescFont: brandDishDescFont,
         dishPriceFont: brandDishPriceFont,
@@ -834,12 +849,12 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
               {/* Color Customization */}
               <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700 space-y-3">
                 <span className="block font-mono text-xs font-bold text-amber-300 border-b border-neutral-700 pb-1">
-                  🎨 Colores de la Carta
+                  🎨 Colores de la Carta y Elementos
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-neutral-300 font-mono mb-1">Color de Fondo</label>
+                    <label className="block text-neutral-300 font-mono mb-1">Color de Fondo de la Carta</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -851,6 +866,25 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                         type="text"
                         value={brandDarkBgColor}
                         onChange={e => setBrandDarkBgColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color de Fondo de la Ficha del Plato</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandDishCardBgColor || brandDarkBgColor}
+                        onChange={e => setBrandDishCardBgColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Mismo del fondo si está vacío"
+                        value={brandDishCardBgColor}
+                        onChange={e => setBrandDishCardBgColor(e.target.value)}
                         className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
                       />
                     </div>
@@ -873,10 +907,61 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color del Texto de los Botones</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandButtonTextColor}
+                        onChange={e => setBrandButtonTextColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brandButtonTextColor}
+                        onChange={e => setBrandButtonTextColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color de Textos (Platos/Nombres)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandTextColor}
+                        onChange={e => setBrandTextColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brandTextColor}
+                        onChange={e => setBrandTextColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-mono mb-1">Color del Nombre del Restaurante</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={brandRestaurantNameColor}
+                        onChange={e => setBrandRestaurantNameColor(e.target.value)}
+                        className="w-10 h-8 rounded-lg bg-neutral-900 border border-neutral-700 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brandRestaurantNameColor}
+                        onChange={e => setBrandRestaurantNameColor(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white font-mono text-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[10px] text-amber-200/80">
-                  💡 El color elegido de los botones será exactamente el mismo que enmarcará los bordes del recuadro de cada plato.
-                </p>
               </div>
 
               {/* Font Customization */}
@@ -886,6 +971,24 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                 </span>
 
                 <div className="space-y-2">
+                  <div>
+                    <label className="block text-neutral-300 text-[11px] font-mono mb-1 font-bold text-amber-300">Tipo de letra para el Nombre del Restaurante</label>
+                    <select
+                      value={brandRestaurantNameFont}
+                      onChange={e => setBrandRestaurantNameFont(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs outline-none"
+                    >
+                      <option value="inherit">Por defecto (Estilo de Plantilla)</option>
+                      <option value="ui-serif, Georgia, Cambria, serif font-serif">Serif Elegante (Georgia / Playfair)</option>
+                      <option value="ui-sans-serif, system-ui, sans-serif font-sans">Sans-Serif Limpia (Inter / Arial)</option>
+                      <option value="'Montserrat', sans-serif">Montserrat (Urbana / Vanguardia)</option>
+                      <option value="'Oswald', sans-serif">Oswald (Impacto / Condensada)</option>
+                      <option value="'Cinzel', serif">Cinzel (Clásica / Alta Gastronomía)</option>
+                      <option value="cursive">Pacifico / Cursiva (Gourmet / Cárnica)</option>
+                      <option value="ui-monospace, monospace">Monospace (Técnica / Pizarra)</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-neutral-300 text-[11px] font-mono mb-1">Tipo de letra para el Nombre del Plato</label>
                     <select

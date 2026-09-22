@@ -25,14 +25,18 @@ export interface RestaurantBranding {
   primaryColor: string;       // Color primario de marca (ej: #EA580C)
   secondaryColor: string;     // Color secundario (ej: #F59E0B)
   accentColor: string;        // Color de acento para botones/badges
-  darkBgColor: string;        // Fondo oscuro para menús nocturnos
+  darkBgColor: string;        // Fondo de la carta
   cardBgColor: string;        // Fondo de tarjetas
-  textColor: string;          // Color principal de texto
+  textColor: string;          // Color principal de texto (platos y descripciones)
   fontDisplay: string;        // Tipografía para encabezados
   buttonColor?: string;       // Color de los botones y del borde del recuadro del plato
+  buttonTextColor?: string;   // Color del texto de los botones
   dishNameFont?: string;      // Tipo de letra para el nombre del plato
   dishDescFont?: string;      // Tipo de letra para la descripción del plato
   dishPriceFont?: string;     // Tipo de letra para el precio del plato
+  restaurantNameFont?: string;  // Tipo de letra para el nombre del restaurante
+  restaurantNameColor?: string; // Color del texto del nombre del restaurante
+  dishCardBgColor?: string;     // Fondo del recuadro / ficha del plato
 }
 
 export interface RestaurantMetrics {

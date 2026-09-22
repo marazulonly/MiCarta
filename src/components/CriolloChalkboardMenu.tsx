@@ -344,7 +344,13 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
               <span className="text-amber-300 font-mono text-xs tracking-widest uppercase">
                 {activeChannel === 'DELIVERY' ? 'Carta Pizarra Delivery' : 'Carta Salón Tradición'}
               </span>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-wide font-serif">
+              <h1 
+                style={{ 
+                  fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
+                  color: restaurant.branding?.restaurantNameColor || undefined
+                }}
+                className="text-3xl sm:text-4xl font-black text-white tracking-wide"
+              >
                 {restaurant.name}
               </h1>
               <p className="text-[11px] text-neutral-400 font-mono">
@@ -392,6 +398,9 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                   {cat.items.map(item => {
                     const inCart = cart.find(c => c.item.id === item.id);
                     const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#f59e0b';
+                    const btnTextColor = restaurant.branding?.buttonTextColor || '#000000';
+                    const textColor = restaurant.branding?.textColor;
+                    const dishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor;
                     const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
                     const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
                     const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
@@ -399,8 +408,12 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                     return (
                       <div 
                         key={item.id}
-                        style={{ borderColor: btnColor ? `${btnColor}80` : undefined }}
-                        className="relative p-3 rounded-xl bg-black/40 border hover:border-neutral-700 transition flex items-center justify-between gap-3 group"
+                        style={{ 
+                          backgroundColor: dishCardBgColor || 'rgba(0, 0, 0, 0.40)', 
+                          borderColor: btnColor ? `${btnColor}80` : undefined,
+                          color: textColor || undefined 
+                        }}
+                        className="relative p-3 rounded-xl border hover:border-neutral-700 transition flex items-center justify-between gap-3 group"
                       >
                         {/* Live Edit Action Badges */}
                         {isLiveEditActive && (
@@ -451,13 +464,13 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                           />
                           <div>
                             <h3 
-                              style={{ fontFamily: dishNameFont }}
-                              className="text-xs sm:text-sm font-bold text-white"
+                              style={{ fontFamily: dishNameFont, color: textColor || '#ffffff' }}
+                              className="text-xs sm:text-sm font-bold"
                             >
                               {item.name}
                             </h3>
                             <p 
-                              style={{ fontFamily: dishDescFont }}
+                              style={{ fontFamily: dishDescFont, color: textColor ? `${textColor}cc` : undefined }}
                               className="text-[11px] text-neutral-400 line-clamp-1"
                             >
                               {item.description}
@@ -473,8 +486,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
                         <button
                           onClick={() => setSelectedItemForCustomization(item)}
-                          style={{ backgroundColor: btnColor }}
-                          className="px-3 py-1.5 rounded-lg text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow hover:brightness-110"
+                          style={{ backgroundColor: btnColor, color: btnTextColor }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow hover:brightness-110"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -521,6 +534,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
           onConfirm={handleConfirmItemUnits}
           themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#f59e0b'}
           themeDarkBg={restaurant.branding?.darkBgColor || '#141716'}
+          buttonTextColor={restaurant.branding?.buttonTextColor || '#000000'}
+          textColor={restaurant.branding?.textColor}
           dishNameFont={restaurant.branding?.dishNameFont}
           dishDescFont={restaurant.branding?.dishDescFont}
           dishPriceFont={restaurant.branding?.dishPriceFont}
