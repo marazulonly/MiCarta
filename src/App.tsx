@@ -471,12 +471,59 @@ export default function App() {
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
+    const prevRest = restaurants.find(r => r.id === updated.id);
+    const prevOwnerId = prevRest?.ownerId;
+    const newOwnerId = updated.ownerId;
+
     setRestaurants(prev => prev.map(r => r.id === updated.id ? updated : r));
     if (previewRestaurant && previewRestaurant.id === updated.id) {
       setPreviewRestaurant(updated);
     }
     saveRestaurantToFirebase(updated);
-    showToast(`Restaurante "${updated.name}" actualizado.`);
+
+    // If owner was reassigned, update users state and Firebase
+    if (prevOwnerId && prevOwnerId !== newOwnerId) {
+      setUsers(prevUsers => {
+        return prevUsers.map(u => {
+          if (u.id === prevOwnerId) {
+            const updatedUser: User = {
+              ...u,
+              restaurantIds: (u.restaurantIds || []).filter(id => id !== updated.id)
+            };
+            saveUserToFirebase(updatedUser);
+            return updatedUser;
+          }
+          if (u.id === newOwnerId) {
+            const updatedUser: User = {
+              ...u,
+              restaurantIds: (u.restaurantIds || []).includes(updated.id)
+                ? u.restaurantIds
+                : [...(u.restaurantIds || []), updated.id]
+            };
+            saveUserToFirebase(updatedUser);
+            return updatedUser;
+          }
+          return u;
+        });
+      });
+    } else if (newOwnerId) {
+      // Ensure the designated owner has this restaurant in their list
+      setUsers(prevUsers => {
+        return prevUsers.map(u => {
+          if (u.id === newOwnerId && !(u.restaurantIds || []).includes(updated.id)) {
+            const updatedUser: User = {
+              ...u,
+              restaurantIds: [...(u.restaurantIds || []), updated.id]
+            };
+            saveUserToFirebase(updatedUser);
+            return updatedUser;
+          }
+          return u;
+        });
+      });
+    }
+
+    showToast(`Restaurante "${updated.name}" actualizado y sincronizado.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {

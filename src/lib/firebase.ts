@@ -9,10 +9,19 @@ import {
   collection, 
   getDocs,
   deleteDoc,
-  writeBatch
+  writeBatch,
+  onSnapshot,
+  Unsubscribe
 } from 'firebase/firestore';
 import { Restaurant, MenuItem, MenuCategory, Order, User } from '../types';
 import rawConfig from '../../firebase-applet-config.json';
+import { 
+  INITIAL_RESTAURANTS, 
+  INITIAL_CATEGORIES, 
+  INITIAL_MENU_ITEMS, 
+  INITIAL_USERS, 
+  INITIAL_ORDERS 
+} from '../data/mockData';
 
 // Initialize Firebase App singleton
 let app: FirebaseApp;
@@ -58,7 +67,7 @@ try {
 export { db };
 
 // Helper to wrap firestore operations with a timeout so offline/unavailable connections fall back gracefully
-function withTimeout<T>(promise: Promise<T>, ms: number = 8000): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number = 8000): Promise<T> {
   let timeoutId: any;
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -73,6 +82,23 @@ export interface FirebaseSaveResult {
   message: string;
   timestamp?: string;
   error?: string;
+}
+
+/**
+ * Universal merger preserving all unique IDs from base and overrides
+ */
+export function mergeRecordsById<T extends { id: string }>(base: T[], incoming: T[]): T[] {
+  const map = new Map<string, T>();
+  base.forEach(item => {
+    if (item && item.id) map.set(item.id, item);
+  });
+  incoming.forEach(item => {
+    if (item && item.id) {
+      const existing = map.get(item.id);
+      map.set(item.id, existing ? { ...existing, ...item } : item);
+    }
+  });
+  return Array.from(map.values());
 }
 
 /**
@@ -97,19 +123,19 @@ export async function saveAllDataToFirebase(data: {
     const batch = writeBatch(db);
     const now = new Date().toISOString();
 
-    // 1. Guardar Restaurantes
+    // 1. Guardar Restaurantes individualmente
     for (const rest of data.restaurants) {
       const restRef = doc(db, 'restaurants', rest.id);
       batch.set(restRef, { ...rest, updatedAt: now }, { merge: true });
     }
 
-    // 2. Guardar Categorías
+    // 2. Guardar Categorías individualmente
     for (const cat of data.categories) {
       const catRef = doc(db, 'categories', cat.id);
       batch.set(catRef, { ...cat, updatedAt: now }, { merge: true });
     }
 
-    // 3. Guardar Platos en colecciones 'items' y 'menu_items' para compatibilidad total
+    // 3. Guardar Platos en colecciones 'items' y 'menu_items'
     for (const item of data.items) {
       const itemRef = doc(db, 'items', item.id);
       batch.set(itemRef, { ...item, updatedAt: now }, { merge: true });
@@ -117,13 +143,19 @@ export async function saveAllDataToFirebase(data: {
       batch.set(menuItemRef, { ...item, updatedAt: now }, { merge: true });
     }
 
-    // 4. Guardar Usuarios y Dueños
+    // 4. Guardar Usuarios y Dueños individualmente
     for (const user of data.users || []) {
       const userRef = doc(db, 'users', user.id);
       batch.set(userRef, { ...user, updatedAt: now }, { merge: true });
     }
 
-    // 5. Guardar snapshot global
+    // 5. Guardar Pedidos individualmente si existen
+    for (const order of data.orders || []) {
+      const orderRef = doc(db, 'orders', order.id);
+      batch.set(orderRef, { ...order, updatedAt: now }, { merge: true });
+    }
+
+    // 6. Guardar snapshot global consolidado
     const metaRef = doc(db, 'system_snapshot', 'latest');
     batch.set(metaRef, {
       updatedAt: now,
@@ -137,27 +169,29 @@ export async function saveAllDataToFirebase(data: {
       categories: data.categories,
       users: data.users || [],
       orders: data.orders || [],
-    });
+    }, { merge: true });
 
-    await withTimeout(batch.commit(), 8000);
+    await withTimeout(batch.commit(), 9000);
 
     return {
       success: true,
-      message: `Todos los datos (${data.items.length} platos, restaurantes y cartas) se han guardado exitosamente en Firebase Firestore.`,
+      message: `Persistencia garantizada: ${data.restaurants.length} restaurantes, ${(data.users || []).length} usuarios y ${data.items.length} platos resguardados en Firestore.`,
       timestamp: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
   } catch (err: any) {
-    console.warn('[Firebase] Warning saving to Firestore (using local cache fallback):', err.message);
+    console.warn('[Firebase] Warning saving to Firestore (local cache active):', err.message);
     return {
       success: false,
-      message: 'Ocurrió un aviso al guardar en Firebase (los datos permanecen respaldados localmente).',
+      message: 'Aviso al guardar en Firebase (los datos permanecen asegurados localmente).',
       error: err.message
     };
   }
 }
 
 /**
- * Loads data from Firestore if present, consolidating snapshot and items collections
+ * Loads data from Firestore - PRIMARY SOURCE OF TRUTH:
+ * Directly fetches all documents from collections 'restaurants', 'users', 'categories', 'items', 'orders'.
+ * Also inspects system_snapshot/latest and consolidates without dropping any manually created record.
  */
 export async function loadAllDataFromFirebase(): Promise<{
   restaurants: Restaurant[];
@@ -169,16 +203,66 @@ export async function loadAllDataFromFirebase(): Promise<{
   if (!db) return null;
 
   try {
+    const restaurantsMap = new Map<string, Restaurant>();
+    const usersMap = new Map<string, User>();
+    const categoriesMap = new Map<string, MenuCategory>();
     const itemsMap = new Map<string, MenuItem>();
+    const ordersMap = new Map<string, Order>();
 
-    // 1. Intentar leer colecciones directas 'items' y 'menu_items'
+    // 1. Read directly from 'restaurants' collection
+    try {
+      const restColl = collection(db, 'restaurants');
+      const restDocs = await withTimeout(getDocs(restColl), 6000);
+      restDocs.forEach(d => {
+        const restData = d.data() as Restaurant;
+        const id = restData.id || d.id;
+        if (id) {
+          restaurantsMap.set(id, { ...restData, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading direct restaurants collection:', e);
+    }
+
+    // 2. Read directly from 'users' collection (CRITICAL: Dueños, Admins, Mozos, Cocineros, Repartidores, Clientes)
+    try {
+      const usersColl = collection(db, 'users');
+      const userDocs = await withTimeout(getDocs(usersColl), 6000);
+      userDocs.forEach(d => {
+        const userData = d.data() as User;
+        const id = userData.id || d.id;
+        if (id) {
+          usersMap.set(id, { ...userData, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading direct users collection:', e);
+    }
+
+    // 3. Read directly from 'categories' collection
+    try {
+      const catColl = collection(db, 'categories');
+      const catDocs = await withTimeout(getDocs(catColl), 5000);
+      catDocs.forEach(d => {
+        const catData = d.data() as MenuCategory;
+        const id = catData.id || d.id;
+        if (id) {
+          categoriesMap.set(id, { ...catData, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading direct categories collection:', e);
+    }
+
+    // 4. Read directly from 'items' and 'menu_items' collections
     try {
       const itemsColl = collection(db, 'items');
       const itemDocs = await withTimeout(getDocs(itemsColl), 6000);
       itemDocs.forEach(d => {
         const itemData = d.data() as MenuItem;
-        if (itemData && (itemData.id || d.id)) {
-          itemsMap.set(itemData.id || d.id, { ...itemData, id: itemData.id || d.id });
+        const id = itemData.id || d.id;
+        if (id) {
+          itemsMap.set(id, { ...itemData, id });
         }
       });
     } catch (e) {
@@ -199,38 +283,61 @@ export async function loadAllDataFromFirebase(): Promise<{
       console.warn('[Firebase] Notice reading menu_items collection:', e);
     }
 
-    // 2. Intentar leer snapshot más reciente
-    let snapshotRestaurants: Restaurant[] = [];
-    let snapshotCategories: MenuCategory[] = [];
-    let snapshotUsers: User[] = [];
-    let snapshotOrders: Order[] = [];
+    // 5. Read directly from 'orders' collection
+    try {
+      const ordersColl = collection(db, 'orders');
+      const orderDocs = await withTimeout(getDocs(ordersColl), 5000);
+      orderDocs.forEach(d => {
+        const orderData = d.data() as Order;
+        const id = orderData.id || d.id;
+        if (id) {
+          ordersMap.set(id, { ...orderData, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading orders collection:', e);
+    }
 
+    // 6. Supplement with system_snapshot/latest (never overwrite existing collection documents)
     try {
       const metaRef = doc(db, 'system_snapshot', 'latest');
-      const snap = await withTimeout(getDoc(metaRef), 6000);
+      const snap = await withTimeout(getDoc(metaRef), 5000);
 
       if (snap.exists()) {
         const data = snap.data();
         if (data) {
-          if (data.restaurants && data.restaurants.length > 0) {
-            snapshotRestaurants = data.restaurants as Restaurant[];
+          if (Array.isArray(data.restaurants)) {
+            data.restaurants.forEach((r: Restaurant) => {
+              if (r && r.id && !restaurantsMap.has(r.id)) {
+                restaurantsMap.set(r.id, r);
+              }
+            });
           }
-          if (data.categories && data.categories.length > 0) {
-            snapshotCategories = data.categories as MenuCategory[];
+          if (Array.isArray(data.users)) {
+            data.users.forEach((u: User) => {
+              if (u && u.id && !usersMap.has(u.id)) {
+                usersMap.set(u.id, u);
+              }
+            });
           }
-          if (data.users && data.users.length > 0) {
-            snapshotUsers = data.users as User[];
+          if (Array.isArray(data.categories)) {
+            data.categories.forEach((c: MenuCategory) => {
+              if (c && c.id && !categoriesMap.has(c.id)) {
+                categoriesMap.set(c.id, c);
+              }
+            });
           }
-          if (data.orders) {
-            snapshotOrders = data.orders as Order[];
-          }
-          if (data.items && Array.isArray(data.items)) {
+          if (Array.isArray(data.items)) {
             data.items.forEach((it: MenuItem) => {
-              if (it && it.id) {
-                // If not already in itemsMap or snapshot has more recent details
-                if (!itemsMap.has(it.id)) {
-                  itemsMap.set(it.id, it);
-                }
+              if (it && it.id && !itemsMap.has(it.id)) {
+                itemsMap.set(it.id, it);
+              }
+            });
+          }
+          if (Array.isArray(data.orders)) {
+            data.orders.forEach((o: Order) => {
+              if (o && o.id && !ordersMap.has(o.id)) {
+                ordersMap.set(o.id, o);
               }
             });
           }
@@ -240,40 +347,38 @@ export async function loadAllDataFromFirebase(): Promise<{
       console.warn('[Firebase] Notice reading system_snapshot:', e);
     }
 
-    // 3. Fallback para restaurantes y categorías si no vinieron en snapshot
-    if (snapshotRestaurants.length === 0) {
-      try {
-        const restColl = collection(db, 'restaurants');
-        const restDocs = await withTimeout(getDocs(restColl), 5000);
-        snapshotRestaurants = restDocs.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
-      } catch (e) {
-        console.warn('[Firebase] Notice reading restaurants:', e);
-      }
+    // 7. If Firestore is completely clean and empty (first run), initialize with default seed data
+    if (restaurantsMap.size === 0 && usersMap.size === 0 && itemsMap.size === 0) {
+      console.info('[Firebase] Firestore is pristine/empty. Seeding initial baseline datasets...');
+      INITIAL_RESTAURANTS.forEach(r => restaurantsMap.set(r.id, r));
+      INITIAL_USERS.forEach(u => usersMap.set(u.id, u));
+      INITIAL_CATEGORIES.forEach(c => categoriesMap.set(c.id, c));
+      INITIAL_MENU_ITEMS.forEach(it => itemsMap.set(it.id, it));
+      INITIAL_ORDERS.forEach(o => ordersMap.set(o.id, o));
+
+      // Asynchronously seed to Firestore in background without blocking return
+      saveAllDataToFirebase({
+        restaurants: Array.from(restaurantsMap.values()),
+        items: Array.from(itemsMap.values()),
+        categories: Array.from(categoriesMap.values()),
+        users: Array.from(usersMap.values()),
+        orders: Array.from(ordersMap.values()),
+      }).catch(err => console.warn('[Firebase] Initial seed write notice:', err));
     }
 
-    if (snapshotCategories.length === 0) {
-      try {
-        const catColl = collection(db, 'categories');
-        const catDocs = await withTimeout(getDocs(catColl), 5000);
-        snapshotCategories = catDocs.docs.map(d => ({ ...d.data(), id: d.id } as MenuCategory));
-      } catch (e) {
-        console.warn('[Firebase] Notice reading categories:', e);
-      }
-    }
-
+    const consolidatedRestaurants = Array.from(restaurantsMap.values());
+    const consolidatedUsers = Array.from(usersMap.values());
+    const consolidatedCategories = Array.from(categoriesMap.values());
     const consolidatedItems = Array.from(itemsMap.values());
+    const consolidatedOrders = Array.from(ordersMap.values());
 
-    if (consolidatedItems.length > 0 || snapshotRestaurants.length > 0) {
-      return {
-        restaurants: snapshotRestaurants,
-        items: consolidatedItems,
-        categories: snapshotCategories,
-        users: snapshotUsers,
-        orders: snapshotOrders,
-      };
-    }
-
-    return null;
+    return {
+      restaurants: consolidatedRestaurants,
+      items: consolidatedItems,
+      categories: consolidatedCategories,
+      users: consolidatedUsers,
+      orders: consolidatedOrders,
+    };
   } catch (err) {
     console.warn('[Firebase] No se pudieron cargar datos remotos (usando caché local):', err);
     return null;
@@ -281,16 +386,97 @@ export async function loadAllDataFromFirebase(): Promise<{
 }
 
 /**
- * Saves a single restaurant to Firestore
+ * Saves a single restaurant to Firestore collection 'restaurants'
+ * and updates system_snapshot to ensure instant availability
  */
 export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<boolean> {
   if (!db) return false;
   try {
+    const now = new Date().toISOString();
     const restRef = doc(db, 'restaurants', restaurant.id);
-    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true }), 6000);
+    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: now }, { merge: true }), 6000);
+    
+    // Also patch snapshot in background
+    try {
+      const metaRef = doc(db, 'system_snapshot', 'latest');
+      getDoc(metaRef).then(snap => {
+        if (snap.exists() && db) {
+          const current = snap.data();
+          const existingRests: Restaurant[] = current.restaurants || [];
+          const updated = mergeRecordsById(existingRests, [restaurant]);
+          setDoc(metaRef, { restaurants: updated, restaurantCount: updated.length, updatedAt: now }, { merge: true });
+        }
+      }).catch(() => {});
+    } catch {
+      // Non-blocking snapshot patch
+    }
+
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving restaurant offline:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes a restaurant from Firestore
+ */
+export async function deleteRestaurantFromFirebase(restaurantId: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const restRef = doc(db, 'restaurants', restaurantId);
+    await withTimeout(deleteDoc(restRef), 4000);
+    return true;
+  } catch (err) {
+    console.warn('[Firebase] Notice deleting restaurant:', err);
+    return false;
+  }
+}
+
+/**
+ * Saves a single user (Dueño, Admin, Mozo, Cocinero, Repartidor, Cliente) to Firestore
+ * and ensures it is never lost or overwritten
+ */
+export async function saveUserToFirebase(user: User): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const now = new Date().toISOString();
+    const userRef = doc(db, 'users', user.id);
+    await withTimeout(setDoc(userRef, { ...user, updatedAt: now }, { merge: true }), 6000);
+
+    // Also patch snapshot in background
+    try {
+      const metaRef = doc(db, 'system_snapshot', 'latest');
+      getDoc(metaRef).then(snap => {
+        if (snap.exists() && db) {
+          const current = snap.data();
+          const existingUsers: User[] = current.users || [];
+          const updated = mergeRecordsById(existingUsers, [user]);
+          setDoc(metaRef, { users: updated, userCount: updated.length, updatedAt: now }, { merge: true });
+        }
+      }).catch(() => {});
+    } catch {
+      // Non-blocking snapshot patch
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('[Firebase] Notice saving user offline:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes a user from Firestore
+ */
+export async function deleteUserFromFirebase(userId: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const userRef = doc(db, 'users', userId);
+    await withTimeout(deleteDoc(userRef), 4000);
+    return true;
+  } catch (err) {
+    console.warn('[Firebase] Notice deleting user offline:', err);
     return false;
   }
 }
@@ -341,40 +527,10 @@ export async function saveCategoryToFirebase(category: MenuCategory): Promise<bo
   if (!db) return false;
   try {
     const catRef = doc(db, 'categories', category.id);
-    await withTimeout(setDoc(catRef, { ...category, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(catRef, { ...category, updatedAt: new Date().toISOString() }, { merge: true }), 4000);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving category offline:', err);
-    return false;
-  }
-}
-
-/**
- * Saves a single user to Firestore
- */
-export async function saveUserToFirebase(user: User): Promise<boolean> {
-  if (!db) return false;
-  try {
-    const userRef = doc(db, 'users', user.id);
-    await withTimeout(setDoc(userRef, { ...user, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
-    return true;
-  } catch (err) {
-    console.warn('[Firebase] Notice saving user offline:', err);
-    return false;
-  }
-}
-
-/**
- * Deletes a user from Firestore
- */
-export async function deleteUserFromFirebase(userId: string): Promise<boolean> {
-  if (!db) return false;
-  try {
-    const userRef = doc(db, 'users', userId);
-    await withTimeout(deleteDoc(userId ? userRef : userRef), 3500);
-    return true;
-  } catch (err) {
-    console.warn('[Firebase] Notice deleting user offline:', err);
     return false;
   }
 }
@@ -386,10 +542,124 @@ export async function saveOrderToFirebase(order: Order): Promise<boolean> {
   if (!db) return false;
   try {
     const orderRef = doc(db, 'orders', order.id);
-    await withTimeout(setDoc(orderRef, { ...order, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(orderRef, { ...order, updatedAt: new Date().toISOString() }, { merge: true }), 4000);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving order offline:', err);
     return false;
   }
+}
+
+/**
+ * Subscribes to real-time updates from Firestore for restaurants, users, items, categories, and orders.
+ * Returns an unsubscription function to detach all listeners.
+ */
+export function subscribeToSystemData(handlers: {
+  onRestaurantsChange?: (restaurants: Restaurant[]) => void;
+  onUsersChange?: (users: User[]) => void;
+  onCategoriesChange?: (categories: MenuCategory[]) => void;
+  onItemsChange?: (items: MenuItem[]) => void;
+  onOrdersChange?: (orders: Order[]) => void;
+}): () => void {
+  if (!db) return () => {};
+
+  const unsubscribes: Unsubscribe[] = [];
+
+  // Listen to restaurants
+  if (handlers.onRestaurantsChange) {
+    try {
+      const restColl = collection(db, 'restaurants');
+      const unsub = onSnapshot(restColl, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
+          handlers.onRestaurantsChange!(list);
+        }
+      }, (err) => {
+        console.warn('[Firebase] Realtime restaurants listener notice:', err);
+      });
+      unsubscribes.push(unsub);
+    } catch (e) {
+      console.warn('[Firebase] Could not attach restaurants listener:', e);
+    }
+  }
+
+  // Listen to users (Dueños, Admins, Mozos, Cocineros, Repartidores, Clientes)
+  if (handlers.onUsersChange) {
+    try {
+      const usersColl = collection(db, 'users');
+      const unsub = onSnapshot(usersColl, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as User));
+          handlers.onUsersChange!(list);
+        }
+      }, (err) => {
+        console.warn('[Firebase] Realtime users listener notice:', err);
+      });
+      unsubscribes.push(unsub);
+    } catch (e) {
+      console.warn('[Firebase] Could not attach users listener:', e);
+    }
+  }
+
+  // Listen to categories
+  if (handlers.onCategoriesChange) {
+    try {
+      const catColl = collection(db, 'categories');
+      const unsub = onSnapshot(catColl, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as MenuCategory));
+          handlers.onCategoriesChange!(list);
+        }
+      }, (err) => {
+        console.warn('[Firebase] Realtime categories listener notice:', err);
+      });
+      unsubscribes.push(unsub);
+    } catch (e) {
+      console.warn('[Firebase] Could not attach categories listener:', e);
+    }
+  }
+
+  // Listen to items
+  if (handlers.onItemsChange) {
+    try {
+      const itemsColl = collection(db, 'items');
+      const unsub = onSnapshot(itemsColl, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as MenuItem));
+          handlers.onItemsChange!(list);
+        }
+      }, (err) => {
+        console.warn('[Firebase] Realtime items listener notice:', err);
+      });
+      unsubscribes.push(unsub);
+    } catch (e) {
+      console.warn('[Firebase] Could not attach items listener:', e);
+    }
+  }
+
+  // Listen to orders
+  if (handlers.onOrdersChange) {
+    try {
+      const ordersColl = collection(db, 'orders');
+      const unsub = onSnapshot(ordersColl, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as Order));
+          handlers.onOrdersChange!(list);
+        }
+      }, (err) => {
+        console.warn('[Firebase] Realtime orders listener notice:', err);
+      });
+      unsubscribes.push(unsub);
+    } catch (e) {
+      console.warn('[Firebase] Could not attach orders listener:', e);
+    }
+  }
+
+  return () => {
+    unsubscribes.forEach(unsub => {
+      try {
+        unsub();
+      } catch {}
+    });
+  };
 }

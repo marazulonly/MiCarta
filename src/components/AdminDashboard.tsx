@@ -169,7 +169,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveRestaurant = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRestaurant) return;
+
+    const previousRest = restaurants.find(r => r.id === editingRestaurant.id);
+    const prevOwnerId = previousRest?.ownerId;
+    const newOwnerId = editingRestaurant.ownerId;
+
     onUpdateRestaurant(editingRestaurant);
+
+    // Sync owners' assigned restaurantIds if owner changed
+    if (prevOwnerId && prevOwnerId !== newOwnerId) {
+      const prevOwner = users.find(u => u.id === prevOwnerId);
+      if (prevOwner) {
+        onUpdateUser({
+          ...prevOwner,
+          restaurantIds: (prevOwner.restaurantIds || []).filter(id => id !== editingRestaurant.id)
+        });
+      }
+    }
+    if (newOwnerId && prevOwnerId !== newOwnerId) {
+      const newOwner = users.find(u => u.id === newOwnerId);
+      if (newOwner) {
+        onUpdateUser({
+          ...newOwner,
+          restaurantIds: (newOwner.restaurantIds || []).includes(editingRestaurant.id)
+            ? newOwner.restaurantIds
+            : [...(newOwner.restaurantIds || []), editingRestaurant.id]
+        });
+      }
+    }
+
     setEditingRestaurant(null);
   };
 
@@ -1148,6 +1176,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <form onSubmit={handleSaveRestaurant} className="space-y-4">
+              {/* Dueño / Propietario Asignado (Reasignación de Restaurante) */}
+              <div className="p-3.5 rounded-xl bg-black/60 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Dueño / Propietario Asignado (Reasignar a otro dueño)</span>
+                  </label>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 font-mono">
+                    {ownersList.length} Dueños Disponibles
+                  </span>
+                </div>
+
+                <div>
+                  <select
+                    value={editingRestaurant.ownerId || (ownersList[0]?.id || '')}
+                    onChange={(e) => setEditingRestaurant({ ...editingRestaurant, ownerId: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-950 border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-medium"
+                  >
+                    {ownersList.map(owner => (
+                      <option key={owner.id} value={owner.id}>
+                        {owner.name} (DNI: {owner.dni}) — {owner.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Selected Owner Details Preview Card */}
+                {(() => {
+                  const currentSelectedOwner = users.find(u => u.id === editingRestaurant.ownerId) || ownersList.find(o => o.id === editingRestaurant.ownerId);
+                  if (!currentSelectedOwner) return null;
+                  const currentOwnerRestCount = restaurants.filter(r => r.ownerId === currentSelectedOwner.id || currentSelectedOwner.restaurantIds?.includes(r.id)).length;
+
+                  return (
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-neutral-900/90 border border-neutral-800">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img 
+                          src={currentSelectedOwner.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'} 
+                          alt={currentSelectedOwner.name} 
+                          className="w-10 h-10 rounded-lg object-cover border border-neutral-700 shrink-0" 
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-white truncate">{currentSelectedOwner.name}</h4>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-mono shrink-0">
+                              DNI: {currentSelectedOwner.dni}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                            {currentSelectedOwner.email} · Tel: {currentSelectedOwner.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 pl-2 border-l border-neutral-800">
+                        <span className="text-[10px] text-neutral-500 block">Locales a cargo</span>
+                        <span className="text-xs font-mono font-bold text-amber-400">
+                          {currentOwnerRestCount}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  ✓ Al reasignar el dueño, este restaurante aparecerá automáticamente en el <strong>Panel de Administración del nuevo propietario</strong> y se actualizarán sus credenciales y accesos.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-neutral-300 block mb-1">Nombre Comercial</label>
@@ -1210,6 +1305,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setEditingRestaurant({ ...editingRestaurant, address: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">URL Logo de Marca</label>
+                  <input
+                    type="text"
+                    value={editingRestaurant.logoUrl || ''}
+                    onChange={(e) => setEditingRestaurant({ ...editingRestaurant, logoUrl: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">URL Portada / Banner</label>
+                  <input
+                    type="text"
+                    value={editingRestaurant.coverUrl || ''}
+                    onChange={(e) => setEditingRestaurant({ ...editingRestaurant, coverUrl: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
