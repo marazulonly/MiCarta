@@ -10,6 +10,7 @@ import {
   User as UserIcon,
   LogOut,
   UploadCloud,
+  RefreshCw,
   Check
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
@@ -30,6 +31,8 @@ interface TopHeaderProps {
   onToggleSimulation?: (active: boolean) => void;
   onSaveFirebase?: () => void;
   isSavingFirebase?: boolean;
+  onSyncFirebase?: () => void;
+  isSyncingFirebase?: boolean;
 }
 
 const ROLES_LIST: { role: UserRole; label: string }[] = [
@@ -58,6 +61,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onToggleSimulation,
   onSaveFirebase,
   isSavingFirebase = false,
+  onSyncFirebase,
+  isSyncingFirebase = false,
 }) => {
   const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
@@ -215,6 +220,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               >
                 <UploadCloud className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span className="hidden sm:inline">{isSavingFirebase ? 'Guardando...' : 'Guardar Firebase'}</span>
+              </button>
+            )}
+
+            {/* Firebase Cloud Recover / Sync Button */}
+            {onSyncFirebase && (
+              <button
+                id="header-btn-sync-firebase"
+                onClick={onSyncFirebase}
+                disabled={isSyncingFirebase}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white transition cursor-pointer shadow disabled:opacity-50"
+                title="Recuperar y sincronizar platos y cartas desde Firebase Firestore"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingFirebase ? 'animate-spin text-amber-400' : 'text-neutral-400'}`} />
+                <span className="hidden sm:inline">{isSyncingFirebase ? 'Recuperando...' : 'Recuperar Firebase'}</span>
               </button>
             )}
 

@@ -8,6 +8,9 @@ service cloud.firestore {
     match /menu_items/{itemId} {
       allow read, write: if true;
     }
+    match /items/{itemId} {
+      allow read, write: if true;
+    }
     match /categories/{categoryId} {
       allow read, write: if true;
     }

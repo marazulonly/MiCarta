@@ -155,6 +155,18 @@ function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
   });
 }
 
+// Helper to reliably merge menu items by unique ID preserving manually entered and recovered dishes
+function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): MenuItem[] {
+  const map = new Map<string, MenuItem>();
+  baseList.forEach(item => {
+    if (item && item.id) map.set(item.id, item);
+  });
+  overrideList.forEach(item => {
+    if (item && item.id) map.set(item.id, item);
+  });
+  return Array.from(map.values());
+}
+
 // Load cached initial state synchronously before React component initializes
 const getInitialStateFromStorage = () => {
   let cachedRests = INITIAL_RESTAURANTS;
@@ -173,7 +185,9 @@ const getInitialStateFromStorage = () => {
         }
         if (parsed.categories?.length) cachedCategories = parsed.categories;
         if (parsed.items?.length) {
-          cachedItems = sanitizeMenuItems(parsed.items);
+          const stored = sanitizeMenuItems(parsed.items);
+          // Always merge to guarantee recovered manual dishes in INITIAL_MENU_ITEMS are retained
+          cachedItems = mergeMenuItemsById(INITIAL_MENU_ITEMS, stored);
         }
         if (parsed.users?.length) cachedUsers = parsed.users;
         if (parsed.orders?.length) cachedOrders = parsed.orders;
@@ -274,7 +288,7 @@ export default function App() {
         }
         if (parsed.items?.length) {
           const cleanItems = sanitizeMenuItems(parsed.items);
-          setMenuItems(cleanItems);
+          setMenuItems(prev => mergeMenuItemsById(INITIAL_MENU_ITEMS, cleanItems));
         }
         if (parsed.categories?.length) setCategories(parsed.categories);
         if (parsed.users?.length) setUsers(parsed.users);
@@ -293,7 +307,7 @@ export default function App() {
         }
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(cleanItems);
+          setMenuItems(prev => mergeMenuItemsById(prev, cleanItems));
         }
         if (remoteData.categories?.length) setCategories(remoteData.categories);
         if (remoteData.users?.length) {
@@ -306,7 +320,7 @@ export default function App() {
           });
         }
         if (remoteData.orders?.length) setOrders(remoteData.orders);
-        showToast('✓ Estado de restaurantes, dueños y cartas sincronizado con Firebase');
+        showToast(`✓ Sincronizado con Firebase Firestore (${remoteData.items?.length || 0} platos activos)`);
       }
     }).catch(err => {
       console.warn('Could not auto-load from Firebase:', err);
@@ -327,6 +341,46 @@ export default function App() {
       // Storage quota error ignored
     }
   }, [restaurants, menuItems, categories, users, orders]);
+
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+
+  // Manual explicit sync/recover from Firebase handler
+  const handleSyncFromFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const remoteData = await loadAllDataFromFirebase();
+      if (remoteData) {
+        if (remoteData.restaurants?.length) {
+          setRestaurants(sanitizeRestaurants(remoteData.restaurants));
+        }
+        if (remoteData.items?.length) {
+          const cleanItems = sanitizeMenuItems(remoteData.items);
+          setMenuItems(prev => mergeMenuItemsById(prev, cleanItems));
+        }
+        if (remoteData.categories?.length) {
+          setCategories(remoteData.categories);
+        }
+        if (remoteData.users?.length) {
+          setUsers(prev => {
+            const map = new Map<string, User>();
+            prev.forEach(u => map.set(u.id, u));
+            remoteData.users.forEach(u => map.set(u.id, u));
+            return Array.from(map.values());
+          });
+        }
+        if (remoteData.orders?.length) {
+          setOrders(remoteData.orders);
+        }
+        showToast(`✓ ¡Recuperados y sincronizados ${remoteData.items?.length || 0} platos desde Firebase!`);
+      } else {
+        showToast('✓ Platos y cartas al día con Firebase Firestore');
+      }
+    } catch (err: any) {
+      showToast('Aviso de conexión Firebase: ' + (err.message || 'Error'));
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
 
   // Global save to Firebase handler
   const handleSaveAllToFirebase = async () => {
@@ -648,6 +702,8 @@ export default function App() {
           onLogout={handleLogout}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onOpenCustomerPreview={() => handleOpenCustomerPreview()}
+          onSyncFirebase={handleSyncFromFirebase}
+          isSyncingFirebase={isSyncingFirebase}
         />
 
         {/* Role-Specific View Container */}
@@ -812,6 +868,8 @@ export default function App() {
         }}
         onSaveFirebase={handleSaveAllToFirebase}
         isSavingFirebase={isSavingFirebase}
+        onSyncFirebase={handleSyncFromFirebase}
+        isSyncingFirebase={isSyncingFirebase}
       />
 
       {/* Main Content Area */}

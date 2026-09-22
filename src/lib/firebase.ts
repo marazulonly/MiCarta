@@ -58,7 +58,7 @@ try {
 export { db };
 
 // Helper to wrap firestore operations with a timeout so offline/unavailable connections fall back gracefully
-function withTimeout<T>(promise: Promise<T>, ms: number = 4000): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number = 8000): Promise<T> {
   let timeoutId: any;
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -109,10 +109,12 @@ export async function saveAllDataToFirebase(data: {
       batch.set(catRef, { ...cat, updatedAt: now }, { merge: true });
     }
 
-    // 3. Guardar Platos
+    // 3. Guardar Platos en colecciones 'items' y 'menu_items' para compatibilidad total
     for (const item of data.items) {
       const itemRef = doc(db, 'items', item.id);
       batch.set(itemRef, { ...item, updatedAt: now }, { merge: true });
+      const menuItemRef = doc(db, 'menu_items', item.id);
+      batch.set(menuItemRef, { ...item, updatedAt: now }, { merge: true });
     }
 
     // 4. Guardar Usuarios y Dueños
@@ -137,11 +139,11 @@ export async function saveAllDataToFirebase(data: {
       orders: data.orders || [],
     });
 
-    await withTimeout(batch.commit(), 5000);
+    await withTimeout(batch.commit(), 8000);
 
     return {
       success: true,
-      message: 'Todos los datos (restaurantes, dueños, usuarios y cartas) se han guardado exitosamente en Firebase Firestore.',
+      message: `Todos los datos (${data.items.length} platos, restaurantes y cartas) se han guardado exitosamente en Firebase Firestore.`,
       timestamp: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
   } catch (err: any) {
@@ -155,7 +157,7 @@ export async function saveAllDataToFirebase(data: {
 }
 
 /**
- * Loads data from Firestore if present
+ * Loads data from Firestore if present, consolidating snapshot and items collections
  */
 export async function loadAllDataFromFirebase(): Promise<{
   restaurants: Restaurant[];
@@ -167,47 +169,107 @@ export async function loadAllDataFromFirebase(): Promise<{
   if (!db) return null;
 
   try {
-    // Primero intenta leer el snapshot más reciente con tiempo límite
-    const metaRef = doc(db, 'system_snapshot', 'latest');
-    const snap = await withTimeout(getDoc(metaRef), 3500);
+    const itemsMap = new Map<string, MenuItem>();
 
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data && data.restaurants && data.restaurants.length > 0) {
-        return {
-          restaurants: data.restaurants as Restaurant[],
-          items: (data.items || []) as MenuItem[],
-          categories: (data.categories || []) as MenuCategory[],
-          users: (data.users || []) as User[],
-          orders: (data.orders || []) as Order[],
-        };
+    // 1. Intentar leer colecciones directas 'items' y 'menu_items'
+    try {
+      const itemsColl = collection(db, 'items');
+      const itemDocs = await withTimeout(getDocs(itemsColl), 6000);
+      itemDocs.forEach(d => {
+        const itemData = d.data() as MenuItem;
+        if (itemData && (itemData.id || d.id)) {
+          itemsMap.set(itemData.id || d.id, { ...itemData, id: itemData.id || d.id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading items collection:', e);
+    }
+
+    try {
+      const menuItemsColl = collection(db, 'menu_items');
+      const menuDocs = await withTimeout(getDocs(menuItemsColl), 6000);
+      menuDocs.forEach(d => {
+        const itemData = d.data() as MenuItem;
+        const id = itemData.id || d.id;
+        if (id && !itemsMap.has(id)) {
+          itemsMap.set(id, { ...itemData, id });
+        }
+      });
+    } catch (e) {
+      console.warn('[Firebase] Notice reading menu_items collection:', e);
+    }
+
+    // 2. Intentar leer snapshot más reciente
+    let snapshotRestaurants: Restaurant[] = [];
+    let snapshotCategories: MenuCategory[] = [];
+    let snapshotUsers: User[] = [];
+    let snapshotOrders: Order[] = [];
+
+    try {
+      const metaRef = doc(db, 'system_snapshot', 'latest');
+      const snap = await withTimeout(getDoc(metaRef), 6000);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data) {
+          if (data.restaurants && data.restaurants.length > 0) {
+            snapshotRestaurants = data.restaurants as Restaurant[];
+          }
+          if (data.categories && data.categories.length > 0) {
+            snapshotCategories = data.categories as MenuCategory[];
+          }
+          if (data.users && data.users.length > 0) {
+            snapshotUsers = data.users as User[];
+          }
+          if (data.orders) {
+            snapshotOrders = data.orders as Order[];
+          }
+          if (data.items && Array.isArray(data.items)) {
+            data.items.forEach((it: MenuItem) => {
+              if (it && it.id) {
+                // If not already in itemsMap or snapshot has more recent details
+                if (!itemsMap.has(it.id)) {
+                  itemsMap.set(it.id, it);
+                }
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Firebase] Notice reading system_snapshot:', e);
+    }
+
+    // 3. Fallback para restaurantes y categorías si no vinieron en snapshot
+    if (snapshotRestaurants.length === 0) {
+      try {
+        const restColl = collection(db, 'restaurants');
+        const restDocs = await withTimeout(getDocs(restColl), 5000);
+        snapshotRestaurants = restDocs.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
+      } catch (e) {
+        console.warn('[Firebase] Notice reading restaurants:', e);
       }
     }
 
-    // Fallback: leer colecciones individuales
-    const restColl = collection(db, 'restaurants');
-    const restDocs = await withTimeout(getDocs(restColl), 3500);
-    if (!restDocs.empty) {
-      const restaurants = restDocs.docs.map(d => d.data() as Restaurant);
+    if (snapshotCategories.length === 0) {
+      try {
+        const catColl = collection(db, 'categories');
+        const catDocs = await withTimeout(getDocs(catColl), 5000);
+        snapshotCategories = catDocs.docs.map(d => ({ ...d.data(), id: d.id } as MenuCategory));
+      } catch (e) {
+        console.warn('[Firebase] Notice reading categories:', e);
+      }
+    }
 
-      const itemsColl = collection(db, 'items');
-      const itemDocs = await withTimeout(getDocs(itemsColl), 3500);
-      const items = itemDocs.docs.map(d => d.data() as MenuItem);
+    const consolidatedItems = Array.from(itemsMap.values());
 
-      const catColl = collection(db, 'categories');
-      const catDocs = await withTimeout(getDocs(catColl), 3500);
-      const categories = catDocs.docs.map(d => d.data() as MenuCategory);
-
-      const usersColl = collection(db, 'users');
-      const userDocs = await withTimeout(getDocs(usersColl), 3500);
-      const users = userDocs.docs.map(d => d.data() as User);
-
+    if (consolidatedItems.length > 0 || snapshotRestaurants.length > 0) {
       return {
-        restaurants,
-        items,
-        categories,
-        users,
-        orders: [],
+        restaurants: snapshotRestaurants,
+        items: consolidatedItems,
+        categories: snapshotCategories,
+        users: snapshotUsers,
+        orders: snapshotOrders,
       };
     }
 
@@ -225,7 +287,7 @@ export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<
   if (!db) return false;
   try {
     const restRef = doc(db, 'restaurants', restaurant.id);
-    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true }), 6000);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving restaurant offline:', err);
@@ -239,8 +301,13 @@ export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<
 export async function saveMenuItemToFirebase(item: MenuItem): Promise<boolean> {
   if (!db) return false;
   try {
+    const now = new Date().toISOString();
     const itemRef = doc(db, 'items', item.id);
-    await withTimeout(setDoc(itemRef, { ...item, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    const menuItemRef = doc(db, 'menu_items', item.id);
+    await Promise.allSettled([
+      withTimeout(setDoc(itemRef, { ...item, updatedAt: now }, { merge: true }), 6000),
+      withTimeout(setDoc(menuItemRef, { ...item, updatedAt: now }, { merge: true }), 6000)
+    ]);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving item offline:', err);
@@ -255,7 +322,11 @@ export async function deleteMenuItemFromFirebase(itemId: string): Promise<boolea
   if (!db) return false;
   try {
     const itemRef = doc(db, 'items', itemId);
-    await withTimeout(deleteDoc(itemRef), 3500);
+    const menuItemRef = doc(db, 'menu_items', itemId);
+    await Promise.allSettled([
+      withTimeout(deleteDoc(itemRef), 6000),
+      withTimeout(deleteDoc(menuItemRef), 6000)
+    ]);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice deleting item offline:', err);

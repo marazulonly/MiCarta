@@ -94,6 +94,12 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   );
 
   useEffect(() => {
+    if (currentCategories.length > 0 && !currentCategories.some(c => c.id === selectedCategoryId)) {
+      setSelectedCategoryId(currentCategories[0].id);
+    }
+  }, [currentCategories, selectedCategoryId]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && onClose) {
         onClose();
@@ -376,7 +382,20 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             style={marineStyle}
           >
             {/* Header */}
-            <div className={`text-center space-y-1.5 ${!isOwnerOrAdmin ? 'pt-3 sm:pt-4' : ''}`}>
+            <div className={`relative text-center space-y-1.5 ${!isOwnerOrAdmin ? 'pt-4 sm:pt-6' : ''}`}>
+              {/* Discrete close button for anonymous clients */}
+              {!isOwnerOrAdmin && onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Cerrar carta"
+                  style={{ backgroundColor: `${COLOR_TEAL}18`, color: COLOR_TEAL }}
+                  className="absolute top-0 right-0 p-2 rounded-full hover:bg-black/10 transition cursor-pointer z-20"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
               {restaurant.logoUrl && (
                 <div className="flex justify-center mb-1">
                   <img 

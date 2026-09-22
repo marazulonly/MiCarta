@@ -9,7 +9,8 @@ import {
   KeyRound, 
   ExternalLink,
   Shield,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
 
@@ -19,6 +20,8 @@ interface RoleHeaderProps {
   onOpenLoginModal?: () => void;
   restaurant?: Restaurant;
   onOpenCustomerPreview?: () => void;
+  onSyncFirebase?: () => void;
+  isSyncingFirebase?: boolean;
 }
 
 export const RoleHeader: React.FC<RoleHeaderProps> = ({
@@ -27,6 +30,8 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
   onOpenLoginModal,
   restaurant,
   onOpenCustomerPreview,
+  onSyncFirebase,
+  isSyncingFirebase = false,
 }) => {
   const roleBadgeConfig: Record<UserRole, { label: string; icon: React.FC<{ className?: string }>; color: string }> = {
     ADMIN: { label: 'Administrador', icon: Shield, color: 'bg-white text-black font-bold' },
@@ -78,6 +83,19 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Ver Carta Digital</span>
+              </button>
+            )}
+
+            {/* Sync from Firebase */}
+            {onSyncFirebase && (
+              <button
+                onClick={onSyncFirebase}
+                disabled={isSyncingFirebase}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white transition cursor-pointer shadow disabled:opacity-50"
+                title="Recuperar y sincronizar platos desde Firebase Firestore"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingFirebase ? 'animate-spin text-amber-400' : 'text-neutral-400'}`} />
+                <span>{isSyncingFirebase ? 'Recuperando...' : 'Recuperar Firebase'}</span>
               </button>
             )}
 
