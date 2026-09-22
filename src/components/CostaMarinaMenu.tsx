@@ -93,42 +93,45 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
   if (!isOpen) return null;
 
-  // Background customization from settings
+  // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
+  const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
 
-  let marineStyle: React.CSSProperties = {
-    background: 'linear-gradient(180deg, #041824 0%, #031018 100%)'
-  };
+  let marineStyle: React.CSSProperties = brandingBg
+    ? { backgroundColor: brandingBg, backgroundImage: 'none' }
+    : { background: 'linear-gradient(180deg, #041824 0%, #031018 100%)' };
 
-  if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
-    if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
-      marineStyle = {
-        backgroundImage: `linear-gradient(rgba(3, 20, 32, 0.88), rgba(2, 12, 20, 0.95)), url("${accessSettings.deliveryBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.deliveryBgType === 'color') {
-      marineStyle = { backgroundColor: accessSettings.deliveryBgValue || '#041824' };
-    } else if (accessSettings.deliveryBgType === 'gradient') {
-      marineStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #041824 0%, #031018 100%)' };
+  if (!brandingBg) {
+    if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
+      if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
+        marineStyle = {
+          backgroundImage: `linear-gradient(rgba(3, 20, 32, 0.88), rgba(2, 12, 20, 0.95)), url("${accessSettings.deliveryBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.deliveryBgType === 'color') {
+        marineStyle = { backgroundColor: accessSettings.deliveryBgValue || '#041824' };
+      } else if (accessSettings.deliveryBgType === 'gradient') {
+        marineStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #041824 0%, #031018 100%)' };
+      }
+    } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
+      if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
+        marineStyle = {
+          backgroundImage: `linear-gradient(rgba(3, 24, 38, 0.85), rgba(1, 14, 24, 0.94)), url("${accessSettings.presentialBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.presentialBgType === 'color') {
+        marineStyle = { backgroundColor: accessSettings.presentialBgValue || '#031f33' };
+      } else if (accessSettings.presentialBgType === 'gradient') {
+        marineStyle = { background: accessSettings.presentialBgValue || 'linear-gradient(180deg, #032b45 0%, #010d17 100%)' };
+      }
+    } else if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
+      marineStyle = { background: accessSettings.deliveryBgValue };
+    } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
+      marineStyle = { background: accessSettings.presentialBgValue };
     }
-  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
-    if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
-      marineStyle = {
-        backgroundImage: `linear-gradient(rgba(3, 24, 38, 0.85), rgba(1, 14, 24, 0.94)), url("${accessSettings.presentialBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.presentialBgType === 'color') {
-      marineStyle = { backgroundColor: accessSettings.presentialBgValue || '#031f33' };
-    } else if (accessSettings.presentialBgType === 'gradient') {
-      marineStyle = { background: accessSettings.presentialBgValue || 'linear-gradient(180deg, #032b45 0%, #010d17 100%)' };
-    }
-  } else if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
-    marineStyle = { background: accessSettings.deliveryBgValue };
-  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
-    marineStyle = { background: accessSettings.presentialBgValue };
   }
 
   const currentItems = items.filter(i => {
@@ -180,9 +183,10 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
         
         {/* Outer Shell Marine Theme */}
         <div 
+          style={marineStyle}
           className={`relative w-full ${
             isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-sky-500/30 bg-[#041824] text-[#e0f2fe] transition-all duration-300`}
+          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-sky-500/30 text-[#e0f2fe] transition-all duration-300`}
         >
           {/* Top Bar */}
           <div className="relative z-30 px-4 py-2.5 bg-[#020e17] border-b border-sky-900/40 flex items-center justify-between text-xs">

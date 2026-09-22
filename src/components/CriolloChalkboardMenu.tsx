@@ -87,40 +87,45 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
   if (!isOpen) return null;
 
-  // Background customization from settings
+  // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
+  const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
   
-  let chalkboardStyle: React.CSSProperties = { backgroundColor: '#141716' };
+  let chalkboardStyle: React.CSSProperties = brandingBg
+    ? { backgroundColor: brandingBg, backgroundImage: 'none' }
+    : { backgroundColor: '#141716' };
 
-  if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
-    if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
-      chalkboardStyle = {
-        backgroundImage: `linear-gradient(rgba(18, 20, 19, 0.88), rgba(10, 12, 11, 0.95)), url("${accessSettings.deliveryBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.deliveryBgType === 'color') {
-      chalkboardStyle = { backgroundColor: accessSettings.deliveryBgValue || '#141716' };
-    } else if (accessSettings.deliveryBgType === 'gradient') {
-      chalkboardStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #1f1a14 0%, #100e0b 100%)' };
+  if (!brandingBg) {
+    if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
+      if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
+        chalkboardStyle = {
+          backgroundImage: `linear-gradient(rgba(18, 20, 19, 0.88), rgba(10, 12, 11, 0.95)), url("${accessSettings.deliveryBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.deliveryBgType === 'color') {
+        chalkboardStyle = { backgroundColor: accessSettings.deliveryBgValue || '#141716' };
+      } else if (accessSettings.deliveryBgType === 'gradient') {
+        chalkboardStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #1f1a14 0%, #100e0b 100%)' };
+      }
+    } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
+      if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
+        chalkboardStyle = {
+          backgroundImage: `linear-gradient(rgba(20, 23, 22, 0.86), rgba(12, 14, 13, 0.94)), url("${accessSettings.presentialBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.presentialBgType === 'color') {
+        chalkboardStyle = { backgroundColor: accessSettings.presentialBgValue || '#141716' };
+      } else if (accessSettings.presentialBgType === 'gradient') {
+        chalkboardStyle = { background: accessSettings.presentialBgValue || 'linear-gradient(180deg, #1c1917 0%, #0c0a09 100%)' };
+      }
+    } else if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
+      chalkboardStyle = { background: accessSettings.deliveryBgValue };
+    } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
+      chalkboardStyle = { background: accessSettings.presentialBgValue };
     }
-  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
-    if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
-      chalkboardStyle = {
-        backgroundImage: `linear-gradient(rgba(20, 23, 22, 0.86), rgba(12, 14, 13, 0.94)), url("${accessSettings.presentialBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.presentialBgType === 'color') {
-      chalkboardStyle = { backgroundColor: accessSettings.presentialBgValue || '#141716' };
-    } else if (accessSettings.presentialBgType === 'gradient') {
-      chalkboardStyle = { background: accessSettings.presentialBgValue || 'linear-gradient(180deg, #1c1917 0%, #0c0a09 100%)' };
-    }
-  } else if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
-    chalkboardStyle = { background: accessSettings.deliveryBgValue };
-  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
-    chalkboardStyle = { background: accessSettings.presentialBgValue };
   }
 
   // Filter categories and items for this restaurant
@@ -177,9 +182,10 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
         
         {/* Outer Blackboard Wood Frame */}
         <div 
+          style={chalkboardStyle}
           className={`relative w-full ${
             isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border-4 border-[#5c3e23] bg-[#141716] text-[#e8ebe9] transition-all duration-300`}
+          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border-4 border-[#5c3e23] text-[#e8ebe9] transition-all duration-300`}
         >
           {/* Top Bar */}
           <div className="relative z-30 px-4 py-2.5 bg-[#21160e] border-b border-[#5c3e23] flex items-center justify-between text-xs">

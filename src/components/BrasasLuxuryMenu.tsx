@@ -95,38 +95,41 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
   if (!isOpen) return null;
 
-  // Check background customizations from menuAccessSettings
+  // Check background customizations from menuAccessSettings or restaurant.branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
+  const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
   
   // Dynamic background resolution
-  let customBgStyle: React.CSSProperties = {
-    background: 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)',
-  };
+  let customBgStyle: React.CSSProperties = brandingBg
+    ? { backgroundColor: brandingBg, backgroundImage: 'none' }
+    : { background: 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
 
-  if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
-    if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
-      customBgStyle = {
-        backgroundImage: `linear-gradient(rgba(8, 12, 11, 0.88), rgba(4, 8, 7, 0.95)), url("${accessSettings.deliveryBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.deliveryBgType === 'color') {
-      customBgStyle = { backgroundColor: accessSettings.deliveryBgValue || '#0A0A0A' };
-    } else if (accessSettings.deliveryBgType === 'gradient') {
-      customBgStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #0d362b 0%, #150820 100%)' };
-    }
-  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
-    if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
-      customBgStyle = {
-        backgroundImage: `linear-gradient(rgba(5, 24, 19, 0.86), rgba(3, 16, 12, 0.94)), url("${accessSettings.presentialBgValue}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (accessSettings.presentialBgType === 'color') {
-      customBgStyle = { backgroundColor: accessSettings.presentialBgValue || '#051813' };
-    } else if (accessSettings.presentialBgType === 'gradient') {
-      customBgStyle = { background: accessSettings.presentialBgValue || 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
+  if (!brandingBg) {
+    if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
+      if (accessSettings.deliveryBgType === 'image' && accessSettings.deliveryBgValue) {
+        customBgStyle = {
+          backgroundImage: `linear-gradient(rgba(8, 12, 11, 0.88), rgba(4, 8, 7, 0.95)), url("${accessSettings.deliveryBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.deliveryBgType === 'color') {
+        customBgStyle = { backgroundColor: accessSettings.deliveryBgValue || '#0A0A0A' };
+      } else if (accessSettings.deliveryBgType === 'gradient') {
+        customBgStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #0d362b 0%, #150820 100%)' };
+      }
+    } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
+      if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
+        customBgStyle = {
+          backgroundImage: `linear-gradient(rgba(5, 24, 19, 0.86), rgba(3, 16, 12, 0.94)), url("${accessSettings.presentialBgValue}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      } else if (accessSettings.presentialBgType === 'color') {
+        customBgStyle = { backgroundColor: accessSettings.presentialBgValue || '#051813' };
+      } else if (accessSettings.presentialBgType === 'gradient') {
+        customBgStyle = { background: accessSettings.presentialBgValue || 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
+      }
     }
   }
 
@@ -208,9 +211,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
           className={`relative w-full ${
             isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
           } rounded-2xl overflow-hidden flex flex-col shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-[#b88e3d]/40 transition-all duration-300`}
-          style={{
-            backgroundColor: '#051813',
-          }}
+          style={customBgStyle}
         >
           
           {/* Top Operational Bar */}
