@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Shield, 
   Lock, 
@@ -14,20 +14,84 @@ import {
   Flame,
   CheckCircle2,
   Sparkles,
-  Phone
+  Phone,
+  QrCode,
+  Smartphone,
+  ExternalLink,
+  Copy,
+  Check,
+  Download,
+  X
 } from 'lucide-react';
-import { User, UserRole } from '../types';
+import { QRCodeSVG } from 'qrcode.react';
+import { User, UserRole, Restaurant } from '../types';
 
 interface LoginScreenProps {
   users: User[];
   onLogin: (user: User) => void;
+  restaurants?: Restaurant[];
+  onOpenCustomerPreview?: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ 
+  users, 
+  onLogin,
+  restaurants = [],
+  onOpenCustomerPreview
+}) => {
   const [dniInput, setDniInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Real QR anonymous testing modal state
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [selectedRestForQr, setSelectedRestForQr] = useState<Restaurant>(restaurants[0]);
+  const [selectedTableNum, setSelectedTableNum] = useState<string>('01');
+  const [selectedChannel, setSelectedChannel] = useState<'DINE_IN' | 'DELIVERY'>('DINE_IN');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const activeRest = selectedRestForQr || restaurants[0];
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
+  const qrUrl = activeRest 
+    ? `${origin}/?r=${activeRest.slug}&mesa=${selectedTableNum}&mode=${selectedChannel}`
+    : `${origin}/?r=brasas-y-fuegos&mesa=01&mode=DINE_IN`;
+
+  const handleCopyQrLink = () => {
+    navigator.clipboard?.writeText(qrUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleDownloadQrPng = () => {
+    if (!qrRef.current || !activeRest) return;
+    const svgElement = qrRef.current.querySelector('svg');
+    if (!svgElement) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    canvas.width = 600;
+    canvas.height = 600;
+
+    img.onload = () => {
+      if (ctx) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 50, 50, 500, 500);
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.download = `QR_${activeRest.slug}_Mesa_${selectedTableNum}.png`;
+        downloadLink.href = pngUrl;
+        downloadLink.click();
+      }
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +235,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
             </p>
           </div>
 
+          {/* Quick Real QR Tester Banner for Anonymous Guests */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-neutral-900 border border-amber-500/30 flex items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-400 text-black flex items-center justify-center shrink-0 shadow">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-white block truncate">
+                  ¿Deseas probar pedidos como comensal anónimo?
+                </span>
+                <span className="text-[11px] text-neutral-400 block truncate">
+                  Escanea códigos QR de mesa reales con tu celular o pruébalos aquí.
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (restaurants.length > 0) setSelectedRestForQr(restaurants[0]);
+                setIsQrModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer shrink-0 shadow flex items-center gap-1.5"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Ver Códigos QR</span>
+            </button>
+          </div>
+
           {/* Form Card */}
           <div className="p-6 sm:p-8 rounded-2xl bg-neutral-950 border border-neutral-800 shadow-2xl space-y-6">
             
@@ -239,12 +332,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
-
-            <div className="pt-2 border-t border-neutral-900 text-center">
-              <span className="text-[11px] text-neutral-500">
-                Al ingresar como <strong>Administrador</strong> tendrás acceso a la vista general SaaS y al simulador para PC.
-              </span>
-            </div>
 
           </div>
 
@@ -357,9 +444,182 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
 
       </main>
 
+      {/* Real QR Modal from Login Screen */}
+      {isQrModalOpen && activeRest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="bg-neutral-950 border border-neutral-800 w-full max-w-md rounded-3xl p-6 text-center space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsQrModalOpen(false)}
+              className="absolute right-4 top-4 text-neutral-400 hover:text-white p-1 rounded-lg bg-neutral-900 border border-neutral-800 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-black flex items-center justify-center mx-auto shadow-lg shadow-amber-400/20">
+              <QrCode className="w-6 h-6" />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Códigos QR Reales para Comensales</span>
+              </div>
+              <h3 className="text-base font-black text-white">
+                Probar Pedidos Anónimos
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Selecciona un restaurante y escanea con tu celular para abrir la carta sin registrarte.
+              </p>
+            </div>
+
+            {/* Restaurant Selector Tabs */}
+            {restaurants.length > 0 && (
+              <div className="space-y-1 text-left">
+                <label className="text-[11px] font-bold text-neutral-400">Seleccionar Restaurante:</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {restaurants.map(r => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setSelectedRestForQr(r)}
+                      className={`p-2 rounded-xl text-left border text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                        activeRest.id === r.id
+                          ? 'bg-amber-400/10 border-amber-400 text-amber-300'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      <img src={r.logoUrl} alt={r.name} className="w-6 h-6 rounded-lg object-cover" />
+                      <span className="truncate">{r.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Table or Delivery Selection */}
+            <div className="p-3 bg-neutral-900/90 rounded-2xl border border-neutral-800 text-left space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-neutral-300">Mesa de Prueba:</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChannel('DINE_IN')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                      selectedChannel === 'DINE_IN' ? 'bg-amber-400 text-black' : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    🍽️ Salón
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChannel('DELIVERY')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                      selectedChannel === 'DELIVERY' ? 'bg-sky-400 text-black' : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    🛵 Delivery
+                  </button>
+                </div>
+              </div>
+
+              {selectedChannel === 'DINE_IN' && (
+                <div className="grid grid-cols-6 gap-1.5 pt-1">
+                  {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map(num => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setSelectedTableNum(num)}
+                      className={`py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
+                        selectedTableNum === num
+                          ? 'bg-amber-400 text-black shadow'
+                          : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                      }`}
+                    >
+                      M{num}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Real QR Vector */}
+            <div ref={qrRef} className="p-4 bg-white rounded-2xl inline-block shadow-2xl border border-neutral-200 mx-auto">
+              <QRCodeSVG
+                value={qrUrl}
+                size={180}
+                level="H"
+                includeMargin={false}
+                imageSettings={{
+                  src: activeRest.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64&q=80",
+                  x: undefined,
+                  y: undefined,
+                  height: 36,
+                  width: 36,
+                  excavate: true,
+                }}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                <Smartphone className="w-4 h-4 text-amber-400" />
+                <span>
+                  {activeRest.name} • {selectedChannel === 'DINE_IN' ? `Mesa ${selectedTableNum}` : 'Delivery'}
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400">
+                Apunta con la cámara de tu celular real para abrir la carta y enviar pedidos a cocina.
+              </p>
+            </div>
+
+            <div className="p-2 rounded-xl bg-black/60 border border-neutral-800 text-[10px] font-mono text-neutral-400 truncate text-center">
+              {qrUrl}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2 pt-1">
+              {onOpenCustomerPreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQrModalOpen(false);
+                    onOpenCustomerPreview(activeRest, selectedChannel, selectedTableNum);
+                  }}
+                  className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-950/20"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Probar Carta y Pedido en esta Pantalla</span>
+                </button>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyQrLink}
+                  className="py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-bold border border-neutral-700 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
+                  <span>{copiedLink ? '¡Copiado!' : 'Copiar URL'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadQrPng}
+                  className="py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-bold border border-neutral-700 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Bajar QR PNG</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="w-full border-t border-neutral-900 bg-neutral-950/40 py-4 px-6 text-center text-xs text-neutral-500">
-        MiCarta SaaS Gastronómico • Roles: Administrador, Dueño, Gerente, Cocina KDS, Mesero, Repartidor, Cliente
+        MiCarta 2026
       </footer>
 
     </div>

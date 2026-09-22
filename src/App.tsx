@@ -52,6 +52,7 @@ export default function App() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(INITIAL_RESTAURANTS[0]);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>('DINE_IN');
+  const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(undefined);
 
   // Firebase state
   const [isSavingFirebase, setIsSavingFirebase] = useState(false);
@@ -63,6 +64,29 @@ export default function App() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  // Check URL search parameters on initial mount for QR scanning (e.g. ?r=brasas-y-fuegos&mesa=04&mode=DINE_IN)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const restaurantSlug = urlParams.get('r');
+      const table = urlParams.get('mesa');
+      const mode = urlParams.get('mode') as 'DINE_IN' | 'DELIVERY' | null;
+
+      if (restaurantSlug) {
+        const foundRest = restaurants.find(r => r.slug === restaurantSlug || r.id === restaurantSlug) || restaurants[0];
+        if (foundRest) {
+          setPreviewRestaurant(foundRest);
+          setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+          if (table) setPreviewTableNumber(table);
+          setIsCustomerModalOpen(true);
+          showToast(`📱 Carta QR detectada: ${foundRest.name} ${table ? `(Mesa ${table})` : ''}`);
+        }
+      }
+    } catch {
+      // Ignored if window not available
+    }
+  }, [restaurants]);
 
   // Load from Firebase on initial mount if data exists
   useEffect(() => {
@@ -277,10 +301,11 @@ export default function App() {
     showToast(`🔔 ¡Nueva comanda entrante! ${newOrder.orderNumber} en ${randomRest.name}`);
   };
 
-  const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => {
+  const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => {
     const target = restaurant || restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
     setPreviewRestaurant(target);
     setPreviewMode(mode || 'DINE_IN');
+    setPreviewTableNumber(tableNumber);
     setIsCustomerModalOpen(true);
   };
 
@@ -308,6 +333,8 @@ export default function App() {
         <LoginScreen
           users={users}
           onLogin={handleLogin}
+          restaurants={restaurants}
+          onOpenCustomerPreview={handleOpenCustomerPreview}
         />
 
         {/* Interactive Public Digital Menu Preview Modal for Customers if triggered */}
@@ -319,6 +346,7 @@ export default function App() {
           items={menuItems}
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
+          initialTableNumber={previewTableNumber}
           onUpdateRestaurant={handleUpdateRestaurant}
           onUpdateMenuItem={handleUpdateMenuItem}
           onAddMenuItem={handleAddMenuItem}
@@ -441,6 +469,7 @@ export default function App() {
           items={menuItems}
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
+          initialTableNumber={previewTableNumber}
           onUpdateRestaurant={handleUpdateRestaurant}
           onUpdateMenuItem={handleUpdateMenuItem}
           onAddMenuItem={handleAddMenuItem}
@@ -625,6 +654,7 @@ export default function App() {
         items={menuItems}
         onOrderCreated={handleCreateOrder}
         initialMode={previewMode}
+        initialTableNumber={previewTableNumber}
         onUpdateRestaurant={handleUpdateRestaurant}
         onUpdateMenuItem={handleUpdateMenuItem}
         onAddMenuItem={handleAddMenuItem}
