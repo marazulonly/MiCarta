@@ -5,6 +5,9 @@ service cloud.firestore {
     match /restaurants/{restaurantId} {
       allow read, write: if true;
     }
+    match /items/{itemId} {
+      allow read, write: if true;
+    }
     match /menu_items/{itemId} {
       allow read, write: if true;
     }
@@ -12,6 +15,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
     match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /system_snapshot/{snapshotId} {
       allow read, write: if true;
     }
     match /app_settings/{settingId} {
@@ -22,3 +31,4 @@ service cloud.firestore {
     }
   }
 }
+

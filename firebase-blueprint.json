@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Restaurant profile, branding, and operational configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "cuisineType": { "type": "string" },
+        "slug": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "rating": { "type": "number" },
+        "templateId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "isOpen": { "type": "boolean" }
+      },
+      "required": ["id", "name", "slug"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Menu dish or beverage item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "prepTimeMinutes": { "type": "number" }
+      },
+      "required": ["id", "restaurantId", "categoryId", "name", "price"]
+    },
+    "MenuCategory": {
+      "title": "MenuCategory",
+      "description": "Classification category for dishes in a restaurant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sortOrder": { "type": "number" }
+      },
+      "required": ["id", "restaurantId", "name"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer or table food order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "total": { "type": "number" }
+      },
+      "required": ["id", "restaurantId", "status", "total"]
+    },
+    "User": {
+      "title": "User",
+      "description": "System administrator, owner, manager, waiter, or rider",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "SystemSnapshot": {
+      "title": "SystemSnapshot",
+      "description": "Aggregated state for zero-latency instant loading across client sessions",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string" },
+        "restaurantCount": { "type": "number" },
+        "itemCount": { "type": "number" }
+      },
+      "required": ["updatedAt"]
+    }
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": "Restaurant",
+      "description": "Collection of restaurants"
+    },
+    "/items/{itemId}": {
+      "schema": "MenuItem",
+      "description": "Collection of menu items"
+    },
+    "/categories/{categoryId}": {
+      "schema": "MenuCategory",
+      "description": "Collection of menu categories"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of orders"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of users"
+    },
+    "/system_snapshot/{snapshotId}": {
+      "schema": "SystemSnapshot",
+      "description": "Global snapshot document for single-trip instant load"
+    }
+  }
+}

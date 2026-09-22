@@ -119,7 +119,7 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Robust sanitization to guarantee Cevichito Pliz brand name, slug and dishes across all caches
+// Robust sanitization to guarantee Cevichito Pliz brand name, slug, authentic dishes and categories
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   return rests.map(r => {
     if (
@@ -133,17 +133,39 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       return {
         ...r,
         id: 'rest-costa',
-        name: 'Cevichito Pliz',
+        name: r.name && r.name !== 'Costa Marina' ? r.name : 'Cevichito Pliz',
         slug: 'cevichito-pliz',
-        tagline: 'Cevichería Contemporánea & Pesca Artesanal del Día',
-        branding: defaultCosta?.branding ? { ...defaultCosta.branding } : r.branding
+        tagline: r.tagline && !r.tagline.toLowerCase().includes('costa marina') ? r.tagline : '¡Tragamos como ballenas!',
+        branding: r.branding || defaultCosta?.branding
       };
     }
     return r;
   });
 }
 
+function sanitizeCategories(cats: MenuCategory[]): MenuCategory[] {
+  const costaCats = cats.filter(c => c.restaurantId === 'rest-costa');
+  // If costa has outdated categories or fewer than the 7 authentic categories
+  if (costaCats.length < 7 || costaCats.some(c => c.name.toLowerCase().includes('tiradito') && !c.name.includes('ENTRADAS'))) {
+    const defaultCostaCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === 'rest-costa');
+    const otherCats = cats.filter(c => c.restaurantId !== 'rest-costa');
+    return [...otherCats, ...defaultCostaCats];
+  }
+  return cats;
+}
+
 function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
+  const costaItems = items.filter(it => it.restaurantId === 'rest-costa');
+  const defaultCostaItems = INITIAL_MENU_ITEMS.filter(it => it.restaurantId === 'rest-costa');
+  // Detect if cached costa items are the old dummy ones (e.g. have Ahumado al Ají Amarillo or less than 15 items)
+  if (
+    costaItems.length < 15 || 
+    costaItems.some(it => it.name.includes('Ahumado al Ají Amarillo') || it.name.includes('Apaltado'))
+  ) {
+    const otherItems = items.filter(it => it.restaurantId !== 'rest-costa');
+    return [...otherItems, ...defaultCostaItems];
+  }
+
   return items.map(it => {
     if (it.restaurantId === 'rest-costa' || it.name.includes('Costa Marina')) {
       return {
@@ -171,7 +193,9 @@ const getInitialStateFromStorage = () => {
         if (parsed.restaurants?.length) {
           cachedRests = sanitizeRestaurants(parsed.restaurants);
         }
-        if (parsed.categories?.length) cachedCategories = parsed.categories;
+        if (parsed.categories?.length) {
+          cachedCategories = sanitizeCategories(parsed.categories);
+        }
         if (parsed.items?.length) {
           cachedItems = sanitizeMenuItems(parsed.items);
         }
@@ -261,30 +285,8 @@ export default function App() {
     }
   }, [restaurants]);
 
-  // Load from Firebase and LocalStorage fallback on initial mount if data exists
+  // Fast sync with remote Firebase Firestore on mount
   useEffect(() => {
-    // 1. First try loading from LocalStorage for instant zero-latency load
-    try {
-      const cached = localStorage.getItem('micarta_system_state_v1');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.restaurants?.length) {
-          const cleanRests = sanitizeRestaurants(parsed.restaurants);
-          setRestaurants(cleanRests);
-        }
-        if (parsed.items?.length) {
-          const cleanItems = sanitizeMenuItems(parsed.items);
-          setMenuItems(cleanItems);
-        }
-        if (parsed.categories?.length) setCategories(parsed.categories);
-        if (parsed.users?.length) setUsers(parsed.users);
-        if (parsed.orders?.length) setOrders(parsed.orders);
-      }
-    } catch {
-      // Local storage read error
-    }
-
-    // 2. Sync with remote Firebase Firestore database
     loadAllDataFromFirebase().then(remoteData => {
       if (remoteData) {
         if (remoteData.restaurants?.length) {
@@ -295,9 +297,11 @@ export default function App() {
           const cleanItems = sanitizeMenuItems(remoteData.items);
           setMenuItems(cleanItems);
         }
-        if (remoteData.categories?.length) setCategories(remoteData.categories);
+        if (remoteData.categories?.length) {
+          const cleanCats = sanitizeCategories(remoteData.categories);
+          setCategories(cleanCats);
+        }
         if (remoteData.users?.length) {
-          // Merge remote users with initial users to guarantee no accounts are lost
           setUsers(prev => {
             const map = new Map<string, User>();
             prev.forEach(u => map.set(u.id, u));
@@ -306,7 +310,6 @@ export default function App() {
           });
         }
         if (remoteData.orders?.length) setOrders(remoteData.orders);
-        showToast('✓ Estado de restaurantes, dueños y cartas sincronizado con Firebase');
       }
     }).catch(err => {
       console.warn('Could not auto-load from Firebase:', err);

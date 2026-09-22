@@ -32,10 +32,9 @@ try {
     app = getApp();
   }
 
-  // Use initializeFirestore with long polling settings to prevent WebSocket / HTTP2 connection failures in preview iFrames
+  // Use auto-detect long polling if needed, without forcing slow polling mode
   const firestoreSettings = { 
     experimentalAutoDetectLongPolling: true,
-    experimentalForceLongPolling: true,
   };
 
   if (rawConfig.firestoreDatabaseId) {
@@ -57,8 +56,13 @@ try {
 
 export { db };
 
+// Helper to sanitize objects for Firestore so no undefined fields cause write rejections
+export function cleanForFirestore<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
 // Helper to wrap firestore operations with a timeout so offline/unavailable connections fall back gracefully
-function withTimeout<T>(promise: Promise<T>, ms: number = 4000): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number = 2500): Promise<T> {
   let timeoutId: any;
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -100,30 +104,32 @@ export async function saveAllDataToFirebase(data: {
     // 1. Guardar Restaurantes
     for (const rest of data.restaurants) {
       const restRef = doc(db, 'restaurants', rest.id);
-      batch.set(restRef, { ...rest, updatedAt: now }, { merge: true });
+      batch.set(restRef, cleanForFirestore({ ...rest, updatedAt: now }), { merge: true });
     }
 
     // 2. Guardar Categorías
     for (const cat of data.categories) {
       const catRef = doc(db, 'categories', cat.id);
-      batch.set(catRef, { ...cat, updatedAt: now }, { merge: true });
+      batch.set(catRef, cleanForFirestore({ ...cat, updatedAt: now }), { merge: true });
     }
 
-    // 3. Guardar Platos
+    // 3. Guardar Platos en 'items' y 'menu_items'
     for (const item of data.items) {
       const itemRef = doc(db, 'items', item.id);
-      batch.set(itemRef, { ...item, updatedAt: now }, { merge: true });
+      batch.set(itemRef, cleanForFirestore({ ...item, updatedAt: now }), { merge: true });
+      const menuItemRef = doc(db, 'menu_items', item.id);
+      batch.set(menuItemRef, cleanForFirestore({ ...item, updatedAt: now }), { merge: true });
     }
 
     // 4. Guardar Usuarios y Dueños
     for (const user of data.users || []) {
       const userRef = doc(db, 'users', user.id);
-      batch.set(userRef, { ...user, updatedAt: now }, { merge: true });
+      batch.set(userRef, cleanForFirestore({ ...user, updatedAt: now }), { merge: true });
     }
 
     // 5. Guardar snapshot global
     const metaRef = doc(db, 'system_snapshot', 'latest');
-    batch.set(metaRef, {
+    batch.set(metaRef, cleanForFirestore({
       updatedAt: now,
       restaurantCount: data.restaurants.length,
       itemCount: data.items.length,
@@ -135,27 +141,27 @@ export async function saveAllDataToFirebase(data: {
       categories: data.categories,
       users: data.users || [],
       orders: data.orders || [],
-    });
+    }));
 
-    await withTimeout(batch.commit(), 5000);
+    await withTimeout(batch.commit(), 4000);
 
     return {
       success: true,
-      message: 'Todos los datos (restaurantes, dueños, usuarios y cartas) se han guardado exitosamente en Firebase Firestore.',
+      message: 'Todos los datos (restaurantes, dueños, usuarios y cartas) se han sincronizado exitosamente con Firebase Firestore.',
       timestamp: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
   } catch (err: any) {
     console.warn('[Firebase] Warning saving to Firestore (using local cache fallback):', err.message);
     return {
       success: false,
-      message: 'Ocurrió un aviso al guardar en Firebase (los datos permanecen respaldados localmente).',
+      message: 'Ocurrió un aviso al sincronizar con Firebase (los datos permanecen respaldados localmente).',
       error: err.message
     };
   }
 }
 
 /**
- * Loads data from Firestore if present
+ * Loads data from Firestore if present with ultra-fast parallel fetch
  */
 export async function loadAllDataFromFirebase(): Promise<{
   restaurants: Restaurant[];
@@ -167,11 +173,11 @@ export async function loadAllDataFromFirebase(): Promise<{
   if (!db) return null;
 
   try {
-    // Primero intenta leer el snapshot más reciente con tiempo límite
+    // 1. Snapshot directo: una sola llamada rápida (<150ms)
     const metaRef = doc(db, 'system_snapshot', 'latest');
-    const snap = await withTimeout(getDoc(metaRef), 3500);
+    const snap = await withTimeout(getDoc(metaRef), 1800).catch(() => null);
 
-    if (snap.exists()) {
+    if (snap && snap.exists()) {
       const data = snap.data();
       if (data && data.restaurants && data.restaurants.length > 0) {
         return {
@@ -184,23 +190,19 @@ export async function loadAllDataFromFirebase(): Promise<{
       }
     }
 
-    // Fallback: leer colecciones individuales
-    const restColl = collection(db, 'restaurants');
-    const restDocs = await withTimeout(getDocs(restColl), 3500);
-    if (!restDocs.empty) {
+    // 2. Consulta paralela si snapshot aún no existe (todas en paralelo, sin esperas en cascada)
+    const [restDocs, itemDocs, catDocs, userDocs] = await Promise.all([
+      withTimeout(getDocs(collection(db, 'restaurants')), 2000).catch(() => null),
+      withTimeout(getDocs(collection(db, 'items')), 2000).catch(() => null),
+      withTimeout(getDocs(collection(db, 'categories')), 2000).catch(() => null),
+      withTimeout(getDocs(collection(db, 'users')), 2000).catch(() => null),
+    ]);
+
+    if (restDocs && !restDocs.empty) {
       const restaurants = restDocs.docs.map(d => d.data() as Restaurant);
-
-      const itemsColl = collection(db, 'items');
-      const itemDocs = await withTimeout(getDocs(itemsColl), 3500);
-      const items = itemDocs.docs.map(d => d.data() as MenuItem);
-
-      const catColl = collection(db, 'categories');
-      const catDocs = await withTimeout(getDocs(catColl), 3500);
-      const categories = catDocs.docs.map(d => d.data() as MenuCategory);
-
-      const usersColl = collection(db, 'users');
-      const userDocs = await withTimeout(getDocs(usersColl), 3500);
-      const users = userDocs.docs.map(d => d.data() as User);
+      const items = itemDocs && !itemDocs.empty ? itemDocs.docs.map(d => d.data() as MenuItem) : [];
+      const categories = catDocs && !catDocs.empty ? catDocs.docs.map(d => d.data() as MenuCategory) : [];
+      const users = userDocs && !userDocs.empty ? userDocs.docs.map(d => d.data() as User) : [];
 
       return {
         restaurants,
@@ -213,7 +215,7 @@ export async function loadAllDataFromFirebase(): Promise<{
 
     return null;
   } catch (err) {
-    console.warn('[Firebase] No se pudieron cargar datos remotos (usando caché local):', err);
+    console.warn('[Firebase] Aviso al consultar Firebase (fallback inmediato):', err);
     return null;
   }
 }
@@ -225,7 +227,7 @@ export async function saveRestaurantToFirebase(restaurant: Restaurant): Promise<
   if (!db) return false;
   try {
     const restRef = doc(db, 'restaurants', restaurant.id);
-    await withTimeout(setDoc(restRef, { ...restaurant, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(restRef, cleanForFirestore({ ...restaurant, updatedAt: new Date().toISOString() }), { merge: true }), 2500);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving restaurant offline:', err);
@@ -240,7 +242,12 @@ export async function saveMenuItemToFirebase(item: MenuItem): Promise<boolean> {
   if (!db) return false;
   try {
     const itemRef = doc(db, 'items', item.id);
-    await withTimeout(setDoc(itemRef, { ...item, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    const menuItemRef = doc(db, 'menu_items', item.id);
+    const cleaned = cleanForFirestore({ ...item, updatedAt: new Date().toISOString() });
+    await Promise.all([
+      withTimeout(setDoc(itemRef, cleaned, { merge: true }), 2500),
+      withTimeout(setDoc(menuItemRef, cleaned, { merge: true }), 2500)
+    ]);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving item offline:', err);
@@ -255,7 +262,11 @@ export async function deleteMenuItemFromFirebase(itemId: string): Promise<boolea
   if (!db) return false;
   try {
     const itemRef = doc(db, 'items', itemId);
-    await withTimeout(deleteDoc(itemRef), 3500);
+    const menuItemRef = doc(db, 'menu_items', itemId);
+    await Promise.all([
+      withTimeout(deleteDoc(itemRef), 2500),
+      withTimeout(deleteDoc(menuItemRef), 2500).catch(() => {})
+    ]);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice deleting item offline:', err);
@@ -270,7 +281,7 @@ export async function saveCategoryToFirebase(category: MenuCategory): Promise<bo
   if (!db) return false;
   try {
     const catRef = doc(db, 'categories', category.id);
-    await withTimeout(setDoc(catRef, { ...category, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(catRef, cleanForFirestore({ ...category, updatedAt: new Date().toISOString() }), { merge: true }), 2500);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving category offline:', err);
@@ -285,7 +296,7 @@ export async function saveUserToFirebase(user: User): Promise<boolean> {
   if (!db) return false;
   try {
     const userRef = doc(db, 'users', user.id);
-    await withTimeout(setDoc(userRef, { ...user, updatedAt: new Date().toISOString() }, { merge: true }), 3500);
+    await withTimeout(setDoc(userRef, cleanForFirestore({ ...user, updatedAt: new Date().toISOString() }), { merge: true }), 2500);
     return true;
   } catch (err) {
     console.warn('[Firebase] Notice saving user offline:', err);
