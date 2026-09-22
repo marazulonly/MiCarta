@@ -22,7 +22,8 @@ import {
   RotateCcw,
   ShieldCheck,
   UploadCloud,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -71,6 +72,27 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Local Disk File Upload Handler
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La imagen es demasiado pesada. Elige una foto de menos de 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        callback(result);
+        showToast('✓ Imagen cargada exitosamente desde el disco');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveToFirebase = async () => {
@@ -1659,21 +1681,39 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
               {/* Row 4: Foto del Plato */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-neutral-300 block">
-                  Foto del Plato (URL o Seleccionar del catálogo)
+                  Foto del Plato
                 </label>
                 
                 <div className="flex items-center gap-2">
                   <input
-                    type="url"
+                    type="text"
                     value={formImageUrl}
                     onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-white focus:border-amber-400 transition"
+                    placeholder="URL de la imagen o sube desde el disco..."
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-white focus:border-amber-400 transition"
                   />
+                  {formImageUrl && (
+                    <img 
+                      src={formImageUrl} 
+                      alt="Preview" 
+                      className="w-9 h-9 rounded-lg object-cover border border-neutral-800 shrink-0" 
+                    />
+                  )}
                 </div>
 
+                <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-dashed border-amber-500/50 cursor-pointer text-amber-400 text-xs font-semibold transition">
+                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  <span>📁 Reemplazar foto subiendo desde el disco</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => handleImageFileUpload(e, setFormImageUrl)} 
+                  />
+                </label>
+
                 {/* Stock photo suggestions */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
                   <span className="text-[10px] text-neutral-400 shrink-0">Fotos rápidas:</span>
                   {STOCK_PHOTOS.map((ph, idx) => (
                     <button
@@ -2024,6 +2064,32 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             </div>
 
             <div className="p-5 space-y-4 overflow-y-auto">
+              {/* Local Disk Upload Section */}
+              <div className="p-3.5 rounded-2xl bg-neutral-900 border border-amber-500/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <Upload className="w-4 h-4 text-amber-400" />
+                    <span>Subir Foto de Reemplazo desde el Disco:</span>
+                  </span>
+                  <span className="text-[10px] text-neutral-400">JPG, PNG, WEBP (máx. 5MB)</span>
+                </div>
+                <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow-md transition">
+                  <Upload className="w-4 h-4 stroke-[2.5]" />
+                  <span>📁 Seleccionar Imagen del Equipo</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      handleImageFileUpload(e, (dataUrl) => {
+                        setQuickPhotoUrl(dataUrl);
+                        handleQuickSavePhoto(dataUrl);
+                      });
+                    }} 
+                  />
+                </label>
+              </div>
+
               {/* Photo Live Preview */}
               <div className="relative h-44 rounded-xl overflow-hidden bg-black border border-neutral-800">
                 <img

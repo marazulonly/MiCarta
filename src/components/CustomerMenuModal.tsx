@@ -12,7 +12,8 @@ import {
   Bike, 
   Image as ImageIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Upload
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
@@ -119,6 +120,27 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Disk Image Upload Handler (reads file from local disk as DataURL base64)
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('⚠️ La foto es demasiado pesada. Elige una imagen de menos de 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        callback(result);
+        showToast('✓ Foto del plato cargada exitosamente desde el disco');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   if (!isOpen) return null;
@@ -428,13 +450,35 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-mono mb-1">URL de la Foto</label>
-                <input
-                  type="url"
-                  value={editItemImgUrl}
-                  onChange={e => setEditItemImgUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none font-mono text-[11px]"
-                />
+                <label className="block text-neutral-400 font-mono mb-1">Foto del Plato</label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="URL de la imagen o sube desde tu equipo..."
+                      value={editItemImgUrl}
+                      onChange={e => setEditItemImgUrl(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none font-mono text-[11px]"
+                    />
+                    {editItemImgUrl && (
+                      <img 
+                        src={editItemImgUrl} 
+                        alt="Preview" 
+                        className="w-9 h-9 rounded-lg object-cover border border-neutral-700 shrink-0" 
+                      />
+                    )}
+                  </div>
+                  <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-dashed border-amber-500/50 cursor-pointer text-amber-400 text-xs font-semibold transition">
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    <span>📁 Reemplazar foto subiendo desde el disco</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleImageFileUpload(e, setEditItemImgUrl)} 
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -545,6 +589,31 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Local Disk Upload Section */}
+              <div className="p-3.5 rounded-2xl bg-neutral-800/80 border border-amber-500/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <Upload className="w-4 h-4 text-amber-400" />
+                    <span>Subir Foto de Reemplazo desde el Disco:</span>
+                  </span>
+                  <span className="text-[10px] text-neutral-400">JPG, PNG, WEBP (máx. 5MB)</span>
+                </div>
+                <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow-md transition">
+                  <Upload className="w-4 h-4 stroke-[2.5]" />
+                  <span>📁 Seleccionar Imagen del Equipo</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      handleImageFileUpload(e, (dataUrl) => {
+                        handleSaveQuickPhoto(dataUrl);
+                      });
+                    }} 
+                  />
+                </label>
+              </div>
+
               <div>
                 <label className="block text-xs font-mono text-neutral-400 mb-1.5">Galería Gastronómica Peruana Sugerida</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -776,18 +845,33 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
               <div>
                 <label className="block text-neutral-400 font-mono mb-1">Foto del Plato</label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={newItemImgUrl}
-                    onChange={e => setNewItemImgUrl(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none font-mono text-[11px]"
-                  />
-                  <img 
-                    src={newItemImgUrl} 
-                    alt="preview" 
-                    className="w-9 h-9 rounded-lg object-cover border border-neutral-700 shrink-0" 
-                  />
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="URL de la imagen o sube desde tu equipo..."
+                      value={newItemImgUrl}
+                      onChange={e => setNewItemImgUrl(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-white focus:border-amber-400 outline-none font-mono text-[11px]"
+                    />
+                    {newItemImgUrl && (
+                      <img 
+                        src={newItemImgUrl} 
+                        alt="preview" 
+                        className="w-9 h-9 rounded-lg object-cover border border-neutral-700 shrink-0" 
+                      />
+                    )}
+                  </div>
+                  <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-dashed border-amber-500/50 cursor-pointer text-amber-400 text-xs font-semibold transition">
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    <span>📁 Subir foto desde el disco</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleImageFileUpload(e, setNewItemImgUrl)} 
+                    />
+                  </label>
                 </div>
               </div>
 
