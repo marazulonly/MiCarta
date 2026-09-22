@@ -302,9 +302,9 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
     id: 'rest-costa',
     name: 'Costa Marina',
-    tagline: 'Cevichería Contemporánea & Pesca Artesanal del Día',
+    tagline: 'Cevichito Pliz - Cevichería Contemporánea & Pesca Artesanal del Día',
     cuisineType: 'Cevichería & Mariscos',
-    slug: 'costa-marina',
+    slug: 'cevichito-pliz',
     address: 'Malecón de la Reserva 102, Miraflores',
     phone: '+51 945 678 901',
     rating: 4.9,

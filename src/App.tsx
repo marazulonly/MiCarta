@@ -25,7 +25,7 @@ import { AdminSimulationView } from './components/AdminSimulationView';
 import { OwnerDashboard } from './components/OwnerDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
-import { Bell, CheckCircle2 } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import { 
   saveAllDataToFirebase, 
   loadAllDataFromFirebase,
@@ -48,6 +48,56 @@ export const normalizeSlug = (str?: string): string => {
     .replace(/[^a-z0-9]/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+};
+
+// Helper function to locate a restaurant strictly by slug, ID, name, tagline, or custom alias
+export const findRestaurantBySlug = (restaurantsList: Restaurant[], querySlug?: string | null): Restaurant | null => {
+  if (!querySlug) return null;
+  const target = normalizeSlug(querySlug);
+  if (!target) return null;
+
+  // 1. Exact match by slug, id, or name
+  const exact = restaurantsList.find(r => 
+    normalizeSlug(r.slug) === target || 
+    normalizeSlug(r.id) === target || 
+    normalizeSlug(r.name) === target
+  );
+  if (exact) return exact;
+
+  // 2. Alias or fuzzy match
+  const fuzzy = restaurantsList.find(r => {
+    const slugNorm = normalizeSlug(r.slug);
+    const idNorm = normalizeSlug(r.id);
+    const nameNorm = normalizeSlug(r.name);
+    const taglineNorm = normalizeSlug(r.tagline || '');
+
+    // Cevichito Pliz / Costa Marina alias mapping
+    if (
+      r.id === 'rest-costa' || 
+      slugNorm.includes('costa') || 
+      slugNorm.includes('cevichito') || 
+      nameNorm.includes('costa') || 
+      nameNorm.includes('cevichito') ||
+      taglineNorm.includes('cevichito')
+    ) {
+      if (
+        target.includes('cevichito') || 
+        target.includes('costa') || 
+        target.includes('marina') || 
+        target.includes('pliz')
+      ) {
+        return true;
+      }
+    }
+
+    if (slugNorm.includes(target) || target.includes(slugNorm)) return true;
+    if (nameNorm.includes(target) || target.includes(nameNorm)) return true;
+    if (taglineNorm.includes(target)) return true;
+
+    return false;
+  });
+
+  return fuzzy || null;
 };
 
 // Parse initial URL search parameters synchronously before first render
@@ -111,13 +161,10 @@ const getInitialStateFromStorage = () => {
 const initialState = getInitialStateFromStorage();
 const initParams = getInitialUrlParams();
 
-const initialFoundRest = initParams.restSlug 
-  ? (initialState.cachedRests.find(r => 
-      normalizeSlug(r.slug) === normalizeSlug(initParams.restSlug!) || 
-      normalizeSlug(r.id) === normalizeSlug(initParams.restSlug!) ||
-      normalizeSlug(r.name) === normalizeSlug(initParams.restSlug!)
-    ) || initialState.cachedRests[0])
-  : initialState.cachedRests[0];
+const initialRequestedSlug = initParams.restSlug;
+const initialFoundRest = initialRequestedSlug 
+  ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
+  : null;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -140,10 +187,13 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
 
   // Customer preview modal
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(initParams.isQr);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(initialFoundRest);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(Boolean(initialRequestedSlug && initialFoundRest));
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(initialFoundRest || initialState.cachedRests[0]);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
+  const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
+    (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
+  );
 
   // Firebase state
   const [isSavingFirebase, setIsSavingFirebase] = useState(false);
@@ -165,18 +215,18 @@ export default function App() {
       const mode = urlParams.get('mode') as 'DINE_IN' | 'DELIVERY' | null;
 
       if (restaurantSlug) {
-        const targetSlug = normalizeSlug(restaurantSlug);
-        const foundRest = restaurants.find(r => 
-          normalizeSlug(r.slug) === targetSlug || 
-          normalizeSlug(r.id) === targetSlug || 
-          normalizeSlug(r.name) === targetSlug
-        );
+        const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
 
         if (foundRest) {
           setPreviewRestaurant(foundRest);
           setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
           if (table) setPreviewTableNumber(table);
           setIsCustomerModalOpen(true);
+          setNotFoundSlugError(null);
+        } else {
+          // STRICT RULE: If the requested menu does NOT exist, DO NOT show a wrong fallback menu!
+          setIsCustomerModalOpen(false);
+          setNotFoundSlugError(restaurantSlug);
         }
       }
     } catch {
@@ -840,6 +890,35 @@ export default function App() {
         onAddCategory={handleAddCategory}
         isOwnerOrAdmin={Boolean(currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER'))}
       />
+
+      {/* Strict Warning Modal when URL requested slug does not exist */}
+      {notFoundSlugError && !isCustomerModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md p-6 rounded-2xl bg-neutral-900 border border-amber-500/40 text-white shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-amber-300">Carta No Disponible</h3>
+              <p className="text-xs text-neutral-300 mt-2">
+                Se intentó acceder a la carta digital con el parámetro:
+              </p>
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-black/60 border border-neutral-800 text-amber-400 font-mono text-xs inline-block font-bold">
+                ?r={notFoundSlugError}
+              </div>
+              <p className="text-[11px] text-neutral-400 mt-3 leading-relaxed">
+                No se encontró ninguna carta registrada para esta dirección. Por política de seguridad y fidelidad, no se mostrará la carta de ningún otro restaurante.
+              </p>
+            </div>
+            <button
+              onClick={() => setNotFoundSlugError(null)}
+              className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs transition cursor-pointer shadow-lg"
+            >
+              Entendido / Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}
       <LoginModal

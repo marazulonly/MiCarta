@@ -376,9 +376,14 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     }
   };
 
-  // Template resolution: check templateId first, fallback to slug/id
+  // Template resolution: check templateId first, fallback to slug/id/keywords
   const isMarineTemplate = restaurant.templateId === 'tmpl-marine' || 
-    (!restaurant.templateId && (restaurant.id === 'rest-costa' || restaurant.slug === 'costa-marina' || restaurant.name.toLowerCase().includes('costa')));
+    restaurant.id === 'rest-costa' || 
+    restaurant.slug === 'costa-marina' || 
+    restaurant.slug === 'cevichito-pliz' || 
+    restaurant.name.toLowerCase().includes('costa') || 
+    restaurant.name.toLowerCase().includes('cevichito') ||
+    Boolean(restaurant.tagline && restaurant.tagline.toLowerCase().includes('cevichito'));
 
   const isCriolloTemplate = restaurant.templateId === 'tmpl-criollo' || 
     (!restaurant.templateId && (restaurant.id === 'rest-criollo' || restaurant.slug === 'criollo-tradicion' || restaurant.name.toLowerCase().includes('criollo')));
