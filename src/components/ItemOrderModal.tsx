@@ -175,8 +175,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
               Personalizar Pedido
             </span>
             <h2 
-              style={{ fontFamily: dishNameFont }}
-              className="text-base sm:text-lg font-bold text-white leading-tight"
+              style={{ fontFamily: dishNameFont, color: textColor || '#ffffff' }}
+              className="text-base sm:text-lg font-bold leading-tight"
             >
               {item.name}
             </h2>
@@ -257,16 +257,20 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                     <button
                       key={idx}
                       onClick={() => setActiveUnitTab(idx)}
-                      style={isSelectedTab ? { backgroundColor: themeAccentColor, color: '#000' } : undefined}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                        !isSelectedTab ? 'bg-black/40 text-neutral-300 hover:text-white border border-neutral-700/80' : 'shadow-md'
+                      style={
+                        isSelectedTab 
+                          ? { backgroundColor: themeAccentColor, color: buttonTextColor, borderColor: themeAccentColor } 
+                          : { backgroundColor: 'rgba(0,0,0,0.4)', color: themeAccentColor, borderColor: `${themeAccentColor}60` }
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                        isSelectedTab ? 'shadow-md' : 'hover:brightness-125'
                       }`}
                     >
                       <span>Plato {idx + 1}</span>
                       {(hasAddons || hasObs) && (
                         <span 
                           className="w-1.5 h-1.5 rounded-full" 
-                          style={isSelectedTab ? { backgroundColor: '#000' } : { backgroundColor: themeAccentColor }} 
+                          style={isSelectedTab ? { backgroundColor: buttonTextColor } : { backgroundColor: themeAccentColor }} 
                         />
                       )}
                     </button>
@@ -322,10 +326,10 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           <div 
                             style={isSelected ? { backgroundColor: themeAccentColor, borderColor: themeAccentColor } : undefined}
                             className={`w-4 h-4 rounded flex items-center justify-center border ${
-                              !isSelected ? 'border-neutral-700 bg-neutral-900' : 'text-black'
+                              !isSelected ? 'border-neutral-700 bg-neutral-900' : ''
                             }`}
                           >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: buttonTextColor }} />}
                           </div>
                           <span className="text-xs font-medium">{addon.name}</span>
                         </div>
@@ -365,12 +369,16 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                         style={isChipActive ? {
                           backgroundColor: themeAccentColor,
                           borderColor: themeAccentColor,
-                          color: '#000'
-                        } : undefined}
+                          color: buttonTextColor
+                        } : {
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          borderColor: `${themeAccentColor}60`,
+                          color: themeAccentColor
+                        }}
                         className={`text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer ${
                           !isChipActive
-                            ? 'bg-black/60 text-neutral-300 hover:text-white border-neutral-700'
-                            : 'font-bold'
+                            ? 'hover:brightness-125'
+                            : 'font-bold shadow-sm'
                         }`}
                       >
                         {chip}

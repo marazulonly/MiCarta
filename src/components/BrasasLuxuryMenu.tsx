@@ -467,27 +467,47 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
               {/* CATEGORY SELECTOR TABS */}
               <div className="my-3 pb-3 border-b border-[#dfb86c]/20 flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1">
-                {currentCategories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-serif transition-all cursor-pointer whitespace-nowrap border ${
-                      activeCategory === cat.id
-                        ? 'bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-bold border-[#fff] shadow-[0_0_12px_rgba(223,184,108,0.4)]'
-                        : 'bg-[#09261f]/80 text-[#d8be86] border-[#dfb86c]/30 hover:bg-[#0f372d] hover:text-white'
-                    }`}
-                  >
-                    {getCategoryIcon(cat.name)}
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
+                {currentCategories.map(cat => {
+                  const isSelected = activeCategory === cat.id;
+                  const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c';
+                  const btnTextColor = restaurant.branding?.buttonTextColor || '#000000';
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      style={
+                        isSelected
+                          ? { backgroundColor: btnColor, color: btnTextColor, borderColor: btnColor }
+                          : { backgroundColor: 'rgba(9, 38, 31, 0.8)', color: btnColor, borderColor: `${btnColor}50` }
+                      }
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-serif transition-all cursor-pointer whitespace-nowrap border ${
+                        isSelected ? 'font-bold shadow-[0_0_12px_rgba(223,184,108,0.4)]' : 'hover:brightness-125'
+                      }`}
+                    >
+                      {getCategoryIcon(cat.name)}
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
 
                 <button
                   onClick={() => setActiveCategory('all')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-serif transition-all cursor-pointer whitespace-nowrap border ${
+                  style={
                     activeCategory === 'all'
-                      ? 'bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-bold border-[#fff] shadow-[0_0_12px_rgba(223,184,108,0.4)]'
-                      : 'bg-[#09261f]/80 text-[#d8be86] border-[#dfb86c]/30 hover:bg-[#0f372d] hover:text-white'
+                      ? {
+                          backgroundColor: restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c',
+                          color: restaurant.branding?.buttonTextColor || '#000000',
+                          borderColor: restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c'
+                        }
+                      : {
+                          backgroundColor: 'rgba(9, 38, 31, 0.8)',
+                          color: restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c',
+                          borderColor: `${restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#dfb86c'}50`
+                        }
+                  }
+                  className={`px-3 py-1.5 rounded-full text-xs font-serif transition-all cursor-pointer whitespace-nowrap border ${
+                    activeCategory === 'all' ? 'font-bold shadow-[0_0_12px_rgba(223,184,108,0.4)]' : 'hover:brightness-125'
                   }`}
                 >
                   Todas las Secciones

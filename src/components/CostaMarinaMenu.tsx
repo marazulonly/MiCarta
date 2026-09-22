@@ -375,25 +375,38 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             {/* Category Tabs */}
             <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 border-b border-sky-900/50">
               <div className="flex items-center gap-2">
-                {currentCategories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategoryId(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      selectedCategoryId === cat.id
-                        ? 'bg-sky-400 text-black shadow-md'
-                        : 'bg-[#062438] text-sky-200 hover:text-white border border-sky-800/40'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+                {currentCategories.map(cat => {
+                  const isSelected = selectedCategoryId === cat.id;
+                  const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8';
+                  const btnTextColor = restaurant.branding?.buttonTextColor || '#000000';
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategoryId(cat.id)}
+                      style={
+                        isSelected
+                          ? { backgroundColor: btnColor, color: btnTextColor, borderColor: btnColor }
+                          : { backgroundColor: 'rgba(6, 36, 56, 0.8)', color: btnColor, borderColor: `${btnColor}60` }
+                      }
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
+                        isSelected ? 'shadow-md' : 'hover:brightness-125'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
               </div>
               {isLiveEditActive && onAddNewItem && (
                 <button
                   type="button"
                   onClick={onAddNewItem}
-                  className="shrink-0 px-2.5 py-1.5 rounded-xl bg-sky-400 hover:bg-sky-300 text-black font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow"
+                  style={{
+                    backgroundColor: restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8',
+                    color: restaurant.branding?.buttonTextColor || '#000000'
+                  }}
+                  className="shrink-0 px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[3]" />
                   <span>+ Plato</span>
