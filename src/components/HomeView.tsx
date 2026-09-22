@@ -17,6 +17,7 @@ import { AdminDashboard } from './AdminDashboard';
 import { OwnerDashboard } from './OwnerDashboard';
 
 interface HomeViewProps {
+  currentUser?: User | null;
   restaurants: Restaurant[];
   orders: Order[];
   users: User[];
@@ -42,6 +43,7 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
+  currentUser,
   restaurants,
   orders,
   users,
@@ -158,6 +160,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* Render Owner Dashboard */}
       {viewMode === 'owner' && (
         <OwnerDashboard
+          currentUser={currentUser || undefined}
           restaurants={restaurants}
           users={users}
           templates={templates}

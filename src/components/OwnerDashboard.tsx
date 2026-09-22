@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Store, 
   ChefHat, 
@@ -61,6 +61,7 @@ import { TableQrModal } from './TableQrModal';
 import { DEFAULT_WEEKLY_SCHEDULE, generateTablesForRestaurant, generateShiftsForRestaurant } from '../data/mockData';
 
 interface OwnerDashboardProps {
+  currentUser?: User;
   restaurants: Restaurant[];
   users: User[];
   templates: MenuTemplate[];
@@ -83,6 +84,7 @@ interface OwnerDashboardProps {
 type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates';
 
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
+  currentUser,
   restaurants,
   users,
   templates,
@@ -101,23 +103,31 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onOpenCustomerPreview,
   onSwitchToAdminView,
 }) => {
+  const isOwnerLogged = Boolean(currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'));
+
   // Find available owners
   const ownersList = users.filter(u => u.role === 'OWNER');
-  const [selectedOwnerId, setSelectedOwnerId] = useState<string>(ownersList[0]?.id || 'u-2');
-
-  const currentOwner = ownersList.find(o => o.id === selectedOwnerId) || ownersList[0];
-
-  // Restaurants owned by this owner
-  const ownedRestaurants = restaurants.filter(r => 
-    currentOwner?.restaurantIds.includes(r.id) || r.ownerId === currentOwner?.id
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>(
+    currentUser?.role === 'OWNER' ? currentUser.id : (ownersList[0]?.id || 'u-2')
   );
+
+  const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o.id === selectedOwnerId) || ownersList[0]);
+
+  // Restaurants owned or assigned to this owner:
+  // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
+  const ownedRestaurants = restaurants.filter(r => {
+    if (isOwnerLogged && currentUser) {
+      return r.ownerId === currentUser.id || (currentUser.restaurantIds && (currentUser.restaurantIds.includes(r.id) || currentUser.restaurantIds.includes('all')));
+    }
+    return r.ownerId === currentOwner?.id || (currentOwner?.restaurantIds && currentOwner.restaurantIds.includes(r.id));
+  });
 
   // Selected Restaurant being managed
   const [selectedRestId, setSelectedRestId] = useState<string>(
-    ownedRestaurants[0]?.id || restaurants[0]?.id || 'rest-brasas'
+    ownedRestaurants[0]?.id || ''
   );
 
-  const currentRestaurant = restaurants.find(r => r.id === selectedRestId) || ownedRestaurants[0] || restaurants[0];
+  const currentRestaurant = ownedRestaurants.find(r => r.id === selectedRestId) || ownedRestaurants[0];
 
   // Active subtab inside restaurant management
   const [activeSubTab, setActiveSubTab] = useState<AccessSubTab>('waiters');
@@ -130,9 +140,37 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Sync state when restaurant switches
+  const handleSelectRestaurant = (restId: string) => {
+    setSelectedRestId(restId);
+    const target = restaurants.find(r => r.id === restId);
+    if (target) {
+      if (target.waiterPermissions) setWaiterPerms(target.waiterPermissions);
+      if (target.kitchenPermissions) setKitchenPerms(target.kitchenPermissions);
+      if (target.deliveryPermissions) setDeliveryPerms(target.deliveryPermissions);
+      if (target.customerAccessSettings) setCustomerSettings(target.customerAccessSettings);
+      setScheduleState(target.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
+      setShiftsState(target.shifts || generateShiftsForRestaurant(target.id));
+      setTablesState(target.tables || generateTablesForRestaurant(target.id));
+    }
+  };
+
+  // Sync selectedRestId if ownedRestaurants changes
+  useEffect(() => {
+    if (ownedRestaurants.length > 0) {
+      if (!selectedRestId || !ownedRestaurants.some(r => r.id === selectedRestId)) {
+        const nextId = ownedRestaurants[0].id;
+        setSelectedRestId(nextId);
+        handleSelectRestaurant(nextId);
+      }
+    } else {
+      setSelectedRestId('');
+    }
+  }, [ownedRestaurants.length, selectedOwnerId]);
+
   // Local mutable state for currently selected restaurant permissions
   const [waiterPerms, setWaiterPerms] = useState<WaiterPermissions>(
-    currentRestaurant.waiterPermissions || {
+    currentRestaurant?.waiterPermissions || {
       canCancelOrders: false,
       canApplyDiscounts: true,
       canAssignTables: true,
@@ -143,7 +181,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   );
 
   const [kitchenPerms, setKitchenPerms] = useState<KitchenPermissions>(
-    currentRestaurant.kitchenPermissions || {
+    currentRestaurant?.kitchenPermissions || {
       canMarkReady: true,
       canRejectItems: true,
       canManageStockOut: true,
@@ -155,7 +193,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   );
 
   const [deliveryPerms, setDeliveryPerms] = useState<DeliveryPermissions>(
-    currentRestaurant.deliveryPermissions || {
+    currentRestaurant?.deliveryPermissions || {
       canAcceptCash: true,
       maxActiveOrders: 3,
       autoAssignZone: true,
@@ -165,7 +203,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   );
 
   const [customerSettings, setCustomerSettings] = useState<CustomerAccessSettings>(
-    currentRestaurant.customerAccessSettings || {
+    currentRestaurant?.customerAccessSettings || {
       qrOrderingEnabled: true,
       guestCheckout: true,
       allowCashAtTable: true,
@@ -178,15 +216,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   // --- State for Weekly Schedules, Shifts, and Tables ---
   const [scheduleState, setScheduleState] = useState<DaySchedule[]>(
-    currentRestaurant.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
+    currentRestaurant?.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
   );
 
   const [shiftsState, setShiftsState] = useState<StaffShift[]>(
-    currentRestaurant.shifts || generateShiftsForRestaurant(currentRestaurant.id)
+    currentRestaurant?.shifts || (currentRestaurant ? generateShiftsForRestaurant(currentRestaurant.id) : [])
   );
 
   const [tablesState, setTablesState] = useState<RestaurantTable[]>(
-    currentRestaurant.tables || generateTablesForRestaurant(currentRestaurant.id)
+    currentRestaurant?.tables || (currentRestaurant ? generateTablesForRestaurant(currentRestaurant.id) : [])
   );
 
   // Modals for Tables & QR & Shifts
@@ -231,7 +269,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [newUserPhone, setNewUserPhone] = useState('+51 987 000 111');
   const [newUserDni, setNewUserDni] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('12345678');
-  const [newUserRestId, setNewUserRestId] = useState<string>(ownedRestaurants[0]?.id || currentRestaurant.id);
+  const [newUserRestId, setNewUserRestId] = useState<string>(ownedRestaurants[0]?.id || currentRestaurant?.id || '');
   const [newUserShift, setNewUserShift] = useState<'MANANA' | 'TARDE' | 'NOCHE' | 'COMPLETO'>('TARDE');
   const [newUserPin, setNewUserPin] = useState('1234');
   const [newUserKitchenStation, setNewUserKitchenStation] = useState('Parrilla & Brasas');
@@ -244,32 +282,25 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editUserError, setEditUserError] = useState<string | null>(null);
 
-  // Sync state when restaurant switches
-  const handleSelectRestaurant = (restId: string) => {
-    setSelectedRestId(restId);
-    const target = restaurants.find(r => r.id === restId);
-    if (target) {
-      if (target.waiterPermissions) setWaiterPerms(target.waiterPermissions);
-      if (target.kitchenPermissions) setKitchenPerms(target.kitchenPermissions);
-      if (target.deliveryPermissions) setDeliveryPerms(target.deliveryPermissions);
-      if (target.customerAccessSettings) setCustomerSettings(target.customerAccessSettings);
-      setScheduleState(target.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
-      setShiftsState(target.shifts || generateShiftsForRestaurant(target.id));
-      setTablesState(target.tables || generateTablesForRestaurant(target.id));
-    }
-  };
-
   // Waiters assigned to this restaurant
-  const assignedWaiters = users.filter(u => u.role === 'WAITER' && u.restaurantIds.includes(currentRestaurant.id));
+  const assignedWaiters = currentRestaurant
+    ? users.filter(u => u.role === 'WAITER' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all')))
+    : [];
   
   // Kitchen staff assigned to this restaurant
-  const assignedKitchen = users.filter(u => u.role === 'KITCHEN' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all')));
+  const assignedKitchen = currentRestaurant
+    ? users.filter(u => u.role === 'KITCHEN' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all')))
+    : [];
 
   // Delivery assigned to this restaurant
-  const assignedRiders = users.filter(u => u.role === 'DELIVERY' && u.restaurantIds.includes(currentRestaurant.id));
+  const assignedRiders = currentRestaurant
+    ? users.filter(u => u.role === 'DELIVERY' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all')))
+    : [];
 
   // Customers (either assigned to this restaurant or global clients)
-  const assignedCustomers = users.filter(u => u.role === 'CUSTOMER' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all') || u.restaurantIds.length === 0));
+  const assignedCustomers = currentRestaurant
+    ? users.filter(u => u.role === 'CUSTOMER' && (u.restaurantIds.includes(currentRestaurant.id) || u.restaurantIds.includes('all') || u.restaurantIds.length === 0))
+    : [];
 
   // Save Kitchen Permissions
   const handleSaveKitchenPerms = () => {
@@ -722,30 +753,41 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             Gestión de Mis Restaurantes y Accesos
           </h1>
           <p className="text-xs text-neutral-400 mt-0.5">
-            Administra tus locales, personal de salón, repartidores, accesos de clientes QR y diseña tu carta digital.
+            {isOwnerLogged 
+              ? `Bienvenido, ${currentOwner.name}. Aquí puedes gestionar únicamente tus sedes creadas o asignadas y personalizar tu carta.`
+              : 'Administra tus locales, personal de salón, repartidores, accesos de clientes QR y diseña tu carta digital.'
+            }
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {/* Switch Active Owner for Testing */}
-          <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
-            <span className="text-[11px] text-neutral-400">Dueño:</span>
-            <select
-              value={selectedOwnerId}
-              onChange={(e) => {
-                setSelectedOwnerId(e.target.value);
-                const firstRest = restaurants.find(r => r.ownerId === e.target.value);
-                if (firstRest) handleSelectRestaurant(firstRest.id);
-              }}
-              className="bg-transparent text-xs text-white font-bold cursor-pointer focus:outline-none"
-            >
-              {ownersList.map(o => (
-                <option key={o.id} value={o.id} className="bg-neutral-900 text-white">
-                  {o.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {/* Active Owner display */}
+          {isOwnerLogged ? (
+            <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
+              <span className="text-[11px] text-neutral-400">Dueño Activo:</span>
+              <span className="text-xs text-amber-400 font-bold">{currentOwner.name}</span>
+              <span className="text-[10px] text-neutral-400 font-mono">({currentOwner.dni})</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
+              <span className="text-[11px] text-neutral-400">Ver como Dueño:</span>
+              <select
+                value={selectedOwnerId}
+                onChange={(e) => {
+                  setSelectedOwnerId(e.target.value);
+                  const firstRest = restaurants.find(r => r.ownerId === e.target.value || users.find(u => u.id === e.target.value)?.restaurantIds.includes(r.id));
+                  if (firstRest) handleSelectRestaurant(firstRest.id);
+                }}
+                className="bg-transparent text-xs text-white font-bold cursor-pointer focus:outline-none"
+              >
+                {ownersList.map(o => (
+                  <option key={o.id} value={o.id} className="bg-neutral-900 text-white">
+                    {o.name} ({o.dni})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button
             onClick={onSwitchToAdminView}
@@ -767,7 +809,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <h2 className="text-base font-bold text-white">
               Mis Restaurantes ({ownedRestaurants.length})
             </h2>
-            <span className="text-xs text-neutral-400 hidden sm:inline">· Selecciona un local para gestionar sus accesos</span>
+            <span className="text-xs text-neutral-400 hidden sm:inline">· Sedes creadas o asignadas a tu cuenta</span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -781,7 +823,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
             <button
               onClick={() => setIsCreatingUser(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shadow-sm"
+              disabled={ownedRestaurants.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer shadow-sm"
             >
               <UserIcon className="w-3.5 h-3.5" />
               <span>Crear Personal / Cliente</span>
@@ -789,67 +832,85 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ownedRestaurants.map((rest) => {
-            const isSelected = rest.id === currentRestaurant.id;
-            const assignedTemplate = templates.find(t => t.id === rest.templateId) || templates[0];
+        {ownedRestaurants.length === 0 ? (
+          <div className="p-8 rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/30 text-center flex flex-col items-center justify-center gap-3">
+            <Store className="w-10 h-10 text-neutral-600" />
+            <h3 className="text-sm font-bold text-white">No tienes restaurantes creados ni asignados</h3>
+            <p className="text-xs text-neutral-400 max-w-md">
+              Como propietario, puedes crear tu propio restaurante o solicitar al administrador que te asigne una sede existente.
+            </p>
+            <button
+              onClick={() => setIsCreatingRestaurant(true)}
+              className="mt-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Crear Mi Primer Restaurante</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ownedRestaurants.map((rest) => {
+              const isSelected = rest.id === currentRestaurant?.id;
+              const assignedTemplate = templates.find(t => t.id === rest.templateId) || templates[0];
 
-            return (
-              <div
-                key={rest.id}
-                onClick={() => handleSelectRestaurant(rest.id)}
-                className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-3 relative ${
-                  isSelected 
-                    ? 'bg-neutral-900/90 border-amber-400/80 ring-1 ring-amber-400/50 shadow-lg' 
-                    : 'bg-neutral-900/40 hover:bg-neutral-900/70 border-neutral-800 hover:border-neutral-700'
-                }`}
-              >
-                {isSelected && (
-                  <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-400 text-black">
-                    Gestionando
-                  </span>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <img 
-                    src={rest.logoUrl} 
-                    alt={rest.name} 
-                    className="w-12 h-12 rounded-xl object-cover border border-neutral-700 shrink-0" 
-                  />
-                  <div className="pr-16">
-                    <h3 className="text-sm font-bold text-white leading-tight">{rest.name}</h3>
-                    <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">{rest.tagline}</p>
-                    <span className="text-[11px] text-neutral-400 font-mono mt-1 block">
-                      /r/{rest.slug}
+              return (
+                <div
+                  key={rest.id}
+                  onClick={() => handleSelectRestaurant(rest.id)}
+                  className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-3 relative ${
+                    isSelected 
+                      ? 'bg-neutral-900/90 border-amber-400/80 ring-1 ring-amber-400/50 shadow-lg' 
+                      : 'bg-neutral-900/40 hover:bg-neutral-900/70 border-neutral-800 hover:border-neutral-700'
+                  }`}
+                >
+                  {isSelected && (
+                    <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-400 text-black">
+                      Gestionando
                     </span>
-                  </div>
-                </div>
+                  )}
 
-                <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
-                  <div>
-                    <span className="text-neutral-500 block">Plantilla</span>
-                    <span className="text-amber-400 font-semibold">{assignedTemplate.badge}</span>
+                  <div className="flex items-start gap-3">
+                    <img 
+                      src={rest.logoUrl} 
+                      alt={rest.name} 
+                      className="w-12 h-12 rounded-xl object-cover border border-neutral-700 shrink-0" 
+                    />
+                    <div className="pr-16">
+                      <h3 className="text-sm font-bold text-white leading-tight">{rest.name}</h3>
+                      <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">{rest.tagline}</p>
+                      <span className="text-[11px] text-neutral-400 font-mono mt-1 block">
+                        /r/{rest.slug}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenCustomerPreview(rest);
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-white hover:text-amber-400 transition cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Ver Carta</span>
-                  </button>
+
+                  <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
+                    <div>
+                      <span className="text-neutral-500 block">Plantilla</span>
+                      <span className="text-amber-400 font-semibold">{assignedTemplate.badge}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenCustomerPreview(rest);
+                      }}
+                      className="flex items-center gap-1 text-xs font-semibold text-white hover:text-amber-400 transition cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Ver Carta</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------------------- */}
       {/* 2. PANEL DE EDICIÓN DE ACCESOS Y PLANTILLAS                   */}
       {/* ------------------------------------------------------------- */}
+      {currentRestaurant && (
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
         
         {/* Restaurant Header Banner */}
@@ -2343,6 +2404,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         )}
 
       </div>
+      )}
 
       {/* ============================================================= */}
       {/* MODAL: CREAR NUEVO RESTAURANTE PARA EL DUEÑO                  */}

@@ -108,6 +108,16 @@ export default function App() {
     if (user.role === 'WAITER' || user.role === 'DELIVERY' || user.role === 'CUSTOMER' || user.role === 'KITCHEN') {
       setActiveTab('home');
     }
+    // Auto select first restaurant accessible by this user:
+    // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
+    if (user.role === 'OWNER' || user.role === 'RESTAURANT_MANAGER') {
+      const allowed = restaurants.filter(r => r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all'));
+      if (allowed.length > 0) {
+        setSelectedRestaurantId(allowed[0].id);
+      }
+    } else if (user.restaurantIds && user.restaurantIds.length > 0 && user.restaurantIds[0] !== 'all') {
+      setSelectedRestaurantId(user.restaurantIds[0]);
+    }
     showToast(`Sesión iniciada: ${user.name} (${user.role}) - DNI: ${user.dni}`);
   };
 
@@ -140,6 +150,17 @@ export default function App() {
   // Handlers
   const handleAddRestaurant = (newRestaurant: Restaurant) => {
     setRestaurants(prev => [newRestaurant, ...prev]);
+    if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
+      const updatedUser: User = {
+        ...currentUser,
+        restaurantIds: currentUser.restaurantIds.includes(newRestaurant.id)
+          ? currentUser.restaurantIds
+          : [...currentUser.restaurantIds, newRestaurant.id]
+      };
+      setCurrentUser(updatedUser);
+      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    }
+    setSelectedRestaurantId(newRestaurant.id);
     showToast(`Restaurante "${newRestaurant.name}" creado con éxito.`);
   };
 
@@ -269,8 +290,15 @@ export default function App() {
   const effectiveDeliveryUser = currentUser?.role === 'DELIVERY' ? currentUser : (users.find(u => u.role === 'DELIVERY') || users[0]);
   const effectiveCustomerUser = currentUser?.role === 'CUSTOMER' ? currentUser : (users.find(u => u.role === 'CUSTOMER') || users[0]);
 
+  // Restaurants accessible by the current logged-in user
+  const userAccessibleRestaurants = currentUser
+    ? (currentUser.role === 'ADMIN'
+        ? restaurants
+        : restaurants.filter(r => r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all')))
+    : restaurants;
+
   // Current active restaurant branding for dynamic theme accent
-  const currentSelectedRest = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
+  const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
   // 1. Initial State: Prompt for DNI and Password if not logged in
@@ -334,6 +362,7 @@ export default function App() {
           {/* OWNER & RESTAURANT MANAGER: Full Owner Dashboard with Menus, Tables/QR, Staff, Shifts, Schedules */}
           {(currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && (
             <OwnerDashboard
+              currentUser={currentUser}
               restaurants={restaurants}
               users={users}
               templates={templates}
@@ -516,6 +545,7 @@ export default function App() {
             {/* View Switching & RBAC Dynamic Routing for Admin */}
             {activeTab === 'home' && (
               <HomeView
+                currentUser={currentUser}
                 restaurants={restaurants}
                 orders={orders}
                 users={users}
