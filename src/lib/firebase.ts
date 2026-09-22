@@ -258,6 +258,36 @@ export async function saveCategoryToFirebase(category: MenuCategory): Promise<bo
 }
 
 /**
+ * Saves a single user to Firestore
+ */
+export async function saveUserToFirebase(user: User): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const userRef = doc(db, 'users', user.id);
+    await setDoc(userRef, { ...user, updatedAt: new Date().toISOString() }, { merge: true });
+    return true;
+  } catch (err) {
+    console.error('[Firebase] Error saving user:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes a user from Firestore
+ */
+export async function deleteUserFromFirebase(userId: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef);
+    return true;
+  } catch (err) {
+    console.error('[Firebase] Error deleting user:', err);
+    return false;
+  }
+}
+
+/**
  * Saves a single order to Firestore
  */
 export async function saveOrderToFirebase(order: Order): Promise<boolean> {

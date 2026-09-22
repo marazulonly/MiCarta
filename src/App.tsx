@@ -26,7 +26,16 @@ import { OwnerDashboard } from './components/OwnerDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
 import { Bell, CheckCircle2 } from 'lucide-react';
-import { saveAllDataToFirebase, loadAllDataFromFirebase } from './lib/firebase';
+import { 
+  saveAllDataToFirebase, 
+  loadAllDataFromFirebase,
+  saveRestaurantToFirebase,
+  saveMenuItemToFirebase,
+  deleteMenuItemFromFirebase,
+  saveCategoryToFirebase,
+  saveUserToFirebase,
+  saveOrderToFirebase
+} from './lib/firebase';
 
 // Parse initial URL search parameters synchronously before first render
 const getInitialUrlParams = () => {
@@ -239,6 +248,7 @@ export default function App() {
   // Handlers
   const handleAddRestaurant = (newRestaurant: Restaurant) => {
     setRestaurants(prev => [newRestaurant, ...prev]);
+    saveRestaurantToFirebase(newRestaurant);
     if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
       const updatedUser: User = {
         ...currentUser,
@@ -248,38 +258,45 @@ export default function App() {
       };
       setCurrentUser(updatedUser);
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      saveUserToFirebase(updatedUser);
     }
     setSelectedRestaurantId(newRestaurant.id);
-    showToast(`Restaurante "${newRestaurant.name}" creado con éxito.`);
+    showToast(`Restaurante "${newRestaurant.name}" guardado automáticamente.`);
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
     setRestaurants(prev => prev.map(r => r.id === updated.id ? updated : r));
-    showToast(`Restaurante "${updated.name}" actualizado (Slug: /${updated.slug})`);
+    saveRestaurantToFirebase(updated);
+    showToast(`Restaurante "${updated.name}" actualizado.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {
     setMenuItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+    saveMenuItemToFirebase(updated);
     showToast(`Plato "${updated.name}" actualizado.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
     setMenuItems(prev => [newItem, ...prev]);
-    showToast(`Nuevo plato "${newItem.name}" agregado a la carta.`);
+    saveMenuItemToFirebase(newItem);
+    showToast(`Nuevo plato "${newItem.name}" guardado automáticamente.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
     setMenuItems(prev => prev.filter(i => i.id !== itemId));
-    showToast(`Plato eliminado de la carta.`);
+    deleteMenuItemFromFirebase(itemId);
+    showToast(`Plato eliminado.`);
   };
 
   const handleAddCategory = (newCategory: MenuCategory) => {
     setCategories(prev => [...prev, newCategory]);
+    saveCategoryToFirebase(newCategory);
     showToast(`Categoría "${newCategory.name}" agregada.`);
   };
 
   const handleUpdateCategory = (updatedCategory: MenuCategory) => {
     setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+    saveCategoryToFirebase(updatedCategory);
     showToast(`Categoría "${updatedCategory.name}" actualizada.`);
   };
 
@@ -290,11 +307,13 @@ export default function App() {
 
   const handleAddUser = (newUser: User) => {
     setUsers(prev => [newUser, ...prev]);
-    showToast(`Usuario "${newUser.name}" registrado con DNI ${newUser.dni} (${newUser.role}).`);
+    saveUserToFirebase(newUser);
+    showToast(`Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado automáticamente en Firebase.`);
   };
 
   const handleUpdateUser = (updated: User) => {
     setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    saveUserToFirebase(updated);
     showToast(`Usuario "${updated.name}" actualizado.`);
   };
 
@@ -304,12 +323,23 @@ export default function App() {
   };
 
   const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o));
+    setOrders(prev => {
+      const updatedList = prev.map(o => {
+        if (o.id === orderId) {
+          const updatedOrder = { ...o, status: nextStatus };
+          saveOrderToFirebase(updatedOrder);
+          return updatedOrder;
+        }
+        return o;
+      });
+      return updatedList;
+    });
     showToast(`Comanda actualizada a estado "${nextStatus}".`);
   };
 
   const handleCreateOrder = (newOrder: Order) => {
     setOrders(prev => [newOrder, ...prev]);
+    saveOrderToFirebase(newOrder);
     playNotificationSound();
     const rest = restaurants.find(r => r.id === newOrder.restaurantId);
     showToast(`🎉 ¡Pedido ${newOrder.orderNumber} enviado a ${rest?.name || 'cocina'}!`);
