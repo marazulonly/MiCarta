@@ -1,0 +1,199 @@
+import React from 'react';
+import { 
+  Building2, 
+  Shield, 
+  Database,
+  ExternalLink,
+  LogIn,
+  KeyRound,
+  Sparkles,
+  User as UserIcon
+} from 'lucide-react';
+import { Restaurant, UserRole, TabType, User } from '../types';
+
+interface TopHeaderProps {
+  restaurants: Restaurant[];
+  selectedRestaurantId: string;
+  onSelectRestaurant: (id: string) => void;
+  activeRole: UserRole;
+  onRoleChange: (role: UserRole) => void;
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  onOpenCustomerPreview: () => void;
+  currentUser?: User | null;
+  onOpenLoginModal?: () => void;
+  isSimulationActive?: boolean;
+  onToggleSimulation?: (active: boolean) => void;
+}
+
+const ROLES_LIST: { role: UserRole; label: string }[] = [
+  { role: 'ADMIN', label: '1. Administrador' },
+  { role: 'OWNER', label: '2. Dueño' },
+  { role: 'RESTAURANT_MANAGER', label: '3. Restaurante' },
+  { role: 'WAITER', label: '4. Mesero' },
+  { role: 'DELIVERY', label: '5. Repartidor' },
+  { role: 'CUSTOMER', label: '6. Cliente' },
+];
+
+export const TopHeader: React.FC<TopHeaderProps> = ({
+  restaurants,
+  selectedRestaurantId,
+  onSelectRestaurant,
+  activeRole,
+  onRoleChange,
+  activeTab,
+  onTabChange,
+  onOpenCustomerPreview,
+  currentUser,
+  onOpenLoginModal,
+  isSimulationActive = false,
+  onToggleSimulation,
+}) => {
+  const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
+
+  return (
+    <header className="sticky top-0 z-40 w-full bg-black/90 backdrop-blur-md border-b border-neutral-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-3">
+          
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-black text-sm tracking-tighter">
+              MC
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black tracking-widest text-white uppercase">
+                  Micarta
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800 font-mono">
+                  SaaS v2.5
+                </span>
+              </div>
+              <span className="text-[11px] text-neutral-400 block -mt-0.5">
+                4 Restaurantes Conectados
+              </span>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end">
+            
+            {/* Top Corner "Simulación" Check Toggle */}
+            {onToggleSimulation && (
+              <label
+                id="header-check-simulation"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer select-none ${
+                  isSimulationActive
+                    ? 'bg-amber-400 text-black border-amber-300 shadow-md shadow-amber-400/20'
+                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-amber-400/50 hover:text-white'
+                }`}
+                title="Activar vista de simulación sincronizada en 3 pantallas móviles (PC)"
+              >
+                <input
+                  type="checkbox"
+                  checked={isSimulationActive}
+                  onChange={(e) => onToggleSimulation(e.target.checked)}
+                  className="w-4 h-4 rounded text-amber-500 focus:ring-0 accent-black cursor-pointer"
+                />
+                <Sparkles className={`w-3.5 h-3.5 ${isSimulationActive ? 'text-black fill-black' : 'text-amber-400'}`} />
+                <span>Simulación</span>
+              </label>
+            )}
+
+            {/* Restaurant Selector */}
+            <div className="relative hidden md:flex items-center bg-neutral-900/90 border border-neutral-800 rounded-lg px-2.5 py-1.5 hover:border-neutral-700 transition">
+              <Building2 className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
+              <select
+                id="restaurant-selector"
+                value={selectedRestaurantId}
+                onChange={(e) => onSelectRestaurant(e.target.value)}
+                className="bg-transparent text-xs text-neutral-200 font-medium focus:outline-none cursor-pointer pr-3"
+              >
+                <option value="all" className="bg-neutral-950 text-neutral-200">Todos los Locales</option>
+                {restaurants.map(r => (
+                  <option key={r.id} value={r.id} className="bg-neutral-950 text-neutral-200">
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Role Switcher */}
+            <div className="relative hidden lg:flex items-center bg-neutral-900/90 border border-neutral-800 rounded-lg px-2.5 py-1.5 hover:border-neutral-700 transition">
+              <Shield className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
+              <select
+                id="role-simulator-selector"
+                value={activeRole}
+                onChange={(e) => onRoleChange(e.target.value as UserRole)}
+                className="bg-transparent text-xs text-white font-medium focus:outline-none cursor-pointer pr-3"
+              >
+                {ROLES_LIST.map(r => (
+                  <option key={r.role} value={r.role} className="bg-neutral-950 text-neutral-200">
+                    Rol: {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Login / Current User Profile Button */}
+            <button
+              id="header-btn-login-modal"
+              onClick={onOpenLoginModal}
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-neutral-700 transition cursor-pointer text-white shadow-sm"
+              title="Iniciar Sesión con DNI y Clave de Acceso"
+            >
+              {currentUser ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-5 h-5 rounded-full object-cover border border-neutral-700"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-white max-w-[90px] sm:max-w-[120px] truncate">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-500/30">
+                      DNI: {currentUser.dni}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-neutral-300">
+                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Ingresar (DNI)</span>
+                </div>
+              )}
+            </button>
+
+            {/* DB & Prisma Technical Deliverable */}
+            <button
+              id="header-btn-architecture"
+              onClick={() => onTabChange(activeTab === 'architecture' ? 'home' : 'architecture')}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-medium border transition cursor-pointer ${
+                activeTab === 'architecture'
+                  ? 'bg-white text-black border-white'
+                  : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800 hover:text-white'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Esquema DB</span>
+            </button>
+
+            {/* Customer Digital Menu Preview */}
+            <button
+              id="header-btn-preview-menu"
+              onClick={onOpenCustomerPreview}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-white text-black hover:bg-neutral-200 transition cursor-pointer shadow"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Carta Digital</span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};

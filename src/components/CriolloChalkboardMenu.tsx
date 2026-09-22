@@ -1,0 +1,325 @@
+import React, { useState } from 'react';
+import { 
+  X, 
+  ShoppingBag, 
+  Check, 
+  Plus, 
+  Minus, 
+  Maximize2, 
+  Minimize2, 
+  Share2,
+  ChefHat,
+  Bike,
+  Sparkles,
+  Clock,
+  MapPin
+} from 'lucide-react';
+import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
+import { ItemOrderModal } from './ItemOrderModal';
+import { UnifiedCartDrawer } from './UnifiedCartDrawer';
+import { ScheduleViewModal } from './ScheduleViewModal';
+
+interface CriolloChalkboardMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  restaurant: Restaurant;
+  categories: MenuCategory[];
+  items: MenuItem[];
+  onOrderCreated?: (newOrder: Order) => void;
+  initialMode?: 'DINE_IN' | 'DELIVERY';
+  initialTableNumber?: string;
+}
+
+interface CartEntry {
+  item: MenuItem;
+  quantity: number;
+  units: OrderItemUnit[];
+}
+
+export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
+  isOpen,
+  onClose,
+  restaurant,
+  categories,
+  items,
+  onOrderCreated,
+  initialMode = 'DINE_IN',
+  initialTableNumber,
+}) => {
+  const [activeChannel, setActiveChannel] = useState<'DINE_IN' | 'DELIVERY'>(initialMode);
+  const [cart, setCart] = useState<CartEntry[]>([]);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
+
+  if (!isOpen) return null;
+
+  // Background customization from settings
+  const accessSettings = restaurant.menuAccessSettings;
+  const isSeparate = accessSettings?.menuMode === 'SEPARATE';
+  
+  let chalkboardBg = '#141716';
+  if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
+    chalkboardBg = accessSettings.deliveryBgValue;
+  } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
+    chalkboardBg = accessSettings.presentialBgValue;
+  }
+
+  // Filter categories and items for this restaurant
+  const currentCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const currentItems = items.filter(i => {
+    const matchRest = i.restaurantId === restaurant.id;
+    if (!matchRest) return false;
+    if (isSeparate) {
+      if (activeChannel === 'DINE_IN' && i.targetMenuScope === 'DELIVERY') return false;
+      if (activeChannel === 'DELIVERY' && i.targetMenuScope === 'DINE_IN') return false;
+    }
+    return true;
+  });
+
+  const handleConfirmItemUnits = (item: MenuItem, quantity: number, units: OrderItemUnit[]) => {
+    setCart(prev => {
+      const idx = prev.findIndex(c => c.item.id === item.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { item, quantity, units };
+        return next;
+      }
+      return [...prev, { item, quantity, units }];
+    });
+  };
+
+  const cartTotal = cart.reduce((sum, c) => {
+    const base = c.item.price * c.quantity;
+    const addons = c.units.reduce((uSum, u) => {
+      return uSum + (u.selectedAddons || []).reduce((aSum, a) => aSum + a.price, 0);
+    }, 0);
+    return sum + base + addons;
+  }, 0);
+
+  const totalItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
+
+  const fullUrl = `https://micarta.io/r/${restaurant.slug}`;
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2200);
+  };
+
+  // Group items by category for chalkboard style
+  const groupedCategories = currentCategories.map(cat => ({
+    ...cat,
+    items: currentItems.filter(i => i.categoryId === cat.id)
+  })).filter(cat => cat.items.length > 0);
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+        
+        {/* Outer Blackboard Wood Frame */}
+        <div 
+          className={`relative w-full ${
+            isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
+          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border-4 border-[#5c3e23] bg-[#141716] text-[#e8ebe9] transition-all duration-300`}
+        >
+          {/* Top Bar */}
+          <div className="relative z-30 px-4 py-2.5 bg-[#21160e] border-b border-[#5c3e23] flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-[#f5d0a9] font-mono tracking-wider uppercase text-[11px] font-bold">
+                Pizarra Criolla · {restaurant.name}
+              </span>
+              
+              {/* Channel badge */}
+              <div className="flex items-center gap-1 bg-[#120a05] p-0.5 rounded-lg border border-[#5c3e23]">
+                <button
+                  onClick={() => setActiveChannel('DINE_IN')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
+                    activeChannel === 'DINE_IN' ? 'bg-[#f5d0a9] text-black font-bold' : 'text-[#c2a281]'
+                  }`}
+                >
+                  <ChefHat className="w-2.5 h-2.5" />
+                  <span>Salón</span>
+                </button>
+                <button
+                  onClick={() => setActiveChannel('DELIVERY')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 ${
+                    activeChannel === 'DELIVERY' ? 'bg-[#f5d0a9] text-black font-bold' : 'text-[#c2a281]'
+                  }`}
+                >
+                  <Bike className="w-2.5 h-2.5" />
+                  <span>Delivery</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {initialTableNumber && (
+                <span className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 text-[#f5d0a9] border border-amber-500/40 text-[10px] font-bold font-mono">
+                  <MapPin className="w-3 h-3 text-amber-400" />
+                  <span>Mesa {initialTableNumber}</span>
+                </span>
+              )}
+              <button
+                onClick={() => setIsScheduleModalOpen(true)}
+                className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer flex items-center gap-1"
+                title="Ver Horarios de Atención"
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline text-[10px]">Horarios</span>
+              </button>
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer"
+              >
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                onClick={copyUrl}
+                className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer flex items-center gap-1"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline text-[10px]">{copiedLink ? 'Copiado' : 'Compartir'}</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Chalkboard Texture Canvas */}
+          <div 
+            className="relative flex-1 overflow-y-auto p-4 sm:p-6 pb-28 space-y-6"
+            style={{ backgroundColor: chalkboardBg }}
+          >
+            {/* Header Chalk script */}
+            <div className="text-center space-y-1 border-b-2 border-dashed border-[#ffffff]/20 pb-4">
+              <span className="text-amber-300 font-mono text-xs tracking-widest uppercase">
+                {activeChannel === 'DELIVERY' ? 'Carta Pizarra Delivery' : 'Carta Salón Tradición'}
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-wide font-serif">
+                {restaurant.name}
+              </h1>
+              <p className="text-[11px] text-neutral-400 font-mono">
+                Sazón Criolla y Fuego a la Leña · Precios en Soles (S/.)
+              </p>
+            </div>
+
+            {/* Categorized Chalkboard Lists */}
+            {groupedCategories.map(cat => (
+              <div key={cat.id} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-[2px] w-6 bg-amber-400" />
+                  <h2 className="text-base font-black text-amber-300 uppercase tracking-wider font-serif">
+                    {cat.name}
+                  </h2>
+                  <span className="h-[2px] flex-1 bg-amber-400/30" />
+                </div>
+
+                <div className="space-y-3">
+                  {cat.items.map(item => {
+                    const inCart = cart.find(c => c.item.id === item.id);
+                    return (
+                      <div 
+                        key={item.id}
+                        className="p-3 rounded-xl bg-black/40 border border-neutral-800 hover:border-neutral-700 transition flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name} 
+                            className="w-14 h-14 rounded-lg object-cover border border-neutral-700 shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-white">
+                              {item.name}
+                            </h3>
+                            <p className="text-[11px] text-neutral-400 line-clamp-1">
+                              {item.description}
+                            </p>
+                            <span className="text-xs font-mono font-black text-amber-300 mt-0.5 block">
+                              S/ {item.price.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => setSelectedItemForCustomization(item)}
+                          className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Floating Cart Trigger */}
+          {cart.length > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 z-30 p-3 bg-[#1e130b]/95 border-t border-[#5c3e23] shadow-2xl backdrop-blur-md flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-[#e0cfbe] block">
+                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                </span>
+                <span className="text-sm font-bold text-amber-300 font-mono">
+                  Total: S/ {cartTotal.toFixed(2)}
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsCartDrawerOpen(true)}
+                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs shadow-lg transition cursor-pointer flex items-center gap-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Revisar y Enviar Pedido</span>
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Item Unit Customization Modal */}
+      {selectedItemForCustomization && (
+        <ItemOrderModal
+          isOpen={!!selectedItemForCustomization}
+          onClose={() => setSelectedItemForCustomization(null)}
+          item={selectedItemForCustomization}
+          onConfirm={handleConfirmItemUnits}
+          themeAccentColor="#f59e0b"
+          themeDarkBg="#141716"
+        />
+      )}
+
+      {/* Unified Cart / Checkout Drawer */}
+      <UnifiedCartDrawer
+        isOpen={isCartDrawerOpen}
+        onClose={() => setIsCartDrawerOpen(false)}
+        restaurant={restaurant}
+        cart={cart}
+        onUpdateCart={setCart}
+        onOrderCreated={onOrderCreated}
+        initialOrderType={activeChannel}
+        initialTableNumber={initialTableNumber}
+        themeStyle="chalkboard"
+      />
+
+      {/* Schedule View Modal */}
+      <ScheduleViewModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        restaurant={restaurant}
+      />
+    </>
+  );
+};
