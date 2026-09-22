@@ -69,6 +69,7 @@ interface OwnerDashboardProps {
   categories?: MenuCategory[];
   onUpdateRestaurant: (updated: Restaurant) => void;
   onAddRestaurant?: (newRestaurant: Restaurant) => void;
+  onDeleteRestaurant?: (restaurantId: string) => void;
   onAddUser?: (newUser: User) => void;
   onUpdateUser?: (updatedUser: User) => void;
   onAddMenuItem?: (newItem: MenuItem) => void;
@@ -92,6 +93,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   categories = [],
   onUpdateRestaurant,
   onAddRestaurant,
+  onDeleteRestaurant,
   onAddUser,
   onUpdateUser,
   onAddMenuItem,
@@ -104,6 +106,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onSwitchToAdminView,
 }) => {
   const isOwnerLogged = Boolean(currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'));
+
+  // Delete Restaurant Confirmation State
+  const [restaurantToDelete, setRestaurantToDelete] = useState<Restaurant | null>(null);
 
   // Find available owners
   const ownersList = users.filter(u => u.role === 'OWNER');
@@ -545,6 +550,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     e.preventDefault();
     setRestError(null);
 
+    const cleanName = newRestName.trim();
+    if (!cleanName) {
+      setRestError('El nombre del restaurante no puede estar vacío.');
+      return;
+    }
+
+    if (restaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+      setRestError(`Ya existe un restaurante registrado con el nombre "${cleanName}". No pueden haber 2 restaurantes con el mismo nombre.`);
+      return;
+    }
+
     const cleanSlug = (newRestSlug || newRestName)
       .toLowerCase()
       .trim()
@@ -559,7 +575,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     const newId = `rest-${Date.now()}`;
     const newRest: Restaurant = {
       id: newId,
-      name: newRestName.trim(),
+      name: cleanName,
       slug: cleanSlug,
       tagline: newRestTagline.trim() || 'Gastronomía de Autor & Excelencia',
       cuisineType: newRestCuisine,
@@ -912,6 +928,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         <ExternalLink className="w-3 h-3" />
                         <span>Probar</span>
                       </button>
+                      {onDeleteRestaurant && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRestaurantToDelete(rest);
+                          }}
+                          className="p-1 rounded bg-red-950/60 hover:bg-red-900/80 text-red-400 hover:text-red-200 border border-red-900/60 transition cursor-pointer"
+                          title={`Eliminar sede ${rest.name}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -973,6 +1001,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Probar Carta como Cliente</span>
             </button>
+
+            {onDeleteRestaurant && (
+              <button
+                onClick={() => setRestaurantToDelete(currentRestaurant)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-400 hover:text-red-200 border border-red-900/80 text-xs font-semibold transition cursor-pointer"
+                title="Eliminar esta sede"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Eliminar Sede</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -3524,6 +3563,77 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
               >
                 Guardar Turno
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL CONFIRMACIÓN BORRAR RESTAURANTE POR DUEÑO               */}
+      {/* ============================================================= */}
+      {restaurantToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-neutral-900 border border-red-800/80 p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/90 text-red-400 border border-red-800 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">¿Eliminar este Restaurante?</h3>
+                <p className="text-xs text-neutral-400 font-mono">/r/{restaurantToDelete.slug}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400">Nombre Sede:</span>
+                <span className="font-bold text-white">{restaurantToDelete.name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400">Cocina:</span>
+                <span className="text-neutral-300">{restaurantToDelete.cuisineType}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400">Dirección:</span>
+                <span className="text-neutral-300 truncate max-w-[200px]">{restaurantToDelete.address || 'Principal'}</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-red-300 text-xs leading-relaxed flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span>
+                ¿Estás seguro de eliminar <strong>{restaurantToDelete.name}</strong>? Se borrará de tu lista de sedes y de la plataforma.
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setRestaurantToDelete(null)}
+                className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const toDeleteId = restaurantToDelete.id;
+                  const toDeleteName = restaurantToDelete.name;
+                  if (onDeleteRestaurant) {
+                    onDeleteRestaurant(toDeleteId);
+                  }
+                  setRestaurantToDelete(null);
+                  const remaining = ownedRestaurants.filter(r => r.id !== toDeleteId);
+                  if (remaining.length > 0) {
+                    handleSelectRestaurant(remaining[0].id);
+                  }
+                  showToast(`Sede "${toDeleteName}" eliminada correctamente.`);
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-red-950"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Sí, Eliminar Restaurante</span>
               </button>
             </div>
           </div>

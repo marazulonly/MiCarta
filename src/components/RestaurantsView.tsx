@@ -22,6 +22,7 @@ interface RestaurantsViewProps {
   categories: MenuCategory[];
   items: MenuItem[];
   onUpdateRestaurant: (updated: Restaurant) => void;
+  onDeleteRestaurant?: (restaurantId: string) => void;
   onUpdateMenuItem: (updated: MenuItem) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
@@ -32,6 +33,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   categories,
   items,
   onUpdateRestaurant,
+  onDeleteRestaurant,
   onUpdateMenuItem,
   onAddMenuItem,
   onOpenCustomerPreview,

@@ -31,6 +31,7 @@ interface HomeViewProps {
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => void;
   onUpdateRestaurant: (updated: Restaurant) => void;
   onAddRestaurant?: (newRestaurant: Restaurant) => void;
+  onDeleteRestaurant?: (restaurantId: string) => void;
   onUpdateUser: (updated: User) => void;
   onAddUser?: (newUser: User) => void;
   onUpdateTemplate: (updated: MenuTemplate) => void;
@@ -57,6 +58,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenCustomerPreview,
   onUpdateRestaurant,
   onAddRestaurant,
+  onDeleteRestaurant,
   onUpdateUser,
   onAddUser,
   onUpdateTemplate,
@@ -146,6 +148,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           users={users}
           templates={templates}
           onUpdateRestaurant={onUpdateRestaurant}
+          onAddRestaurant={onAddRestaurant}
+          onDeleteRestaurant={onDeleteRestaurant}
           onUpdateUser={onUpdateUser}
           onAddUser={onAddUser || (() => {})}
           onUpdateTemplate={onUpdateTemplate}
@@ -168,6 +172,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           categories={categories}
           onUpdateRestaurant={onUpdateRestaurant}
           onAddRestaurant={onAddRestaurant}
+          onDeleteRestaurant={onDeleteRestaurant}
           onAddUser={onAddUser}
           onUpdateUser={onUpdateUser}
           onAddMenuItem={onAddMenuItem}

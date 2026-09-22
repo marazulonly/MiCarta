@@ -100,8 +100,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     try {
       const res = await saveAllDataToFirebase({
         restaurants: [restaurant],
-        items: items.filter(i => i.restaurantId === restaurant.id),
-        categories: categories.filter(c => c.restaurantId === restaurant.id),
+        items: items,
+        categories: categories,
       });
       if (res.success) {
         showToast('✓ ' + res.message);

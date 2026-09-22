@@ -30,6 +30,7 @@ import {
   saveAllDataToFirebase, 
   loadAllDataFromFirebase,
   saveRestaurantToFirebase,
+  deleteRestaurantFromFirebase,
   saveMenuItemToFirebase,
   deleteMenuItemFromFirebase,
   saveCategoryToFirebase,
@@ -453,6 +454,13 @@ export default function App() {
 
   // Handlers
   const handleAddRestaurant = (newRestaurant: Restaurant) => {
+    // Unique name validation
+    const cleanName = newRestaurant.name.trim();
+    if (restaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+      showToast(`Error: Ya existe un restaurante con el nombre "${cleanName}".`);
+      return;
+    }
+
     setRestaurants(prev => [newRestaurant, ...prev]);
     saveRestaurantToFirebase(newRestaurant);
     if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
@@ -467,13 +475,20 @@ export default function App() {
       saveUserToFirebase(updatedUser);
     }
     setSelectedRestaurantId(newRestaurant.id);
-    showToast(`Restaurante "${newRestaurant.name}" guardado automáticamente.`);
+    showToast(`Restaurante "${newRestaurant.name}" creado y guardado.`);
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
     const prevRest = restaurants.find(r => r.id === updated.id);
     const prevOwnerId = prevRest?.ownerId;
     const newOwnerId = updated.ownerId;
+
+    // Unique name validation against other restaurants
+    const cleanName = updated.name.trim();
+    if (restaurants.some(r => r.id !== updated.id && r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+      showToast(`Error: Ya existe otro restaurante con el nombre "${cleanName}".`);
+      return;
+    }
 
     setRestaurants(prev => prev.map(r => r.id === updated.id ? updated : r));
     if (previewRestaurant && previewRestaurant.id === updated.id) {
@@ -526,20 +541,100 @@ export default function App() {
     showToast(`Restaurante "${updated.name}" actualizado y sincronizado.`);
   };
 
+  const handleDeleteRestaurant = (restaurantId: string) => {
+    const targetRest = restaurants.find(r => r.id === restaurantId);
+    const restName = targetRest ? targetRest.name : 'Restaurante';
+
+    // 1. Remove from restaurants state
+    const nextRestaurants = restaurants.filter(r => r.id !== restaurantId);
+    setRestaurants(nextRestaurants);
+
+    // 2. Clear from localStorage immediately
+    try {
+      const cached = localStorage.getItem('micarta_system_state_v1');
+      const parsed = cached ? JSON.parse(cached) : {};
+      localStorage.setItem('micarta_system_state_v1', JSON.stringify({
+        ...parsed,
+        restaurants: nextRestaurants,
+        items: menuItems.filter(i => i.restaurantId !== restaurantId),
+        categories: categories.filter(c => c.restaurantId !== restaurantId)
+      }));
+    } catch {}
+
+    // 3. If previewing or selected, reset
+    if (selectedRestaurantId === restaurantId) {
+      setSelectedRestaurantId(nextRestaurants[0]?.id || '');
+    }
+    if (previewRestaurant && previewRestaurant.id === restaurantId) {
+      setPreviewRestaurant(null);
+    }
+
+    // 4. Clean user restaurant assignments
+    setUsers(prevUsers => {
+      return prevUsers.map(u => {
+        if (u.restaurantIds && u.restaurantIds.includes(restaurantId)) {
+          const updatedUser: User = {
+            ...u,
+            restaurantIds: u.restaurantIds.filter(id => id !== restaurantId)
+          };
+          saveUserToFirebase(updatedUser);
+          return updatedUser;
+        }
+        return u;
+      });
+    });
+
+    if (currentUser && currentUser.restaurantIds && currentUser.restaurantIds.includes(restaurantId)) {
+      setCurrentUser(prev => prev ? {
+        ...prev,
+        restaurantIds: prev.restaurantIds.filter(id => id !== restaurantId)
+      } : null);
+    }
+
+    // 5. Delete from Firebase
+    deleteRestaurantFromFirebase(restaurantId);
+
+    showToast(`Restaurante "${restName}" eliminado exitosamente.`);
+  };
+
   const handleUpdateMenuItem = (updated: MenuItem) => {
-    setMenuItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+    setMenuItems(prev => {
+      const next = prev.map(i => i.id === updated.id ? updated : i);
+      try {
+        const cached = localStorage.getItem('micarta_system_state_v1');
+        const parsed = cached ? JSON.parse(cached) : {};
+        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
+      } catch {}
+      return next;
+    });
     saveMenuItemToFirebase(updated);
-    showToast(`Plato "${updated.name}" actualizado.`);
+    showToast(`Plato "${updated.name}" actualizado y guardado.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
-    setMenuItems(prev => [newItem, ...prev]);
+    setMenuItems(prev => {
+      const next = [newItem, ...prev];
+      try {
+        const cached = localStorage.getItem('micarta_system_state_v1');
+        const parsed = cached ? JSON.parse(cached) : {};
+        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
+      } catch {}
+      return next;
+    });
     saveMenuItemToFirebase(newItem);
-    showToast(`Nuevo plato "${newItem.name}" guardado automáticamente.`);
+    showToast(`Nuevo plato "${newItem.name}" guardado permanentemente.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
-    setMenuItems(prev => prev.filter(i => i.id !== itemId));
+    setMenuItems(prev => {
+      const next = prev.filter(i => i.id !== itemId);
+      try {
+        const cached = localStorage.getItem('micarta_system_state_v1');
+        const parsed = cached ? JSON.parse(cached) : {};
+        localStorage.setItem('micarta_system_state_v1', JSON.stringify({ ...parsed, items: next }));
+      } catch {}
+      return next;
+    });
     deleteMenuItemFromFirebase(itemId);
     showToast(`Plato eliminado.`);
   };
@@ -767,6 +862,7 @@ export default function App() {
               categories={categories}
               onUpdateRestaurant={handleUpdateRestaurant}
               onAddRestaurant={handleAddRestaurant}
+              onDeleteRestaurant={handleDeleteRestaurant}
               onAddUser={handleAddUser}
               onUpdateUser={handleUpdateUser}
               onAddMenuItem={handleAddMenuItem}
@@ -959,6 +1055,7 @@ export default function App() {
                 onOpenCustomerPreview={handleOpenCustomerPreview}
                 onUpdateRestaurant={handleUpdateRestaurant}
                 onAddRestaurant={handleAddRestaurant}
+                onDeleteRestaurant={handleDeleteRestaurant}
                 onUpdateUser={handleUpdateUser}
                 onAddUser={handleAddUser}
                 onUpdateTemplate={handleUpdateTemplate}
@@ -977,6 +1074,7 @@ export default function App() {
                 categories={categories}
                 items={menuItems}
                 onUpdateRestaurant={handleUpdateRestaurant}
+                onDeleteRestaurant={handleDeleteRestaurant}
                 onUpdateMenuItem={handleUpdateMenuItem}
                 onAddMenuItem={handleAddMenuItem}
                 onOpenCustomerPreview={handleOpenCustomerPreview}
