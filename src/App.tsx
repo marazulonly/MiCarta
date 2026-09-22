@@ -86,7 +86,7 @@ const getInitialStateFromStorage = () => {
           cachedRests = parsed.restaurants.map((r: Restaurant) => {
             if (r.id === 'rest-costa') {
               const defaultCosta = INITIAL_RESTAURANTS.find(ir => ir.id === 'rest-costa');
-              if (defaultCosta && (r.branding?.darkBgColor === '#082F49' || !r.branding?.buttonColor)) {
+              if (defaultCosta && (r.branding?.primaryColor !== '#1B667A' || r.branding?.darkBgColor !== '#EAEBDC')) {
                 return {
                   ...r,
                   branding: { ...defaultCosta.branding }
