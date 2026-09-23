@@ -955,24 +955,36 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
+              type="button"
+              onClick={() => setIsSplitEditorOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20 shrink-0"
+              title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span>Editor Pantalla Dividida</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${currentRestaurant.slug}`;
                 navigator.clipboard?.writeText(url);
                 showToast(`Link de ${currentRestaurant.name} copiado: ${url}`);
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold transition cursor-pointer"
               title="Copiar Link para pruebas como cliente"
             >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Copiar Link</span>
+              <Copy className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">Copiar Link</span>
             </button>
 
             <button
+              type="button"
               onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '01')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0 shadow"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0 shadow"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Probar Carta como Cliente</span>
+              <Eye className="w-3.5 h-3.5 text-amber-500" />
+              <span>Previsualizar Carta</span>
             </button>
 
             {onDeleteRestaurant && (

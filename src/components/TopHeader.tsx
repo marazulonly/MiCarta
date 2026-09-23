@@ -11,7 +11,10 @@ import {
   LogOut,
   UploadCloud,
   RefreshCw,
-  Check
+  Check,
+  SlidersHorizontal,
+  Eye,
+  LayoutTemplate
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 
@@ -24,6 +27,7 @@ interface TopHeaderProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   onOpenCustomerPreview: () => void;
+  onOpenTemplateSplitEditor?: () => void;
   currentUser?: User | null;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
@@ -54,6 +58,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   activeTab,
   onTabChange,
   onOpenCustomerPreview,
+  onOpenTemplateSplitEditor,
   currentUser,
   onOpenLoginModal,
   onLogout,
@@ -99,6 +104,33 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
           {/* Controls */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end">
+            
+            {/* Split-Screen Template Editor Trigger Button */}
+            {onOpenTemplateSplitEditor && (
+              <button
+                type="button"
+                onClick={onOpenTemplateSplitEditor}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20"
+                title="Diseñar plantillas, colores y tarjetas en tiempo real"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Editor Pantalla Dividida</span>
+                <span className="sm:hidden">Editor</span>
+              </button>
+            )}
+
+            {/* Quick Preview Button */}
+            {onOpenCustomerPreview && (
+              <button
+                type="button"
+                onClick={onOpenCustomerPreview}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white text-xs font-bold transition cursor-pointer"
+                title="Previsualizar Carta Digital"
+              >
+                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden md:inline">Previsualizar Carta</span>
+              </button>
+            )}
             
             {/* Top Corner "Simulación" Check Toggle */}
             {onToggleSimulation && (

@@ -103,7 +103,7 @@ export interface MenuTemplate {
   name: string;
   description: string;
   category: string;
-  themeStyle: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist' | 'warm-trattoria' | 'green-organic' | 'custom';
+  themeStyle: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist' | 'warm-trattoria' | 'green-organic' | 'editorial-zigzag' | 'custom';
   fontDisplay: string;
   primaryColor: string;
   darkBgColor: string;

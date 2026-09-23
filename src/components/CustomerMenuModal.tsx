@@ -22,6 +22,7 @@ import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
 import { NeonStreetMenu } from './NeonStreetMenu';
 import { MinimalistBistroMenu } from './MinimalistBistroMenu';
+import { EditorialGrandMenu } from './EditorialGrandMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { saveAllDataToFirebase } from '../lib/firebase';
 
@@ -402,6 +403,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   // Template resolution: strict templateId checking with intuitive fallbacks
   const tmplId = restaurant.templateId || 'tmpl-luxury';
+  const isEditorialTemplate = tmplId === 'tmpl-editorial' || tmplId.includes('editorial') || tmplId.includes('zigzag') || tmplId.includes('grand');
   const isNeonTemplate = tmplId === 'tmpl-neon' || tmplId.includes('neon') || tmplId.includes('street');
   const isMinimalTemplate = tmplId === 'tmpl-minimalist' || tmplId.includes('minimal') || tmplId.includes('bistro');
   const isMarineTemplate = tmplId === 'tmpl-marine' || 
@@ -441,7 +443,20 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       )}
 
       {/* Render Appropriate Specialized Menu Template */}
-      {isNeonTemplate ? (
+      {isEditorialTemplate ? (
+        <EditorialGrandMenu
+          isOpen={isOpen}
+          onClose={onClose}
+          restaurant={restaurant}
+          categories={categories}
+          items={items}
+          onOrderCreated={onOrderCreated}
+          initialMode={initialMode}
+          initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+          {...liveEditProps}
+        />
+      ) : isNeonTemplate ? (
         <NeonStreetMenu
           isOpen={isOpen}
           onClose={onClose}

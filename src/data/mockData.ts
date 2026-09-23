@@ -313,7 +313,7 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     reviewCount: 390,
     logoUrl: CEVICHITO_PLIZ_LOGO_SVG,
     coverUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=900&auto=format&fit=crop&q=80',
-    ownerId: 'u-3',
+    ownerId: 'u-owner-stephanie',
     templateId: 'tmpl-marine',
     branding: {
       primaryColor: '#1B667A',       // Azul verdoso oscuro

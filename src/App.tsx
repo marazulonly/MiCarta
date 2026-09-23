@@ -243,7 +243,13 @@ function getInitialStorageState() {
       if (storedRests) {
         const parsedRests = JSON.parse(storedRests);
         if (Array.isArray(parsedRests) && parsedRests.length > 0) {
-          cachedRests = sanitizeRestaurants(parsedRests);
+          const map = new Map<string, Restaurant>();
+          sanitizeRestaurants(parsedRests).forEach(r => { if (r && r.id) map.set(r.id, r); });
+          // Guarantee default system restaurants are never purged
+          sanitizeRestaurants(INITIAL_RESTAURANTS).forEach(r => {
+            if (r && r.id && !map.has(r.id)) map.set(r.id, r);
+          });
+          cachedRests = Array.from(map.values());
         }
       }
 
@@ -251,7 +257,12 @@ function getInitialStorageState() {
       if (storedCats) {
         const parsedCats = JSON.parse(storedCats);
         if (Array.isArray(parsedCats)) {
-          cachedCategories = parsedCats;
+          const map = new Map<string, MenuCategory>();
+          parsedCats.forEach(c => { if (c && c.id) map.set(c.id, c); });
+          INITIAL_CATEGORIES.forEach(c => {
+            if (c && c.id && !map.has(c.id)) map.set(c.id, c);
+          });
+          cachedCategories = Array.from(map.values());
         }
       }
 
@@ -259,7 +270,12 @@ function getInitialStorageState() {
       if (storedItems) {
         const parsedItems = JSON.parse(storedItems);
         if (Array.isArray(parsedItems)) {
-          cachedItems = sanitizeMenuItems(parsedItems);
+          const map = new Map<string, MenuItem>();
+          sanitizeMenuItems(parsedItems).forEach(i => { if (i && i.id) map.set(i.id, i); });
+          sanitizeMenuItems(INITIAL_MENU_ITEMS).forEach(i => {
+            if (i && i.id && !map.has(i.id)) map.set(i.id, i);
+          });
+          cachedItems = Array.from(map.values());
         }
       }
 
@@ -267,8 +283,13 @@ function getInitialStorageState() {
       if (storedUsers) {
         const parsed = JSON.parse(storedUsers);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Strictly respect user deletions: use stored users as the source of truth
-          cachedUsers = parsed;
+          const map = new Map<string, User>();
+          parsed.forEach(u => { if (u && u.id) map.set(u.id, u); });
+          // Guarantee essential default users (e.g. Stephanie Leon, Herly Lizarazo) are never purged
+          INITIAL_USERS.forEach(u => {
+            if (u && u.id && !map.has(u.id)) map.set(u.id, u);
+          });
+          cachedUsers = Array.from(map.values());
         }
       }
 
@@ -1289,6 +1310,7 @@ export default function App() {
           onLogin={handleLogin}
           restaurants={restaurants}
           onOpenCustomerPreview={handleOpenCustomerPreview}
+          onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
         />
       </div>
     );
@@ -1307,6 +1329,7 @@ export default function App() {
           onLogout={handleLogout}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onOpenCustomerPreview={() => handleOpenCustomerPreview()}
+          onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
           onSyncFirebase={handleSyncFromFirebase}
           isSyncingFirebase={isSyncingFirebase}
         />
@@ -1461,6 +1484,7 @@ export default function App() {
           }
         }}
         onOpenCustomerPreview={() => handleOpenCustomerPreview()}
+        onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
         currentUser={currentUser}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}

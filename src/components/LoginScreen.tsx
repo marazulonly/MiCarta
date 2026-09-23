@@ -21,7 +21,8 @@ import {
   Copy,
   Check,
   Download,
-  X
+  X,
+  SlidersHorizontal
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { User, UserRole, Restaurant } from '../types';
@@ -31,13 +32,15 @@ interface LoginScreenProps {
   onLogin: (user: User) => void;
   restaurants?: Restaurant[];
   onOpenCustomerPreview?: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
+  onOpenTemplateSplitEditor?: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ 
   users, 
   onLogin,
   restaurants = [],
-  onOpenCustomerPreview
+  onOpenCustomerPreview,
+  onOpenTemplateSplitEditor
 }) => {
   const [dniInput, setDniInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -209,9 +212,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
           </div>
 
-          <div className="text-right hidden sm:block">
-            <span className="text-xs text-neutral-400 block">Seguridad & RBAC</span>
-            <span className="text-[11px] font-mono text-emerald-400 font-medium">● 4 Restaurantes en Red</span>
+          <div className="flex items-center gap-2">
+            {onOpenTemplateSplitEditor && (
+              <button
+                type="button"
+                onClick={onOpenTemplateSplitEditor}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20"
+                title="Diseñador de Plantillas en Pantalla Dividida"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Editor Dividido</span>
+              </button>
+            )}
+
+            {onOpenCustomerPreview && restaurants.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onOpenCustomerPreview(restaurants[0])}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white text-xs font-bold transition cursor-pointer"
+                title="Previsualizar Carta Digital"
+              >
+                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Previsualizar Carta</span>
+              </button>
+            )}
+
+            <div className="text-right hidden md:block ml-2 border-l border-neutral-800 pl-3">
+              <span className="text-xs text-neutral-400 block">Seguridad & RBAC</span>
+              <span className="text-[11px] font-mono text-emerald-400 font-medium">● 4 Restaurantes en Red</span>
+            </div>
           </div>
         </div>
       </header>

@@ -579,7 +579,66 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
             {/* Dishes list */}
             <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-              {previewFilteredItems.map(item => {
+              {previewFilteredItems.map((item, idx) => {
+                const isEditorial = activeTemplateId === 'tmpl-editorial';
+                const isEven = idx % 2 === 1;
+
+                if (isEditorial) {
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        backgroundColor: workingBranding.cardBgColor || '#FAF8F5',
+                        color: workingBranding.textColor || '#1A1A1A'
+                      }}
+                      className="p-3 border border-neutral-900/10 rounded-xl transition flex items-center gap-3 shadow-md"
+                    >
+                      <div className={`flex items-center gap-3 w-full ${isEven ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                        {item.imageUrl && (
+                          <div className={`shrink-0 flex items-center ${isEven ? 'pl-2 border-l-2 border-neutral-900' : 'pr-2 border-r-2 border-neutral-900'}`}>
+                            <div className={`w-16 h-16 overflow-hidden bg-neutral-900/10 shadow border border-neutral-900/20 ${isEven ? 'rounded-l-full' : 'rounded-r-full'}`}>
+                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <h3 
+                            className="text-xs sm:text-sm font-bold font-serif line-clamp-1 text-neutral-900"
+                            style={{
+                              fontFamily: workingBranding.dishNameFont || workingBranding.fontDisplay || 'serif'
+                            }}
+                          >
+                            {item.name}
+                          </h3>
+                          <p 
+                            className="text-[11px] opacity-80 mt-0.5 line-clamp-1 italic font-serif"
+                            style={{
+                              fontFamily: workingBranding.dishDescFont || 'serif'
+                            }}
+                          >
+                            {item.description}
+                          </p>
+                          <div className={`flex items-center gap-2 mt-1.5 ${isEven ? 'justify-end' : 'justify-start'}`}>
+                            <span 
+                              className="text-xs font-bold font-serif"
+                              style={{
+                                color: workingBranding.priceColor || '#111827',
+                                fontFamily: workingBranding.dishPriceFont || 'serif'
+                              }}
+                            >
+                              S/ {item.price.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] bg-neutral-900 text-amber-300 px-2 py-0.5 rounded font-sans font-bold">
+                              + Pedir
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const cardBg = workingBranding.dishCardBgColor || workingBranding.cardBgColor || 'rgba(255,255,255,0.05)';
                 const cardRadius = workingBranding.cardBorderRadius || '12px';
                 const cardBorder = workingBranding.dishCardBorderColor || (workingBranding.buttonColor ? `${workingBranding.buttonColor}50` : 'rgba(255,255,255,0.1)');

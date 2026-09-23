@@ -10,7 +10,10 @@ import {
   ExternalLink,
   Shield,
   Clock,
-  RefreshCw
+  RefreshCw,
+  SlidersHorizontal,
+  Eye,
+  LayoutTemplate
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
 
@@ -20,6 +23,7 @@ interface RoleHeaderProps {
   onOpenLoginModal?: () => void;
   restaurant?: Restaurant;
   onOpenCustomerPreview?: () => void;
+  onOpenTemplateSplitEditor?: () => void;
   onSyncFirebase?: () => void;
   isSyncingFirebase?: boolean;
 }
@@ -30,6 +34,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
   onOpenLoginModal,
   restaurant,
   onOpenCustomerPreview,
+  onOpenTemplateSplitEditor,
   onSyncFirebase,
   isSyncingFirebase = false,
 }) => {
@@ -73,16 +78,31 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
           </div>
 
           {/* User Profile & Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             
-            {/* Customer preview button if owner or manager */}
-            {(currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && onOpenCustomerPreview && (
+            {/* Split-Screen Template Editor Button */}
+            {(currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && onOpenTemplateSplitEditor && (
               <button
-                onClick={onOpenCustomerPreview}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-white text-black hover:bg-neutral-200 transition cursor-pointer shadow"
+                type="button"
+                onClick={onOpenTemplateSplitEditor}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-amber-400 hover:bg-amber-300 text-black transition cursor-pointer shadow-lg shadow-amber-400/20"
+                title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Ver Carta Digital</span>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Editor Pantalla Dividida</span>
+              </button>
+            )}
+
+            {/* Customer preview button */}
+            {(currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && onOpenCustomerPreview && (
+              <button
+                type="button"
+                onClick={onOpenCustomerPreview}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-white text-black hover:bg-neutral-200 transition cursor-pointer shadow"
+                title="Previsualizar la carta digital de esta sede"
+              >
+                <Eye className="w-3.5 h-3.5 text-black" />
+                <span>Previsualizar Carta</span>
               </button>
             )}
 

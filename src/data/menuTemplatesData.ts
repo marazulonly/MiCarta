@@ -115,5 +115,28 @@ export const INITIAL_MENU_TEMPLATES: MenuTemplate[] = [
     tags: ['Bistró', 'Vinos de Autor', 'Café de Especialidad', 'Minimal'],
     isCustomizable: true,
     activeRestaurantsCount: 0
+  },
+  {
+    id: 'tmpl-editorial',
+    name: 'Editorial Grand Menu (Zig-Zag Vintage)',
+    description: 'Carta editorial de alta cocina inspirada en bistrós franceses e internacionales: fondo marfil con tarjetas alternadas en zig-zag, fotos en medio círculo con línea divisoria vertical, tipografía serif "the MENU" y marco esmeralda imperial.',
+    category: 'Haute Cuisine & Editorial',
+    themeStyle: 'editorial-zigzag',
+    fontDisplay: 'Playfair Display, serif',
+    primaryColor: '#D4AF37',
+    darkBgColor: '#051811',
+    cardBgColor: '#FAF8F5',
+    buttonColor: '#1A1A1A',
+    buttonTextColor: '#FFFFFF',
+    textColor: '#1A1A1A',
+    cardBorderRadius: '4px',
+    cardStyle: 'horizontal',
+    headerStyle: 'centered',
+    layoutMode: 'alternating',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=360&auto=format&fit=crop&q=80',
+    badge: 'Nuevo Diseño Zig-Zag',
+    tags: ['Efecto Zig-Zag', 'Arco Medio Círculo', 'Serif Vintage', 'Marco Esmeralda'],
+    isCustomizable: true,
+    activeRestaurantsCount: 0
   }
 ];
