@@ -189,7 +189,9 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
   const totalItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
-  const fullUrl = `https://micarta.io/r/${restaurant.slug}`;
+  const fullUrl = typeof window !== 'undefined' && window.location.origin
+    ? `${window.location.origin}/?r=${restaurant.slug}`
+    : `https://micarta-bay.vercel.app/?r=${restaurant.slug}`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(fullUrl);

@@ -49,7 +49,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRestId, setCopiedRestId] = useState<string | null>(null);
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';
   const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug}`;
 
   // Palette editing
