@@ -41,7 +41,7 @@ interface CostaMarinaMenuProps {
   onQuickPriceItem?: (item: MenuItem) => void;
   onQuickPhotoItem?: (item: MenuItem) => void;
   onToggleAvailability?: (item: MenuItem) => void;
-  onAddNewItem?: () => void;
+  onAddNewItem?: (categoryId?: string) => void;
   onEditBranding?: () => void;
   onEditHeader?: () => void;
   onSaveToFirebase?: () => void;
@@ -92,12 +92,16 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  const currentCategories = categories
+  const rawCategories = categories
     .filter(c => c.restaurantId === restaurant.id)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
+  const currentCategories = rawCategories.length > 0
+    ? rawCategories
+    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'De la Casa', sortOrder: 1, isActive: true }];
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    currentCategories[0]?.id || 'cat-m-entradas'
+    currentCategories[0]?.id || `cat-${restaurant.id}-general`
   );
 
   useEffect(() => {
@@ -171,7 +175,16 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   });
 
   const activeCategory = currentCategories.find(c => c.id === selectedCategoryId) || currentCategories[0];
-  const displayedItems = currentItems.filter(i => i.categoryId === activeCategory?.id);
+  const displayedItems = currentItems.filter(i => {
+    if (!activeCategory) return true;
+    if (i.categoryId === activeCategory.id) return true;
+    const belongsToKnownCategory = currentCategories.some(c => c.id === i.categoryId);
+    // If the dish has an orphaned or default categoryId, show it in the first/active category
+    if (!belongsToKnownCategory && activeCategory.id === currentCategories[0]?.id) {
+      return true;
+    }
+    return false;
+  });
 
   const handleConfirmItemUnits = (item: MenuItem, quantity: number, units: OrderItemUnit[]) => {
     setCart(prev => {
@@ -568,7 +581,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               {isLiveEditActive && onAddNewItem && (
                 <button
                   type="button"
-                  onClick={onAddNewItem}
+                  onClick={() => onAddNewItem(selectedCategoryId)}
                   style={{
                     backgroundColor: COLOR_TERRACOTTA,
                     color: COLOR_CREAM

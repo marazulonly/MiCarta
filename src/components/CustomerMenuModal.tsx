@@ -142,11 +142,15 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   };
 
   // New item form state
-  const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const availableCats = categories.filter(c => c.restaurantId === restaurant.id);
+  const restaurantCategories = availableCats.length > 0 
+    ? availableCats 
+    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'De la Casa', sortOrder: 1, isActive: true }];
+
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('35.00');
-  const [newItemCategory, setNewItemCategory] = useState(restaurantCategories[0]?.id || '');
+  const [newItemCategory, setNewItemCategory] = useState(restaurantCategories[0]?.id || `cat-${restaurant.id}-general`);
   const [newItemImgUrl, setNewItemImgUrl] = useState(PRESET_DISH_PHOTOS[0].url);
   const [newItemPrepTime, setNewItemPrepTime] = useState(25);
 
@@ -273,11 +277,11 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     showToast(`Plato marcado como ${updated.isAvailable ? 'Disponible' : 'Agotado'}`);
   };
 
-  const handleOpenAddItem = () => {
+  const handleOpenAddItem = (preselectedCatId?: string) => {
     setNewItemName('');
     setNewItemDesc('');
     setNewItemPrice('35.00');
-    setNewItemCategory(restaurantCategories[0]?.id || '');
+    setNewItemCategory(preselectedCatId || restaurantCategories[0]?.id || `cat-${restaurant.id}-general`);
     setNewItemImgUrl(PRESET_DISH_PHOTOS[0].url);
     setNewItemPrepTime(25);
     setIsAddItemModalOpen(true);
@@ -286,10 +290,25 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const handleSaveNewItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemName.trim() || !onAddMenuItem) return;
+
+    const targetCatId = newItemCategory || restaurantCategories[0]?.id || `cat-${restaurant.id}-general`;
+
+    // Ensure category exists in categories state
+    if (onAddCategory && !categories.some(c => c.id === targetCatId && c.restaurantId === restaurant.id)) {
+      const newCat: MenuCategory = {
+        id: targetCatId,
+        restaurantId: restaurant.id,
+        name: 'De la Casa',
+        sortOrder: 1,
+        isActive: true,
+      };
+      onAddCategory(newCat);
+    }
+
     const newItem: MenuItem = {
       id: `item-${restaurant.id}-${Date.now()}`,
       restaurantId: restaurant.id,
-      categoryId: newItemCategory || restaurantCategories[0]?.id || 'cat-general',
+      categoryId: targetCatId,
       name: newItemName.trim(),
       description: newItemDesc.trim(),
       price: Math.max(0.5, parseFloat(newItemPrice) || 20),

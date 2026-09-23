@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ShoppingBag, 
@@ -45,7 +45,7 @@ interface BrasasLuxuryMenuProps {
   onQuickPriceItem?: (item: MenuItem) => void;
   onQuickPhotoItem?: (item: MenuItem) => void;
   onToggleAvailability?: (item: MenuItem) => void;
-  onAddNewItem?: () => void;
+  onAddNewItem?: (categoryId?: string) => void;
   onEditBranding?: () => void;
   onEditHeader?: () => void;
   onSaveToFirebase?: () => void;
@@ -88,8 +88,21 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
     (!isDeliveryEnabled && isDineInEnabled) ? 'DINE_IN' :
     (initialMode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
 
-  const [activeCategory, setActiveCategory] = useState<string>('cat-b-parrillas');
+  // Filter categories for this restaurant with robust fallback
+  const rawCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const currentCategories = rawCategories.length > 0
+    ? rawCategories
+    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Especialidades', sortOrder: 1, isActive: true }];
+
+  const [activeCategory, setActiveCategory] = useState<string>(currentCategories[0]?.id || `cat-${restaurant.id}-general`);
   const [activeChannel, setActiveChannel] = useState<'DINE_IN' | 'DELIVERY'>(defaultChannel);
+
+  useEffect(() => {
+    if (activeCategory !== 'all' && currentCategories.length > 0 && !currentCategories.some(c => c.id === activeCategory)) {
+      setActiveCategory(currentCategories[0].id);
+    }
+  }, [currentCategories, activeCategory]);
+
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -139,10 +152,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
     }
   }
 
-  // Filter categories for this restaurant
-  const currentCategories = categories.filter(c => c.restaurantId === restaurant.id);
-  
-  // Filter items based on active category & channel
+  // Filter items based on active category & channel with smart category binding
   const currentItems = items.filter(i => {
     const matchRest = i.restaurantId === restaurant.id;
     if (!matchRest) return false;
@@ -154,7 +164,14 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
     }
 
     if (activeCategory === 'all') return true;
-    return i.categoryId === activeCategory;
+    if (i.categoryId === activeCategory) return true;
+
+    // If item has an unknown or unassigned category, show it in the first category
+    const belongsToKnown = currentCategories.some(c => c.id === i.categoryId);
+    if (!belongsToKnown && activeCategory === currentCategories[0]?.id) {
+      return true;
+    }
+    return false;
   });
 
   const activeCategoryObj = currentCategories.find(c => c.id === activeCategory);
@@ -335,7 +352,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
               <div className="flex items-center gap-1.5">
                 {onAddNewItem && (
                   <button
-                    onClick={onAddNewItem}
+                    onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
                     className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />

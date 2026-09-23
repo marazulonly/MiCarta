@@ -663,6 +663,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       onUpdateRestaurant(newRest);
     }
 
+    if (onAddCategory) {
+      const defaultCat: MenuCategory = {
+        id: `cat-${newId}-general`,
+        restaurantId: newId,
+        name: 'De la Casa',
+        sortOrder: 1,
+        isActive: true,
+      };
+      onAddCategory(defaultCat);
+    }
+
     if (onUpdateUser && currentOwner) {
       const updatedOwner: User = {
         ...currentOwner,

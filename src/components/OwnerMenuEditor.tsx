@@ -427,10 +427,20 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       onUpdateMenuItem(updated);
       showToast(`Plato "${updated.name}" actualizado con éxito`);
     } else {
+      const targetCatId = formCategoryId || restaurantCategories[0]?.id || `cat-${restaurant.id}-general`;
+      if (!categories.some(c => c.id === targetCatId && c.restaurantId === restaurant.id)) {
+        onAddCategory({
+          id: targetCatId,
+          restaurantId: restaurant.id,
+          name: 'De la Casa',
+          sortOrder: 1,
+          isActive: true,
+        });
+      }
       const newItem: MenuItem = {
         id: `item-${Date.now()}`,
         restaurantId: restaurant.id,
-        categoryId: formCategoryId || restaurantCategories[0]?.id || `cat-${Date.now()}`,
+        categoryId: targetCatId,
         name: formName.trim(),
         description: formDescription.trim(),
         price: Number(formPrice),

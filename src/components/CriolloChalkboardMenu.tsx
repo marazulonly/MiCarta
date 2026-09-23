@@ -134,8 +134,12 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
     }
   }
 
-  // Filter categories and items for this restaurant
-  const currentCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  // Filter categories and items for this restaurant with robust fallback
+  const rawCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const currentCategories = rawCategories.length > 0
+    ? rawCategories
+    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Especialidades Criollas', sortOrder: 1, isActive: true }];
+
   const currentItems = items.filter(i => {
     const matchRest = i.restaurantId === restaurant.id;
     if (!matchRest) return false;
@@ -178,10 +182,15 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
     setTimeout(() => setCopiedLink(false), 2200);
   };
 
-  // Group items by category for chalkboard style
-  const groupedCategories = currentCategories.map(cat => ({
+  // Group items by category for chalkboard style with smart fallback for orphaned items
+  const groupedCategories = currentCategories.map((cat, idx) => ({
     ...cat,
-    items: currentItems.filter(i => i.categoryId === cat.id)
+    items: currentItems.filter(i => {
+      if (i.categoryId === cat.id) return true;
+      const belongsToKnown = currentCategories.some(c => c.id === i.categoryId);
+      if (!belongsToKnown && idx === 0) return true;
+      return false;
+    })
   })).filter(cat => cat.items.length > 0);
 
   return (

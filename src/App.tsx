@@ -117,20 +117,29 @@ export const findRestaurantBySlug = (restaurantsList: Restaurant[], querySlug?: 
 
 // Parse initial URL search parameters synchronously before first render
 const getInitialUrlParams = () => {
-  if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const };
+  if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false };
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const rSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
     const table = urlParams.get('mesa') || urlParams.get('table') || urlParams.get('m') || undefined;
     const mode = urlParams.get('mode') === 'DELIVERY' ? ('DELIVERY' as const) : ('DINE_IN' as const);
+    const isStaffLogin = Boolean(
+      urlParams.get('admin') || 
+      urlParams.get('login') || 
+      urlParams.get('staff') || 
+      urlParams.get('panel') ||
+      window.location.pathname.startsWith('/admin') ||
+      window.location.pathname.startsWith('/login')
+    );
     return {
       isQr: Boolean(rSlug),
       restSlug: rSlug,
       table,
-      mode
+      mode,
+      isStaffLogin
     };
   } catch {
-    return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const };
+    return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false };
   }
 };
 
@@ -266,9 +275,10 @@ const initialState = getInitialStorageState();
 const initParams = getInitialUrlParams();
 
 const initialRequestedSlug = initParams.restSlug;
+const defaultFallbackRest = initialState.cachedRests.find(r => r.id === 'rest-costa' || r.slug === 'cevichito-pliz') || initialState.cachedRests[0];
 const initialFoundRest = initialRequestedSlug 
   ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
-  : null;
+  : defaultFallbackRest;
 
 function cleanseUserRestaurantAssociations(rawUsers: User[], rawRests: Restaurant[]) {
   const modifiedUsers: User[] = [];
@@ -336,12 +346,13 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
 
   // Customer preview modal
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(Boolean(initialRequestedSlug && initialFoundRest));
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(!initParams.isStaffLogin);
+  const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(initialFoundRest || initialState.cachedRests[0]);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
-    (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
+    (initialRequestedSlug && !findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)) ? initialRequestedSlug : null
   );
 
   // Synchronous LocalStorage write effects to guarantee zero data loss between renders or reloads
@@ -682,6 +693,20 @@ export default function App() {
     if (restaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
       showToast(`Error: Ya existe un restaurante con el nombre "${cleanName}".`);
       return;
+    }
+
+    // Ensure the new restaurant has at least 1 default category
+    const hasCategory = categories.some(c => c.restaurantId === newRestaurant.id);
+    if (!hasCategory) {
+      const defaultCat: MenuCategory = {
+        id: `cat-${newRestaurant.id}-general`,
+        restaurantId: newRestaurant.id,
+        name: 'De la Casa',
+        sortOrder: 1,
+        isActive: true,
+      };
+      setCategories(prev => [...prev, defaultCat]);
+      autoSyncCategory(defaultCat);
     }
 
     setRestaurants(prev => [newRestaurant, ...prev]);
@@ -1078,11 +1103,23 @@ export default function App() {
     showToast(`🔔 ¡Nueva comanda entrante! ${newOrder.orderNumber} en ${randomRest.name}`);
   };
 
+  const handleCustomerMenuClose = () => {
+    if (currentUser) {
+      setIsCustomerModalOpen(false);
+    } else {
+      try {
+        window.close();
+      } catch {}
+      setIsMenuClosedByGuest(true);
+    }
+  };
+
   const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => {
     const target = restaurant || restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
     setPreviewRestaurant(target);
     setPreviewMode(mode || 'DINE_IN');
     setPreviewTableNumber(tableNumber);
+    setIsMenuClosedByGuest(false);
     setIsCustomerModalOpen(true);
   };
 
@@ -1103,55 +1140,125 @@ export default function App() {
   const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
-  // 1. Initial State: Prompt for DNI and Password if not logged in
+  // 1. Initial State: Directly display Digital Menu for every public guest/incognito link
   if (!currentUser) {
-    // If an anonymous guest arrives via QR code / direct link or clicked "Probar Carta"
-    if (isCustomerModalOpen) {
-      return (
-        <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
-          <CustomerMenuModal
-            isOpen={true}
-            onClose={() => setIsCustomerModalOpen(false)}
-            restaurant={previewRestaurant}
-            categories={categories}
-            items={menuItems}
-            onOrderCreated={handleCreateOrder}
-            initialMode={previewMode}
-            initialTableNumber={previewTableNumber}
-            onUpdateRestaurant={handleUpdateRestaurant}
-            onUpdateMenuItem={handleUpdateMenuItem}
-            onAddMenuItem={handleAddMenuItem}
-            onDeleteMenuItem={handleDeleteMenuItem}
-            onUpdateCategory={handleUpdateCategory}
-            onAddCategory={handleAddCategory}
-            isOwnerOrAdmin={false}
-          />
+    // If the guest explicitly closed the menu
+    if (isMenuClosedByGuest) {
+      const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
+      const secColor = previewRestaurant?.branding?.secondaryColor || '#8A9B57';
+      const btnColor = previewRestaurant?.branding?.buttonColor || '#D98262';
+      const creamColor = previewRestaurant?.branding?.buttonTextColor || '#EAEBDC';
 
-          {/* Floating Toast Notification */}
-          {toastMessage && (
-            <div className="fixed top-6 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
-              <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>{toastMessage}</span>
-              </div>
+      return (
+        <div 
+          className="min-h-screen flex flex-col items-center justify-center p-6 text-center select-none font-sans"
+          style={{ backgroundColor: `${restColor}F5`, color: creamColor }}
+        >
+          <div 
+            className="max-w-md w-full p-8 rounded-3xl border shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in zoom-in-95 duration-200"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)', borderColor: `${secColor}60` }}
+          >
+            <div 
+              className="w-16 h-16 mx-auto rounded-full border flex items-center justify-center"
+              style={{ backgroundColor: `${secColor}30`, borderColor: secColor }}
+            >
+              <CheckCircle2 className="w-8 h-8" style={{ color: secColor }} />
             </div>
-          )}
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: 'Fredoka, Outfit, sans-serif' }}>
+                ¡Gracias por tu visita!
+              </h2>
+              <p className="text-sm opacity-85 leading-relaxed">
+                Has cerrado la carta digital de <strong>{previewRestaurant?.name || 'nuestro restaurante'}</strong>. Ya puedes cerrar esta pestaña de tu navegador.
+              </p>
+            </div>
+            
+            <button
+              onClick={() => {
+                setIsMenuClosedByGuest(false);
+                setIsCustomerModalOpen(true);
+              }}
+              style={{ backgroundColor: btnColor, color: creamColor }}
+              className="w-full py-3.5 px-6 rounded-2xl font-black text-sm tracking-wide transition shadow-lg cursor-pointer hover:brightness-110"
+            >
+              Volver a abrir la Carta Digital
+            </button>
+          </div>
+
+          {/* Subtle discrete staff portal trigger */}
+          <div className="mt-8">
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="text-xs opacity-35 hover:opacity-90 transition underline underline-offset-4 cursor-pointer"
+            >
+              Acceso exclusivo para el personal
+            </button>
+          </div>
+
+          {/* Authentication Modal with DNI for Staff */}
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
+            users={users}
+            currentUser={currentUser}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+            onUpdateUser={handleUpdateUser}
+          />
         </div>
       );
     }
 
+    // If an explicit staff login parameter was requested in URL
+    if (initParams.isStaffLogin) {
+      return (
+        <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+          <LoginScreen
+            users={users}
+            onLogin={handleLogin}
+            restaurants={restaurants}
+            onOpenCustomerPreview={handleOpenCustomerPreview}
+          />
+        </div>
+      );
+    }
+
+    // By default for EVERY customer/incognito user: directly display the Digital Menu
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
-        <LoginScreen
+        <CustomerMenuModal
+          isOpen={true}
+          onClose={handleCustomerMenuClose}
+          restaurant={previewRestaurant}
+          categories={categories}
+          items={menuItems}
+          onOrderCreated={handleCreateOrder}
+          initialMode={previewMode}
+          initialTableNumber={previewTableNumber}
+          onUpdateRestaurant={handleUpdateRestaurant}
+          onUpdateMenuItem={handleUpdateMenuItem}
+          onAddMenuItem={handleAddMenuItem}
+          onDeleteMenuItem={handleDeleteMenuItem}
+          onUpdateCategory={handleUpdateCategory}
+          onAddCategory={handleAddCategory}
+          isOwnerOrAdmin={false}
+        />
+
+        {/* Authentication Modal with DNI (if opened by staff) */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
           users={users}
+          currentUser={currentUser}
           onLogin={handleLogin}
-          restaurants={restaurants}
-          onOpenCustomerPreview={handleOpenCustomerPreview}
+          onLogout={handleLogout}
+          onUpdateUser={handleUpdateUser}
         />
 
         {/* Floating Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-6 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-200">
+          <div className="fixed top-6 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
             <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>{toastMessage}</span>

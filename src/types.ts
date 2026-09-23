@@ -139,9 +139,10 @@ export interface MenuCategory {
   id: string;
   restaurantId: string;
   name: string;
-  description: string;
+  description?: string;
   sortOrder: number;
-  iconName: string;
+  iconName?: string;
+  isActive?: boolean;
   targetMenuScope?: 'ALL' | 'DINE_IN' | 'DELIVERY';
 }
 
