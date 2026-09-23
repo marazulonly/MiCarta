@@ -234,7 +234,7 @@ function getInitialStorageState() {
   const cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
   let cachedUsers = INITIAL_USERS;
   let cachedOrders = INITIAL_ORDERS;
-  let cachedAuth: User | null = null;
+  let cachedAuth: User | null = INITIAL_USERS[0] || null;
 
   // Only read auth and user credentials from localStorage, never stale menu/restaurant data
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -1257,8 +1257,8 @@ export default function App() {
     );
   }
 
-  // If explicit staff login parameter was requested in URL without an active session
-  if (!currentUser && initParams.isStaffLogin) {
+  // If no user is logged in, display the Login Screen (Pantalla de Logueo)
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         <LoginScreen
