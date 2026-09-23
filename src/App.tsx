@@ -278,7 +278,7 @@ const initialRequestedSlug = initParams.restSlug;
 const defaultFallbackRest = initialState.cachedRests.find(r => r.id === 'rest-costa' || r.slug === 'cevichito-pliz') || initialState.cachedRests[0];
 const initialFoundRest = initialRequestedSlug 
   ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
-  : defaultFallbackRest;
+  : null;
 
 function cleanseUserRestaurantAssociations(rawUsers: User[], rawRests: Restaurant[]) {
   const modifiedUsers: User[] = [];
@@ -346,7 +346,7 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
 
   // Customer preview modal
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(!initParams.isStaffLogin);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(
     initialFoundRest || defaultFallbackRest
@@ -354,7 +354,7 @@ export default function App() {
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
-    (initialRequestedSlug && !findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)) ? initialRequestedSlug : null
+    (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
   );
 
   // Synchronous LocalStorage write effects to guarantee zero data loss between renders or reloads
@@ -1142,8 +1142,8 @@ export default function App() {
   const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
-  // 1. Initial State: Directly display Digital Menu for every public guest/incognito link
-  if (!currentUser) {
+  // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links without logged-in session
+  if (!currentUser && (initParams.isQr || initParams.restSlug) && previewRestaurant) {
     // If the guest explicitly closed the menu, show ONLY the thank you screen
     if (isMenuClosedByGuest) {
       const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
@@ -1212,21 +1212,7 @@ export default function App() {
       );
     }
 
-    // If an explicit staff login parameter was requested in URL
-    if (initParams.isStaffLogin) {
-      return (
-        <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
-          <LoginScreen
-            users={users}
-            onLogin={handleLogin}
-            restaurants={restaurants}
-            onOpenCustomerPreview={handleOpenCustomerPreview}
-          />
-        </div>
-      );
-    }
-
-    // By default for EVERY customer/guest accessing the link: directly display the Digital Menu
+    // Direct standalone full-screen digital menu for QR scan visitors
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         <CustomerMenuModal
@@ -1267,6 +1253,20 @@ export default function App() {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // If explicit staff login parameter was requested in URL without an active session
+  if (!currentUser && initParams.isStaffLogin) {
+    return (
+      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+        <LoginScreen
+          users={users}
+          onLogin={handleLogin}
+          restaurants={restaurants}
+          onOpenCustomerPreview={handleOpenCustomerPreview}
+        />
       </div>
     );
   }
