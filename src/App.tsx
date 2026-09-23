@@ -348,7 +348,9 @@ export default function App() {
   // Customer preview modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(!initParams.isStaffLogin);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(initialFoundRest || initialState.cachedRests[0]);
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(
+    initialFoundRest || defaultFallbackRest
+  );
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
@@ -1134,7 +1136,7 @@ export default function App() {
     ? (currentUser.role === 'ADMIN'
         ? restaurants
         : restaurants.filter(r => r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all')))
-    : restaurants;
+  : restaurants;
 
   // Current active restaurant branding for dynamic theme accent
   const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
@@ -1142,7 +1144,7 @@ export default function App() {
 
   // 1. Initial State: Directly display Digital Menu for every public guest/incognito link
   if (!currentUser) {
-    // If the guest explicitly closed the menu
+    // If the guest explicitly closed the menu, show ONLY the thank you screen
     if (isMenuClosedByGuest) {
       const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
       const secColor = previewRestaurant?.branding?.secondaryColor || '#8A9B57';
@@ -1186,7 +1188,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* Subtle discrete staff portal trigger */}
+          {/* Discrete staff portal trigger */}
           <div className="mt-8">
             <button
               onClick={() => setIsLoginModalOpen(true)}
@@ -1224,7 +1226,7 @@ export default function App() {
       );
     }
 
-    // By default for EVERY customer/incognito user: directly display the Digital Menu
+    // By default for EVERY customer/guest accessing the link: directly display the Digital Menu
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         <CustomerMenuModal
@@ -1271,7 +1273,7 @@ export default function App() {
 
   // 2. Non-Admin Role Views: "Las vistas deberán corresponder al rol del usuario que se loguee"
   // "La vista actual, solo será vista cuando el que se loguee sea un administrador"
-  if (currentUser.role !== 'ADMIN') {
+  if (currentUser && currentUser.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         
