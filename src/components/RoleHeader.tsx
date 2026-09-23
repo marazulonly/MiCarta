@@ -74,32 +74,6 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
 
           {/* User Profile & Actions */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            
-            {/* Split-Screen Template Editor Button */}
-            {(currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && onOpenTemplateSplitEditor && (
-              <button
-                type="button"
-                onClick={onOpenTemplateSplitEditor}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-amber-400 hover:bg-amber-300 text-black transition cursor-pointer shadow-lg shadow-amber-400/20"
-                title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Editor Pantalla Dividida</span>
-              </button>
-            )}
-
-            {/* Customer preview button */}
-            {(currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && onOpenCustomerPreview && (
-              <button
-                type="button"
-                onClick={onOpenCustomerPreview}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-white text-black hover:bg-neutral-200 transition cursor-pointer shadow"
-                title="Previsualizar la carta digital de esta sede"
-              >
-                <Eye className="w-3.5 h-3.5 text-black" />
-                <span>Previsualizar Carta</span>
-              </button>
-            )}
 
             {/* User Profile Card */}
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800">
@@ -120,18 +94,6 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Change User */}
-            {onOpenLoginModal && (
-              <button
-                onClick={onOpenLoginModal}
-                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300 hover:text-white hover:bg-neutral-900 transition cursor-pointer"
-                title="Cambiar a otro rol"
-              >
-                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[11px]">Cambiar</span>
-              </button>
-            )}
 
             {/* Logout Button */}
             <button

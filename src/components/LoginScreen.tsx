@@ -197,46 +197,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black text-base shadow">
               MC
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-black tracking-widest text-white uppercase">
-                  Micarta
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 text-amber-400 border border-neutral-800 font-mono">
-                  SaaS Gastronómico
-                </span>
-              </div>
-              <span className="text-[11px] text-neutral-400 block -mt-0.5">
-                Portal de Acceso Multi-Rol Unificado
-              </span>
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {onOpenTemplateSplitEditor && (
-              <button
-                type="button"
-                onClick={onOpenTemplateSplitEditor}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20"
-                title="Diseñador de Plantillas en Pantalla Dividida"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Editor Dividido</span>
-              </button>
-            )}
-
-            {onOpenCustomerPreview && restaurants.length > 0 && (
-              <button
-                type="button"
-                onClick={() => onOpenCustomerPreview(restaurants[0])}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white text-xs font-bold transition cursor-pointer"
-                title="Previsualizar Carta Digital"
-              >
-                <Eye className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Previsualizar Carta</span>
-              </button>
-            )}
-
             <div className="text-right hidden md:block ml-2 border-l border-neutral-800 pl-3">
               <span className="text-xs text-neutral-400 block">Seguridad & RBAC</span>
               <span className="text-[11px] font-mono text-emerald-400 font-medium">● 4 Restaurantes en Red</span>
@@ -252,45 +215,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           
           {/* Headline */}
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-300">
-              <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Autenticación Requerida</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               Iniciar Sesión
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto">
               Ingresa con tu <strong>DNI</strong> y <strong>Contraseña</strong>. La vista se adaptará automáticamente a los privilegios de tu rol asignado.
             </p>
-          </div>
-
-          {/* Quick Real QR Tester Banner for Anonymous Guests */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-neutral-900 border border-amber-500/30 flex items-center justify-between gap-3 shadow-lg">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-amber-400 text-black flex items-center justify-center shrink-0 shadow">
-                <QrCode className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-white block truncate">
-                  ¿Deseas probar pedidos como comensal anónimo?
-                </span>
-                <span className="text-[11px] text-neutral-400 block truncate">
-                  Escanea códigos QR de mesa reales con tu celular o pruébalos aquí.
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (restaurants.length > 0) setSelectedRestForQr(restaurants[0]);
-                setIsQrModalOpen(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer shrink-0 shadow flex items-center gap-1.5"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Ver Códigos QR</span>
-            </button>
           </div>
 
           {/* Form Card */}
@@ -331,7 +261,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <div>
                 <label className="text-xs font-bold text-neutral-200 block mb-1.5 flex items-center justify-between">
                   <span>Contraseña de Acceso</span>
-                  <span className="text-neutral-500 font-normal text-[11px]">Universal: 12345678 o password</span>
                 </label>
                 <div className="relative">
                   <input
@@ -357,116 +286,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 type="submit"
                 className="w-full py-3.5 px-4 rounded-xl bg-white text-black font-black text-sm hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-[0.99] mt-2"
               >
-                <span>Acceder a Mi Cuenta</span>
+                <span>Acceder</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
-          </div>
-
-          {/* Featured Administrator Highlight: Herly Lizarazo */}
-          {herlyAdmin && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-neutral-900 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <img
-                  src={herlyAdmin.avatar}
-                  alt={herlyAdmin.name}
-                  className="w-12 h-12 rounded-xl object-cover border-2 border-amber-400 shrink-0"
-                />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white">{herlyAdmin.name}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-black font-black">
-                      ADMINISTRADOR
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-800 text-emerald-400 font-mono">
-                      Oficial
-                    </span>
-                  </div>
-                  <div className="text-xs text-neutral-300 font-mono mt-0.5 flex items-center gap-3 flex-wrap">
-                    <span>DNI: <strong className="text-white font-bold">{herlyAdmin.dni}</strong></span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-amber-400" />
-                      <strong>{herlyAdmin.phone || '952341165'}</strong>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleFillCredentials(herlyAdmin)}
-                  className="px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-200 border border-neutral-700 cursor-pointer transition"
-                >
-                  Rellenar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin(herlyAdmin)}
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-black cursor-pointer transition shadow flex items-center gap-1.5"
-                >
-                  <span>Entrar como Admin</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Quick Demo Switchers for Other Roles */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>O prueba directamente con otros roles registrados:</span>
-              </span>
-              <span className="text-[11px] text-neutral-500 font-mono">
-                1 clic para entrar
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {users
-                .filter(u => u.dni !== '00448157') // don't repeat Herly since he's featured above
-                .slice(0, 6)
-                .map(user => {
-                  const meta = roleMeta[user.role] || roleMeta.CUSTOMER;
-                  const IconComp = meta.icon;
-
-                  return (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => handleQuickLogin(user)}
-                      className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-600 hover:bg-neutral-900/70 transition flex items-center justify-between text-left cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-9 h-9 rounded-xl object-cover border border-neutral-800 shrink-0 group-hover:border-neutral-600"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-white truncate max-w-[130px]">{user.name}</span>
-                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${meta.badgeColor}`}>
-                              {user.role}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-neutral-400 font-mono mt-0.5">
-                            DNI: <strong className="text-neutral-200">{user.dni}</strong>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="w-6 h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:border-neutral-700 shrink-0 ml-2">
-                        <ArrowRight className="w-3 h-3" />
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
           </div>
 
         </div>

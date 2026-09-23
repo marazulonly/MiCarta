@@ -947,9 +947,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
                 </span>
               </div>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Configurando permisos y accesos para esta sede · <span className="font-mono text-amber-400 font-bold">/?r={currentRestaurant.slug}</span>
-              </p>
             </div>
           </div>
 
@@ -962,29 +959,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span>Editor Pantalla Dividida</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${currentRestaurant.slug}`;
-                navigator.clipboard?.writeText(url);
-                showToast(`Link de ${currentRestaurant.name} copiado: ${url}`);
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold transition cursor-pointer"
-              title="Copiar Link para pruebas como cliente"
-            >
-              <Copy className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">Copiar Link</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', '01')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0 shadow"
-            >
-              <Eye className="w-3.5 h-3.5 text-amber-500" />
-              <span>Previsualizar Carta</span>
             </button>
 
             {onDeleteRestaurant && (
