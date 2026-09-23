@@ -42,7 +42,6 @@ import {
   MenuAccessSettings,
   MenuTemplate
 } from '../types';
-import { saveRestaurantMenuToFirebase } from '../lib/firebase';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
@@ -90,8 +89,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isSavingFirebase, setIsSavingFirebase] = useState(false);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -116,26 +113,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       }
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleSaveToFirebase = async () => {
-    setIsSavingFirebase(true);
-    try {
-      const res = await saveRestaurantMenuToFirebase({
-        restaurant,
-        items,
-        categories,
-      });
-      if (res.success) {
-        showToast('✓ Carta y restaurante guardados exitosamente en Firebase');
-      } else {
-        showToast('⚠️ ' + res.message);
-      }
-    } catch (e: any) {
-      showToast('Error al conectar con Firebase: ' + (e.message || 'Error'));
-    } finally {
-      setIsSavingFirebase(false);
-    }
   };
 
   // Find linked system template (reference only - never mutated)
@@ -708,16 +685,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           >
             <Sliders className="w-3.5 h-3.5 text-fuchsia-400" />
             <span>Editar Cabecera</span>
-          </button>
-
-          <button
-            onClick={handleSaveToFirebase}
-            disabled={isSavingFirebase}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer disabled:opacity-50"
-            title="Guardar restaurante y platos en Firebase Cloud Firestore"
-          >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>{isSavingFirebase ? 'Guardando...' : 'Guardar Firebase'}</span>
           </button>
 
           <button
@@ -1994,16 +1961,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={handleSaveToFirebase}
-                disabled={isSavingFirebase}
-                className="w-full sm:w-auto px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-amber-500/30 cursor-pointer disabled:opacity-50"
-              >
-                <UploadCloud className="w-4 h-4" />
-                <span>{isSavingFirebase ? 'Guardando en la Nube...' : 'Guardar en Firebase'}</span>
-              </button>
-
               <button
                 type="button"
                 onClick={handleSaveCustomization}

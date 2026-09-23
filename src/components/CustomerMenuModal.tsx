@@ -23,8 +23,8 @@ import { CostaMarinaMenu } from './CostaMarinaMenu';
 import { NeonStreetMenu } from './NeonStreetMenu';
 import { MinimalistBistroMenu } from './MinimalistBistroMenu';
 import { EditorialGrandMenu } from './EditorialGrandMenu';
+import { StartersEditorialMenu } from './StartersEditorialMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
-import { saveAllDataToFirebase } from '../lib/firebase';
 
 interface CustomerMenuModalProps {
   isOpen: boolean;
@@ -166,8 +166,6 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [editItemPrepTime, setEditItemPrepTime] = useState(25);
   const [editItemAvailable, setEditItemAvailable] = useState(true);
 
-  // Firebase save status
-  const [isSavingFirebase, setIsSavingFirebase] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -381,29 +379,9 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     showToast('✓ Personalización de marca, colores, fuentes y canales guardada.');
   };
 
-  const handleSaveToFirebase = async () => {
-    setIsSavingFirebase(true);
-    try {
-      const res = await saveAllDataToFirebase({
-        restaurants: [restaurant],
-        items: items,
-        categories: categories,
-      });
-      if (res.success) {
-        showToast('✓ ' + res.message);
-      } else {
-        showToast('⚠️ ' + res.message);
-      }
-    } catch (err: any) {
-      showToast('Error al conectar con Firebase: ' + (err.message || 'Error'));
-    } finally {
-      setIsSavingFirebase(false);
-    }
-  };
-
   // Template resolution: strict templateId checking with intuitive fallbacks
   const tmplId = restaurant.templateId || 'tmpl-luxury';
-  const isEditorialTemplate = tmplId === 'tmpl-editorial' || tmplId.includes('editorial') || tmplId.includes('zigzag') || tmplId.includes('grand');
+  const isStartersEditorialTemplate = tmplId === 'tmpl-starters-editorial' || tmplId === 'tmpl-editorial' || tmplId.includes('editorial') || tmplId.includes('zigzag') || tmplId.includes('grand') || tmplId.includes('starters');
   const isNeonTemplate = tmplId === 'tmpl-neon' || tmplId.includes('neon') || tmplId.includes('street');
   const isMinimalTemplate = tmplId === 'tmpl-minimalist' || tmplId.includes('minimal') || tmplId.includes('bistro');
   const isMarineTemplate = tmplId === 'tmpl-marine' || 
@@ -422,14 +400,16 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     isLiveEditActive: Boolean(isOwnerOrAdmin && isLiveEditActive),
     onToggleLiveEdit: isOwnerOrAdmin ? handleToggleLiveEdit : undefined,
     onEditItem: isOwnerOrAdmin ? handleOpenEditItem : undefined,
+    onDeleteItem: isOwnerOrAdmin && onDeleteMenuItem ? (itemId: string) => {
+      onDeleteMenuItem(itemId);
+      showToast('✓ Plato eliminado correctamente');
+    } : undefined,
     onQuickPriceItem: isOwnerOrAdmin ? handleOpenQuickPrice : undefined,
     onQuickPhotoItem: isOwnerOrAdmin ? handleOpenQuickPhoto : undefined,
     onToggleAvailability: isOwnerOrAdmin ? handleToggleAvailability : undefined,
     onAddNewItem: isOwnerOrAdmin ? handleOpenAddItem : undefined,
     onEditBranding: isOwnerOrAdmin ? handleOpenBranding : undefined,
     onEditHeader: isOwnerOrAdmin ? () => setIsHeaderModalOpen(true) : undefined,
-    onSaveToFirebase: isOwnerOrAdmin ? handleSaveToFirebase : undefined,
-    isSavingFirebase: isSavingFirebase,
   };
 
   return (
@@ -443,8 +423,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       )}
 
       {/* Render Appropriate Specialized Menu Template */}
-      {isEditorialTemplate ? (
-        <EditorialGrandMenu
+      {isStartersEditorialTemplate ? (
+        <StartersEditorialMenu
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}

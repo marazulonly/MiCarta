@@ -35,6 +35,7 @@ interface HomeViewProps {
   onUpdateUser: (updated: User) => void;
   onAddUser?: (newUser: User) => void;
   onUpdateTemplate: (updated: MenuTemplate) => void;
+  onDeleteTemplate?: (templateId: string) => void;
   onAddMenuItem?: (newItem: MenuItem) => void;
   onUpdateMenuItem?: (updatedItem: MenuItem) => void;
   onDeleteMenuItem?: (itemId: string) => void;
@@ -62,6 +63,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onUpdateUser,
   onAddUser,
   onUpdateTemplate,
+  onDeleteTemplate,
   onAddMenuItem,
   onUpdateMenuItem,
   onDeleteMenuItem,
@@ -153,6 +155,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           onUpdateUser={onUpdateUser}
           onAddUser={onAddUser || (() => {})}
           onUpdateTemplate={onUpdateTemplate}
+          onDeleteTemplate={onDeleteTemplate}
           onOpenCustomerPreview={onOpenCustomerPreview}
           onSwitchToOwnerView={() => {
             setViewMode('owner');

@@ -134,9 +134,32 @@ export const INITIAL_MENU_TEMPLATES: MenuTemplate[] = [
     headerStyle: 'centered',
     layoutMode: 'alternating',
     thumbnailUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=360&auto=format&fit=crop&q=80',
-    badge: 'Nuevo Diseño Zig-Zag',
+    badge: 'Diseño Zig-Zag',
     tags: ['Efecto Zig-Zag', 'Arco Medio Círculo', 'Serif Vintage', 'Marco Esmeralda'],
     isCustomizable: true,
     activeRestaurantsCount: 0
+  },
+  {
+    id: 'tmpl-starters-editorial',
+    name: 'Starters Editorial Identical (Imagen Adjunta)',
+    description: 'Plantilla réplica exacta e idéntica de la imagen adjunta: fondo verde esmeralda con polvo de oro, marco metálico dorado, encabezado "the MENU Starters", indicador de dieta (veg/non-veg) y fotos en medio círculo intercaladas con línea divisoria vertical.',
+    category: 'Editorial & Replicas Identicas',
+    themeStyle: 'editorial-zigzag',
+    fontDisplay: 'Playfair Display, serif',
+    primaryColor: '#D4AF37',
+    darkBgColor: '#03140E',
+    cardBgColor: '#FFFFFF',
+    buttonColor: '#000000',
+    buttonTextColor: '#FBBF24',
+    textColor: '#000000',
+    cardBorderRadius: '0px',
+    cardStyle: 'horizontal',
+    headerStyle: 'centered',
+    layoutMode: 'alternating',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=360&auto=format&fit=crop&q=80',
+    badge: 'Réplica Idéntica 100%',
+    tags: ['the MENU', 'Starters', 'Círculo Cortado', 'Marco Dorado', 'Veg / Non-Veg'],
+    isCustomizable: true,
+    activeRestaurantsCount: 1
   }
 ];

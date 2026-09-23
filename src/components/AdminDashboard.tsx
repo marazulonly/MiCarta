@@ -37,6 +37,7 @@ interface AdminDashboardProps {
   onUpdateUser: (updated: User) => void;
   onAddUser: (newUser: User) => void;
   onUpdateTemplate: (updated: MenuTemplate) => void;
+  onDeleteTemplate?: (templateId: string) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
   onSwitchToOwnerView: () => void;
 }
@@ -53,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateUser,
   onAddUser,
   onUpdateTemplate,
+  onDeleteTemplate,
   onOpenCustomerPreview,
   onSwitchToOwnerView,
 }) => {
@@ -899,13 +901,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <span className="font-semibold text-white">{activeCount}</span> {activeCount === 1 ? 'local asignado' : 'locales asignados'}
                       </div>
 
-                      <button
-                        onClick={() => setEditingTemplate(tmpl)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Editar Plantilla</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {onDeleteTemplate && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`¿Estás seguro de que deseas eliminar la plantilla "${tmpl.name}"?`)) {
+                                onDeleteTemplate(tmpl.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-800/80 transition cursor-pointer"
+                            title="Borrar plantilla"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEditingTemplate(tmpl)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Editar</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2088,21 +2107,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingTemplate(null)}
-                  className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Guardar Cambios</span>
-                </button>
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-neutral-800">
+                {onDeleteTemplate ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar la plantilla "${editingTemplate.name}" definitivamente?`)) {
+                        onDeleteTemplate(editingTemplate.id);
+                        setEditingTemplate(null);
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar Plantilla</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingTemplate(null)}
+                    className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Guardar Cambios</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

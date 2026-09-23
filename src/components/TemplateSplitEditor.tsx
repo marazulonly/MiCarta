@@ -21,7 +21,8 @@ import {
   Flame,
   Zap,
   Info,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -40,6 +41,7 @@ interface TemplateSplitEditorProps {
   currentRestaurantId?: string;
   onUpdateRestaurant: (updated: Restaurant) => void;
   onOpenCustomerPreview: (restaurant: Restaurant) => void;
+  onDeleteTemplate?: (templateId: string) => void;
   onClose?: () => void;
 }
 
@@ -128,6 +130,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   currentRestaurantId,
   onUpdateRestaurant,
   onOpenCustomerPreview,
+  onDeleteTemplate,
   onClose,
 }) => {
   // Selected restaurant for live editing
@@ -801,7 +804,24 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                           </div>
                         </div>
 
-                        <ChevronRight className={`w-4 h-4 shrink-0 ${isSelected ? 'text-amber-400' : 'text-neutral-600'}`} />
+                        <div className="flex items-center gap-2 shrink-0">
+                          {onDeleteTemplate && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`¿Estás seguro de que deseas eliminar la plantilla "${tmpl.name}"?`)) {
+                                  onDeleteTemplate(tmpl.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-800/80 transition cursor-pointer"
+                              title="Borrar plantilla"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-amber-400' : 'text-neutral-600'}`} />
+                        </div>
                       </div>
                     );
                   })}
