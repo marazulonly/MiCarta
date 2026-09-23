@@ -47,18 +47,18 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
   const RoleIcon = badge.icon;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800">
+    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-neutral-200/60 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           
           {/* Brand & Role info */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black text-sm shadow">
+            <div className="w-9 h-9 rounded-xl bg-[#1E1F24] text-white flex items-center justify-center font-black text-sm shadow">
               MC
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-black tracking-widest text-white uppercase">
+                <span className="text-sm font-black tracking-widest text-[#1E1F24] uppercase">
                   Micarta
                 </span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${badge.color} flex items-center gap-1`}>
@@ -66,7 +66,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
                   <span>{badge.label}</span>
                 </span>
               </div>
-              <span className="text-[11px] text-neutral-400 block -mt-0.5">
+              <span className="text-[11px] text-neutral-500 block -mt-0.5">
                 {restaurant ? `${restaurant.name}` : 'Portal de Gestión Operativa'}
               </span>
             </div>
@@ -76,20 +76,20 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
           <div className="flex items-center gap-2.5 flex-wrap">
 
             {/* User Profile Card */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800">
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-50 border border-neutral-200">
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
-                className="w-7 h-7 rounded-full object-cover border border-neutral-700 shrink-0"
+                className="w-7 h-7 rounded-full object-cover border border-neutral-200 shrink-0"
               />
               <div className="text-left">
-                <div className="text-xs font-bold text-white max-w-[130px] sm:max-w-[170px] truncate leading-tight">
+                <div className="text-xs font-bold text-neutral-800 max-w-[130px] sm:max-w-[170px] truncate leading-tight">
                   {currentUser.name}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono flex items-center gap-1.5">
-                  <span>DNI: <strong className="text-neutral-200">{currentUser.dni}</strong></span>
+                <div className="text-[10px] text-neutral-500 font-mono flex items-center gap-1.5">
+                  <span>DNI: <strong className="text-neutral-700">{currentUser.dni}</strong></span>
                   {currentUser.phone && (
-                    <span className="hidden md:inline text-neutral-500">• {currentUser.phone}</span>
+                    <span className="hidden md:inline text-neutral-400">• {currentUser.phone}</span>
                   )}
                 </div>
               </div>
@@ -99,10 +99,10 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
             <button
               id="role-header-btn-logout"
               onClick={onLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-900/60 bg-red-950/40 hover:bg-red-900/60 hover:border-red-600 text-red-300 text-xs font-medium transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium transition cursor-pointer"
               title="Cerrar Sesión y volver a la pantalla de ingreso"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 text-red-600" />
               <span>Cerrar Sesión</span>
             </button>
 

@@ -62,30 +62,30 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-black/90 backdrop-blur-md border-b border-neutral-800">
+    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-neutral-200/60 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-3">
           
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-black text-sm tracking-tighter">
+            <div className="w-8 h-8 rounded-lg bg-[#1E1F24] text-white flex items-center justify-center font-black text-sm tracking-tighter">
               MC
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black tracking-widest text-white uppercase">
+                <span className="text-sm font-black tracking-widest text-[#1E1F24] uppercase">
                   Micarta
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800 font-mono">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 border border-neutral-200 font-mono">
                   SaaS v2.5
                 </span>
               </div>
               <div className="flex items-center gap-2 -mt-0.5 flex-wrap">
-                <span className="text-[11px] text-neutral-400">
+                <span className="text-[11px] text-neutral-500">
                   4 Restaurantes Conectados
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Auto-sync Nube (Incógnito listo) ✓
                 </span>
               </div>
@@ -100,10 +100,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenTemplateSplitEditor}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1E1F24] hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md"
                 title="Diseñar plantillas, colores y tarjetas en tiempo real"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
                 <span className="hidden sm:inline">Editor Pantalla Dividida</span>
                 <span className="sm:hidden">Editor</span>
               </button>
@@ -114,10 +114,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenCustomerPreview}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white text-xs font-bold transition cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-700 hover:text-neutral-900 text-xs font-bold transition cursor-pointer"
                 title="Previsualizar Carta Digital"
               >
-                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                <Eye className="w-3.5 h-3.5 text-amber-500" />
                 <span className="hidden md:inline">Previsualizar Carta</span>
               </button>
             )}
@@ -128,8 +128,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 id="header-check-simulation"
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer select-none ${
                   isSimulationActive
-                    ? 'bg-amber-400 text-black border-amber-300 shadow-md shadow-amber-400/20'
-                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-amber-400/50 hover:text-white'
+                    ? 'bg-[#1E1F24] text-white border-neutral-800 shadow-md'
+                    : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:text-neutral-900'
                 }`}
                 title="Activar vista de simulación sincronizada en 3 pantallas móviles (PC)"
               >
@@ -137,25 +137,25 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   type="checkbox"
                   checked={isSimulationActive}
                   onChange={(e) => onToggleSimulation(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-500 focus:ring-0 accent-black cursor-pointer"
+                  className="w-4 h-4 rounded text-[#1E1F24] focus:ring-0 accent-[#1E1F24] cursor-pointer"
                 />
-                <Sparkles className={`w-3.5 h-3.5 ${isSimulationActive ? 'text-black fill-black' : 'text-amber-400'}`} />
+                <Sparkles className={`w-3.5 h-3.5 ${isSimulationActive ? 'text-white fill-white' : 'text-amber-500'}`} />
                 <span>Simulación</span>
               </label>
             )}
 
             {/* Restaurant Selector */}
-            <div className="relative hidden md:flex items-center bg-neutral-900/90 border border-neutral-800 rounded-lg px-2.5 py-1.5 hover:border-neutral-700 transition">
+            <div className="relative hidden md:flex items-center bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 hover:border-neutral-300 transition">
               <Building2 className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
               <select
                 id="restaurant-selector"
                 value={selectedRestaurantId}
                 onChange={(e) => onSelectRestaurant(e.target.value)}
-                className="bg-transparent text-xs text-neutral-200 font-medium focus:outline-none cursor-pointer pr-3"
+                className="bg-transparent text-xs text-neutral-700 font-medium focus:outline-none cursor-pointer pr-3"
               >
-                <option value="all" className="bg-neutral-950 text-neutral-200">Todos los Locales</option>
+                <option value="all" className="bg-white text-neutral-800">Todos los Locales</option>
                 {restaurants.map(r => (
-                  <option key={r.id} value={r.id} className="bg-neutral-950 text-neutral-200">
+                  <option key={r.id} value={r.id} className="bg-white text-neutral-800">
                     {r.name}
                   </option>
                 ))}
@@ -163,16 +163,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             </div>
 
             {/* Role Switcher */}
-            <div className="relative hidden lg:flex items-center bg-neutral-900/90 border border-neutral-800 rounded-lg px-2.5 py-1.5 hover:border-neutral-700 transition">
+            <div className="relative hidden lg:flex items-center bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 hover:border-neutral-300 transition">
               <Shield className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
               <select
                 id="role-simulator-selector"
                 value={activeRole}
                 onChange={(e) => onRoleChange(e.target.value as UserRole)}
-                className="bg-transparent text-xs text-white font-medium focus:outline-none cursor-pointer pr-3"
+                className="bg-transparent text-xs text-neutral-700 font-medium focus:outline-none cursor-pointer pr-3"
               >
                 {ROLES_LIST.map(r => (
-                  <option key={r.role} value={r.role} className="bg-neutral-950 text-neutral-200">
+                  <option key={r.role} value={r.role} className="bg-white text-neutral-800">
                     Rol: {r.label}
                   </option>
                 ))}
@@ -183,7 +183,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <button
               id="header-btn-login-modal"
               onClick={onOpenLoginModal}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-neutral-700 transition cursor-pointer text-white shadow-sm"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-300 transition cursor-pointer text-neutral-700 shadow-sm"
               title="Cambiar Usuario o Ver Credenciales"
             >
               {currentUser ? (
@@ -191,20 +191,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
-                    className="w-5 h-5 rounded-full object-cover border border-neutral-700"
+                    className="w-5 h-5 rounded-full object-cover border border-neutral-200"
                   />
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-white max-w-[90px] sm:max-w-[120px] truncate">
+                    <span className="font-semibold text-neutral-800 max-w-[90px] sm:max-w-[120px] truncate">
                       {currentUser.name}
                     </span>
-                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-[#1E1F24] text-white">
                       DNI: {currentUser.dni}
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-neutral-300">
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <div className="flex items-center gap-1.5 text-neutral-600">
+                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
                   <span>Ingresar (DNI)</span>
                 </div>
               )}
@@ -215,7 +215,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <button
                 id="header-btn-logout"
                 onClick={onLogout}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-red-900/50 bg-red-950/40 hover:bg-red-900/50 hover:border-red-700 text-red-300 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
                 title="Cerrar Sesión y Regresar al Login"
               >
                 <LogOut className="w-3.5 h-3.5" />

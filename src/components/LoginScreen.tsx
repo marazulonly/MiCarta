@@ -188,21 +188,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex flex-col justify-between selection:bg-amber-400 selection:text-black">
+    <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col justify-between selection:bg-[#1E1F24] selection:text-white">
       
       {/* Top Brand Bar */}
-      <header className="w-full border-b border-neutral-900 bg-neutral-950/60 backdrop-blur-md px-6 py-4">
+      <header className="w-full border-b border-neutral-200/60 bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black text-base shadow">
+            <div className="w-9 h-9 rounded-xl bg-[#1E1F24] text-white flex items-center justify-center font-black text-base shadow">
               MC
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="text-right hidden md:block ml-2 border-l border-neutral-800 pl-3">
-              <span className="text-xs text-neutral-400 block">Seguridad & RBAC</span>
-              <span className="text-[11px] font-mono text-emerald-400 font-medium">● 4 Restaurantes en Red</span>
+            <div className="text-right hidden md:block ml-2 border-l border-neutral-200 pl-3">
+              <span className="text-xs text-neutral-500 block">Seguridad & RBAC</span>
+              <span className="text-[11px] font-mono text-emerald-600 font-bold">● 4 Restaurantes en Red</span>
             </div>
           </div>
         </div>
@@ -215,20 +215,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           
           {/* Headline */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#1E1F24]">
               Iniciar Sesión
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
               Ingresa con tu <strong>DNI</strong> y <strong>Contraseña</strong>. La vista se adaptará automáticamente a los privilegios de tu rol asignado.
             </p>
           </div>
 
           {/* Form Card */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-neutral-950 border border-neutral-800 shadow-2xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-[32px] bg-white border border-neutral-200/50 shadow-[0_12px_40px_rgba(0,0,0,0.06)] space-y-6">
             
             {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2.5 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -237,9 +237,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               
               {/* DNI Input */}
               <div>
-                <label className="text-xs font-bold text-neutral-200 block mb-1.5 flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-700 block mb-1.5 flex items-center justify-between">
                   <span>Usuario / DNI (8 dígitos)</span>
-                  <span className="text-neutral-500 font-normal text-[11px]">Obligatorio</span>
+                  <span className="text-neutral-400 font-normal text-[11px]">Obligatorio</span>
                 </label>
                 <div className="relative">
                   <input
@@ -249,9 +249,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     value={dniInput}
                     onChange={(e) => setDniInput(e.target.value.replace(/\D/g, ''))}
                     placeholder="Ej: 00448157"
-                    className="w-full px-4 py-3 rounded-xl bg-black border border-neutral-700 text-white font-mono text-base tracking-widest focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition placeholder:text-neutral-600"
+                    className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 font-mono text-base tracking-widest focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition placeholder:text-neutral-400"
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs font-mono">
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-mono">
                     {dniInput.length}/8
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
               {/* Password Input */}
               <div>
-                <label className="text-xs font-bold text-neutral-200 block mb-1.5 flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-700 block mb-1.5 flex items-center justify-between">
                   <span>Contraseña de Acceso</span>
                 </label>
                 <div className="relative">
@@ -269,12 +269,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Ingresa tu contraseña"
-                    className="w-full px-4 py-3 pr-11 rounded-xl bg-black border border-neutral-700 text-white font-mono text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition placeholder:text-neutral-600"
+                    className="w-full px-4 py-3 pr-11 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 font-mono text-sm focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition placeholder:text-neutral-400"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -284,10 +284,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-xl bg-white text-black font-black text-sm hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-[0.99] mt-2"
+                className="w-full py-3.5 px-4 rounded-xl bg-[#1E1F24] hover:bg-neutral-800 text-white font-black text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-[0.99] mt-2"
               >
                 <span>Acceder</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-white" />
               </button>
             </form>
 

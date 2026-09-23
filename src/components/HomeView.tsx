@@ -93,17 +93,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
     <div className="space-y-6">
       
       {/* Top View Switcher Pills */}
-      <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-neutral-900">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-neutral-900/80 border border-neutral-800">
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-neutral-200/50">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white border border-neutral-200/60 shadow-sm">
           <button
             onClick={() => {
               setViewMode('admin');
               onRoleChange('ADMIN');
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
               viewMode === 'admin'
-                ? 'bg-white text-black shadow-sm'
-                : 'text-neutral-400 hover:text-white'
+                ? 'bg-[#1E1F24] text-white shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -115,10 +115,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               setViewMode('owner');
               onRoleChange('OWNER');
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
               viewMode === 'owner'
-                ? 'bg-amber-400 text-black shadow-sm'
-                : 'text-neutral-400 hover:text-white'
+                ? 'bg-[#1E1F24] text-white shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -127,10 +127,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           <button
             onClick={() => setViewMode('overview')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
               viewMode === 'overview'
-                ? 'bg-neutral-800 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white'
+                ? 'bg-[#1E1F24] text-white shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -138,8 +138,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </button>
         </div>
 
-        <div className="text-[11px] text-neutral-400 font-mono">
-          Modo actual: <strong className="text-white uppercase">{viewMode}</strong>
+        <div className="text-[11px] text-neutral-500 font-mono">
+          Modo actual: <strong className="text-[#1E1F24] uppercase font-bold">{viewMode}</strong>
         </div>
       </div>
 

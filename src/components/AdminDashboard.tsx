@@ -303,30 +303,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6 pb-28 text-neutral-900">
       
       {/* Header with Switch to Owner View */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-200/60 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white text-black font-bold">
+            <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[#1E1F24] text-white font-bold">
               SUPERADMINISTRADOR
             </span>
-            <span className="text-xs text-neutral-400 font-mono">Panel Global</span>
+            <span className="text-xs text-neutral-500 font-mono">Panel Global</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#1E1F24] mt-1">
             Dashboard de Administrador
           </h1>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-neutral-500 mt-0.5">
             Control maestro de Dueños, Restaurantes, Meseros, Repartidores, Clientes y Plantillas de Cartas con edición en vivo.
           </p>
         </div>
 
         <button
           onClick={onSwitchToOwnerView}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-semibold text-white transition cursor-pointer self-start sm:self-auto shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-700 transition cursor-pointer self-start sm:self-auto shadow-sm"
         >
-          <Building2 className="w-3.5 h-3.5 text-amber-400" />
+          <Building2 className="w-3.5 h-3.5 text-amber-500" />
           <span>Ir a Vista de Dueños</span>
           <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
         </button>
@@ -344,23 +344,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setActiveSection(m.id as AdminSection);
                 setSearchTerm('');
               }}
-              className={`p-3 rounded-xl border transition text-left cursor-pointer flex flex-col justify-between ${
+              className={`p-3.5 rounded-[22px] border transition text-left cursor-pointer flex flex-col justify-between ${
                 isActive 
-                  ? 'bg-white text-black border-white shadow-lg' 
-                  : 'bg-neutral-900/50 hover:bg-neutral-900 border-neutral-800 text-neutral-200'
+                  ? 'bg-[#1E1F24] text-white border-transparent shadow-md transform scale-102' 
+                  : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-800 shadow-sm'
               }`}
             >
               <div className="flex items-center justify-between">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-neutral-400'}`} />
-                <span className={`text-base font-black ${isActive ? 'text-black' : 'text-white'}`}>
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-neutral-500'}`} />
+                <span className={`text-base font-black ${isActive ? 'text-white' : 'text-neutral-900'}`}>
                   {m.count}
                 </span>
               </div>
-              <div className="mt-2">
-                <div className={`text-xs font-bold ${isActive ? 'text-black' : 'text-white'}`}>
+              <div className="mt-2.5">
+                <div className={`text-xs font-bold ${isActive ? 'text-white' : 'text-neutral-900'}`}>
                   {m.label}
                 </div>
-                <div className={`text-[10px] truncate ${isActive ? 'text-neutral-700' : 'text-neutral-400'}`}>
+                <div className={`text-[10px] truncate ${isActive ? 'text-neutral-300' : 'text-neutral-500'}`}>
                   {m.desc}
                 </div>
               </div>
@@ -372,7 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Section Search Bar & Section Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold text-white capitalize">
+          <h2 className="text-lg font-bold text-[#1E1F24] capitalize">
             {activeSection === 'owners' && 'Gestión de Dueños'}
             {activeSection === 'restaurants' && 'Gestión de Restaurantes'}
             {activeSection === 'waiters' && 'Gestión de Meseros de Salón'}
@@ -380,7 +380,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {activeSection === 'customers' && 'Gestión de Clientes y Comensales'}
             {activeSection === 'templates' && 'Catálogo de Plantillas de Cartas'}
           </h2>
-          <span className="text-xs text-neutral-400">· Edición habilitada</span>
+          <span className="text-xs text-neutral-500">· Edición habilitada</span>
         </div>
 
         <div className="relative w-full sm:w-72">
@@ -390,7 +390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             placeholder="Buscar por nombre, correo o sede..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600"
+            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-white border border-neutral-200 text-xs text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400"
           />
         </div>
       </div>

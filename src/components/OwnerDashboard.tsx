@@ -794,45 +794,45 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            <Store className="w-4 h-4 text-amber-400" />
-            <h2 className="text-base font-bold text-white">
+            <Store className="w-4 h-4 text-[#1E1F24]" />
+            <h2 className="text-base font-bold text-neutral-900">
               Mis Restaurantes ({ownedRestaurants.length})
             </h2>
-            <span className="text-xs text-neutral-400 hidden sm:inline">· Sedes creadas o asignadas a tu cuenta</span>
+            <span className="text-xs text-neutral-500 hidden sm:inline">· Sedes creadas o asignadas a tu cuenta</span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsCreatingRestaurant(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1E1F24] text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-sm"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-white" />
               <span>Crear Restaurante</span>
             </button>
 
             <button
               onClick={() => setIsCreatingUser(true)}
               disabled={ownedRestaurants.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-neutral-200 text-neutral-800 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer shadow-sm"
             >
-              <UserIcon className="w-3.5 h-3.5" />
+              <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
               <span>Crear Personal / Cliente</span>
             </button>
           </div>
         </div>
 
         {ownedRestaurants.length === 0 ? (
-          <div className="p-8 rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/30 text-center flex flex-col items-center justify-center gap-3">
-            <Store className="w-10 h-10 text-neutral-600" />
-            <h3 className="text-sm font-bold text-white">No tienes restaurantes creados ni asignados</h3>
-            <p className="text-xs text-neutral-400 max-w-md">
+          <div className="p-8 rounded-[32px] border border-dashed border-neutral-300 bg-white text-center flex flex-col items-center justify-center gap-3 shadow-sm">
+            <Store className="w-10 h-10 text-neutral-400" />
+            <h3 className="text-sm font-bold text-neutral-800">No tienes restaurantes creados ni asignados</h3>
+            <p className="text-xs text-neutral-500 max-w-md">
               Como propietario, puedes crear tu propio restaurante o solicitar al administrador que te asigne una sede existente.
             </p>
             <button
               onClick={() => setIsCreatingRestaurant(true)}
-              className="mt-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer flex items-center gap-2"
+              className="mt-2 px-4 py-2 rounded-xl bg-[#1E1F24] hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-white" />
               <span>Crear Mi Primer Restaurante</span>
             </button>
           </div>
@@ -846,14 +846,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div
                   key={rest.id}
                   onClick={() => handleSelectRestaurant(rest.id)}
-                  className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-3 relative ${
+                  className={`p-4 rounded-[22px] border transition cursor-pointer flex flex-col justify-between gap-3 relative ${
                     isSelected 
-                      ? 'bg-neutral-900/90 border-amber-400/80 ring-1 ring-amber-400/50 shadow-lg' 
-                      : 'bg-neutral-900/40 hover:bg-neutral-900/70 border-neutral-800 hover:border-neutral-700'
+                      ? 'bg-white border-[#1E1F24] ring-1 ring-[#1E1F24] shadow-md' 
+                      : 'bg-white hover:bg-neutral-50 border-neutral-200 shadow-sm'
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-400 text-black">
+                    <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#1E1F24] text-white">
                       Gestionando
                     </span>
                   )}
@@ -862,21 +862,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <img 
                       src={rest.logoUrl} 
                       alt={rest.name} 
-                      className="w-12 h-12 rounded-xl object-cover border border-neutral-700 shrink-0" 
+                      className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0" 
                     />
                     <div className="pr-16">
-                      <h3 className="text-sm font-bold text-white leading-tight">{rest.name}</h3>
-                      <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1">{rest.tagline}</p>
-                      <span className="text-[11px] text-neutral-400 font-mono mt-1 block">
+                      <h3 className="text-sm font-bold text-neutral-800 leading-tight">{rest.name}</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">{rest.tagline}</p>
+                      <span className="text-[11px] text-neutral-500 font-mono mt-1 block">
                         /r/{rest.slug}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
+                  <div className="pt-2 border-t border-neutral-200 flex items-center justify-between text-[11px]">
                     <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                      <span className="text-amber-400 font-bold">Link:</span>
-                      <span className="text-neutral-300">/?r={rest.slug}</span>
+                      <span className="text-[#1E1F24] font-bold">Link:</span>
+                      <span className="text-neutral-600">/?r={rest.slug}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
@@ -886,19 +886,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           navigator.clipboard?.writeText(url);
                           showToast(`Link de ${rest.name} copiado al portapapeles.`);
                         }}
-                        className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition cursor-pointer"
+                        className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition cursor-pointer border border-neutral-200"
                         title="Copiar link para probar como cliente"
                       >
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3 h-3 text-neutral-500" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onOpenCustomerPreview(rest, 'DINE_IN', '01');
                         }}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-white text-black font-bold text-[11px] hover:bg-neutral-200 transition cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-[#1E1F24] hover:bg-neutral-800 text-white font-bold text-[11px] transition cursor-pointer"
                       >
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-3 h-3 text-white" />
                         <span>Probar</span>
                       </button>
                       {onDeleteRestaurant && (
@@ -907,10 +907,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             e.stopPropagation();
                             setRestaurantToDelete(rest);
                           }}
-                          className="p-1 rounded bg-red-950/60 hover:bg-red-900/80 text-red-400 hover:text-red-200 border border-red-900/60 transition cursor-pointer"
+                          className="p-1 rounded bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 transition cursor-pointer"
                           title={`Eliminar sede ${rest.name}`}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3 text-red-500" />
                         </button>
                       )}
                     </div>
@@ -926,23 +926,23 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {/* 2. PANEL DE EDICIÓN DE ACCESOS Y PLANTILLAS                   */}
       {/* ------------------------------------------------------------- */}
       {currentRestaurant && (
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
+      <div className="rounded-[32px] border border-neutral-200 bg-white shadow-sm overflow-hidden">
         
         {/* Restaurant Header Banner */}
-        <div className="p-4 sm:p-5 border-b border-neutral-800 bg-neutral-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img 
               src={currentRestaurant.logoUrl} 
               alt={currentRestaurant.name} 
-              className="w-11 h-11 rounded-xl object-cover border border-neutral-700" 
+              className="w-11 h-11 rounded-xl object-cover border border-neutral-200" 
             />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-white">
+                <h2 className="text-base sm:text-lg font-bold text-neutral-800">
                   {currentRestaurant.name}
                 </h2>
                 <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                  currentRestaurant.isOpen ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-neutral-800 text-neutral-400'
+                  currentRestaurant.isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-neutral-100 text-neutral-500'
                 }`}>
                   {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
                 </span>
@@ -975,114 +975,35 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
 
         {/* 8 Access Navigation SubTabs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 border-b border-neutral-800 bg-neutral-950/30 text-[11px] sm:text-xs">
-          <button
-            onClick={() => setActiveSubTab('dishes')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'dishes'
-                ? 'border-amber-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Utensils className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="truncate">Carta & Platos</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('tables')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'tables'
-                ? 'border-emerald-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Layers className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">Mesas ({tablesState.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('schedules')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'schedules'
-                ? 'border-sky-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Clock className="w-4 h-4 text-sky-400 shrink-0" />
-            <span className="truncate">Horarios</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('shifts')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'shifts'
-                ? 'border-amber-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="truncate">Turnos ({shiftsState.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('kitchen')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'kitchen'
-                ? 'border-orange-500 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Flame className="w-4 h-4 text-orange-400 shrink-0" />
-            <span className="truncate">Cocina ({assignedKitchen.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('waiters')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'waiters'
-                ? 'border-amber-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <ChefHat className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="truncate">Mozos ({assignedWaiters.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('delivery')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'delivery'
-                ? 'border-blue-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <Bike className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="truncate">Riders ({assignedRiders.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('customers')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'customers'
-                ? 'border-emerald-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">Clientes & QR</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('templates')}
-            className={`py-3 px-2 font-bold transition flex flex-col sm:flex-row items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
-              activeSubTab === 'templates'
-                ? 'border-purple-400 text-white bg-neutral-900/80'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40'
-            }`}
-          >
-            <LayoutTemplate className="w-4 h-4 text-purple-400 shrink-0" />
-            <span className="truncate">Plantillas</span>
-          </button>
+        <div className="p-2 gap-1.5 flex flex-wrap bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs sm:text-xs">
+          {[
+            { id: 'dishes', label: 'Carta & Platos', icon: Utensils, color: 'text-amber-500' },
+            { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers, color: 'text-emerald-500' },
+            { id: 'schedules', label: 'Horarios', icon: Clock, color: 'text-sky-500' },
+            { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar, color: 'text-amber-500' },
+            { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame, color: 'text-orange-500' },
+            { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat, color: 'text-amber-500' },
+            { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike, color: 'text-blue-500' },
+            { id: 'customers', label: 'Clientes & QR', icon: UserCheck, color: 'text-emerald-500' },
+            { id: 'templates', label: 'Plantillas', icon: LayoutTemplate, color: 'text-purple-500' },
+          ].map(tab => {
+            const isActive = activeSubTab === tab.id;
+            const IconComp = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
+                className={`py-2 px-3.5 rounded-full font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
+                  isActive
+                    ? 'bg-[#1E1F24] text-white shadow-md transform scale-102'
+                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                }`}
+              >
+                <IconComp className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.color} shrink-0`} />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* ============================================================= */}

@@ -1162,7 +1162,7 @@ export default function App() {
   // If no user is logged in, display the Login Screen (Pantalla de Logueo)
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+      <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
         <LoginScreen
           users={users}
           onLogin={handleLogin}
@@ -1178,7 +1178,7 @@ export default function App() {
   // "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   if (currentUser && currentUser.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+      <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
         
         {/* Dedicated Role Header with User Profile, Restaurant and Logout */}
         <RoleHeader
@@ -1316,7 +1316,7 @@ export default function App() {
 
   // 3. ADMIN ROLE VIEW: "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
       
       {/* Top Header with Profile / Login Trigger and Simulación Checkbox */}
       <TopHeader
