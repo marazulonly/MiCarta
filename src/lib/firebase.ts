@@ -153,16 +153,26 @@ export async function saveAllDataToFirebase(data: {
       let mergedUsersMap = new Map<string, User>();
       let mergedOrdersMap = new Map<string, Order>();
 
+      const updatedRestIds = new Set((data.restaurants || []).map(r => r?.id).filter(Boolean));
+
       if (snap && snap.exists()) {
         const snapData = snap.data();
         if (Array.isArray(snapData.restaurants)) {
           snapData.restaurants.forEach((r: Restaurant) => r && r.id && mergedRestaurantsMap.set(r.id, r));
         }
         if (Array.isArray(snapData.categories)) {
-          snapData.categories.forEach((c: MenuCategory) => c && c.id && mergedCategoriesMap.set(c.id, c));
+          snapData.categories.forEach((c: MenuCategory) => {
+            if (c && c.id && (!c.restaurantId || !updatedRestIds.has(c.restaurantId))) {
+              mergedCategoriesMap.set(c.id, c);
+            }
+          });
         }
         if (Array.isArray(snapData.items)) {
-          snapData.items.forEach((i: MenuItem) => i && i.id && mergedItemsMap.set(i.id, i));
+          snapData.items.forEach((i: MenuItem) => {
+            if (i && i.id && (!i.restaurantId || !updatedRestIds.has(i.restaurantId))) {
+              mergedItemsMap.set(i.id, i);
+            }
+          });
         }
         if (Array.isArray(snapData.users)) {
           snapData.users.forEach((u: User) => u && u.id && mergedUsersMap.set(u.id, u));

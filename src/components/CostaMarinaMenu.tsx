@@ -88,9 +88,12 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  const currentCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const currentCategories = categories
+    .filter(c => c.restaurantId === restaurant.id)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    currentCategories[0]?.id || 'cat-m1'
+    currentCategories[0]?.id || 'cat-m-entradas'
   );
 
   useEffect(() => {

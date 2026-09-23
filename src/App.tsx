@@ -221,8 +221,8 @@ function getInitialStorageState() {
         const parsed = JSON.parse(storedCats);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const map = new Map<string, MenuCategory>();
-          INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
           parsed.forEach(c => map.set(c.id, c));
+          INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
           cachedCategories = Array.from(map.values());
         }
       }
@@ -231,7 +231,7 @@ function getInitialStorageState() {
       if (storedItems) {
         const parsed = JSON.parse(storedItems);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
+          cachedItems = mergeMenuItemsById(sanitizeMenuItems(parsed), sanitizeMenuItems(INITIAL_MENU_ITEMS));
         }
       }
 
@@ -455,16 +455,23 @@ export default function App() {
         if (remoteData.categories?.length) {
           setCategories(prev => {
             const map = new Map<string, MenuCategory>();
+            // 1. Initial defaults
             INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+            // 2. Remote Firestore data
             remoteData.categories.forEach(c => map.set(c.id, c));
-            prev.forEach(c => map.set(c.id, c)); // Local state & user edits take precedence
+            // 3. Local state updates (overriding matching IDs)
+            prev.forEach(c => {
+              // Ensure we don't restore old cat-m1 if INITIAL_CATEGORIES or remoteData replaced it
+              if (c.id === 'cat-m1' && map.has('cat-m-entradas')) return;
+              map.set(c.id, c);
+            });
             return Array.from(map.values());
           });
         }
 
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(prev => mergeMenuItemsById(mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), cleanItems), prev)); // Local state & user edits take precedence
+          setMenuItems(prev => mergeMenuItemsById(cleanItems, prev));
         }
         if (remoteData.orders?.length) {
           setOrders(prev => {

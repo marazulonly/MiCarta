@@ -393,11 +393,13 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   { id: 'cat-l3', restaurantId: 'rest-loop', name: 'Fries & Sides', description: 'Papas sazonadas y dips adictivos', sortOrder: 3, iconName: 'Sparkles' },
 
   // Costa Marina / Cevichito Pliz
-  { id: 'cat-m1', restaurantId: 'rest-costa', name: 'Ceviches & Tiraditos', description: 'Pesca artesanal fresca del litoral', sortOrder: 1, iconName: 'Fish' },
-  { id: 'cat-m-causas', restaurantId: 'rest-costa', name: 'Causas Limeñas & Acevichadas', description: 'Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas', sortOrder: 2, iconName: 'Sparkles' },
-  { id: 'cat-m2', restaurantId: 'rest-costa', name: 'Chicharrones & Wok', description: 'Frituras crocantes y arroces marineros', sortOrder: 3, iconName: 'Waves' },
-  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 4, iconName: 'GlassWater' },
-  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 5, iconName: 'GlassWater' }
+  { id: 'cat-m-entradas', restaurantId: 'rest-costa', name: 'Entradas & Piqueos', description: 'Tequeños crocantes, tiraditos y piqueos marinos para compartir', sortOrder: 1, iconName: 'Utensils' },
+  { id: 'cat-m-causitas', restaurantId: 'rest-costa', name: 'Nuestras Causitas', description: 'Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas', sortOrder: 2, iconName: 'Sparkles' },
+  { id: 'cat-m-arroces', restaurantId: 'rest-costa', name: 'Arroces', description: 'Arroces marineros al wok, chaufa de mariscos y melosos al pisco', sortOrder: 3, iconName: 'Waves' },
+  { id: 'cat-m-pulpos', restaurantId: 'rest-costa', name: 'Pulpos', description: 'Tentáculos enteros de pulpo a la brasa y al olivo', sortOrder: 4, iconName: 'Flame' },
+  { id: 'cat-m-ceviches', restaurantId: 'rest-costa', name: 'Ceviches & Cevichitos', description: 'Pesca artesanal fresca del litoral, leche de tigre y tiraditos', sortOrder: 5, iconName: 'Fish' },
+  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 6, iconName: 'GlassWater' },
+  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 7, iconName: 'GlassWater' }
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
@@ -747,158 +749,74 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     tags: ['Para Compartir']
   },
 
-  // Cevichito Pliz
+  // Cevichito Pliz (Costa Marina)
+  // 1. Entradas & Piqueos (cat-m-entradas)
   {
-    id: 'item-m1',
+    id: 'item-m-tequenos-queso',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Ceviche Mixto Cevichito Pliz',
-    description: 'Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja. Aliñado con leche de tigre clásica al ají limo, apio y zumo de limón piurano.',
-    price: 48.00,
+    categoryId: 'cat-m-entradas',
+    name: 'TEQUEÑOS DE QUESO (X8)',
+    description: 'Masa wantan rellena de queso acompañado con guacamole de la casa.',
+    price: 18.00,
+    imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 20,
+    allergens: ['Lácteos', 'Gluten'],
+    tags: ['Para Picar', 'Entrada'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-m-tiradito-entrada',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-entradas',
+    name: 'TIRADITO',
+    description: 'Tiras delgadas de pescado fresco marinadas en la crema de su preferencia: Tradicional, Ají Amarillo o Rocoto.',
+    price: 22.00,
     imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 10,
-    allergens: ['Pescado', 'Mariscos'],
-    tags: ['Especialidad de la Casa', 'Pesca del Día']
-  },
-  {
-    id: 'item-m2',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Tiradito Ahumado al Ají Amarillo & Maracuyá',
-    description: 'Láminas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte. Bañado en emulsión sedosa de ají amarillo soasado con reducción de maracuyá y oliva virgen.',
-    price: 42.00,
-    imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 8,
+    prepTimeMinutes: 20,
     allergens: ['Pescado'],
-    tags: ['Tiradito', 'Toque Cítrico']
+    tags: ['Frescura Marina', 'Entrada'],
+    targetMenuScope: 'ALL'
   },
   {
-    id: 'item-m3',
+    id: 'item-m-tequenos-mariscos',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Ceviche Apaltado con Pulpo a la Brasa',
-    description: 'Pesca blanca del día y tentáculo entero de pulpo sellado a la brasa. Acompañado de abanico de palta hass y canchita chulpi serrana. Sazonado con leche de tigre cremosa al rocoto ahumado y chimichurri parrillero.',
-    price: 52.00,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    categoryId: 'cat-m-entradas',
+    name: 'TEQUEÑOS DE MARISCOS (X8)',
+    description: 'Masa wantan rellena de mixtura de mariscos, decorada con nuestra salsa agridulce.',
+    price: 22.00,
+    imageUrl: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 12,
-    allergens: ['Pescado', 'Moluscos'],
-    tags: ['Pulpo a la Brasa', 'Gourmet']
+    prepTimeMinutes: 20,
+    allergens: ['Mariscos', 'Gluten'],
+    tags: ['Entrada', 'Mariscos'],
+    targetMenuScope: 'ALL'
   },
   {
-    id: 'item-m4',
+    id: 'item-m-choritos-chalaca',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Tiradito Nikkei de Atún Aleta Amarilla',
-    description: 'Cortes seleccionados de atún rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjolí tostado. Aliñado con salsa ponzu artesanal de kion, shoyu añejo y gotas de aceite de sésamo prensado en frío.',
-    price: 45.00,
-    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 8,
-    allergens: ['Pescado', 'Soya'],
-    tags: ['Fusión Nikkei', 'Atún Fresco']
-  },
-
-  // Costa Marina - Chicharrones & Wok
-  {
-    id: 'item-m5',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
-    name: 'Arroz con Mariscos Meloso al Wok de Leña',
-    description: 'Langostinos jumbo, anillas de calamar tierno, pulpo y conchas de abanico flameados al pisco. Montado sobre arroz meloso con arvejas y pimientos asados. Con reducción de bisque de cangrejos y salsa criolla al ají limo.',
-    price: 54.00,
-    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 16,
-    allergens: ['Mariscos', 'Pescado'],
-    tags: ['Wok Marinero', 'Al Pisco']
-  },
-  {
-    id: 'item-m6',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
-    name: 'Chicharrón de Corvina & Calamar Crocante',
-    description: 'Filetes tiernos de corvina y anillas de calamar en rebozado ligero y crujiente. Guarnecido con bastones de yuca frita dorada y zarandaja aliñada. Acompañado de salsa tártara de la casa con alcaparras y crema de rocoto carretillero.',
-    price: 46.00,
-    imageUrl: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 14,
-    allergens: ['Pescado', 'Moluscos', 'Huevo'],
-    tags: ['Fritura Perfecta', 'Para Picar']
-  },
-  {
-    id: 'item-m7',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
-    name: 'Chaufa Marino Especial al Carbón',
-    description: 'Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazmín salteado al wok con cebollita china fresca y tortilla de huevo. Bañado en salsa de ostión, sillao de hongo y ajonjolí tostado.',
-    price: 49.00,
-    imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 15,
-    allergens: ['Mariscos', 'Pescado', 'Soya', 'Huevo'],
-    tags: ['Wok Candente', 'Chaufa Especial']
-  },
-
-  // Cevichito Pliz - Coctelería de Autor & Bebidas
-  {
-    id: 'item-m8',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m3',
-    name: 'Pisco Sour Catedral Cevichito Pliz (Copa Doble)',
-    description: 'Destilado puro de uva Quebranta iqueña (4 oz) batido vigorosamente con clara de huevo fresca. Con zumo de limón piurano recién exprimido, jarabe simple aromático y gotas aromáticas de bitter Angostura.',
-    price: 32.00,
-    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 5,
-    allergens: ['Huevo'],
-    tags: ['Cóctel Bandera', '4 oz Pisco Puro']
-  },
-  {
-    id: 'item-m9',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m3',
-    name: 'Chilcano Macerado de Maracuyá & Hierba Luisa',
-    description: 'Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuyá. Con hielo tallado artesanal, zumo de lima y ginger ale botánico. Decorado con rodaja de naranja deshidratada.',
-    price: 28.00,
-    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 4,
-    allergens: [],
-    tags: ['Refrescante', 'Macerado de Casa']
-  },
-  {
-    id: 'item-m10',
-    restaurantId: 'rest-costa',
-    categoryId: 'cat-m4',
-    name: 'Limonada de Hierba Luisa & Jengibre (Jarra 1L)',
-    description: 'Zumo fresco de limones sutiles colado al momento con infusión helada de hierba luisa y jengibre fresco rallado. Endulzada con miel de caña natural y hojas de menta del huerto.',
+    categoryId: 'cat-m-entradas',
+    name: 'CHORITOS A LA CHALACA (X8)',
+    description: 'Mejillones bañados en aceite de oliva, jugo de limón y decorado con ají verde, choclo, cebolla picada y cilantro.',
     price: 24.00,
-    imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
-    prepTimeMinutes: 4,
-    allergens: [],
-    tags: ['Sin Alcohol', '100% Natural', 'Jarra Familiar']
+    prepTimeMinutes: 20,
+    allergens: ['Moluscos'],
+    tags: ['Tradición Chalaca', 'Entrada'],
+    targetMenuScope: 'ALL'
   },
 
-  // Platos ingresados manualmente recuperados de Firebase Firestore (Cevichito Pliz / Costa Marina)
+  // 2. Nuestras Causitas (cat-m-causitas)
   {
     id: 'item-m-causa-acevichada',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m-causas',
-    name: 'Causa Acevichada al Ají Amarillo',
+    categoryId: 'cat-m-causitas',
+    name: 'CAUSA ACEVICHADA AL AJÍ AMARILLO',
     description: 'Suave masa de papa amarilla prensada con pasta de ají amarillo y limón sutil, rellena de palta hass y cubierta con ceviche fresco bañado en salsa acevichada.',
     price: 32.00,
     imageUrl: 'https://images.unsplash.com/photo-1579631542720-3a87824fff86?w=600&auto=format&fit=crop&q=80',
@@ -912,8 +830,8 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-causa-pulpo',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m-causas',
-    name: 'Causa de Pulpo al Olivo',
+    categoryId: 'cat-m-causitas',
+    name: 'CAUSA DE PULPO AL OLIVO',
     description: 'Papa amarilla sazonada rellena de palta cremosa y coronada con láminas de pulpo tierno marinadas en crema de aceitunas botija iqueñas.',
     price: 34.00,
     imageUrl: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80',
@@ -923,11 +841,88 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     tags: ['Gourmet', 'Pulpo'],
     targetMenuScope: 'ALL'
   },
+
+  // 3. Arroces (cat-m-arroces)
+  {
+    id: 'item-m5',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-arroces',
+    name: 'ARROZ CON MARISCOS MELOSO AL WOK DE LEÑA',
+    description: 'Langostinos jumbo, anillas de calamar tierno, pulpo y conchas de abanico flameados al pisco. Montado sobre arroz meloso con arvejas y pimientos asados.',
+    price: 54.00,
+    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 16,
+    allergens: ['Mariscos', 'Pescado'],
+    tags: ['Wok Marinero', 'Al Pisco']
+  },
+  {
+    id: 'item-m7',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-arroces',
+    name: 'CHAUFA MARINO ESPECIAL AL CARBÓN',
+    description: 'Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazmín salteado al wok con cebollita china fresca.',
+    price: 49.00,
+    imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    prepTimeMinutes: 15,
+    allergens: ['Mariscos', 'Pescado', 'Soya', 'Huevo'],
+    tags: ['Wok Candente', 'Chaufa Especial']
+  },
+
+  // 4. Pulpos (cat-m-pulpos)
+  {
+    id: 'item-m3',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-pulpos',
+    name: 'PULPO A LA BRASA CON PAPAS COCHAYUYO',
+    description: 'Tentáculo entero de pulpo sellado a la brasa con salsa anticuchera de la casa y papas doradas.',
+    price: 52.00,
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 12,
+    allergens: ['Moluscos'],
+    tags: ['Pulpo a la Brasa', 'Gourmet']
+  },
+
+  // 5. Ceviches & Cevichitos (cat-m-ceviches)
+  {
+    id: 'item-m1',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-ceviches',
+    name: 'CEVICHE MIXTO CEVICHITO PLIZ',
+    description: 'Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja.',
+    price: 48.00,
+    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 10,
+    allergens: ['Pescado', 'Mariscos'],
+    tags: ['Especialidad de la Casa', 'Pesca del Día']
+  },
+  {
+    id: 'item-m-ceviche-clasico',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-ceviches',
+    name: 'CEVICHE CLÁSICO DE PESCA DEL DÍA',
+    description: 'Corvina fresca marinada al momento con zumo de limón piurano recién exprimido, ají limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.',
+    price: 38.00,
+    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 10,
+    allergens: ['Pescado'],
+    tags: ['Clásico', 'Pesca del Día']
+  },
   {
     id: 'item-m-ceviche-carretillero',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Ceviche Carretillero con Calamar Crocante',
+    categoryId: 'cat-m-ceviches',
+    name: 'CEVICHE CARRETILLERO CON CALAMAR CROCANTE',
     description: 'Pesca fresca marinada al ají limo y limón piurano servida con generosa porción de chicharrón de calamar crujiente al momento y crema de rocoto carretillero.',
     price: 44.00,
     imageUrl: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80',
@@ -940,20 +935,74 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     targetMenuScope: 'ALL'
   },
   {
-    id: 'item-m-ceviche-clasico',
+    id: 'item-m2',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
-    name: 'Ceviche Clásico de Pesca del Día',
-    description: 'Corvina fresca marinada al momento con zumo de limón piurano recién exprimido, ají limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.',
-    price: 38.00,
-    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
+    categoryId: 'cat-m-ceviches',
+    name: 'TIRADITO AHUMADO AL AJÍ AMARILLO & MARACUYÁ',
+    description: 'Láminas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte.',
+    price: 42.00,
+    imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 12,
+    prepTimeMinutes: 8,
     allergens: ['Pescado'],
-    tags: ['Plato Bandera', '100% Fresco'],
-    targetMenuScope: 'ALL'
+    tags: ['Tiradito', 'Toque Cítrico']
+  },
+  {
+    id: 'item-m4',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m-ceviches',
+    name: 'TIRADITO NIKKEI DE ATÚN ALETA AMARILLA',
+    description: 'Cortes seleccionados de atún rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjolí tostado.',
+    price: 45.00,
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    prepTimeMinutes: 8,
+    allergens: ['Pescado', 'Soya'],
+    tags: ['Fusión Nikkei', 'Atún Fresco']
+  },
+
+  // 6. Cócteles & Bebidas
+  {
+    id: 'item-m8',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m3',
+    name: 'Pisco Sour Catedral Cevichito Pliz (Copa Doble)',
+    description: 'Destilado puro de uva Quebranta iqueña (4 oz) batido vigorosamente con clara de huevo fresca y zumo de limón piurano.',
+    price: 32.00,
+    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 5,
+    allergens: ['Huevo'],
+    tags: ['Cóctel Bandera', '4 oz Pisco Puro']
+  },
+  {
+    id: 'item-m9',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m3',
+    name: 'Chilcano Macerado de Maracuyá & Hierba Luisa',
+    description: 'Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuyá.',
+    price: 28.00,
+    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    prepTimeMinutes: 4,
+    allergens: [],
+    tags: ['Refrescante', 'Macerado de Casa']
+  },
+  {
+    id: 'item-m10',
+    restaurantId: 'rest-costa',
+    categoryId: 'cat-m4',
+    name: 'Limonada de Hierba Luisa & Jengibre (Jarra 1L)',
+    description: 'Zumo fresco de limones sutiles colado al momento con infusión helada de hierba luisa y jengibre fresco rallado.',
+    price: 24.00,
+    imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 4,
+    allergens: [],
+    tags: ['Sin Alcohol', '100% Natural', 'Jarra Familiar']
   },
   {
     id: 'item-m-chicha',
