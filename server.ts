@@ -11,6 +11,29 @@ const PORT = 3000;
 const DATA_DIR = path.resolve(__dirname, 'data');
 const CLOUD_STORAGE_FILE = path.join(DATA_DIR, 'cloud-menu.json');
 
+// Read .env if present
+try {
+  const envPath = path.resolve(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch {}
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -18,6 +41,59 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // In-memory cache
 let cachedCloudData: any = null;
+
+// Upstash Redis / Vercel KV configuration
+let kvRestUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || 'https://tough-raccoon-293580.upstash.io';
+let kvRestToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || 'gQAAAAAABHrMAAIgcDExYmEwMjliM2FlZTg0NjJjOTM3ZWRhOTI3MmY4MTlmYg';
+
+async function fetchFromVercelKV(): Promise<any> {
+  if (!kvRestUrl || !kvRestToken) return null;
+  try {
+    const cleanUrl = kvRestUrl.replace(/\/+$/, '');
+    const res = await fetch(`${cleanUrl}/get/applet_menu_snapshot`, {
+      headers: {
+        Authorization: `Bearer ${kvRestToken}`,
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.result) {
+        let parsed = data.result;
+        if (typeof parsed === 'string') {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch {
+            // Keep raw if not json
+          }
+        }
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Server] Error reading from Vercel KV / Upstash:', err);
+  }
+  return null;
+}
+
+async function saveToVercelKV(data: any): Promise<boolean> {
+  if (!kvRestUrl || !kvRestToken) return false;
+  try {
+    const cleanUrl = kvRestUrl.replace(/\/+$/, '');
+    const stringified = JSON.stringify(data);
+    const res = await fetch(`${cleanUrl}/set/applet_menu_snapshot`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${kvRestToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: stringified,
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Server] Error saving to Vercel KV / Upstash:', err);
+    return false;
+  }
+}
 
 function loadCloudDataFromDisk() {
   try {
@@ -39,6 +115,14 @@ function saveCloudDataToDisk(data: any) {
       updatedAt: new Date().toISOString(),
     };
     fs.writeFileSync(CLOUD_STORAGE_FILE, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
+    
+    // Asynchronously push to Vercel KV if configured
+    if (kvRestUrl && kvRestToken) {
+      saveToVercelKV(cachedCloudData).catch(err => {
+        console.warn('[Server] Background Vercel KV sync error:', err);
+      });
+    }
+
     return true;
   } catch (err) {
     console.error('[Server] Error saving cloud-menu.json:', err);
@@ -46,8 +130,23 @@ function saveCloudDataToDisk(data: any) {
   }
 }
 
-// Initialize on startup
+// Initialize on startup & query Vercel KV if available
 loadCloudDataFromDisk();
+if (kvRestUrl && kvRestToken) {
+  fetchFromVercelKV().then(remoteData => {
+    if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
+      cachedCloudData = remoteData;
+      saveCloudDataToDisk(remoteData);
+      console.log('[Server] Successfully hydrated cache from Vercel KV / Upstash');
+    } else if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length)) {
+      saveToVercelKV(cachedCloudData).then(() => {
+        console.log('[Server] Initialized Upstash with local menu data snapshot');
+      }).catch(err => {
+        console.warn('[Server] Error pushing initial snapshot to Upstash:', err);
+      });
+    }
+  }).catch(() => {});
+}
 
 // Connected SSE clients for live menu updates
 const sseClients = new Set<express.Response>();
@@ -234,6 +333,58 @@ async function startServer() {
     saveCloudDataToDisk(updatedData);
     broadcastMenuUpdate({ type: 'CATEGORY_DELETED', categoryId: id, categories });
     res.json({ success: true, message: 'Categoría eliminada de la nube' });
+  });
+
+  // POST: Configure and verify Vercel KV / Upstash Redis directly
+  app.post('/api/cloud-menu/setup-kv', async (req, res) => {
+    const { url, token } = req.body;
+    if (!url || !token) {
+      res.status(400).json({ success: false, message: 'Se requiere url y token de Vercel KV / Upstash' });
+      return;
+    }
+
+    try {
+      const cleanUrl = url.trim().replace(/\/+$/, '');
+      const cleanToken = token.trim();
+
+      // Test ping
+      const testRes = await fetch(`${cleanUrl}/set/ping_test`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cleanToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ping: Date.now() }),
+      });
+
+      if (!testRes.ok) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'No se pudo conectar a la base de datos con las credenciales proporcionadas. Revisa la URL y el Token.' 
+        });
+        return;
+      }
+
+      // Set runtime configuration
+      kvRestUrl = cleanUrl;
+      kvRestToken = cleanToken;
+
+      // Immediately sync current menu snapshot to Vercel KV
+      if (cachedCloudData) {
+        await saveToVercelKV(cachedCloudData);
+      }
+
+      res.json({
+        success: true,
+        message: '¡Conexión exitosa con Vercel KV / Upstash! Los cambios ahora se sincronizan en la nube permanentemente.',
+        connected: true,
+      });
+    } catch (err: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: `Error al probar conexión: ${err?.message || 'Error desconocido'}` 
+      });
+    }
   });
 
   // GET: Real-time SSE channel for instant menu updates across all browsers & incognito tabs

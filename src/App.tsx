@@ -261,8 +261,8 @@ function getInitialStorageState() {
         const parsed = JSON.parse(storedCats);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const map = new Map<string, MenuCategory>();
-          parsed.forEach(c => map.set(c.id, c));
           INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+          parsed.forEach(c => map.set(c.id, c));
           cachedCategories = Array.from(map.values());
         }
       }
@@ -271,7 +271,7 @@ function getInitialStorageState() {
       if (storedItems) {
         const parsed = JSON.parse(storedItems);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedItems = mergeMenuItemsById(sanitizeMenuItems(parsed), sanitizeMenuItems(INITIAL_MENU_ITEMS));
+          cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
         }
       }
 
@@ -511,14 +511,21 @@ export default function App() {
           return match || prev;
         });
       } else {
-        // First boot or empty cloud: automatically seed current state to cloud
-        saveFullCloudMenu({
-          restaurants: initialState.cachedRests,
-          items: initialState.cachedItems,
-          categories: initialState.cachedCategories,
-          users: initialState.cachedUsers,
-          orders: initialState.cachedOrders,
-        }).catch(() => {});
+        // Only seed to cloud if current client is an authenticated or existing session with local changes
+        // NEVER overwrite cloud from an incognito or empty fresh client!
+        const hasCustomData = typeof window !== 'undefined' && (
+          Boolean(localStorage.getItem(STORAGE_KEYS.ITEMS)) || 
+          Boolean(localStorage.getItem(STORAGE_KEYS.RESTS))
+        );
+        if (hasCustomData) {
+          saveFullCloudMenu({
+            restaurants: initialState.cachedRests,
+            items: initialState.cachedItems,
+            categories: initialState.cachedCategories,
+            users: initialState.cachedUsers,
+            orders: initialState.cachedOrders,
+          }).catch(() => {});
+        }
       }
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
