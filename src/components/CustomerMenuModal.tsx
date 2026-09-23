@@ -13,12 +13,14 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   AlertCircle,
-  Upload
+  Upload,
+  Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
+import { HeaderEditorModal } from './HeaderEditorModal';
 import { saveAllDataToFirebase } from '../lib/firebase';
 
 interface CustomerMenuModalProps {
@@ -84,6 +86,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [quickPhotoUrl, setQuickPhotoUrl] = useState<string>('');
   
   const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false);
+  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   
   // Local state for brand customizer modal
@@ -397,6 +400,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     onToggleAvailability: isOwnerOrAdmin ? handleToggleAvailability : undefined,
     onAddNewItem: isOwnerOrAdmin ? handleOpenAddItem : undefined,
     onEditBranding: isOwnerOrAdmin ? handleOpenBranding : undefined,
+    onEditHeader: isOwnerOrAdmin ? () => setIsHeaderModalOpen(true) : undefined,
     onSaveToFirebase: isOwnerOrAdmin ? handleSaveToFirebase : undefined,
     isSavingFirebase: isSavingFirebase,
   };
@@ -749,6 +753,30 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             </div>
 
             <form onSubmit={handleSaveBranding} className="space-y-4 text-xs">
+              {/* Direct Banner to Header Editor */}
+              <div className="p-3 rounded-xl bg-gradient-to-r from-fuchsia-950/40 via-neutral-900 to-amber-950/40 border border-fuchsia-500/40 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/30 flex items-center justify-center text-fuchsia-300 shrink-0">
+                    <Sliders className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Editar Cabecera (Logo JPG/PNG/SVG)</h4>
+                    <p className="text-[10px] text-neutral-400">Autoajuste, alternar nombre, eslogan o solo imagen</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBrandingModalOpen(false);
+                    setIsHeaderModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-black font-bold text-[11px] flex items-center gap-1 shadow transition cursor-pointer shrink-0"
+                >
+                  <Sliders className="w-3 h-3" />
+                  <span>Configurar</span>
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-neutral-300 font-mono mb-1 font-bold">Nombre del Restaurante</label>
@@ -1219,6 +1247,16 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           </div>
         </div>
       )}
+
+      {/* MODAL 6: HEADER EDITOR MODAL */}
+      <HeaderEditorModal
+        isOpen={isHeaderModalOpen}
+        onClose={() => setIsHeaderModalOpen(false)}
+        restaurant={restaurant}
+        onUpdateRestaurant={(upd) => {
+          onUpdateRestaurant && onUpdateRestaurant(upd);
+        }}
+      />
     </>
   );
 };

@@ -31,7 +31,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Download,
-  FileJson
+  FileJson,
+  Sliders
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -44,6 +45,7 @@ import {
 import { saveRestaurantMenuToFirebase } from '../lib/firebase';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
+import { HeaderEditorModal } from './HeaderEditorModal';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
@@ -85,6 +87,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   onImportBackupJSON,
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
+  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSavingFirebase, setIsSavingFirebase] = useState(false);
@@ -689,6 +692,15 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           </button>
 
           <button
+            onClick={() => setIsHeaderModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-300 border border-fuchsia-500/40 text-xs font-bold transition cursor-pointer"
+            title="Editar cabecera de la carta: subir logo JPG, PNG o SVG, autoajuste y alternar nombre o eslogan"
+          >
+            <Sliders className="w-3.5 h-3.5 text-fuchsia-400" />
+            <span>Editar Cabecera</span>
+          </button>
+
+          <button
             onClick={handleSaveToFirebase}
             disabled={isSavingFirebase}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer disabled:opacity-50"
@@ -709,7 +721,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       </div>
 
       {/* Subtabs Selector */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-neutral-800 pb-2 flex-wrap">
         <button
           onClick={() => setSubTab('items')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
@@ -744,6 +756,15 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         >
           <Palette className="w-3.5 h-3.5" />
           <span>Cartas: Salón vs Delivery & Fondos</span>
+        </button>
+
+        <button
+          onClick={() => setIsHeaderModalOpen(true)}
+          className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-fuchsia-500/15 text-fuchsia-300 hover:bg-fuchsia-500/25 border border-fuchsia-500/30"
+          title="Editar cabecera de la carta (Subir logo JPG/PNG/SVG, autoajuste y mostrar/ocultar nombre o slogan)"
+        >
+          <Sliders className="w-3.5 h-3.5 text-fuchsia-400" />
+          <span>Cabecera de la Carta (Logo JPG/PNG/SVG)</span>
         </button>
       </div>
 
@@ -2640,6 +2661,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             onImportBackupJSON(data, mode, targetId || restaurant.id);
           }
         }}
+      />
+
+      {/* Header Editor Modal */}
+      <HeaderEditorModal
+        isOpen={isHeaderModalOpen}
+        onClose={() => setIsHeaderModalOpen(false)}
+        restaurant={restaurant}
+        onUpdateRestaurant={onUpdateRestaurant}
       />
 
     </div>

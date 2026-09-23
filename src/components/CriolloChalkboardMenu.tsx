@@ -14,7 +14,8 @@ import {
   Clock,
   MapPin,
   Edit3,
-  Camera
+  Camera,
+  Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -40,6 +41,7 @@ interface CriolloChalkboardMenuProps {
   onToggleAvailability?: (item: MenuItem) => void;
   onAddNewItem?: () => void;
   onEditBranding?: () => void;
+  onEditHeader?: () => void;
   onSaveToFirebase?: () => void;
   isSavingFirebase?: boolean;
 }
@@ -68,6 +70,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
   onToggleAvailability,
   onAddNewItem,
   onEditBranding,
+  onEditHeader,
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
@@ -337,42 +340,91 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
           >
             {/* Header Chalk script */}
             <div className="text-center space-y-1.5 border-b-2 border-dashed border-[#ffffff]/20 pb-4">
-              {restaurant.logoUrl && (
-                <div className="flex justify-center mb-1">
-                  <img 
-                    src={restaurant.logoUrl} 
-                    alt={restaurant.name} 
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-amber-400/40 shadow-lg"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              )}
-              <span className="text-amber-300 font-mono text-xs tracking-widest uppercase">
-                {activeChannel === 'DELIVERY' ? 'Carta Pizarra Delivery' : 'Carta Salón Tradición'}
-              </span>
-              <h1 
-                style={{ 
-                  fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
-                  color: restaurant.branding?.restaurantNameColor || undefined
-                }}
-                className="text-3xl sm:text-4xl font-black text-white tracking-wide"
-              >
-                {restaurant.name}
-              </h1>
-              <p className="text-[11px] text-neutral-400 font-mono">
-                {restaurant.tagline || 'Sazón Criolla y Fuego a la Leña'} · Precios en Soles (S/.)
-              </p>
+              {(() => {
+                const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+                const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
+                const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
+                const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
+                const showBadge = !isImageOnly && (restaurant.branding?.showHeaderBadge !== false);
+                const logoFit = restaurant.branding?.headerLogoFit || 'contain';
+                const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
 
-              {isLiveEditActive && onEditBranding && (
-                <div className="flex justify-center pt-1">
-                  <button
-                    type="button"
-                    onClick={onEditBranding}
-                    className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
-                  >
-                    <Edit3 className="w-3 h-3 text-amber-400" />
-                    <span>✏️ Personalizar Logo, Nombre y Fondos</span>
-                  </button>
+                return (
+                  <>
+                    {headerLogo && (
+                      <div 
+                        className="flex justify-center items-center mb-1 cursor-pointer group relative"
+                        onClick={onEditHeader || onEditBranding}
+                        title={isOwnerOrAdmin ? "Clic para editar cabecera" : undefined}
+                      >
+                        <img 
+                          src={headerLogo} 
+                          alt={restaurant.name} 
+                          style={{ maxHeight: `${bannerHeight}px` }}
+                          className={`transition-all duration-300 ${
+                            logoFit === 'cover' 
+                              ? 'w-full object-cover rounded-2xl shadow-lg border border-amber-400/40' 
+                              : 'max-w-full object-contain rounded-2xl border-2 border-amber-400/40 shadow-lg'
+                          }`}
+                          referrerPolicy="no-referrer"
+                        />
+                        {(isLiveEditActive || isOwnerOrAdmin) && (
+                          <span className="opacity-0 group-hover:opacity-100 transition absolute -bottom-2 bg-neutral-900/90 text-amber-300 border border-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-1 z-30">
+                            <Sliders className="w-2.5 h-2.5" /> Editar Cabecera
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {showBadge && (
+                      <span className="text-amber-300 font-mono text-xs tracking-widest uppercase block">
+                        {activeChannel === 'DELIVERY' ? 'Carta Pizarra Delivery' : 'Carta Salón Tradición'}
+                      </span>
+                    )}
+
+                    {showName && (
+                      <h1 
+                        style={{ 
+                          fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
+                          color: restaurant.branding?.restaurantNameColor || undefined
+                        }}
+                        className="text-3xl sm:text-4xl font-black text-white tracking-wide"
+                      >
+                        {restaurant.name}
+                      </h1>
+                    )}
+
+                    {showTagline && (
+                      <p className="text-[11px] text-neutral-400 font-mono">
+                        {restaurant.tagline || 'Sazón Criolla y Fuego a la Leña'} · Precios en Soles (S/.)
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
+
+              {isLiveEditActive && (
+                <div className="flex justify-center flex-wrap gap-2 pt-1">
+                  {onEditHeader && (
+                    <button
+                      type="button"
+                      onClick={onEditHeader}
+                      className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                    >
+                      <Sliders className="w-3 h-3 text-amber-400" />
+                      <span>✏️ Editar Cabecera (Logo/Nombre/Slogan)</span>
+                    </button>
+                  )}
+                  {onEditBranding && (
+                    <button
+                      type="button"
+                      onClick={onEditBranding}
+                      className="px-3 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                    >
+                      <Edit3 className="w-3 h-3 text-amber-400" />
+                      <span>Marca & Colores</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

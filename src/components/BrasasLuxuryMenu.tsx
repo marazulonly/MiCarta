@@ -19,7 +19,8 @@ import {
   Clock,
   MapPin,
   Edit3,
-  Camera
+  Camera,
+  Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order, OrderType } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -45,6 +46,7 @@ interface BrasasLuxuryMenuProps {
   onToggleAvailability?: (item: MenuItem) => void;
   onAddNewItem?: () => void;
   onEditBranding?: () => void;
+  onEditHeader?: () => void;
   onSaveToFirebase?: () => void;
   isSavingFirebase?: boolean;
 }
@@ -73,6 +75,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
   onToggleAvailability,
   onAddNewItem,
   onEditBranding,
+  onEditHeader,
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
@@ -389,48 +392,89 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
               {/* HEADER SECTION */}
               <div className="text-center pt-2 pb-5 space-y-1">
-                {restaurant.logoUrl && (
-                  <div className="flex justify-center mb-1">
-                    <div className="p-0.5 rounded-2xl bg-gradient-to-b from-[#dfb86c] to-[#aa7c28] shadow-lg">
-                      <img 
-                        src={restaurant.logoUrl} 
-                        alt={restaurant.name} 
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border border-[#dfb86c]/60"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+                  const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
+                  const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
+                  const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
+                  const logoFit = restaurant.branding?.headerLogoFit || 'contain';
+                  const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
 
-                <div 
-                  className="tracking-normal font-normal text-2xl sm:text-3xl select-none relative z-10"
-                  style={{
-                    fontFamily: restaurant.branding?.restaurantNameFont && restaurant.branding.restaurantNameFont !== 'inherit'
-                      ? restaurant.branding.restaurantNameFont
-                      : "'Alex Brush', 'Dancing Script', cursive",
-                    color: restaurant.branding?.restaurantNameColor || '#eed799',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.8)'
-                  }}
-                >
-                  {restaurant.name}
-                </div>
+                  return (
+                    <>
+                      {headerLogo && (
+                        <div 
+                          className="flex justify-center items-center mb-1 cursor-pointer group relative"
+                          onClick={onEditHeader || onEditBranding}
+                          title={isOwnerOrAdmin ? "Clic para editar cabecera" : undefined}
+                        >
+                          <div className={`p-0.5 rounded-2xl ${logoFit === 'cover' ? 'w-full' : ''} bg-gradient-to-b from-[#dfb86c] to-[#aa7c28] shadow-lg`}>
+                            <img 
+                              src={headerLogo} 
+                              alt={restaurant.name} 
+                              style={{ maxHeight: `${bannerHeight}px` }}
+                              className={`transition-all duration-300 ${
+                                logoFit === 'cover' 
+                                  ? 'w-full object-cover rounded-2xl' 
+                                  : 'max-w-full object-contain rounded-2xl border border-[#dfb86c]/60'
+                              }`}
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          {(isLiveEditActive || isOwnerOrAdmin) && (
+                            <span className="opacity-0 group-hover:opacity-100 transition absolute -bottom-2 bg-neutral-900/90 text-amber-300 border border-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-1 z-30">
+                              <Sliders className="w-2.5 h-2.5" /> Editar Cabecera
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                {restaurant.tagline && (
-                  <p className="text-[10px] sm:text-[11px] text-[#dfb86c]/90 uppercase tracking-widest font-serif max-w-sm mx-auto">
-                    {restaurant.tagline}
-                  </p>
-                )}
+                      {showName && (
+                        <div 
+                          className="tracking-normal font-normal text-2xl sm:text-3xl select-none relative z-10"
+                          style={{
+                            fontFamily: restaurant.branding?.restaurantNameFont && restaurant.branding.restaurantNameFont !== 'inherit'
+                              ? restaurant.branding.restaurantNameFont
+                              : "'Alex Brush', 'Dancing Script', cursive",
+                            color: restaurant.branding?.restaurantNameColor || '#eed799',
+                            textShadow: '0 2px 8px rgba(0,0,0,0.8)'
+                          }}
+                        >
+                          {restaurant.name}
+                        </div>
+                      )}
 
-                {isLiveEditActive && onEditBranding && (
-                  <div className="flex justify-center pt-1 pb-1">
-                    <button
-                      type="button"
-                      onClick={onEditBranding}
-                      className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
-                    >
-                      <Edit3 className="w-3 h-3 text-amber-400" />
-                      <span>✏️ Personalizar Logo, Nombre y Fondos</span>
-                    </button>
+                      {showTagline && restaurant.tagline && (
+                        <p className="text-[10px] sm:text-[11px] text-[#dfb86c]/90 uppercase tracking-widest font-serif max-w-sm mx-auto">
+                          {restaurant.tagline}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+
+                {isLiveEditActive && (
+                  <div className="flex justify-center flex-wrap gap-2 pt-1 pb-1">
+                    {onEditHeader && (
+                      <button
+                        type="button"
+                        onClick={onEditHeader}
+                        className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                      >
+                        <Sliders className="w-3 h-3 text-amber-400" />
+                        <span>✏️ Editar Cabecera (Logo/Nombre/Slogan)</span>
+                      </button>
+                    )}
+                    {onEditBranding && (
+                      <button
+                        type="button"
+                        onClick={onEditBranding}
+                        className="px-3 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] font-serif font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                      >
+                        <Edit3 className="w-3 h-3 text-amber-400" />
+                        <span>Marca & Colores</span>
+                      </button>
+                    )}
                   </div>
                 )}
 

@@ -15,7 +15,8 @@ import {
   Clock,
   MapPin,
   Edit3,
-  Camera
+  Camera,
+  Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -41,6 +42,7 @@ interface CostaMarinaMenuProps {
   onToggleAvailability?: (item: MenuItem) => void;
   onAddNewItem?: () => void;
   onEditBranding?: () => void;
+  onEditHeader?: () => void;
   onSaveToFirebase?: () => void;
   isSavingFirebase?: boolean;
 }
@@ -69,6 +71,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   onToggleAvailability,
   onAddNewItem,
   onEditBranding,
+  onEditHeader,
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
@@ -401,38 +404,80 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 </button>
               )}
 
-              {restaurant.logoUrl && (
-                <div className="flex justify-center mb-1">
-                  <img 
-                    src={restaurant.logoUrl} 
-                    alt={restaurant.name} 
-                    style={{ borderColor: COLOR_TEAL }}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-lg"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              )}
-              <span 
-                style={{ color: COLOR_OLIVE }}
-                className="text-[11px] font-mono tracking-widest uppercase font-bold block"
-              >
-                {activeChannel === 'DELIVERY' ? 'CEVICHERÍA DELIVERY EXPRESS' : 'CEVICHERÍA & COCINA MARINA'}
-              </span>
-              <h1 
-                style={{ 
-                  fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
-                  color: COLOR_TEAL
-                }}
-                className="text-3xl font-black"
-              >
-                {restaurant.name}
-              </h1>
-              <p 
-                style={{ color: COLOR_TEAL }}
-                className="text-xs font-semibold"
-              >
-                {restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}
-              </p>
+              {/* Header Logo / Banner Container (Autoajuste Magenta Area) */}
+              {(() => {
+                const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+                const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
+                const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
+                const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
+                const showBadge = !isImageOnly && (restaurant.branding?.showHeaderBadge !== false);
+                const logoFit = restaurant.branding?.headerLogoFit || 'contain';
+                const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
+
+                return (
+                  <div className="space-y-1">
+                    {headerLogo && (
+                      <div 
+                        className="w-full flex items-center justify-center px-2 py-1 relative group cursor-pointer"
+                        onClick={onEditHeader || onEditBranding}
+                        title={isOwnerOrAdmin ? "Clic para editar la cabecera" : undefined}
+                      >
+                        <img 
+                          src={headerLogo} 
+                          alt={restaurant.name} 
+                          style={{ 
+                            maxHeight: `${bannerHeight}px`,
+                            borderColor: logoFit === 'cover' ? undefined : COLOR_TEAL 
+                          }}
+                          className={`transition-all duration-300 ${
+                            logoFit === 'cover' 
+                              ? 'w-full object-cover rounded-2xl shadow-md' 
+                              : logoFit === 'auto'
+                              ? 'max-w-full object-contain'
+                              : 'max-w-full object-contain'
+                          }`}
+                          referrerPolicy="no-referrer"
+                        />
+                        {(isLiveEditActive || isOwnerOrAdmin) && (
+                          <span className="opacity-0 group-hover:opacity-100 transition absolute top-1 right-2 bg-neutral-900/90 text-amber-300 border border-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-1 z-30">
+                            <Sliders className="w-2.5 h-2.5" /> Editar Cabecera
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {showBadge && (
+                      <span 
+                        style={{ color: COLOR_OLIVE }}
+                        className="text-[11px] font-mono tracking-widest uppercase font-bold block"
+                      >
+                        {activeChannel === 'DELIVERY' ? 'CEVICHERÍA DELIVERY EXPRESS' : 'CEVICHERÍA & COCINA MARINA'}
+                      </span>
+                    )}
+
+                    {showName && (
+                      <h1 
+                        style={{ 
+                          fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
+                          color: COLOR_TEAL
+                        }}
+                        className="text-3xl font-black"
+                      >
+                        {restaurant.name}
+                      </h1>
+                    )}
+
+                    {showTagline && (
+                      <p 
+                        style={{ color: COLOR_TEAL }}
+                        className="text-xs font-semibold"
+                      >
+                        {restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {initialTableNumber && (
                 <div className="flex justify-center pt-0.5">
@@ -446,21 +491,37 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 </div>
               )}
 
-              {isLiveEditActive && onEditBranding && (
-                <div className="flex justify-center pt-1">
-                  <button
-                    type="button"
-                    onClick={onEditBranding}
-                    style={{
-                      backgroundColor: `${COLOR_TEAL}15`,
-                      color: COLOR_TEAL,
-                      borderColor: COLOR_TEAL
-                    }}
-                    className="px-3 py-1 rounded-lg hover:brightness-125 border text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>✏️ Personalizar Logo, Nombre y Fondos</span>
-                  </button>
+              {isLiveEditActive && (
+                <div className="flex justify-center flex-wrap gap-2 pt-1">
+                  {onEditHeader && (
+                    <button
+                      type="button"
+                      onClick={onEditHeader}
+                      style={{
+                        backgroundColor: COLOR_TERRACOTTA,
+                        color: COLOR_CREAM,
+                      }}
+                      className="px-3 py-1 rounded-lg hover:brightness-110 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                    >
+                      <Sliders className="w-3 h-3" />
+                      <span>✏️ Editar Cabecera (Logo/Nombre/Slogan)</span>
+                    </button>
+                  )}
+                  {onEditBranding && (
+                    <button
+                      type="button"
+                      onClick={onEditBranding}
+                      style={{
+                        backgroundColor: `${COLOR_TEAL}15`,
+                        color: COLOR_TEAL,
+                        borderColor: COLOR_TEAL
+                      }}
+                      className="px-3 py-1 rounded-lg hover:brightness-125 border text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Marca & Colores</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -15,11 +15,13 @@ import {
   Sparkles,
   ArrowRight,
   Download,
-  FileJson
+  FileJson,
+  Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory } from '../types';
 import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
+import { HeaderEditorModal } from './HeaderEditorModal';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -50,6 +52,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
 }) => {
   const [selectedRestId, setSelectedRestId] = useState<string>(restaurants[0]?.id || 'rest-brasas');
   const [activeTab, setActiveTab] = useState<'link' | 'branding' | 'menu'>('link');
+  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   
   const currentRestaurant = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
 
@@ -293,6 +296,15 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
               }`}
             >
               Colores & Marca
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsHeaderModalOpen(true)}
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer text-fuchsia-300 hover:text-white bg-fuchsia-500/15 hover:bg-fuchsia-500/25 border border-fuchsia-500/30 flex items-center gap-1.5"
+              title="Editar cabecera de la carta (Subir logo JPG/PNG/SVG, autoajuste y alternar nombre o slogan)"
+            >
+              <Sliders className="w-3 h-3 text-fuchsia-400" />
+              <span>Cabecera</span>
             </button>
           </div>
         </div>
@@ -544,6 +556,16 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
                 </button>
 
                 <button
+                  type="button"
+                  onClick={() => setIsHeaderModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 hover:bg-fuchsia-500/25 text-xs font-bold transition cursor-pointer"
+                  title="Editar cabecera de la carta: subir logo JPG, PNG o SVG, autoajuste y alternar nombre o eslogan"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-fuchsia-400" />
+                  <span>Editar Cabecera</span>
+                </button>
+
+                <button
                   onClick={() => setIsDishModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer"
                 >
@@ -771,6 +793,14 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
             onImportBackupJSON(data, mode, targetId);
           }
         }}
+      />
+
+      {/* Header Editor Modal */}
+      <HeaderEditorModal
+        isOpen={isHeaderModalOpen}
+        onClose={() => setIsHeaderModalOpen(false)}
+        restaurant={currentRestaurant}
+        onUpdateRestaurant={onUpdateRestaurant}
       />
 
     </div>

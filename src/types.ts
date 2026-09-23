@@ -37,6 +37,14 @@ export interface RestaurantBranding {
   restaurantNameFont?: string;  // Tipo de letra para el nombre del restaurante
   restaurantNameColor?: string; // Color del texto del nombre del restaurante
   dishCardBgColor?: string;     // Fondo del recuadro / ficha del plato
+  // Header customization
+  headerLogoUrl?: string;          // Logo o imagen de cabecera específica (JPG, PNG, SVG)
+  headerDisplayMode?: 'IMAGE_AND_TEXT' | 'IMAGE_ONLY'; // Mostrar logo + nombre/slogan o solo la imagen
+  showHeaderName?: boolean;        // Mostrar nombre del restaurante en la cabecera (default true)
+  showHeaderTagline?: boolean;     // Mostrar slogan del restaurante en la cabecera (default true)
+  showHeaderBadge?: boolean;       // Mostrar distintivo de canal/subtítulo superior
+  headerLogoFit?: 'contain' | 'cover' | 'auto'; // Ajuste de la imagen en la cabecera
+  headerBannerHeight?: number;     // Altura máxima del logo/cabecera en px (default 100)
 }
 
 export interface RestaurantMetrics {
