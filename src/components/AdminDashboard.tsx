@@ -36,6 +36,7 @@ interface AdminDashboardProps {
   onDeleteRestaurant?: (restaurantId: string) => void;
   onUpdateUser: (updated: User) => void;
   onAddUser: (newUser: User) => void;
+  onDeleteUser?: (userId: string) => void;
   onUpdateTemplate: (updated: MenuTemplate) => void;
   onDeleteTemplate?: (templateId: string) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
@@ -53,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteRestaurant,
   onUpdateUser,
   onAddUser,
+  onDeleteUser,
   onUpdateTemplate,
   onDeleteTemplate,
   onOpenCustomerPreview,
@@ -309,12 +311,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-200/60 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[#1E1F24] text-white font-bold">
+            <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#12111A] text-white font-extrabold">
               SUPERADMINISTRADOR
             </span>
-            <span className="text-xs text-neutral-500 font-mono">Panel Global</span>
+            <span className="text-xs text-neutral-400 font-mono">Panel Global</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#1E1F24] mt-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#12111A] mt-1">
             Dashboard de Administrador
           </h1>
           <p className="text-xs text-neutral-500 mt-0.5">
@@ -324,9 +326,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <button
           onClick={onSwitchToOwnerView}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-200 text-xs font-semibold text-neutral-700 transition cursor-pointer self-start sm:self-auto shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-50 border border-neutral-200 text-xs font-bold text-neutral-700 transition cursor-pointer self-start sm:self-auto shadow-sm"
         >
-          <Building2 className="w-3.5 h-3.5 text-amber-500" />
+          <Building2 className="w-3.5 h-3.5 text-neutral-800" />
           <span>Ir a Vista de Dueños</span>
           <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
         </button>
@@ -344,20 +346,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setActiveSection(m.id as AdminSection);
                 setSearchTerm('');
               }}
-              className={`p-3.5 rounded-[22px] border transition text-left cursor-pointer flex flex-col justify-between ${
+              className={`p-3.5 rounded-[22px] border transition text-left cursor-pointer flex flex-col justify-between duration-200 ${
                 isActive 
-                  ? 'bg-[#1E1F24] text-white border-transparent shadow-md transform scale-102' 
+                  ? 'bg-[#12111A] text-white border-transparent shadow-md transform scale-102' 
                   : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-800 shadow-sm'
               }`}
             >
               <div className="flex items-center justify-between">
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-neutral-500'}`} />
-                <span className={`text-base font-black ${isActive ? 'text-white' : 'text-neutral-900'}`}>
+                <span className={`text-base font-extrabold ${isActive ? 'text-white' : 'text-neutral-900'}`}>
                   {m.count}
                 </span>
               </div>
               <div className="mt-2.5">
-                <div className={`text-xs font-bold ${isActive ? 'text-white' : 'text-neutral-900'}`}>
+                <div className={`text-xs font-extrabold ${isActive ? 'text-white' : 'text-[#12111A]'}`}>
                   {m.label}
                 </div>
                 <div className={`text-[10px] truncate ${isActive ? 'text-neutral-300' : 'text-neutral-500'}`}>
@@ -399,82 +401,98 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* 1. SECCIÓN: DUEÑOS                                            */}
       {/* ------------------------------------------------------------- */}
       {activeSection === 'owners' && (
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-neutral-900/60 border border-neutral-800">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm">
             <div>
-              <p className="text-xs font-semibold text-white">Administración de Cuentas de Dueños de Franquicia</p>
-              <p className="text-[11px] text-neutral-400">Crea nuevos propietarios con DNI único de 8 dígitos y asígnales los restaurantes a gestionar.</p>
+              <p className="text-xs font-bold text-neutral-900">Administración de Cuentas de Dueños de Franquicia</p>
+              <p className="text-[11px] text-neutral-500">Crea nuevos propietarios con DNI único de 8 dígitos y asígnales los restaurantes a gestionar.</p>
             </div>
             <button
               onClick={() => {
                 setOwnerError(null);
                 setIsCreatingOwner(true);
               }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shrink-0 shadow-md"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#12111A] hover:bg-[#1A1924] text-white text-xs font-bold transition cursor-pointer shrink-0 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Crear Cuenta de Dueño</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ownersList.filter(o => filterBySearch(o.name) || filterBySearch(o.email) || filterBySearch(o.dni || '')).map(owner => {
               const ownedRests = restaurants.filter(r => owner.restaurantIds.includes(r.id));
               return (
                 <div
                   key={owner.id}
-                  className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                  className="p-5 rounded-[22px] border border-neutral-200/80 bg-white hover:border-neutral-300 hover:shadow-md transition duration-200 flex flex-col justify-between gap-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img 
                         src={owner.avatar} 
                         alt={owner.name} 
-                        className="w-12 h-12 rounded-xl object-cover border border-neutral-700" 
+                        className="w-12 h-12 rounded-xl object-cover border border-neutral-200" 
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{owner.name}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                            owner.status === 'active' ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-red-950/80 text-red-400 border border-red-800/60'
+                          <h3 className="text-sm font-extrabold text-neutral-900">{owner.name}</h3>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                            owner.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-red-50 text-red-700 border border-red-200/60'
                           }`}>
                             {owner.status === 'active' ? 'Activo' : 'Inactivo'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-black border border-neutral-700 font-mono text-amber-300 font-bold">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/60 font-mono text-neutral-700 font-bold">
                             DNI: {owner.dni}
                           </span>
                           <span className="text-[10px] text-neutral-500 font-mono">
                             Clave: {owner.password}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
-                          <Mail className="w-3 h-3 text-neutral-500" />
+                        <p className="text-xs text-neutral-500 mt-1.5 flex items-center gap-1.5">
+                          <Mail className="w-3 h-3 text-neutral-400" />
                           <span>{owner.email}</span>
                         </p>
-                        <p className="text-xs text-neutral-400 mt-0.5 flex items-center gap-1.5">
-                          <Phone className="w-3 h-3 text-neutral-500" />
+                        <p className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-neutral-400" />
                           <span>{owner.phone}</span>
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setEditError(null);
-                        setEditingOwner(owner);
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-white hover:text-black text-xs font-semibold text-white border border-neutral-700 transition cursor-pointer shrink-0"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditError(null);
+                          setEditingOwner(owner);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold border border-neutral-200/60 transition cursor-pointer shrink-0"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+
+                      {onDeleteUser && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al dueño "${owner.name}"?`)) {
+                              onDeleteUser(owner.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          title="Eliminar Dueño"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Assigned Restaurants */}
-                  <div className="pt-3 border-t border-neutral-800/80">
-                    <span className="text-[11px] text-neutral-400 block font-medium mb-1.5">
+                  <div className="pt-3.5 border-t border-neutral-100">
+                    <span className="text-[11px] text-neutral-400 block font-bold mb-1.5 uppercase tracking-wider">
                       Restaurantes Asignados ({ownedRests.length}):
                     </span>
                     {ownedRests.length > 0 ? (
@@ -482,7 +500,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {ownedRests.map(r => (
                           <span 
                             key={r.id} 
-                            className="px-2 py-1 rounded bg-black border border-neutral-800 text-[11px] text-neutral-200 flex items-center gap-1.5 font-medium"
+                            className="px-2.5 py-1 rounded-lg bg-neutral-50 border border-neutral-200 text-[11px] text-neutral-700 flex items-center gap-1.5 font-bold shadow-sm"
                           >
                             <Store className="w-3 h-3 text-neutral-400" />
                             <span>{r.name}</span>
@@ -490,9 +508,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ))}
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-950 border border-neutral-800">
-                        <span className="text-[11px] text-amber-400/90 font-medium flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/60">
+                        <span className="text-[11px] text-amber-800 font-bold flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           <span>Sin restaurantes asignados (Cuenta de dueño conservada)</span>
                         </span>
                         <button
@@ -501,7 +519,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             setEditError(null);
                             setEditingOwner(owner);
                           }}
-                          className="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-white font-bold transition cursor-pointer shrink-0"
+                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100/40 text-[10px] text-amber-800 font-extrabold border border-amber-200 transition cursor-pointer shrink-0"
                         >
                           + Asignar Sede
                         </button>
@@ -520,7 +538,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeSection === 'restaurants' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {restaurants.filter(r => filterBySearch(r.name) || filterBySearch(r.cuisineType) || filterBySearch(r.slug)).map(rest => {
               const currentTmpl = templates.find(t => t.id === rest.templateId) || templates[0];
               const owner = users.find(u => u.id === rest.ownerId);
@@ -528,7 +546,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               return (
                 <div
                   key={rest.id}
-                  className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                  className="p-5 rounded-[22px] border border-neutral-200/80 bg-white hover:border-neutral-300 hover:shadow-md transition duration-200 flex flex-col justify-between gap-3.5 shadow-sm"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3">
@@ -536,20 +554,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <img 
                           src={rest.logoUrl} 
                           alt={rest.name} 
-                          className="w-12 h-12 rounded-xl object-cover border border-neutral-700" 
+                          className="w-12 h-12 rounded-xl object-cover border border-neutral-200" 
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-white">{rest.name}</h3>
-                            <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                              rest.isOpen ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-neutral-800 text-neutral-400'
+                            <h3 className="text-sm font-extrabold text-neutral-900">{rest.name}</h3>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                              rest.isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                             }`}>
                               {rest.isOpen ? 'Abierto' : 'Cerrado'}
                             </span>
                           </div>
-                          <p className="text-xs text-neutral-400 line-clamp-1 mt-0.5">{rest.tagline}</p>
+                          <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">{rest.tagline}</p>
                           <span className="text-[11px] text-neutral-400 font-mono">
-                            Slug: /r/<strong className="text-white">{rest.slug}</strong>
+                            Slug: /r/<strong className="text-neutral-700 font-bold">{rest.slug}</strong>
                           </span>
                         </div>
                       </div>
@@ -557,7 +575,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => onOpenCustomerPreview(rest)}
-                          className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 transition cursor-pointer"
+                          className="p-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border border-neutral-200 transition cursor-pointer"
                           title="Ver Carta Digital"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -567,7 +585,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             setEditingRestaurant(rest);
                             setEditRestaurantError(null);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold border border-neutral-200/60 transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Editar</span>
@@ -575,7 +593,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {onDeleteRestaurant && (
                           <button
                             onClick={() => setRestaurantToDelete(rest)}
-                            className="p-1.5 rounded-lg bg-red-950/50 hover:bg-red-900/80 text-red-400 hover:text-red-200 border border-red-900/50 transition cursor-pointer"
+                            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer"
                             title="Eliminar Restaurante"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -585,32 +603,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     {/* Metadata bar */}
-                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-neutral-800/80 text-[11px]">
+                    <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-neutral-100 text-[11px]">
                       <div>
-                        <span className="text-neutral-500 block">Propietario</span>
-                        <span className="font-semibold text-neutral-200 truncate block">
+                        <span className="text-neutral-400 block mb-0.5">Propietario</span>
+                        <span className="font-bold text-neutral-800 truncate block">
                           {owner?.name || 'Valeria Rivas'}
                         </span>
                       </div>
                       <div>
-                        <span className="text-neutral-500 block">Plantilla Carta</span>
-                        <span className="font-semibold text-amber-400 truncate block">
+                        <span className="text-neutral-400 block mb-0.5">Plantilla Carta</span>
+                        <span className="font-bold text-neutral-800 truncate block">
                           {currentTmpl.name}
                         </span>
                       </div>
                       <div>
-                        <span className="text-neutral-500 block">Capacidad</span>
-                        <span className="font-semibold text-neutral-200 block">
+                        <span className="text-neutral-400 block mb-0.5">Capacidad</span>
+                        <span className="font-bold text-neutral-800 block">
                           {rest.metrics.totalTables} Mesas ({rest.metrics.occupancyRate}%)
                         </span>
                       </div>
                     </div>
 
                     {/* Direct Customer Testing Link Bar */}
-                    <div className="mt-3 pt-2.5 border-t border-neutral-800/80 flex items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-neutral-400 font-mono text-[11px] truncate">
-                        <span className="text-amber-400 font-bold">Link:</span>
-                        <span className="text-neutral-200 truncate">/?r={rest.slug}</span>
+                    <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-neutral-500 font-mono text-[11px] truncate">
+                        <span className="text-neutral-600 font-extrabold">Link:</span>
+                        <span className="text-neutral-700 truncate">/?r={rest.slug}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -620,7 +638,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${rest.slug}`;
                             navigator.clipboard?.writeText(url);
                           }}
-                          className="p-1.5 rounded-md bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 transition cursor-pointer"
+                          className="p-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 border border-neutral-200 transition cursor-pointer"
                           title="Copiar Link Directo"
                         >
                           <Copy className="w-3 h-3" />
@@ -629,7 +647,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenCustomerPreview(rest, 'DINE_IN', '01')}
-                          className="px-2.5 py-1 rounded-md bg-amber-400/10 hover:bg-amber-400 hover:text-black text-amber-300 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
+                          className="px-3.5 py-2 rounded-xl bg-[#12111A] hover:bg-[#1A1924] text-white border border-transparent text-[11px] font-extrabold transition cursor-pointer flex items-center gap-1 shadow-sm"
                         >
                           <ExternalLink className="w-3 h-3" />
                           <span>Probar como Cliente</span>
@@ -649,55 +667,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeSection === 'waiters' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {waitersList.filter(w => filterBySearch(w.name) || filterBySearch(w.email)).map(waiter => {
               const assignedRest = restaurants.find(r => waiter.restaurantIds.includes(r.id));
               return (
                 <div
                   key={waiter.id}
-                  className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                  className="p-5 rounded-[22px] border border-neutral-200/80 bg-white hover:border-neutral-300 hover:shadow-md transition duration-200 flex flex-col justify-between gap-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img 
                         src={waiter.avatar} 
                         alt={waiter.name} 
-                        className="w-12 h-12 rounded-xl object-cover border border-neutral-700" 
+                        className="w-12 h-12 rounded-xl object-cover border border-neutral-200" 
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{waiter.name}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                            waiter.status === 'active' ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-neutral-800 text-neutral-400'
+                          <h3 className="text-sm font-extrabold text-neutral-900">{waiter.name}</h3>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                            waiter.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                           }`}>
                             {waiter.status === 'active' ? 'En Turno' : 'Inactivo'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-black border border-neutral-700 font-mono text-neutral-300 font-bold">
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/60 font-mono text-neutral-700 font-bold">
                             DNI: {waiter.dni}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-400 mt-0.5 flex items-center gap-1.5">
-                          <Store className="w-3 h-3 text-neutral-500" />
-                          <span className="text-white font-medium">{assignedRest?.name || 'Sin Asignar'}</span>
+                        <p className="text-xs text-neutral-500 mt-1.5 flex items-center gap-1.5">
+                          <Store className="w-3 h-3 text-neutral-400" />
+                          <span className="text-neutral-800 font-bold">{assignedRest?.name || 'Sin Asignar'}</span>
                         </p>
-                        <p className="text-xs text-neutral-400 mt-0.5">
-                          Turno: <strong className="text-neutral-300">{waiter.assignedShift || 'TARDE'}</strong> · PIN: <strong className="text-neutral-300 font-mono">{waiter.pinCode || '0000'}</strong>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Turno: <strong className="text-neutral-700 font-bold">{waiter.assignedShift || 'TARDE'}</strong> · PIN: <strong className="text-neutral-700 font-mono font-bold">{waiter.pinCode || '0000'}</strong>
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setEditingWaiter(waiter)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-white hover:text-black text-xs font-semibold text-white border border-neutral-700 transition cursor-pointer shrink-0"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => setEditingWaiter(waiter)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold border border-neutral-200/60 transition cursor-pointer shrink-0"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+
+                      {onDeleteUser && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al mesero "${waiter.name}"?`)) {
+                              onDeleteUser(waiter.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          title="Eliminar Mesero"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400">
+                  <div className="pt-2.5 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
                     <span>Estado: {waiter.lastActive}</span>
                     <span>Tel: {waiter.phone}</span>
                   </div>
@@ -713,55 +747,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeSection === 'delivery' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {deliveryList.filter(d => filterBySearch(d.name) || filterBySearch(d.email)).map(rider => {
               const assignedRests = restaurants.filter(r => rider.restaurantIds.includes(r.id));
               return (
                 <div
                   key={rider.id}
-                  className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                  className="p-5 rounded-[22px] border border-neutral-200/80 bg-white hover:border-neutral-300 hover:shadow-md transition duration-200 flex flex-col justify-between gap-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img 
                         src={rider.avatar} 
                         alt={rider.name} 
-                        className="w-12 h-12 rounded-xl object-cover border border-neutral-700" 
+                        className="w-12 h-12 rounded-xl object-cover border border-neutral-200" 
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{rider.name}</h3>
-                          <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-blue-950 text-blue-400 border border-blue-800">
+                          <h3 className="text-sm font-extrabold text-neutral-900">{rider.name}</h3>
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60">
                             {rider.vehicleType || 'MOTO'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-black border border-neutral-700 font-mono text-neutral-300 font-bold">
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/60 font-mono text-neutral-700 font-bold">
                             DNI: {rider.dni}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-400 mt-0.5">
-                          Placa: <strong className="text-neutral-200 font-mono">{rider.licensePlate || 'SIN-PLACA'}</strong> · Tel: {rider.phone}
+                        <p className="text-xs text-neutral-500 mt-1.5">
+                          Placa: <strong className="text-neutral-700 font-mono font-bold">{rider.licensePlate || 'SIN-PLACA'}</strong> · Tel: {rider.phone}
                         </p>
-                        <p className="text-[11px] text-neutral-400 mt-0.5">
+                        <p className="text-[11px] text-neutral-500 mt-0.5">
                           Estado: {rider.lastActive}
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setEditingDelivery(rider)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-white hover:text-black text-xs font-semibold text-white border border-neutral-700 transition cursor-pointer shrink-0"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => setEditingDelivery(rider)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold border border-neutral-200/60 transition cursor-pointer shrink-0"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+
+                      {onDeleteUser && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al repartidor "${rider.name}"?`)) {
+                              onDeleteUser(rider.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          title="Eliminar Repartidor"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-neutral-800/80 flex flex-wrap gap-1.5 items-center">
-                    <span className="text-[11px] text-neutral-500">Sedes operativas:</span>
+                  <div className="pt-2.5 border-t border-neutral-100 flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-bold">Sedes operativas:</span>
                     {assignedRests.map(r => (
-                      <span key={r.id} className="text-[10px] px-1.5 py-0.5 rounded bg-black border border-neutral-800 text-neutral-300">
+                      <span key={r.id} className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-700 font-bold">
                         {r.name}
                       </span>
                     ))}
@@ -778,59 +828,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeSection === 'customers' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {customersList.filter(c => filterBySearch(c.name) || filterBySearch(c.email)).map(client => {
               return (
                 <div
                   key={client.id}
-                  className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                  className="p-5 rounded-[22px] border border-neutral-200/80 bg-white hover:border-neutral-300 hover:shadow-md transition duration-200 flex flex-col justify-between gap-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img 
                         src={client.avatar} 
                         alt={client.name} 
-                        className="w-12 h-12 rounded-xl object-cover border border-neutral-700" 
+                        className="w-12 h-12 rounded-xl object-cover border border-neutral-200" 
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{client.name}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
-                            client.vipTier === 'BLACK_VIP' ? 'bg-neutral-800 text-amber-300 border border-amber-500/50' :
-                            client.vipTier === 'GOLD' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
-                            client.vipTier === 'SILVER' ? 'bg-neutral-800 text-neutral-300 border border-neutral-700' :
-                            'bg-neutral-900 text-neutral-400 border border-neutral-800'
+                          <h3 className="text-sm font-extrabold text-neutral-900">{client.name}</h3>
+                          <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono ${
+                            client.vipTier === 'BLACK_VIP' ? 'bg-neutral-900 text-amber-400 border border-amber-600/30' :
+                            client.vipTier === 'GOLD' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
+                            client.vipTier === 'SILVER' ? 'bg-neutral-50 text-neutral-600 border border-neutral-200/60' :
+                            'bg-neutral-100 text-neutral-500 border border-neutral-200'
                           }`}>
                             {client.vipTier || 'STANDARD'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-black border border-neutral-700 font-mono text-neutral-300 font-bold">
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/60 font-mono text-neutral-700 font-bold">
                             DNI: {client.dni}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-400 mt-0.5 flex items-center gap-1.5">
-                          <Mail className="w-3 h-3 text-neutral-500" />
+                        <p className="text-xs text-neutral-500 mt-1.5 flex items-center gap-1.5">
+                          <Mail className="w-3 h-3 text-neutral-400" />
                           <span>{client.email}</span>
                         </p>
-                        <p className="text-xs text-neutral-400 mt-0.5">
-                          Tel: {client.phone} · Pedidos: <strong className="text-white">{client.totalOrdersCount || 0}</strong>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          Tel: {client.phone} · Pedidos: <strong className="text-neutral-800 font-bold">{client.totalOrdersCount || 0}</strong>
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setEditingCustomer(client)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-white hover:text-black text-xs font-semibold text-white border border-neutral-700 transition cursor-pointer shrink-0"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => setEditingCustomer(client)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold border border-neutral-200/60 transition cursor-pointer shrink-0"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+
+                      {onDeleteUser && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al cliente "${client.name}"?`)) {
+                              onDeleteUser(client.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          title="Eliminar Cliente"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-400">{client.lastActive}</span>
-                    <span className="text-emerald-400 font-medium">
+                  <div className="pt-2.5 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
+                    <span>{client.lastActive}</span>
+                    <span className="text-emerald-600 font-bold">
                       Saldo a Favor: ${client.creditBalance?.toFixed(2) || '0.00'}
                     </span>
                   </div>
@@ -846,59 +912,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeSection === 'templates' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {templates.filter(t => filterBySearch(t.name) || filterBySearch(t.category)).map(tmpl => {
               const activeCount = restaurants.filter(r => r.templateId === tmpl.id).length;
 
               return (
                 <div
                   key={tmpl.id}
-                  className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden flex flex-col justify-between group hover:border-neutral-700 transition"
+                  className="rounded-3xl border border-neutral-200/80 bg-white overflow-hidden flex flex-col justify-between group hover:border-neutral-300 hover:shadow-md transition duration-200 shadow-sm"
                 >
-                  <div className="relative h-44 overflow-hidden bg-neutral-950">
+                  <div className="relative h-44 overflow-hidden bg-neutral-100">
                     <img 
                       src={tmpl.thumbnailUrl} 
                       alt={tmpl.name} 
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                     <div className="absolute top-3 left-3">
-                      <span className="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-black/80 text-amber-300 border border-amber-500/40 backdrop-blur-md">
+                      <span className="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-white/90 text-neutral-800 border border-neutral-200 backdrop-blur-sm">
                         {tmpl.badge}
                       </span>
                     </div>
                     <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                      <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow" style={{ backgroundColor: tmpl.primaryColor }} />
-                      <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow" style={{ backgroundColor: tmpl.darkBgColor }} />
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-md" style={{ backgroundColor: tmpl.primaryColor }} />
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-md" style={{ backgroundColor: tmpl.darkBgColor }} />
                     </div>
                     <div className="absolute bottom-3 left-3 right-3">
-                      <span className="text-[10px] text-neutral-400 font-mono uppercase tracking-wider">
+                      <span className="text-[10px] text-neutral-300 font-mono uppercase tracking-wider">
                         {tmpl.category}
                       </span>
-                      <h3 className="text-sm font-bold text-white mt-0.5 leading-tight">
+                      <h3 className="text-sm font-extrabold text-white mt-0.5 leading-tight">
                         {tmpl.name}
                       </h3>
                     </div>
                   </div>
 
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                     <div>
-                      <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
                         {tmpl.description}
                       </p>
 
-                      <div className="flex flex-wrap gap-1.5 mt-3">
+                      <div className="flex flex-wrap gap-1.5 mt-3.5">
                         {tmpl.tags.map((tag, i) => (
-                          <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-black border border-neutral-800 text-neutral-300">
+                          <span key={i} className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-600 font-bold">
                             {tag}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between">
-                      <div className="text-[11px] text-neutral-400">
-                        <span className="font-semibold text-white">{activeCount}</span> {activeCount === 1 ? 'local asignado' : 'locales asignados'}
+                    <div className="pt-3.5 border-t border-neutral-100 flex items-center justify-between">
+                      <div className="text-[11px] text-neutral-500">
+                        <span className="font-bold text-neutral-800">{activeCount}</span> {activeCount === 1 ? 'local asignado' : 'locales asignados'}
                       </div>
 
                       <div className="flex items-center gap-1.5">
@@ -910,7 +976,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onDeleteTemplate(tmpl.id);
                               }
                             }}
-                            className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-800/80 transition cursor-pointer"
+                            className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer"
                             title="Borrar plantilla"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -919,7 +985,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                           type="button"
                           onClick={() => setEditingTemplate(tmpl)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#12111A] hover:bg-[#1A1924] text-white text-xs font-bold transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Editar</span>

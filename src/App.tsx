@@ -216,36 +216,50 @@ const STORAGE_KEYS = {
 };
 
 function getInitialStorageState() {
-  // Purge any stale local browser menu caches so remote cloud database is always authoritative
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      localStorage.removeItem(STORAGE_KEYS.RESTS);
-      localStorage.removeItem(STORAGE_KEYS.ITEMS);
-      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
-      localStorage.removeItem(STORAGE_KEYS.USERS);
-      localStorage.removeItem(STORAGE_KEYS.ORDERS);
-    } catch {}
-  }
-
+  let cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
+  let cachedCategories = INITIAL_CATEGORIES.filter(c => INITIAL_RESTAURANTS.some(r => r.id === c.restaurantId));
+  let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS).filter(i => INITIAL_RESTAURANTS.some(r => r.id === i.restaurantId));
+  let cachedUsers = deduplicateUsers(INITIAL_USERS);
+  let cachedOrders = INITIAL_ORDERS.filter(o => INITIAL_RESTAURANTS.some(r => r.id === o.restaurantId));
   let cachedAuth: User | null = INITIAL_USERS[0] || null;
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
+      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
+      if (storedRests) {
+        cachedRests = JSON.parse(storedRests);
+      }
+      const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCategories) {
+        cachedCategories = JSON.parse(storedCategories);
+      }
+      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (storedItems) {
+        cachedItems = JSON.parse(storedItems);
+      }
+      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (storedUsers) {
+        cachedUsers = JSON.parse(storedUsers);
+      }
+      const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
+      if (storedOrders) {
+        cachedOrders = JSON.parse(storedOrders);
+      }
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
       }
     } catch (e) {
-      console.warn('[Storage] Error reading initial auth state:', e);
+      console.warn('[Storage] Error reading initial cache:', e);
     }
   }
 
   return {
-    cachedRests: sanitizeRestaurants(INITIAL_RESTAURANTS),
-    cachedCategories: INITIAL_CATEGORIES,
-    cachedItems: sanitizeMenuItems(INITIAL_MENU_ITEMS),
-    cachedUsers: deduplicateUsers(INITIAL_USERS),
-    cachedOrders: INITIAL_ORDERS,
+    cachedRests,
+    cachedCategories,
+    cachedItems,
+    cachedUsers,
+    cachedOrders,
     cachedAuth
   };
 }
@@ -340,6 +354,41 @@ export default function App() {
     } catch {}
   }, [currentUser]);
 
+  // Keep restaurants synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(restaurants));
+    } catch {}
+  }, [restaurants]);
+
+  // Keep menuItems synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(menuItems));
+    } catch {}
+  }, [menuItems]);
+
+  // Keep categories synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    } catch {}
+  }, [categories]);
+
+  // Keep users synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    } catch {}
+  }, [users]);
+
+  // Keep orders synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    } catch {}
+  }, [orders]);
+
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -384,45 +433,24 @@ export default function App() {
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
       if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
-        const rawLoadedRests = cloudData.restaurants?.length 
+        const rawLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
           ? sanitizeRestaurants(cloudData.restaurants) 
           : [];
-        const rawLoadedUsers = cloudData.users?.length 
+        const rawLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
           ? cloudData.users 
           : [];
+        const rawLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
+          ? cloudData.categories
+          : [];
+        const rawLoadedItems = cloudData.items && Array.isArray(cloudData.items)
+          ? sanitizeMenuItems(cloudData.items)
+          : [];
 
-        // Guaranteed non-destructive merge for restaurants: Keep INITIAL_RESTAURANTS + local state + remote cloud
-        const restMap = new Map<string, Restaurant>();
-        INITIAL_RESTAURANTS.forEach(r => restMap.set(r.id, r));
-        restaurants.forEach(r => restMap.set(r.id, r));
-        rawLoadedRests.forEach(r => restMap.set(r.id, r));
-        const mergedRests = Array.from(restMap.values());
-
-        // Guaranteed non-destructive merge for users
-        const userMap = new Map<string, User>();
-        INITIAL_USERS.forEach(u => userMap.set(u.id, u));
-        users.forEach(u => userMap.set(u.id, u));
-        rawLoadedUsers.forEach(u => userMap.set(u.id, u));
-        const mergedUsers = deduplicateUsers(Array.from(userMap.values()));
-
-        const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(mergedUsers, mergedRests);
-
-        setRestaurants(cleanedRests);
-        setUsers(cleanedUsers);
-
-        // Respect cloud categories strictly if present; otherwise fallback to local
-        let finalCategories = categories;
-        if (cloudData.categories && Array.isArray(cloudData.categories) && cloudData.categories.length > 0) {
-          finalCategories = cloudData.categories;
-          setCategories(finalCategories);
-        }
-
-        // Respect cloud items strictly if present; otherwise fallback to local
-        let finalMenuItems = menuItems;
-        if (cloudData.items && Array.isArray(cloudData.items) && cloudData.items.length > 0) {
-          finalMenuItems = sanitizeMenuItems(cloudData.items);
-          setMenuItems(finalMenuItems);
-        }
+        // Set authoritative states
+        setRestaurants(rawLoadedRests);
+        setUsers(deduplicateUsers(rawLoadedUsers));
+        setCategories(rawLoadedCategories);
+        setMenuItems(rawLoadedItems);
 
         if (cloudData.orders?.length) {
           setOrders(prev => {
@@ -436,21 +464,22 @@ export default function App() {
         // Update previewRestaurant immediately with the authoritative cloud branding & data
         setPreviewRestaurant(prev => {
           if (initialRequestedSlug) {
-            const match = findRestaurantBySlug(cleanedRests, initialRequestedSlug);
+            const match = findRestaurantBySlug(rawLoadedRests, initialRequestedSlug);
             if (match) return match;
           }
-          if (!prev) return cleanedRests[0];
-          const match = cleanedRests.find(r => r.id === prev.id || r.slug === prev.slug);
-          return match || cleanedRests[0];
+          if (!prev) return rawLoadedRests[0] || defaultFallbackRest;
+          const match = rawLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
+          return match || rawLoadedRests[0] || defaultFallbackRest;
         });
 
-        // Sync full authoritative state back to cloud
+      } else {
+        // If there is no cloud snapshot, initialize it with the default template mock data so the platform is ready
         saveFullCloudMenu({
-          restaurants: cleanedRests,
-          categories: finalCategories,
-          items: finalMenuItems,
-          users: cleanedUsers,
-          orders: cloudData.orders || []
+          restaurants: sanitizeRestaurants(INITIAL_RESTAURANTS),
+          categories: INITIAL_CATEGORIES.filter(c => INITIAL_RESTAURANTS.some(r => r.id === c.restaurantId)),
+          items: sanitizeMenuItems(INITIAL_MENU_ITEMS).filter(i => INITIAL_RESTAURANTS.some(r => r.id === i.restaurantId)),
+          users: deduplicateUsers(INITIAL_USERS),
+          orders: INITIAL_ORDERS.filter(o => INITIAL_RESTAURANTS.some(r => r.id === o.restaurantId))
         }).catch(() => {});
       }
     }).catch(err => {
@@ -462,22 +491,15 @@ export default function App() {
       if (!isMounted) return;
       if (event.type === 'FULL_SYNC' && event.data) {
         const d = event.data;
-        if (d.restaurants?.length) {
+        if (d.restaurants && Array.isArray(d.restaurants)) {
           const cleanR = sanitizeRestaurants(d.restaurants);
-          setRestaurants(prev => {
-            const map = new Map<string, Restaurant>();
-            INITIAL_RESTAURANTS.forEach(r => map.set(r.id, r));
-            prev.forEach(r => map.set(r.id, r));
-            cleanR.forEach(r => map.set(r.id, r));
-            const merged = Array.from(map.values());
-            setPreviewRestaurant(p => {
-              if (initialRequestedSlug) {
-                const match = findRestaurantBySlug(merged, initialRequestedSlug);
-                if (match) return match;
-              }
-              return p ? (merged.find(r => r.id === p.id) || merged[0]) : merged[0];
-            });
-            return merged;
+          setRestaurants(cleanR);
+          setPreviewRestaurant(p => {
+            if (initialRequestedSlug) {
+              const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
+              if (match) return match;
+            }
+            return p ? (cleanR.find(r => r.id === p.id) || cleanR[0]) : cleanR[0];
           });
         }
         if (d.categories && Array.isArray(d.categories)) {
@@ -486,7 +508,10 @@ export default function App() {
         if (d.items && Array.isArray(d.items)) {
           setMenuItems(sanitizeMenuItems(d.items));
         }
-        if (d.orders?.length) {
+        if (d.users && Array.isArray(d.users)) {
+          setUsers(deduplicateUsers(d.users));
+        }
+        if (d.orders && Array.isArray(d.orders)) {
           setOrders(d.orders);
         }
       } else if (event.type === 'ITEM_UPDATED' && event.item) {
@@ -709,18 +734,16 @@ export default function App() {
     }
 
     // 3. Clean user restaurant assignments
-    setUsers(prevUsers => {
-      return prevUsers.map(u => {
-        if (u.restaurantIds && u.restaurantIds.includes(restaurantId)) {
-          const updatedUser: User = {
-            ...u,
-            restaurantIds: u.restaurantIds.filter(id => id !== restaurantId)
-          };
-          return updatedUser;
-        }
-        return u;
-      });
+    const nextUsers = users.map(u => {
+      if (u.restaurantIds && u.restaurantIds.includes(restaurantId)) {
+        return {
+          ...u,
+          restaurantIds: u.restaurantIds.filter(id => id !== restaurantId)
+        };
+      }
+      return u;
     });
+    setUsers(nextUsers);
 
     if (currentUser && currentUser.restaurantIds && currentUser.restaurantIds.includes(restaurantId)) {
       setCurrentUser(prev => prev ? {
@@ -729,11 +752,16 @@ export default function App() {
       } : null);
     }
 
+    const nextItems = menuItems.filter(i => i.restaurantId !== restaurantId);
+    const nextCategories = categories.filter(c => c.restaurantId !== restaurantId);
+
     // 4. Delete from Cloud
     saveFullCloudMenu({
       restaurants: nextRestaurants,
-      items: menuItems.filter(i => i.restaurantId !== restaurantId),
-      categories: categories.filter(c => c.restaurantId !== restaurantId),
+      items: nextItems,
+      categories: nextCategories,
+      users: nextUsers,
+      orders
     });
 
     showToast(`Restaurante "${restName}" eliminado exitosamente.`);
@@ -814,11 +842,20 @@ export default function App() {
 
   const handleDeleteUser = (userId: string) => {
     const targetUser = users.find(u => u.id === userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    const nextUsers = users.filter(u => u.id !== userId);
+    setUsers(nextUsers);
     if (currentUser?.id === userId) {
       setCurrentUser(null);
     }
-    showToast(`Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado. Restaurantes y cartas sin cambios.`);
+    // Update cloud authoritatively
+    saveFullCloudMenu({
+      restaurants,
+      categories,
+      items: menuItems,
+      users: nextUsers,
+      orders
+    }).catch(() => {});
+    showToast(`Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado.`);
   };
 
   const handleUpdateTemplate = (updated: MenuTemplate) => {
@@ -1401,6 +1438,7 @@ export default function App() {
                 onDeleteRestaurant={handleDeleteRestaurant}
                 onUpdateUser={handleUpdateUser}
                 onAddUser={handleAddUser}
+                onDeleteUser={handleDeleteUser}
                 onUpdateTemplate={handleUpdateTemplate}
                 onDeleteTemplate={handleDeleteTemplate}
                 onAddMenuItem={handleAddMenuItem}
