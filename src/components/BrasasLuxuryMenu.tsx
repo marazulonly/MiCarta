@@ -614,19 +614,23 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                   const customButtonColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor;
                   const customButtonTextColor = restaurant.branding?.buttonTextColor || '#000000';
                   const customTextColor = restaurant.branding?.textColor;
-                  const customDishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor;
+                  const customDishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor;
                   const dishNameFont = restaurant.branding?.dishNameFont && restaurant.branding.dishNameFont !== 'inherit' ? restaurant.branding.dishNameFont : "'Cinzel', 'Playfair Display', serif";
                   const dishDescFont = restaurant.branding?.dishDescFont && restaurant.branding.dishDescFont !== 'inherit' ? restaurant.branding.dishDescFont : 'inherit';
                   const dishPriceFont = restaurant.branding?.dishPriceFont || 'inherit';
+                  const priceColor = restaurant.branding?.priceColor || customButtonColor || '#f5df9e';
+                  const cardRadius = restaurant.branding?.cardBorderRadius || '12px';
 
-                  const cardBorderStyle = {
+                  const cardBorderStyle: React.CSSProperties = {
                     backgroundColor: customDishCardBgColor || 'rgba(10, 39, 32, 0.85)',
-                    borderColor: customButtonColor ? `${customButtonColor}a0` : undefined,
-                    color: customTextColor || undefined
+                    borderColor: customButtonColor ? `${customButtonColor}90` : '#1b4b3e',
+                    color: customTextColor || '#fffdfa',
+                    borderRadius: cardRadius
                   };
-                  const btnStyle = customButtonColor 
-                    ? { backgroundColor: customButtonColor, color: customButtonTextColor } 
-                    : { color: customButtonTextColor };
+
+                  const btnStyle: React.CSSProperties = customButtonColor 
+                    ? { backgroundColor: customButtonColor, color: customButtonTextColor, backgroundImage: 'none' } 
+                    : { background: 'linear-gradient(to right, #e7cb82, #b88e3d)', color: '#071d17' };
 
                   return (
                     <div key={item.id} className="relative group">
@@ -676,7 +680,10 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                         /* LAYOUT A: Even Items (Circle Left, Card Right) */
                         <div className="flex items-center">
                           <div className="relative z-20 shrink-0 -mr-6 sm:-mr-8 cursor-pointer" onClick={() => handleOpenItemCustomizer(item)}>
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-[#dfb86c]/80 shadow-[0_8px_20px_rgba(0,0,0,0.8)] bg-black">
+                            <div 
+                              style={{ borderColor: customButtonColor || '#dfb86c' }}
+                              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 shadow-[0_8px_20px_rgba(0,0,0,0.8)] bg-black"
+                            >
                               <img 
                                 src={item.imageUrl} 
                                 alt={item.name}
@@ -689,36 +696,36 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
                           <div 
                             style={cardBorderStyle}
-                            className="flex-1 pl-8 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
+                            className="flex-1 pl-8 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-4 border backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
                           >
                             <div className="flex flex-col justify-between h-full space-y-1.5">
                               <div>
                                 <h3 
-                                  className="text-sm sm:text-base font-semibold text-[#fffdfa] leading-tight flex items-center justify-between"
-                                  style={{ fontFamily: dishNameFont }}
+                                  className="text-sm sm:text-base font-semibold leading-tight flex items-center justify-between"
+                                  style={{ fontFamily: dishNameFont, color: customTextColor || '#fffdfa' }}
                                 >
                                   <span>{item.name}</span>
                                 </h3>
                                 <p 
-                                  style={{ fontFamily: dishDescFont }}
-                                  className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed"
+                                  style={{ fontFamily: dishDescFont, color: customTextColor ? `${customTextColor}d0` : '#cfdecb' }}
+                                  className="text-[11px] sm:text-xs font-sans mt-1 leading-relaxed opacity-90"
                                 >
                                   {item.description}
                                 </p>
                               </div>
 
-                              <div className="pt-1 flex items-end justify-between border-t border-[#dfb86c]/20">
-                                <div className="flex items-center text-[#dfb86c] text-xs gap-0.5">
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
+                              <div className="pt-1 flex items-end justify-between border-t border-white/10">
+                                <div className="flex items-center text-xs gap-0.5" style={{ color: customButtonColor || '#dfb86c' }}>
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
                                 </div>
 
                                 <div className="flex items-center gap-3">
                                   <span 
-                                    style={{ fontFamily: dishPriceFont }}
-                                    className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight"
+                                    style={{ fontFamily: dishPriceFont, color: priceColor }}
+                                    className="text-lg sm:text-xl font-bold font-serif tracking-tight"
                                   >
                                     S/ {item.price.toFixed(2)}
                                   </span>
@@ -726,7 +733,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                                   <button
                                     onClick={() => handleOpenItemCustomizer(item)}
                                     style={btnStyle}
-                                    className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
+                                    className="px-3 py-1 rounded-lg text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
                                   >
                                     <Plus className="w-3 h-3" />
                                     <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -741,36 +748,36 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                         <div className="flex items-center">
                           <div 
                             style={cardBorderStyle}
-                            className="flex-1 pr-8 sm:pr-10 pl-3 sm:pl-4 py-3 sm:py-4 rounded-xl bg-[#0a2720]/85 border border-[#1b4b3e]/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
+                            className="flex-1 pr-8 sm:pr-10 pl-3 sm:pl-4 py-3 sm:py-4 border backdrop-blur-md shadow-2xl relative overflow-hidden text-left"
                           >
                             <div className="flex flex-col justify-between h-full space-y-1.5">
                               <div>
                                 <h3 
-                                  className="text-sm sm:text-base font-semibold text-[#fffdfa] leading-tight flex items-center justify-between"
-                                  style={{ fontFamily: dishNameFont }}
+                                  className="text-sm sm:text-base font-semibold leading-tight flex items-center justify-between"
+                                  style={{ fontFamily: dishNameFont, color: customTextColor || '#fffdfa' }}
                                 >
                                   <span>{item.name}</span>
                                 </h3>
                                 <p 
-                                  style={{ fontFamily: dishDescFont }}
-                                  className="text-[11px] sm:text-xs text-[#cfdecb]/90 font-sans mt-1 leading-relaxed"
+                                  style={{ fontFamily: dishDescFont, color: customTextColor ? `${customTextColor}d0` : '#cfdecb' }}
+                                  className="text-[11px] sm:text-xs font-sans mt-1 leading-relaxed opacity-90"
                                 >
                                   {item.description}
                                 </p>
                               </div>
 
-                              <div className="pt-1 flex items-end justify-between border-t border-[#dfb86c]/20">
-                                <div className="flex items-center text-[#dfb86c] text-xs gap-0.5">
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
-                                  <Star className="w-3 h-3 fill-[#dfb86c]" />
+                              <div className="pt-1 flex items-end justify-between border-t border-white/10">
+                                <div className="flex items-center text-xs gap-0.5" style={{ color: customButtonColor || '#dfb86c' }}>
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <Star className="w-3 h-3 fill-current" />
                                 </div>
 
                                 <div className="flex items-center gap-3">
                                   <span 
-                                    style={{ fontFamily: dishPriceFont }}
-                                    className="text-lg sm:text-xl font-bold text-[#f5df9e] font-serif tracking-tight"
+                                    style={{ fontFamily: dishPriceFont, color: priceColor }}
+                                    className="text-lg sm:text-xl font-bold font-serif tracking-tight"
                                   >
                                     S/ {item.price.toFixed(2)}
                                   </span>
@@ -778,7 +785,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                                   <button
                                     onClick={() => handleOpenItemCustomizer(item)}
                                     style={btnStyle}
-                                    className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
+                                    className="px-3 py-1 rounded-lg text-xs font-serif font-bold shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-1"
                                   >
                                     <Plus className="w-3 h-3" />
                                     <span>{inCart ? `(${inCart.quantity}) Pedir` : 'Pedir'}</span>
@@ -789,7 +796,10 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                           </div>
 
                           <div className="relative z-20 shrink-0 -ml-6 sm:-ml-8 cursor-pointer" onClick={() => handleOpenItemCustomizer(item)}>
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-[#dfb86c]/80 shadow-[0_8px_20px_rgba(0,0,0,0.8)] bg-black">
+                            <div 
+                              style={{ borderColor: customButtonColor || '#dfb86c' }}
+                              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 shadow-[0_8px_20px_rgba(0,0,0,0.8)] bg-black"
+                            >
                               <img 
                                 src={item.imageUrl} 
                                 alt={item.name}
@@ -801,7 +811,6 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                           </div>
                         </div>
                       )}
-
                     </div>
                   );
                 })}

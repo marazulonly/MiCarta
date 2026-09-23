@@ -1,4 +1,4 @@
-export type TabType = 'home' | 'restaurants' | 'users' | 'orders' | 'architecture';
+export type TabType = 'home' | 'restaurants' | 'users' | 'orders' | 'architecture' | 'templates';
 
 export type UserRole = 
   | 'ADMIN'               // Superadministrador de la plataforma SaaS
@@ -37,6 +37,11 @@ export interface RestaurantBranding {
   restaurantNameFont?: string;  // Tipo de letra para el nombre del restaurante
   restaurantNameColor?: string; // Color del texto del nombre del restaurante
   dishCardBgColor?: string;     // Fondo del recuadro / ficha del plato
+  dishCardBorderColor?: string; // Color de borde del plato
+  cardBorderRadius?: string;    // Radio de borde ('0px', '8px', '16px', '24px')
+  cardStyle?: 'horizontal' | 'grid' | 'compact' | 'minimal' | 'photo-hero';
+  priceColor?: string;          // Color del precio (ej: #dfb86c, #ffffff)
+  headerStyle?: 'banner' | 'centered' | 'minimal' | 'split';
   // Header customization
   headerLogoUrl?: string;          // Logo o imagen de cabecera específica (JPG, PNG, SVG)
   headerDisplayMode?: 'IMAGE_AND_TEXT' | 'IMAGE_ONLY'; // Mostrar logo + nombre/slogan o solo la imagen
@@ -98,10 +103,17 @@ export interface MenuTemplate {
   name: string;
   description: string;
   category: string;
-  themeStyle: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist';
+  themeStyle: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist' | 'warm-trattoria' | 'green-organic' | 'custom';
   fontDisplay: string;
   primaryColor: string;
   darkBgColor: string;
+  cardBgColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  textColor?: string;
+  cardBorderRadius?: string;
+  cardStyle?: 'horizontal' | 'grid' | 'compact' | 'minimal' | 'photo-hero';
+  headerStyle?: 'banner' | 'centered' | 'minimal' | 'split';
   layoutMode: 'grid' | 'alternating' | 'book' | 'compact';
   thumbnailUrl: string;
   badge: string;

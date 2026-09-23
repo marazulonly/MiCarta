@@ -26,6 +26,7 @@ import { AdminSimulationView } from './components/AdminSimulationView';
 import { OwnerDashboard } from './components/OwnerDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
+import { TemplateSplitEditor } from './components/TemplateSplitEditor';
 import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import { 
   saveAllDataToFirebase, 
@@ -229,40 +230,61 @@ const STORAGE_KEYS = {
 };
 
 function getInitialStorageState() {
-  const cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
-  const cachedCategories = INITIAL_CATEGORIES;
-  const cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
+  let cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
+  let cachedCategories = INITIAL_CATEGORIES;
+  let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
   let cachedUsers = INITIAL_USERS;
   let cachedOrders = INITIAL_ORDERS;
   let cachedAuth: User | null = INITIAL_USERS[0] || null;
 
-  // Only read auth and user credentials from localStorage, never stale menu/restaurant data
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
+      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
+      if (storedRests) {
+        const parsedRests = JSON.parse(storedRests);
+        if (Array.isArray(parsedRests) && parsedRests.length > 0) {
+          cachedRests = sanitizeRestaurants(parsedRests);
+        }
+      }
+
+      const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCats) {
+        const parsedCats = JSON.parse(storedCats);
+        if (Array.isArray(parsedCats)) {
+          cachedCategories = parsedCats;
+        }
+      }
+
+      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (storedItems) {
+        const parsedItems = JSON.parse(storedItems);
+        if (Array.isArray(parsedItems)) {
+          cachedItems = sanitizeMenuItems(parsedItems);
+        }
+      }
+
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
         const parsed = JSON.parse(storedUsers);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const map = new Map<string, User>();
-          INITIAL_USERS.forEach(u => map.set(u.id, u));
-          parsed.forEach(u => map.set(u.id, u));
-          cachedUsers = Array.from(map.values());
+          // Strictly respect user deletions: use stored users as the source of truth
+          cachedUsers = parsed;
         }
       }
+
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
       }
     } catch (e) {
-      console.warn('[Storage] Error reading initial auth:', e);
+      console.warn('[Storage] Error reading initial state:', e);
     }
   }
 
-  const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(cachedUsers, cachedRests);
-  const deduplicatedUsers = deduplicateUsers(cleanedUsers);
+  const deduplicatedUsers = deduplicateUsers(cachedUsers);
 
   return {
-    cachedRests: cleanedRests,
+    cachedRests,
     cachedCategories,
     cachedItems,
     cachedUsers: deduplicatedUsers,
@@ -348,6 +370,7 @@ export default function App() {
   // Customer preview modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
+  const [isTemplateSplitEditorOpen, setIsTemplateSplitEditorOpen] = useState<boolean>(false);
   const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(
     initialFoundRest || defaultFallbackRest
   );
@@ -1628,6 +1651,23 @@ export default function App() {
             <span>{toastMessage}</span>
           </div>
         </div>
+      )}
+
+      {/* Split-Screen Template Editor Modal */}
+      {isTemplateSplitEditorOpen && (
+        <TemplateSplitEditor
+          restaurants={restaurants}
+          templates={templates}
+          menuItems={menuItems}
+          categories={categories}
+          currentRestaurantId={selectedRestaurantId}
+          onUpdateRestaurant={(updated) => {
+            handleUpdateRestaurant(updated);
+            showToast(`✓ Diseño guardado exitosamente en "${updated.name}".`);
+          }}
+          onOpenCustomerPreview={(r) => handleOpenCustomerPreview(r)}
+          onClose={() => setIsTemplateSplitEditorOpen(false)}
+        />
       )}
 
     </div>

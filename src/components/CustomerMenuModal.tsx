@@ -20,6 +20,8 @@ import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '.
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
+import { NeonStreetMenu } from './NeonStreetMenu';
+import { MinimalistBistroMenu } from './MinimalistBistroMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { saveAllDataToFirebase } from '../lib/firebase';
 
@@ -398,16 +400,20 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     }
   };
 
-  // Template resolution: check templateId first, fallback to slug/id/keywords
-  const isMarineTemplate = restaurant.templateId === 'tmpl-marine' || 
-    restaurant.id === 'rest-costa' || 
-    restaurant.slug === 'costa-marina' || 
-    restaurant.slug === 'cevichito-pliz' || 
-    restaurant.name.toLowerCase().includes('costa') || 
-    restaurant.name.toLowerCase().includes('cevichito') ||
-    Boolean(restaurant.tagline && restaurant.tagline.toLowerCase().includes('cevichito'));
+  // Template resolution: strict templateId checking with intuitive fallbacks
+  const tmplId = restaurant.templateId || 'tmpl-luxury';
+  const isNeonTemplate = tmplId === 'tmpl-neon' || tmplId.includes('neon') || tmplId.includes('street');
+  const isMinimalTemplate = tmplId === 'tmpl-minimalist' || tmplId.includes('minimal') || tmplId.includes('bistro');
+  const isMarineTemplate = tmplId === 'tmpl-marine' || 
+    (!restaurant.templateId && (
+      restaurant.id === 'rest-costa' || 
+      restaurant.slug === 'costa-marina' || 
+      restaurant.slug === 'cevichito-pliz' || 
+      restaurant.name.toLowerCase().includes('costa') || 
+      restaurant.name.toLowerCase().includes('cevichito')
+    ));
 
-  const isCriolloTemplate = restaurant.templateId === 'tmpl-criollo' || 
+  const isCriolloTemplate = tmplId === 'tmpl-criollo' || 
     (!restaurant.templateId && (restaurant.id === 'rest-criollo' || restaurant.slug === 'criollo-tradicion' || restaurant.name.toLowerCase().includes('criollo')));
 
   const liveEditProps = {
@@ -435,7 +441,33 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       )}
 
       {/* Render Appropriate Specialized Menu Template */}
-      {isMarineTemplate ? (
+      {isNeonTemplate ? (
+        <NeonStreetMenu
+          isOpen={isOpen}
+          onClose={onClose}
+          restaurant={restaurant}
+          categories={categories}
+          items={items}
+          onOrderCreated={onOrderCreated}
+          initialMode={initialMode}
+          initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+          {...liveEditProps}
+        />
+      ) : isMinimalTemplate ? (
+        <MinimalistBistroMenu
+          isOpen={isOpen}
+          onClose={onClose}
+          restaurant={restaurant}
+          categories={categories}
+          items={items}
+          onOrderCreated={onOrderCreated}
+          initialMode={initialMode}
+          initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+          {...liveEditProps}
+        />
+      ) : isMarineTemplate ? (
         <CostaMarinaMenu
           isOpen={isOpen}
           onClose={onClose}
