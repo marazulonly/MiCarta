@@ -127,11 +127,11 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
   const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
 
-  // 4 Palette Colors for Costa Marina (Cevichito Pliz)
-  const COLOR_TEAL = '#1B667A';      // Dark Teal (Barra superior, marcos, títulos, pestañas activas, badge de precio)
-  const COLOR_CREAM = '#EAEBDC';     // Light Cream (Fondo general, tarjetas de platos, texto claro en botones)
-  const COLOR_TERRACOTTA = '#D98262'; // Terracotta (Botón Pedir, acciones destacadas, alertas)
-  const COLOR_OLIVE = '#8A9B57';      // Olive Green (Subtítulos, íconos, tiempo de preparación, bordes secundarios)
+  // 4 Palette Colors for Costa Marina (Cevichito Pliz) (Grayscale adaptation)
+  const COLOR_TEAL = '#111111';      // Black (Barra superior, marcos, títulos, pestañas activas, badge de precio)
+  const COLOR_CREAM = '#FFFFFF';     // White (Fondo general, tarjetas de platos, texto claro en botones)
+  const COLOR_TERRACOTTA = '#111111'; // Black (Botón Pedir, acciones destacadas, alertas)
+  const COLOR_OLIVE = '#71717A';      // Dark gray (Subtítulos, íconos, tiempo de preparación, bordes secundarios)
 
   let marineStyle: React.CSSProperties = {
     backgroundColor: restaurant.branding?.darkBgColor || COLOR_CREAM,

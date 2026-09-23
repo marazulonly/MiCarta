@@ -146,37 +146,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     ADMIN: { 
       label: 'Administrador SaaS', 
       icon: Shield, 
-      badgeColor: 'bg-white text-black font-bold',
+      badgeColor: 'bg-neutral-900 text-white font-bold',
       roleDesc: 'Vista global completa: Locales, Métricas, Usuarios, Pedidos, Arquitectura y Simulación PC.'
     },
     OWNER: { 
       label: 'Dueño / Propietario', 
       icon: Building2, 
-      badgeColor: 'bg-amber-400 text-black font-bold',
+      badgeColor: 'bg-neutral-800 text-white font-bold',
       roleDesc: 'Panel de Dueño: Gestión de cartas, mesas QR, turnos, horarios y permisos de personal.'
     },
     RESTAURANT_MANAGER: { 
       label: 'Gerente de Local', 
       icon: Building2, 
-      badgeColor: 'bg-emerald-400 text-black font-bold',
+      badgeColor: 'bg-neutral-700 text-white font-bold',
       roleDesc: 'Administración operativa de mesas, stock y despacho en salón.'
     },
     KITCHEN: { 
       label: 'Cocina / KDS', 
       icon: Flame, 
-      badgeColor: 'bg-orange-500 text-white font-bold',
+      badgeColor: 'bg-neutral-600 text-white font-bold',
       roleDesc: 'Pantalla KDS táctil: Comanderas, tiempos de cocción, pase y control de agotados (Lista 86).'
     },
     WAITER: { 
       label: 'Mesero / Salón', 
       icon: ChefHat, 
-      badgeColor: 'bg-sky-400 text-black font-bold',
+      badgeColor: 'bg-neutral-500 text-white font-bold',
       roleDesc: 'Atención de mesas, apertura de cuentas, toma de pedidos y comanda directa.'
     },
     DELIVERY: { 
       label: 'Repartidor / Motorizado', 
       icon: Bike, 
-      badgeColor: 'bg-purple-400 text-black font-bold',
+      badgeColor: 'bg-neutral-400 text-black font-bold',
       roleDesc: 'Despacho de pedidos a domicilio, liquidación de efectivo y rutas de entrega.'
     },
     CUSTOMER: { 
@@ -188,7 +188,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col justify-between selection:bg-[#1E1F24] selection:text-white">
+    <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col justify-between selection:bg-neutral-800 selection:text-white">
       
       {/* Top Brand Bar */}
       <header className="w-full border-b border-neutral-200/60 bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm">
@@ -308,12 +308,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-black flex items-center justify-center mx-auto shadow-lg shadow-amber-400/20">
+            <div className="w-12 h-12 rounded-2xl bg-neutral-800 text-white flex items-center justify-center mx-auto shadow-lg">
               <QrCode className="w-6 h-6" />
             </div>
 
             <div>
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1">
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Códigos QR Reales para Comensales</span>
               </div>
@@ -337,7 +337,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       onClick={() => setSelectedRestForQr(r)}
                       className={`p-2 rounded-xl text-left border text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
                         activeRest.id === r.id
-                          ? 'bg-amber-400/10 border-amber-400 text-amber-300'
+                          ? 'bg-neutral-800 border-neutral-600 text-neutral-100'
                           : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800'
                       }`}
                     >
@@ -358,7 +358,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     type="button"
                     onClick={() => setSelectedChannel('DINE_IN')}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                      selectedChannel === 'DINE_IN' ? 'bg-amber-400 text-black' : 'bg-neutral-800 text-neutral-400'
+                      selectedChannel === 'DINE_IN' ? 'bg-neutral-200 text-black' : 'bg-neutral-800 text-neutral-400'
                     }`}
                   >
                     🍽️ Salón
@@ -367,7 +367,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     type="button"
                     onClick={() => setSelectedChannel('DELIVERY')}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                      selectedChannel === 'DELIVERY' ? 'bg-sky-400 text-black' : 'bg-neutral-800 text-neutral-400'
+                      selectedChannel === 'DELIVERY' ? 'bg-neutral-200 text-black' : 'bg-neutral-800 text-neutral-400'
                     }`}
                   >
                     🛵 Delivery
@@ -384,7 +384,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       onClick={() => setSelectedTableNum(num)}
                       className={`py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                         selectedTableNum === num
-                          ? 'bg-amber-400 text-black shadow'
+                          ? 'bg-neutral-200 text-black shadow'
                           : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                       }`}
                     >
@@ -415,7 +415,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <div className="space-y-1">
               <div className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
-                <Smartphone className="w-4 h-4 text-amber-400" />
+                <Smartphone className="w-4 h-4 text-neutral-400" />
                 <span>
                   {activeRest.name} • {selectedChannel === 'DINE_IN' ? `Mesa ${selectedTableNum}` : 'Delivery'}
                 </span>
@@ -438,7 +438,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     setIsQrModalOpen(false);
                     onOpenCustomerPreview(activeRest, selectedChannel, selectedTableNum);
                   }}
-                  className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-950/20"
+                  className="w-full py-3 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-black text-xs font-black transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-neutral-950/20"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>Probar Carta y Pedido en esta Pantalla</span>
@@ -451,7 +451,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={handleCopyQrLink}
                   className="py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-bold border border-neutral-700 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-neutral-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
                   <span>{copiedLink ? '¡Copiado!' : 'Copiar URL'}</span>
                 </button>
 
@@ -460,7 +460,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={handleDownloadQrPng}
                   className="py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-bold border border-neutral-700 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <Download className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Bajar QR PNG</span>
                 </button>
               </div>

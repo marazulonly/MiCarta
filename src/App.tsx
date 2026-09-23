@@ -433,43 +433,63 @@ export default function App() {
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
       if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
-        const rawLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
-          ? sanitizeRestaurants(cloudData.restaurants) 
-          : [];
-        const rawLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
-          ? cloudData.users 
-          : [];
-        const rawLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
+        // Authoritative filtering to wipe out fake restaurants and users forever
+        const cleanLoadedRests = (cloudData.restaurants && Array.isArray(cloudData.restaurants)
+          ? sanitizeRestaurants(cloudData.restaurants)
+          : []).filter(r => r.id !== 'rest-brasas' && r.id !== 'rest-criollo' && r.id !== 'rest-loop');
+
+        const cleanLoadedUsers = (cloudData.users && Array.isArray(cloudData.users)
+          ? cloudData.users
+          : []).filter(u => {
+            // Keep actual admin or owner of Cevichito Pliz, or users assigned to real remaining restaurants
+            if (u.role === 'ADMIN') return true;
+            if (u.id === 'u-owner-stephanie') return true;
+            return u.restaurantIds?.some(rid => cleanLoadedRests.some(r => r.id === rid || rid === 'all'));
+          });
+
+        const cleanLoadedCategories = (cloudData.categories && Array.isArray(cloudData.categories)
           ? cloudData.categories
-          : [];
-        const rawLoadedItems = cloudData.items && Array.isArray(cloudData.items)
+          : []).filter(c => cleanLoadedRests.some(r => r.id === c.restaurantId));
+
+        const cleanLoadedItems = (cloudData.items && Array.isArray(cloudData.items)
           ? sanitizeMenuItems(cloudData.items)
-          : [];
+          : []).filter(i => cleanLoadedRests.some(r => r.id === i.restaurantId));
+
+        const cleanLoadedOrders = (cloudData.orders && Array.isArray(cloudData.orders)
+          ? cloudData.orders
+          : []).filter(o => cleanLoadedRests.some(r => r.id === o.restaurantId));
+
+        // Detect if any fake/fictional records were purged and force-save the sanitized version back to Upstash Cloud Redis
+        const hadFakes = (cloudData.restaurants?.some((r: any) => r.id === 'rest-brasas' || r.id === 'rest-criollo' || r.id === 'rest-loop')) ||
+                         (cloudData.items?.some((i: any) => i.restaurantId === 'rest-brasas' || i.restaurantId === 'rest-criollo' || i.restaurantId === 'rest-loop'));
+
+        if (hadFakes) {
+          saveFullCloudMenu({
+            restaurants: cleanLoadedRests,
+            categories: cleanLoadedCategories,
+            items: cleanLoadedItems,
+            users: deduplicateUsers(cleanLoadedUsers),
+            orders: cleanLoadedOrders
+          }).catch(() => {});
+        }
 
         // Set authoritative states
-        setRestaurants(rawLoadedRests);
-        setUsers(deduplicateUsers(rawLoadedUsers));
-        setCategories(rawLoadedCategories);
-        setMenuItems(rawLoadedItems);
+        setRestaurants(cleanLoadedRests);
+        setUsers(deduplicateUsers(cleanLoadedUsers));
+        setCategories(cleanLoadedCategories);
+        setMenuItems(cleanLoadedItems);
 
-        if (cloudData.orders?.length) {
-          setOrders(prev => {
-            const ordMap = new Map<string, Order>();
-            prev.forEach(o => ordMap.set(o.id, o));
-            cloudData.orders!.forEach(o => ordMap.set(o.id, o));
-            return Array.from(ordMap.values());
-          });
-        }
+        setOrders(cleanLoadedOrders);
 
         // Update previewRestaurant immediately with the authoritative cloud branding & data
         setPreviewRestaurant(prev => {
           if (initialRequestedSlug) {
-            const match = findRestaurantBySlug(rawLoadedRests, initialRequestedSlug);
+            const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
             if (match) return match;
           }
-          if (!prev) return rawLoadedRests[0] || defaultFallbackRest;
-          const match = rawLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
-          return match || rawLoadedRests[0] || defaultFallbackRest;
+          if (!prev) return cleanLoadedRests[0] || defaultFallbackRest;
+          const match = cleanLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
+          return match || cleanLoadedRests[0] || defaultFallbackRest;
         });
 
       } else {
@@ -1199,7 +1219,7 @@ export default function App() {
   // If no user is logged in, display the Login Screen (Pantalla de Logueo)
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
+      <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
         <LoginScreen
           users={users}
           onLogin={handleLogin}
@@ -1215,7 +1235,7 @@ export default function App() {
   // "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   if (currentUser && currentUser.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
+      <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
         
         {/* Dedicated Role Header with User Profile, Restaurant and Logout */}
         <RoleHeader
@@ -1353,7 +1373,7 @@ export default function App() {
 
   // 3. ADMIN ROLE VIEW: "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   return (
-    <div className="min-h-screen bg-[#E2E4E9] text-neutral-900 flex flex-col selection:bg-[#1E1F24] selection:text-white">
+    <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
       
       {/* Top Header with Profile / Login Trigger and Simulación Checkbox */}
       <TopHeader

@@ -1,8 +1,8 @@
 import { Restaurant, MenuCategory, MenuItem, User, Order, DaySchedule, RestaurantTable, StaffShift, TableZone } from '../types';
 
 export const DEFAULT_WEEKLY_SCHEDULE: DaySchedule[] = [
-  { day: 'Lunes', isOpen: true, openTime: '12:00', closeTime: '23:00', notes: 'Almuerzo & Cena a la brasa' },
-  { day: 'Martes', isOpen: true, openTime: '12:00', closeTime: '23:00', notes: 'Almuerzo & Cena a la brasa' },
+  { day: 'Lunes', isOpen: true, openTime: '12:00', closeTime: '23:00', notes: 'Almuerzo & Cena marina' },
+  { day: 'Martes', isOpen: true, openTime: '12:00', closeTime: '23:00', notes: 'Almuerzo & Cena marina' },
   { day: 'Miércoles', isOpen: true, openTime: '12:00', closeTime: '23:30', notes: 'Cenas & Noches de Pisco' },
   { day: 'Jueves', isOpen: true, openTime: '12:00', closeTime: '00:00', notes: 'Horario nocturno extendido' },
   { day: 'Viernes', isOpen: true, openTime: '12:00', closeTime: '01:00', notes: 'Música en vivo & Cenas' },
@@ -12,12 +12,12 @@ export const DEFAULT_WEEKLY_SCHEDULE: DaySchedule[] = [
 
 export const generateTablesForRestaurant = (
   restaurantId: string, 
-  count: number = 12,
-  waiterIds: string[] = ['u-5', 'u-5b', 'u-5c']
+  count: number = 22,
+  waiterIds: string[] = ['u-5c']
 ): RestaurantTable[] => {
   return Array.from({ length: count }, (_, idx) => {
     const num = idx + 1;
-    const zone: TableZone = num <= 5 ? 'SALON' : num <= 8 ? 'TERRAZA' : num <= 11 ? 'VIP' : 'BARRA';
+    const zone: TableZone = num <= 8 ? 'SALON' : num <= 14 ? 'TERRAZA' : num <= 18 ? 'VIP' : 'BARRA';
     const capacity = num % 4 === 0 ? 6 : num % 2 === 0 ? 4 : 2;
     const assignedWaiter = waiterIds.length > 0 ? [waiterIds[idx % waiterIds.length]] : [];
     
@@ -28,9 +28,9 @@ export const generateTablesForRestaurant = (
       name: `Mesa ${num < 10 ? '0' + num : num}`,
       zone,
       capacity,
-      status: num === 4 || num === 2 ? 'OCCUPIED' : num === 8 ? 'RESERVED' : 'AVAILABLE',
+      status: num === 2 ? 'OCCUPIED' : 'AVAILABLE',
       assignedWaiterIds: assignedWaiter,
-      currentOrderId: num === 4 ? 'ord-101' : undefined,
+      currentOrderId: num === 2 ? 'ord-104' : undefined,
       qrCodeParam: `${num}`,
       notes: zone === 'TERRAZA' ? 'Zona exterior con vista' : zone === 'VIP' ? 'Box privado climatizado' : undefined
     };
@@ -39,8 +39,8 @@ export const generateTablesForRestaurant = (
 
 export const generateShiftsForRestaurant = (
   restaurantId: string,
-  waiterIds: string[] = ['u-5', 'u-5b'],
-  riderIds: string[] = ['u-7']
+  waiterIds: string[] = ['u-5c'],
+  riderIds: string[] = ['u-7c']
 ): StaffShift[] => [
   {
     id: `shift-${restaurantId}-1`,
@@ -50,7 +50,7 @@ export const generateShiftsForRestaurant = (
     endTime: '16:30',
     applicableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
     roleTarget: 'WAITER',
-    assignedUserIds: waiterIds.slice(0, 1),
+    assignedUserIds: waiterIds,
     colorBadge: '#38BDF8'
   },
   {
@@ -61,7 +61,7 @@ export const generateShiftsForRestaurant = (
     endTime: '23:30',
     applicableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
     roleTarget: 'WAITER',
-    assignedUserIds: waiterIds.slice(1, 2).length ? waiterIds.slice(1, 2) : waiterIds.slice(0, 1),
+    assignedUserIds: waiterIds,
     colorBadge: '#F59E0B'
   },
   {
@@ -83,12 +83,12 @@ export const generateShiftsForRestaurant = (
     endTime: '23:30',
     applicableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
     roleTarget: 'KITCHEN',
-    assignedUserIds: ['u-k1'],
+    assignedUserIds: ['u-k2'],
     colorBadge: '#F97316'
   }
 ];
 
-export const CEVICHITO_PLIZ_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgQGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9RnJlZG9rYTp3Z2h0QDcwMDs4MDAmYW1wO2Rpc3BsYXk9c3dhcCIpOwogICAgICAuYnJhbmQtdGl0bGUgeyBmb250LWZhbWlseTogIkZyZWRva2EiLCAiT3V0Zml0IiwgIkFyaWFsIEJsYWNrIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogIzFCNjY3QTsgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSI0NCIgbGV0dGVyLXNwYWNpbmc9IjEuNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXRpdGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMS41IDIwMCA1NSkiPkNFVklDSElUTzwvdGV4dD4KICA8cG9seWdvbiBwb2ludHM9IjExMCw4OCAxMjYsODEgMTI2LDk1IiBmaWxsPSIjMUI2NjdBIi8+CiAgPHRleHQgeD0iMjAwIiB5PSI5NCIgZm9udC1zaXplPSIzOCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEuNSAyMDAgOTQpIj5QTElaPC90ZXh0PgogIDxwb2x5Z29uIHBvaW50cz0iMjkwLDg4IDI3NCw4MSAyNzQsOTUiIGZpbGw9IiMxQjY2N0EiLz4KPC9zdmc+';
+export const CEVICHITO_PLIZ_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgQGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9RnJlZG9rYTp3Z2h0QDcwMDs4MDAmYW1wO2Rpc3BsYXk9c3dhcCIpOwogICAgICAuYnJhbmQtdGl0bGUgeyBmb250LWZhbWlseTogIkZyZWRva2EiLCAiT3V0Zml0IiwgIkFyaWFsIEJsYWNrIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogIzExMTExMTsgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSI0NCIgbGV0dGVyLXNwYWNpbmc9IjEuNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXRpdGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMS41IDIwMCA1NSkiPkNFVklDSElUTzwvdGV4dD4KICA8cG9seWdvbiBwb2ludHM9IjExMCw4OCAxMjYsODEgMTI2LDk1IiBmaWxsPSIjMTExMTExIi8+CiAgPHRleHQgeD0iMjAwIiB5PSI5NCIgZm9udC1zaXplPSIzOCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEuNSAyMDAgOTQpIj5QTElaPC90ZXh0PgogIDxwb2x5Z29uIHBvaW50cz0iMjkwLDg4IDI3NCw4MSAyNzQsOTUiIGZpbGw9IiMxMTExMTEiLz4KPC9zdmc+';
 
 export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
@@ -106,18 +106,18 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     ownerId: 'u-owner-stephanie',
     templateId: 'tmpl-marine',
     branding: {
-      primaryColor: '#1B667A',       // Azul verdoso oscuro
-      secondaryColor: '#8A9B57',     // Verde olivo
-      accentColor: '#D98262',        // Terracota
-      darkBgColor: '#EAEBDC',        // Crema marfil
-      cardBgColor: '#EAEBDC',
-      dishCardBgColor: '#EAEBDC',
-      textColor: '#1B667A',          // Azul verdoso oscuro
+      primaryColor: '#18181B',       // Zinc oscuro / casi negro
+      secondaryColor: '#52525B',     // Gris zinc intermedio
+      accentColor: '#111111',        // Negro puro
+      darkBgColor: '#FFFFFF',        // Fondo blanco
+      cardBgColor: '#F4F4F5',        // Tarjetas gris claro
+      dishCardBgColor: '#FFFFFF',    // Platos sobre fondo blanco
+      textColor: '#18181B',          // Texto en zinc oscuro
       fontDisplay: 'Outfit, sans-serif',
-      buttonColor: '#D98262',        // Botón terracota
-      buttonTextColor: '#EAEBDC',    // Texto crema marfil
+      buttonColor: '#111111',        // Botón negro
+      buttonTextColor: '#FFFFFF',    // Texto del botón blanco
       restaurantNameFont: 'Outfit, sans-serif',
-      restaurantNameColor: '#1B667A', // Nombre en azul verdoso oscuro
+      restaurantNameColor: '#18181B', // Nombre en zinc oscuro
       headerLogoUrl: CEVICHITO_PLIZ_LOGO_SVG,
       headerDisplayMode: 'IMAGE_ONLY',
       showHeaderName: false,
@@ -128,16 +128,16 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     },
     metrics: {
       dailyRevenue: 4150.20,
-      activeOrders: 8,
+      activeOrders: 1,
       avgTicket: 41.00,
       customerRating: 4.9,
       totalTables: 22,
-      occupancyRate: 78
+      occupancyRate: 5
     },
     isOpen: true,
     totalTablesCount: 22,
     weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
-    shifts: generateShiftsForRestaurant('rest-costa', ['u-5c'], ['u-7']),
+    shifts: generateShiftsForRestaurant('rest-costa', ['u-5c'], ['u-7c']),
     tables: generateTablesForRestaurant('rest-costa', 22, ['u-5c']),
     waiterPermissions: {
       canCancelOrders: false,
@@ -176,7 +176,6 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
 ];
 
 export const INITIAL_CATEGORIES: MenuCategory[] = [
-  // Costa Marina / Cevichito Pliz
   { id: 'cat-m-entradas', restaurantId: 'rest-costa', name: 'Entradas & Piqueos', description: 'Tequeños crocantes, tiraditos y piqueos marinos para compartir', sortOrder: 1, iconName: 'Utensils' },
   { id: 'cat-m-causitas', restaurantId: 'rest-costa', name: 'Nuestras Causitas', description: 'Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas', sortOrder: 2, iconName: 'Sparkles' },
   { id: 'cat-m-arroces', restaurantId: 'rest-costa', name: 'Arroces', description: 'Arroces marineros al wok, chaufa de mariscos y melosos al pisco', sortOrder: 3, iconName: 'Waves' },
@@ -187,353 +186,6 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
-  // Brasas y Fuegos - Parrillas Familiares
-  {
-    id: 'item-bf-parrilla-1',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-parrillas',
-    name: 'Gran Parrilla Suprema "Brasas y Fuegos"',
-    description: 'Bife ancho Angus (500g), picaña madurada (400g), costillar glaseado y chorizo parrillero. Acompañado de papas nativas doradas al romero y chimichurri ahumado de la casa.',
-    price: 185,
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 30,
-    allergens: [],
-    tags: ['Para 4 a 5 Personas', 'Cortes Angus', 'Quebracho Blanco']
-  },
-  {
-    id: 'item-bf-parrilla-2',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-parrillas',
-    name: 'Parrilla Criolla Mixta Campestre',
-    description: 'Lomo fino tierno al carbón, panceta crujiente, anticuchos de corazón y morcilla criolla. Servido con yucas crocantes al ajo y emulsión de ají rocoto parrillero.',
-    price: 145,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 25,
-    allergens: [],
-    tags: ['Para 3 a 4 Personas', 'Sabor Tradicional']
-  },
-  {
-    id: 'item-bf-parrilla-3',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-parrillas',
-    name: 'Tabla de Cortes Nobles al Carbón',
-    description: 'Ojo de bife Angus (450g) y entraña fina marinada al quebracho. Guarnición de papas trufadas con queso parmesano y reducción de vino malbec con chimichurri rústico.',
-    price: 135,
-    imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 25,
-    allergens: ['Lácteos'],
-    tags: ['Para 2 a 3 Personas', 'Maduración 28 Días']
-  },
-  {
-    id: 'item-bf-parrilla-4',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-parrillas',
-    name: 'Costillar Baby Back Ahumado Familiar',
-    description: 'Rack entero de costillas tiernas ahumadas por 6 horas en leña de manzano. Con puré de camote rústico a la canela y glaseado BBQ artesanal con miel de algarrobina.',
-    price: 120,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 20,
-    allergens: [],
-    tags: ['Ahumado Lento', 'BBQ Artesanal']
-  },
-
-  // Brasas y Fuegos - Entradas&Tablas
-  {
-    id: 'item-bf-entrada-1',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-entradas',
-    name: 'Anticuchos de Corazón Selecto al Carbón',
-    description: 'Tres brochetas jugosas de corazón de res maceradas en ají panca y vinagre de uva. Con papas doradas a la plancha, choclo tierno y ají carretillero de la casa.',
-    price: 38,
-    imageUrl: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 15,
-    allergens: [],
-    tags: ['Receta Clásica', 'Ají Panca de Ica']
-  },
-  {
-    id: 'item-bf-entrada-2',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-entradas',
-    name: 'Provoleta al Hierro con Champiñones',
-    description: 'Queso provolone hilado fundido con orégano silvestre y champiñones al ajillo. Acompañado de tostadas de pan de campo masa madre y oliva extra virgen.',
-    price: 34,
-    imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 12,
-    allergens: ['Lácteos', 'Gluten'],
-    tags: ['Vegetariano', 'Queso Fundido']
-  },
-  {
-    id: 'item-bf-entrada-3',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-entradas',
-    name: 'Mollejitas Crocantes al Limón Parrillero',
-    description: 'Mollejas tiernas selladas a fuego vivo con sal marina de Maras y toque de limón sutil. Con yucas crocantes doradas y emulsión tártara rústica de huacatay.',
-    price: 32,
-    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 14,
-    allergens: [],
-    tags: ['Crujiente', 'Favorito']
-  },
-  {
-    id: 'item-bf-entrada-4',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-entradas',
-    name: 'Tabla de Chorizos & Morcilla Artesanal',
-    description: 'Dúo de chorizos argentinos y morcilla criolla especiada al carbón. Servidos con champiñones parrillados, papas canchan asadas y chimichurri clásico.',
-    price: 36,
-    imageUrl: 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 15,
-    allergens: [],
-    tags: ['Embutidos Propios', 'Al Carbón']
-  },
-
-  // Brasas y Fuegos - Licores y Bebidas
-  {
-    id: 'item-bf-bebida-1',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-bebidas',
-    name: 'Pisco Sour Quebranta Tradicional (Copa Doble)',
-    description: 'Destilado 100% uva Quebranta de Ica (4 oz), zumo de limón sutil recién exprimido, clara batida y jarabe de goma artesanal con gotas de amargo de angostura.',
-    price: 28,
-    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 5,
-    allergens: ['Huevo'],
-    tags: ['Coctel Bandera', '4 oz Pisco Puro']
-  },
-  {
-    id: 'item-bf-bebida-2',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-bebidas',
-    name: 'Chilcano de la Casa Macerado en Roble',
-    description: 'Pisco acholado infusionado con jengibre fresco y hierba luisa silvestre, hielo tallado a mano, ginger ale botánico premium y perfume de cáscara de cítricos.',
-    price: 26,
-    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 5,
-    allergens: [],
-    tags: ['Refrescante', 'Macerado Propio']
-  },
-  {
-    id: 'item-bf-bebida-3',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-bebidas',
-    name: 'Malbec Gran Reserva "Brasas y Fuegos" (750ml)',
-    description: 'Vino tinto varietal de altura del Valle de Uco, Mendoza. Crianza de 14 meses en roble francés, con notas aterciopeladas a ciruela, vainilla y chocolate negro.',
-    price: 95,
-    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 3,
-    allergens: ['Sulfitos'],
-    tags: ['Maridaje Ideal', 'Cava Seleccionada']
-  },
-  {
-    id: 'item-bf-bebida-4',
-    restaurantId: 'rest-brasas',
-    categoryId: 'cat-b-bebidas',
-    name: 'Chicha Morada Ahumada Especial (Jarra 1L)',
-    description: 'Bebida artesanal de maíz morado culli hervido con piña golden, manzana y canela aromática, aromatizada con un toque sutil de madera de manzano ahumada.',
-    price: 24,
-    imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 4,
-    allergens: [],
-    tags: ['Artesanal', 'Sin Alcohol', 'Jarra Familiar']
-  },
-
-  // Criollo & Tradición - Parrillas Familiares
-  {
-    id: 'item-c-parrilla-1',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-parrillas',
-    name: 'Gran Parrilla Criolla de Antaño',
-    description: 'Cortes seleccionados de lomo de res marinado al ají panca, chuleta de cerdo a la leña y chorizo parrillero artesanal. Guarnecido con papas doradas al romero andino y choclo tierno con queso. Servido con chimichurri rústico de huacatay y ají carretillero batido.',
-    price: 139.00,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 25,
-    allergens: [],
-    tags: ['Para 3 a 4 Personas', 'Especialidad a la Leña']
-  },
-  {
-    id: 'item-c-parrilla-2',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-parrillas',
-    name: 'Costillar Criollo Glaseado al Algarrobo',
-    description: 'Costillar tierno de cerdo confitado y laqueado a fuego lento en reducción de chicha de jora y miel de algarrobina. Servido con puré rústico de camote a la canela y ensalada fresca campestre. Acompañado de salsa agridulce de maracuyá y ají amarillo.',
-    price: 118.00,
-    imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 20,
-    allergens: [],
-    tags: ['Ahumado Lento', 'Sabor Dulce y Ahumado']
-  },
-  {
-    id: 'item-c-parrilla-3',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-parrillas',
-    name: 'Parrilla Mixta Tradición & Fuego',
-    description: 'Generosos anticuchos de corazón al carbón, un cuarto de pollo tierno marinado en hierbas de convento y morcilla criolla. Acompañado de yucas fritas crocantes al mojo de ajo y ensalada tibia de vainitas. Con emulsión de rocoto carretillero y tártara casera.',
-    price: 98.00,
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 22,
-    allergens: [],
-    tags: ['Para 2 Personas', 'Favorito Familiar']
-  },
-
-  // Criollo & Tradición - Entradas&Tablas
-  {
-    id: 'item-c-entrada-1',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-entradas',
-    name: 'Tabla Criolla Tres Sabores de Antaño',
-    description: 'Brochetas jugosas de anticucho de corazón, trozos crocantes de chicharrón de cerdo con piel tostada y pastel de choclo limeño. Guarnecido con papitas nativas doradas y choclo salteado. Servido con salsa criolla de cebolla y ají limo, ají de huacatay y crema de rocoto.',
-    price: 48.00,
-    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 15,
-    allergens: ['Lácteos'],
-    tags: ['Para Picar', 'Trilogía Criolla']
-  },
-  {
-    id: 'item-c-entrada-2',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-entradas',
-    name: 'Causa Limeña Señorial de Cangrejo & Palta',
-    description: 'Pulpa tierna de cangrejo seleccionada aderezada en mayonesa suave de lima. Montada sobre masa artesanal de papa amarilla prensada con pasta de ají amarillo y gotas de limón sutil. Acompañada de abanico de palta fuerte, huevo de codorniz y coulis de aceituna botija.',
-    price: 36.00,
-    imageUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 10,
-    allergens: ['Mariscos', 'Huevo'],
-    tags: ['Receta Señorial', 'Entrada Fría']
-  },
-  {
-    id: 'item-c-entrada-3',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-entradas',
-    name: 'Anticuchos de Corazón Selecto al Carbón',
-    description: 'Tres brochetas tiernas de corazón maceradas por 24 horas en ají panca, vinagre tinto y especias andinas. Con papas doradas a la plancha y rodajas de choclo dulce. Servido con ají carretillero de la casa y salsa verde de huacatay.',
-    price: 34.00,
-    imageUrl: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 12,
-    allergens: [],
-    tags: ['Tradición Limeña', 'Al Carbón']
-  },
-
-  // Criollo & Tradición - Licores y Bebidas
-  {
-    id: 'item-c-bebida-1',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-bebidas',
-    name: 'Pisco Sour Quebranta Tradición (Copa Doble)',
-    description: 'Destilado puro 4 oz de uva Quebranta de bodega tradicional iqueña, emulsionado con zumo de limón sutil recién exprimido y clara de huevo fresca batida. Jarabe de goma aromático elaborado en casa y perfume final de gotas de amargo de angostura.',
-    price: 28.00,
-    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 5,
-    allergens: ['Huevo'],
-    tags: ['Cóctel Bandera', '4 oz Pisco Puro']
-  },
-  {
-    id: 'item-c-bebida-2',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-bebidas',
-    name: 'Chilcano Clásico de Maracuyá & Hierba Luisa',
-    description: 'Pisco acholado premium perfumado con hierba luisa silvestre, pulpa fresca de maracuyá colada al momento, hielo tallado y ginger ale botánico de alta gasificación. Coronado con twist de limón y ramita aromática.',
-    price: 25.00,
-    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 5,
-    allergens: [],
-    tags: ['Refrescante', 'Macerado Propio']
-  },
-  {
-    id: 'item-c-bebida-3',
-    restaurantId: 'rest-criollo',
-    categoryId: 'cat-c-bebidas',
-    name: 'Chicha Morada de Maíz Culli Tradicional (Jarra 1L)',
-    description: 'Bebida emblemática elaborada con maíz morado culli hervido durante horas con piña golden, manzana membrillo y canela de Ceilán con clavo. Servida bien helada con dados de frutas y gotas frescas de limón recién exprimido.',
-    price: 22.00,
-    imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    prepTimeMinutes: 3,
-    allergens: [],
-    tags: ['Sin Alcohol', '100% Natural', 'Jarra Familiar']
-  },
-
-  // Loop Burger & Subs
-  {
-    id: 'item-l1',
-    restaurantId: 'rest-loop',
-    categoryId: 'cat-l1',
-    name: 'Loop Double Truffle Smash',
-    description: 'Dos medallones smashed de 90g con costra crocante, doble queso cheddar americano, mayo de trufa negra y cebolla caramelizada.',
-    price: 14.50,
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    isPopular: true,
-    isChefSpecial: true,
-    prepTimeMinutes: 9,
-    allergens: ['Gluten', 'Lácteos', 'Huevo'],
-    tags: ['Top Seller', 'Smash Burger']
-  },
-  {
-    id: 'item-l2',
-    restaurantId: 'rest-loop',
-    categoryId: 'cat-l2',
-    name: 'Buffalo Crispy Chicken Sub',
-    description: 'Pechuga marinada en suero de leche, empanizada hiper-crocante con salsa buffalo spicy y coleslaw fresco.',
-    price: 13.00,
-    imageUrl: 'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 11,
-    allergens: ['Gluten', 'Lácteos'],
-    tags: ['Picante Medio']
-  },
-  {
-    id: 'item-l3',
-    restaurantId: 'rest-loop',
-    categoryId: 'cat-l3',
-    name: 'Dirty Fries con Cheddar & Bacon Bits',
-    description: 'Papas en corte crinkle bañadas en dip de tres quesos, trocitos crocantes de tocino ahumado y jalapeños encurtidos.',
-    price: 8.50,
-    imageUrl: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 8,
-    allergens: ['Lácteos'],
-    tags: ['Para Compartir']
-  },
-
-  // Cevichito Pliz (Costa Marina)
   // 1. Entradas & Piqueos (cat-m-entradas)
   {
     id: 'item-m-tequenos-queso',
@@ -806,7 +458,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-chicharron-mixto',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
+    categoryId: 'cat-m-entradas',
     name: 'Chicharrón Mixto de Pescado & Mariscos',
     description: 'Generosa mixtura crocante de pescado blanco, langostinos y calamares con yucas doradas, zarza criolla al limón y crema tártara casera.',
     price: 44.00,
@@ -821,7 +473,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-choritos',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
+    categoryId: 'cat-m-entradas',
     name: 'Choritos a la Chalaca al Limón Piurano (x8)',
     description: 'Choritos frescos al vapor aderezados con chalaquita criolla de cebolla morada, tomate concasse, ají limo picado, cilantro y choclo desgranado.',
     price: 28.00,
@@ -837,7 +489,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-pulpo-olivo',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
+    categoryId: 'cat-m-causitas',
     name: 'Pulpo al Olivo con Palta Fuerte',
     description: 'Láminas tiernas de pulpo marinadas en suave crema de aceitunas botija peruanas, con cubos de palta fuerte, aceite de oliva virgen y galletas de soda.',
     price: 38.00,
@@ -851,7 +503,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-pulpo-parrilla',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m2',
+    categoryId: 'cat-m-pulpos',
     name: 'Pulpo a la Parrilla con Chimichurri Anticuchero',
     description: 'Tentáculos enteros de pulpo sellados a las brasas con marinada anticuchera de ají panca, acompañados de papas nativas doradas y salsa chimichurri rústica.',
     price: 56.00,
@@ -867,7 +519,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-tequenos',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
+    categoryId: 'cat-m-entradas',
     name: 'Tequeños de Mariscos & Salsa Tártara (x8)',
     description: 'Wantanes crocantes artesanales rellenos de mixtura de mariscos flameados al vino blanco con salsa agridulce especial y tártara casera.',
     price: 26.00,
@@ -909,32 +561,6 @@ export const INITIAL_USERS: User[] = [
     lastActive: 'Hace 3 min'
   },
   {
-    id: 'u-2',
-    name: 'Valeria Rivas',
-    email: 'valeria.rivas@grupoparrillero.com',
-    dni: '20304050',
-    password: '12345678',
-    role: 'OWNER',
-    phone: '+51 971 234 567',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-brasas', 'rest-loop'],
-    status: 'active',
-    lastActive: 'Hace 12 min'
-  },
-  {
-    id: 'u-3',
-    name: 'Mauricio Delgado',
-    email: 'm.delgado@tradicioncriolla.pe',
-    dni: '30405060',
-    password: '12345678',
-    role: 'OWNER',
-    phone: '+51 962 345 678',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo'],
-    status: 'active',
-    lastActive: 'Hace 1 hora'
-  },
-  {
     id: 'u-owner-stephanie',
     name: 'Stephanie Leon',
     email: 'stephanie.leon@cevichitopliz.pe',
@@ -946,91 +572,6 @@ export const INITIAL_USERS: User[] = [
     restaurantIds: ['rest-costa'],
     status: 'active',
     lastActive: 'En línea'
-  },
-  {
-    id: 'u-4',
-    name: 'Sofía Benavides',
-    email: 'sofia.gerencia@brasasfuego.pe',
-    dni: '40102030',
-    password: '12345678',
-    role: 'RESTAURANT_MANAGER',
-    phone: '+51 953 456 789',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-brasas'],
-    status: 'active',
-    lastActive: 'En turno activo'
-  },
-  {
-    id: 'u-5',
-    name: 'Jorge Huamán',
-    email: 'jorge.mesas@brasasfuego.pe',
-    dni: '40506070',
-    password: '12345678',
-    role: 'WAITER',
-    phone: '+51 944 567 890',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-brasas'],
-    status: 'active',
-    lastActive: 'Mesa 4 & 7 atendidas',
-    assignedShift: 'TARDE',
-    pinCode: '4490',
-    createdByOwnerId: 'u-2',
-    waiterPermissions: {
-      canCancelOrders: false,
-      canApplyDiscounts: true,
-      canAssignTables: true,
-      canSplitBills: true,
-      requireSupervisorPin: true,
-      maxActiveTables: 6
-    }
-  },
-  {
-    id: 'u-6',
-    name: 'Ana Paula Torres',
-    email: 'anapaula.salon@loopburgers.pe',
-    dni: '40607080',
-    password: '12345678',
-    role: 'WAITER',
-    phone: '+51 935 678 901',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-loop'],
-    status: 'active',
-    lastActive: 'Hace 5 min',
-    assignedShift: 'NOCHE',
-    pinCode: '8901',
-    createdByOwnerId: 'u-2',
-    waiterPermissions: {
-      canCancelOrders: false,
-      canApplyDiscounts: true,
-      canAssignTables: true,
-      canSplitBills: false,
-      requireSupervisorPin: false,
-      maxActiveTables: 5
-    }
-  },
-  {
-    id: 'u-5b',
-    name: 'Mateo Cárdenas',
-    email: 'mateo.salon@tradicioncriolla.pe',
-    dni: '40708090',
-    password: '12345678',
-    role: 'WAITER',
-    phone: '+51 922 888 777',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo'],
-    status: 'active',
-    lastActive: 'Mesa 12 atendida',
-    assignedShift: 'COMPLETO',
-    pinCode: '1234',
-    createdByOwnerId: 'u-3',
-    waiterPermissions: {
-      canCancelOrders: true,
-      canApplyDiscounts: false,
-      canAssignTables: true,
-      canSplitBills: true,
-      requireSupervisorPin: false,
-      maxActiveTables: 8
-    }
   },
   {
     id: 'u-5c',
@@ -1046,7 +587,7 @@ export const INITIAL_USERS: User[] = [
     lastActive: 'Mesa 3 atendida',
     assignedShift: 'MANANA',
     pinCode: '5678',
-    createdByOwnerId: 'u-3',
+    createdByOwnerId: 'u-owner-stephanie',
     waiterPermissions: {
       canCancelOrders: false,
       canApplyDiscounts: false,
@@ -1054,52 +595,6 @@ export const INITIAL_USERS: User[] = [
       canSplitBills: true,
       requireSupervisorPin: true,
       maxActiveTables: 6
-    }
-  },
-  {
-    id: 'u-7',
-    name: 'Raúl Quispe (Rider #12)',
-    email: 'raul.moto@gastrodelivery.pe',
-    dni: '50607080',
-    password: '12345678',
-    role: 'DELIVERY',
-    phone: '+51 926 789 012',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-loop', 'rest-brasas'],
-    status: 'active',
-    lastActive: 'Ruta en curso: San Isidro',
-    vehicleType: 'MOTO',
-    licensePlate: '5482-3B',
-    createdByOwnerId: 'u-2',
-    deliveryPermissions: {
-      canAcceptCash: true,
-      maxActiveOrders: 3,
-      autoAssignZone: true,
-      gpsSpeedTracking: true,
-      allowedZones: ['San Isidro', 'Miraflores', 'San Borja']
-    }
-  },
-  {
-    id: 'u-7b',
-    name: 'Kevin Salazar (Rider #05)',
-    email: 'kevin.rider@gastrodelivery.pe',
-    dni: '50708090',
-    password: '12345678',
-    role: 'DELIVERY',
-    phone: '+51 933 445 566',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo'],
-    status: 'active',
-    lastActive: 'Esperando despacho',
-    vehicleType: 'MOTO',
-    licensePlate: '9120-1C',
-    createdByOwnerId: 'u-3',
-    deliveryPermissions: {
-      canAcceptCash: true,
-      maxActiveOrders: 4,
-      autoAssignZone: true,
-      gpsSpeedTracking: false,
-      allowedZones: ['Centro de Lima', 'Breña', 'Jesús María']
     }
   },
   {
@@ -1111,44 +606,18 @@ export const INITIAL_USERS: User[] = [
     role: 'DELIVERY',
     phone: '+51 944 223 311',
     avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-costa', 'rest-loop'],
+    restaurantIds: ['rest-costa'],
     status: 'active',
     lastActive: 'En entrega Miraflores',
     vehicleType: 'BICI',
     licensePlate: 'ECO-BIKE',
-    createdByOwnerId: 'u-2',
+    createdByOwnerId: 'u-owner-stephanie',
     deliveryPermissions: {
       canAcceptCash: false,
       maxActiveOrders: 3,
       autoAssignZone: true,
       gpsSpeedTracking: true,
       allowedZones: ['Miraflores', 'San Isidro', 'Barranco']
-    }
-  },
-  {
-    id: 'u-k1',
-    name: 'Chef Walter Ramos',
-    email: 'walter.cocina@brasasfuego.pe',
-    dni: '70102030',
-    password: '12345678',
-    role: 'KITCHEN',
-    phone: '+51 988 554 433',
-    avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-brasas'],
-    status: 'active',
-    lastActive: 'Parrilla activa - 4 comandas en fuego',
-    assignedShift: 'TARDE',
-    pinCode: '7010',
-    createdByOwnerId: 'u-2',
-    kitchenStation: 'Parrilla & Cortes Angus',
-    kitchenPermissions: {
-      canMarkReady: true,
-      canRejectItems: true,
-      canManageStockOut: true,
-      canReorderQueue: true,
-      autoPrintTickets: true,
-      soundAlerts: true,
-      stationFilter: 'Parrilla & Carnes'
     }
   },
   {
@@ -1165,7 +634,7 @@ export const INITIAL_USERS: User[] = [
     lastActive: 'Barra marina activa - ceviches al momento',
     assignedShift: 'MANANA',
     pinCode: '7020',
-    createdByOwnerId: 'u-3',
+    createdByOwnerId: 'u-owner-stephanie',
     kitchenStation: 'Barra Marina & Cebichería',
     kitchenPermissions: {
       canMarkReady: true,
@@ -1178,75 +647,6 @@ export const INITIAL_USERS: User[] = [
     }
   },
   {
-    id: 'u-k3',
-    name: 'Chef Rocío Morales',
-    email: 'rocio.sazon@tradicioncriolla.pe',
-    dni: '70304050',
-    password: '12345678',
-    role: 'KITCHEN',
-    phone: '+51 966 332 211',
-    avatar: 'https://images.unsplash.com/photo-1581299894007-aaa50297cf16?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo'],
-    status: 'active',
-    lastActive: 'Ollas y guisos en punto',
-    assignedShift: 'COMPLETO',
-    pinCode: '7030',
-    createdByOwnerId: 'u-3',
-    kitchenStation: 'Cocina Caliente & Guisos',
-    kitchenPermissions: {
-      canMarkReady: true,
-      canRejectItems: true,
-      canManageStockOut: true,
-      canReorderQueue: true,
-      autoPrintTickets: true,
-      soundAlerts: true,
-      stationFilter: 'Cocina Caliente & Guisos'
-    }
-  },
-  {
-    id: 'u-k4',
-    name: 'Diego Montes',
-    email: 'diego.smash@loopburgers.pe',
-    dni: '70405060',
-    password: '12345678',
-    role: 'KITCHEN',
-    phone: '+51 955 221 100',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-loop'],
-    status: 'active',
-    lastActive: 'Plancha smash al rojo vivo',
-    assignedShift: 'NOCHE',
-    pinCode: '7040',
-    createdByOwnerId: 'u-2',
-    kitchenStation: 'Plancha Smash & Frituras',
-    kitchenPermissions: {
-      canMarkReady: true,
-      canRejectItems: true,
-      canManageStockOut: true,
-      canReorderQueue: true,
-      autoPrintTickets: true,
-      soundAlerts: true,
-      stationFilter: 'Plancha Smash & Frituras'
-    }
-  },
-  {
-    id: 'u-8',
-    name: 'Diego Alarcón',
-    email: 'diego.cliente@gmail.com',
-    dni: '60708090',
-    password: '12345678',
-    role: 'CUSTOMER',
-    phone: '+51 917 890 123',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-brasas'],
-    status: 'active',
-    lastActive: 'Pedido QR Mesa 4',
-    vipTier: 'STANDARD',
-    totalOrdersCount: 4,
-    creditBalance: 15.00,
-    createdByOwnerId: 'u-2'
-  },
-  {
     id: 'u-8b',
     name: 'Valeria Montiel (VIP)',
     email: 'valeria.montiel@corporativo.com',
@@ -1255,124 +655,17 @@ export const INITIAL_USERS: User[] = [
     role: 'CUSTOMER',
     phone: '+51 988 777 665',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-costa', 'rest-brasas'],
+    restaurantIds: ['rest-costa'],
     status: 'active',
-    lastActive: 'Reserva & Pedido Costa Marina',
+    lastActive: 'Reserva & Pedido Cevichito Pliz',
     vipTier: 'BLACK_VIP',
     totalOrdersCount: 28,
     creditBalance: 120.00,
-    createdByOwnerId: 'u-3'
-  },
-  {
-    id: 'u-8c',
-    name: 'Fernando Beltrán',
-    email: 'fernando.beltran@gmail.com',
-    dni: '60901020',
-    password: '12345678',
-    role: 'CUSTOMER',
-    phone: '+51 966 555 443',
-    avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo'],
-    status: 'active',
-    lastActive: 'Pedido Takeaway',
-    vipTier: 'GOLD',
-    totalOrdersCount: 14,
-    creditBalance: 45.00,
-    createdByOwnerId: 'u-3'
-  },
-  {
-    id: 'u-8d',
-    name: 'Camila Zúñiga',
-    email: 'camila.zuniga@gmail.com',
-    dni: '60102030',
-    password: '12345678',
-    role: 'CUSTOMER',
-    phone: '+51 977 444 888',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-loop'],
-    status: 'active',
-    lastActive: 'Pedido Delivery #LP-542',
-    vipTier: 'SILVER',
-    totalOrdersCount: 9,
-    creditBalance: 20.00,
-    createdByOwnerId: 'u-2'
+    createdByOwnerId: 'u-owner-stephanie'
   }
 ];
 
 export const INITIAL_ORDERS: Order[] = [
-  {
-    id: 'ord-101',
-    restaurantId: 'rest-brasas',
-    orderNumber: 'BF-204',
-    type: 'DINE_IN',
-    status: 'IN_KITCHEN',
-    tableNumber: 'Mesa 04 (Terraza)',
-    customerId: 'u-8',
-    customerName: 'Diego Alarcón',
-    customerDni: '60708090',
-    customerPhone: '+51 917 890 123',
-    items: [
-      { id: 'oi-1', menuItemId: 'item-b1', name: 'Bife de Chorizo Angus 400g', price: 38.50, quantity: 2, notes: 'Término medio / Jugoso' },
-      { id: 'oi-2', menuItemId: 'item-b3', name: 'Provoleta Ahumada', price: 16.50, quantity: 1 }
-    ],
-    subtotal: 93.50,
-    tax: 16.83,
-    deliveryFee: 0,
-    total: 110.33,
-    paymentStatus: 'PENDING',
-    createdAt: 'Hace 8 min',
-    estimatedMinutes: 14,
-    waiterId: 'u-5',
-    waiterName: 'Jorge Huamán'
-  },
-  {
-    id: 'ord-102',
-    restaurantId: 'rest-loop',
-    orderNumber: 'LP-542',
-    type: 'DELIVERY',
-    status: 'PENDING',
-    customerId: 'u-8d',
-    customerName: 'Camila Zúñiga',
-    customerDni: '60102030',
-    customerPhone: '+51 977 444 888',
-    deliveryAddress: 'Av. Coronel Portillo 680, Dpto 402, San Isidro',
-    items: [
-      { id: 'oi-3', menuItemId: 'item-l1', name: 'Loop Double Truffle Smash', price: 14.50, quantity: 3, notes: 'Sin pepinillos en 1' },
-      { id: 'oi-4', menuItemId: 'item-l3', name: 'Dirty Fries con Cheddar', price: 8.50, quantity: 2 }
-    ],
-    subtotal: 60.50,
-    tax: 10.89,
-    deliveryFee: 5.00,
-    total: 76.39,
-    paymentStatus: 'PAID',
-    createdAt: 'Hace 3 min',
-    estimatedMinutes: 25,
-    courierName: 'Por asignar'
-  },
-  {
-    id: 'ord-103',
-    restaurantId: 'rest-criollo',
-    orderNumber: 'CT-118',
-    type: 'DINE_IN',
-    status: 'READY',
-    tableNumber: 'Mesa 12 (Salón Principal)',
-    customerId: 'u-8c',
-    customerName: 'Fernando Beltrán',
-    customerDni: '60901020',
-    items: [
-      { id: 'oi-5', menuItemId: 'item-c1', name: 'Lomo Saltado al Wok', price: 26.00, quantity: 2 },
-      { id: 'oi-6', menuItemId: 'item-c3', name: 'Causa con Cangrejo', price: 18.00, quantity: 1 }
-    ],
-    subtotal: 70.00,
-    tax: 12.60,
-    deliveryFee: 0,
-    total: 82.60,
-    paymentStatus: 'PAID',
-    createdAt: 'Hace 19 min',
-    estimatedMinutes: 0,
-    waiterId: 'u-5b',
-    waiterName: 'Mateo Cárdenas'
-  },
   {
     id: 'ord-104',
     restaurantId: 'rest-costa',
@@ -1384,61 +677,17 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Valeria Montiel (VIP)',
     customerDni: '60809010',
     items: [
-      { id: 'oi-7', menuItemId: 'item-m1', name: 'Ceviche Clásico Corvina', price: 24.50, quantity: 2, notes: 'Picante moderado' },
-      { id: 'oi-8', menuItemId: 'item-m2', name: 'Arroz con Mariscos Meloso', price: 28.00, quantity: 1 }
+      { id: 'oi-7', menuItemId: 'item-m1', name: 'CEVICHE MIXTO CEVICHITO PLIZ', price: 48.00, quantity: 2, notes: 'Picante moderado' },
+      { id: 'oi-8', menuItemId: 'item-m5', name: 'ARROZ CON MARISCOS MELOSO AL WOK DE LEÑA', price: 54.00, quantity: 1 }
     ],
-    subtotal: 77.00,
-    tax: 13.86,
+    subtotal: 150.00,
+    tax: 27.00,
     deliveryFee: 0,
-    total: 90.86,
+    total: 177.00,
     paymentStatus: 'PENDING',
     createdAt: 'Hace 11 min',
     estimatedMinutes: 12,
     waiterId: 'u-5c',
     waiterName: 'Lucía Benítez'
-  },
-  {
-    id: 'ord-105',
-    restaurantId: 'rest-loop',
-    orderNumber: 'LP-540',
-    type: 'DELIVERY',
-    status: 'ON_THE_WAY',
-    customerId: 'u-8',
-    customerName: 'Diego Alarcón',
-    customerDni: '60708090',
-    deliveryAddress: 'Calle Dos de Mayo 430, Miraflores',
-    items: [
-      { id: 'oi-9', menuItemId: 'item-l2', name: 'Buffalo Crispy Chicken Sub', price: 13.00, quantity: 2 },
-      { id: 'oi-10', menuItemId: 'item-l3', name: 'Dirty Fries con Cheddar', price: 8.50, quantity: 1 }
-    ],
-    subtotal: 34.50,
-    tax: 6.21,
-    deliveryFee: 4.50,
-    total: 45.21,
-    paymentStatus: 'PAID',
-    createdAt: 'Hace 28 min',
-    estimatedMinutes: 7,
-    courierId: 'u-7',
-    courierName: 'Raúl Quispe (Rider #12)'
-  },
-  {
-    id: 'ord-106',
-    restaurantId: 'rest-brasas',
-    orderNumber: 'BF-201',
-    type: 'TAKEAWAY',
-    status: 'DELIVERED',
-    customerId: 'u-8b',
-    customerName: 'Valeria Montiel (VIP)',
-    customerDni: '60809010',
-    items: [
-      { id: 'oi-11', menuItemId: 'item-b2', name: 'Entraña Fina al Punto', price: 42.00, quantity: 1 }
-    ],
-    subtotal: 42.00,
-    tax: 7.56,
-    deliveryFee: 0,
-    total: 49.56,
-    paymentStatus: 'PAID',
-    createdAt: 'Hace 45 min',
-    estimatedMinutes: 0
   }
 ];
