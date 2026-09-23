@@ -8,6 +8,7 @@ import {
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
 import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate } from './types';
+import { deduplicateUsers } from './lib/userUtils';
 import { TopHeader } from './components/TopHeader';
 import { FloatingNavBar } from './components/FloatingNavBar';
 import { HomeView } from './components/HomeView';
@@ -252,12 +253,13 @@ function getInitialStorageState() {
   }
 
   const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(cachedUsers, cachedRests);
+  const deduplicatedUsers = deduplicateUsers(cleanedUsers);
 
   return {
     cachedRests: cleanedRests,
     cachedCategories,
     cachedItems,
-    cachedUsers: cleanedUsers,
+    cachedUsers: deduplicatedUsers,
     cachedOrders,
     cachedAuth
   };
@@ -449,7 +451,7 @@ export default function App() {
           const map = new Map<string, User>();
           prev.forEach(u => map.set(u.id, u));
           cleanedUsers.forEach(u => map.set(u.id, u));
-          return Array.from(map.values());
+          return deduplicateUsers(Array.from(map.values()));
         });
 
         if (remoteData.categories?.length) {
@@ -521,7 +523,7 @@ export default function App() {
           const map = new Map<string, User>();
           prev.forEach(u => map.set(u.id, u));
           cleanedUsers.forEach(u => map.set(u.id, u));
-          return Array.from(map.values());
+          return deduplicateUsers(Array.from(map.values()));
         });
 
         if (remoteData.items?.length) {
@@ -808,21 +810,28 @@ export default function App() {
   };
 
   const handleAddUser = (newUser: User) => {
-    setUsers(prev => [newUser, ...prev]);
+    setUsers(prev => deduplicateUsers([newUser, ...prev]));
     saveUserToFirebase(newUser);
     showToast(`Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado automáticamente en Firebase.`);
   };
 
   const handleUpdateUser = (updated: User) => {
-    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    setUsers(prev => deduplicateUsers(prev.map(u => u.id === updated.id ? updated : u)));
+    if (currentUser?.id === updated.id) {
+      setCurrentUser(updated);
+    }
     saveUserToFirebase(updated);
     showToast(`Usuario "${updated.name}" actualizado.`);
   };
 
   const handleDeleteUser = (userId: string) => {
+    const targetUser = users.find(u => u.id === userId);
     setUsers(prev => prev.filter(u => u.id !== userId));
+    if (currentUser?.id === userId) {
+      setCurrentUser(null);
+    }
     deleteUserFromFirebase(userId);
-    showToast(`Usuario eliminado del sistema.`);
+    showToast(`Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado. Restaurantes y cartas sin cambios.`);
   };
 
   const handleUpdateTemplate = (updated: MenuTemplate) => {
@@ -1148,6 +1157,7 @@ export default function App() {
           currentUser={currentUser}
           onLogin={handleLogin}
           onLogout={handleLogout}
+          onUpdateUser={handleUpdateUser}
         />
 
         {/* Floating Toast Notification */}
@@ -1284,6 +1294,8 @@ export default function App() {
                 restaurants={restaurants}
                 onAddUser={handleAddUser}
                 onUpdateUser={handleUpdateUser}
+                onDeleteUser={handleDeleteUser}
+                currentUser={currentUser}
               />
             )}
 
@@ -1367,6 +1379,7 @@ export default function App() {
         currentUser={currentUser}
         onLogin={handleLogin}
         onLogout={handleLogout}
+        onUpdateUser={handleUpdateUser}
       />
 
       {/* Floating Toast Notification */}

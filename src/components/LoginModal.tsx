@@ -25,6 +25,7 @@ interface LoginModalProps {
   currentUser: User | null;
   onLogin: (user: User) => void;
   onLogout: () => void;
+  onUpdateUser?: (updatedUser: User) => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -34,6 +35,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   currentUser,
   onLogin,
   onLogout,
+  onUpdateUser,
 }) => {
   const [dniInput, setDniInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('12345678');
@@ -41,6 +43,39 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleAvatarUpload1to1 = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentUser || !onUpdateUser) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 300;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          const minDim = Math.min(img.width, img.height);
+          const sx = (img.width - minDim) / 2;
+          const sy = (img.height - minDim) / 2;
+
+          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+          const squareDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          onUpdateUser({
+            ...currentUser,
+            avatar: squareDataUrl
+          });
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,13 +151,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Currently Logged-in Banner */}
         {currentUser && (
-          <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
             <div className="flex items-center gap-3">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-10 h-10 rounded-full object-cover border border-neutral-700"
-              />
+              <div className="relative shrink-0">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-12 h-12 rounded-full object-cover aspect-square border-2 border-white shadow"
+                />
+                {onUpdateUser && (
+                  <label className="absolute -bottom-1 -right-1 p-1 rounded-full bg-white text-black cursor-pointer shadow hover:bg-neutral-200 transition">
+                    <span className="text-[9px] font-bold block">📷</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload1to1}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white">{currentUser.name}</span>
@@ -135,14 +183,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                onLogout();
-              }}
-              className="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-red-400 hover:text-red-300 hover:bg-neutral-800 font-medium cursor-pointer"
-            >
-              Cerrar Sesión
-            </button>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {onUpdateUser && (
+                <label className="px-3 py-1.5 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs text-white font-semibold cursor-pointer transition">
+                  Subir Foto 1:1
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload1to1}
+                    className="hidden"
+                  />
+                </label>
+              )}
+              <button
+                onClick={() => {
+                  onLogout();
+                }}
+                className="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-red-400 hover:text-red-300 hover:bg-neutral-800 font-medium cursor-pointer"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
           </div>
         )}
 
