@@ -216,30 +216,23 @@ function getInitialStorageState() {
         }
       }
 
-      // ONLY read categories & items from localStorage if user is authenticated staff/owner.
-      // For anonymous comensal or public menu link (?r=slug), DO NOT consult localStorage!
-      if (!isPublicOrAnonymous) {
-        const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-        if (storedCats) {
-          const parsed = JSON.parse(storedCats);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const map = new Map<string, MenuCategory>();
-            INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
-            parsed.forEach(c => map.set(c.id, c));
-            cachedCategories = Array.from(map.values());
-          }
+      const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCats) {
+        const parsed = JSON.parse(storedCats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, MenuCategory>();
+          INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+          parsed.forEach(c => map.set(c.id, c));
+          cachedCategories = Array.from(map.values());
         }
-        const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-        if (storedItems) {
-          const parsed = JSON.parse(storedItems);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
-          }
+      }
+
+      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (storedItems) {
+        const parsed = JSON.parse(storedItems);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
         }
-      } else {
-        // Clear local cache for categories and items in public/anonymous mode so Firebase Cloud Firestore is the SOLE source of truth
-        cachedCategories = [];
-        cachedItems = [];
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -461,29 +454,17 @@ export default function App() {
 
         if (remoteData.categories?.length) {
           setCategories(prev => {
-            const remoteRestIds = new Set(remoteData.categories.map(c => c.restaurantId).filter(Boolean));
-            const preserved = prev.filter(c => !remoteRestIds.has(c.restaurantId));
-            const fallbackForMissing = INITIAL_CATEGORIES.filter(c => 
-              !remoteRestIds.has(c.restaurantId) && !preserved.some(p => p.restaurantId === c.restaurantId)
-            );
-            return [...preserved, ...remoteData.categories, ...fallbackForMissing];
+            const map = new Map<string, MenuCategory>();
+            INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+            prev.forEach(c => map.set(c.id, c));
+            remoteData.categories.forEach(c => map.set(c.id, c));
+            return Array.from(map.values());
           });
-        } else if (categories.length === 0) {
-          setCategories(INITIAL_CATEGORIES);
         }
 
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(prev => {
-            const remoteRestIds = new Set(cleanItems.map(i => i.restaurantId).filter(Boolean));
-            const preserved = prev.filter(i => !remoteRestIds.has(i.restaurantId));
-            const fallbackForMissing = INITIAL_MENU_ITEMS.filter(i => 
-              !remoteRestIds.has(i.restaurantId) && !preserved.some(p => p.restaurantId === i.restaurantId)
-            );
-            return [...preserved, ...cleanItems, ...sanitizeMenuItems(fallbackForMissing)];
-          });
-        } else if (menuItems.length === 0) {
-          setMenuItems(sanitizeMenuItems(INITIAL_MENU_ITEMS));
+          setMenuItems(prev => mergeMenuItemsById(mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), prev), cleanItems));
         }
         if (remoteData.orders?.length) {
           setOrders(prev => {
