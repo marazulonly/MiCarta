@@ -82,6 +82,7 @@ interface OwnerDashboardProps {
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
   onSwitchToAdminView: () => void;
+  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
 }
 
 type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates';
@@ -108,6 +109,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onReorderCategories,
   onOpenCustomerPreview,
   onSwitchToAdminView,
+  onImportBackupJSON,
 }) => {
   const isOwnerLogged = Boolean(currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'));
 
@@ -1098,6 +1100,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onDeleteCategory={onDeleteCategory || (() => {})}
               onReorderCategories={onReorderCategories}
               onOpenCustomerPreview={onOpenCustomerPreview}
+              onImportBackupJSON={onImportBackupJSON}
             />
           </div>
         )}

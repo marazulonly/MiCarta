@@ -13,9 +13,12 @@ import {
   Clock,
   Bike,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Download,
+  FileJson
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory } from '../types';
+import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } from '../lib/jsonExportImport';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -26,6 +29,7 @@ interface RestaurantsViewProps {
   onUpdateMenuItem: (updated: MenuItem) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
+  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
 }
 
 export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
@@ -37,6 +41,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   onUpdateMenuItem,
   onAddMenuItem,
   onOpenCustomerPreview,
+  onImportBackupJSON,
 }) => {
   const [selectedRestId, setSelectedRestId] = useState<string>(restaurants[0]?.id || 'rest-brasas');
   const [activeTab, setActiveTab] = useState<'link' | 'branding' | 'menu'>('link');
@@ -140,6 +145,26 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
     setNewDishDesc('');
   };
 
+  const handleImportJSONFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) return;
+        const parsed = parseImportedJSON(text);
+        if (onImportBackupJSON) {
+          onImportBackupJSON(parsed);
+        }
+      } catch (err: any) {
+        alert('Error al importar backup JSON: ' + (err.message || 'Formato no válido'));
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6 pb-28">
       
@@ -150,17 +175,48 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
             Gestión de Restaurantes
           </h1>
           <p className="text-xs text-neutral-400 mt-1">
-            Configuración de enlaces únicos, identidad visual y cartas para cada sede.
+            Configuración de enlaces únicos, identidad visual y descargas de backup local en formato JSON.
           </p>
         </div>
 
-        <button
-          onClick={() => onOpenCustomerPreview(currentRestaurant)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer self-start sm:self-auto"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          <span>Ver Carta Pública</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => downloadRestaurantJSON(currentRestaurant, categories, items)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-semibold text-xs transition cursor-pointer"
+            title="Descargar este restaurante con su carta completa en archivo JSON al disco"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Descargar {currentRestaurant.name} (JSON)</span>
+          </button>
+
+          <button
+            onClick={() => downloadFullSystemJSON(restaurants, categories, items)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 font-semibold text-xs transition cursor-pointer"
+            title="Descargar todos los restaurantes y platos del sistema en un solo archivo JSON"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Backup Completo (JSON)</span>
+          </button>
+
+          <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 font-semibold text-xs transition cursor-pointer">
+            <FileJson className="w-3.5 h-3.5 text-amber-400" />
+            <span>Cargar JSON</span>
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportJSONFile}
+            />
+          </label>
+
+          <button
+            onClick={() => onOpenCustomerPreview(currentRestaurant)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Ver Carta Pública</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Restaurant Tabs */}

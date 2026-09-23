@@ -394,9 +394,10 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
 
   // Costa Marina / Cevichito Pliz
   { id: 'cat-m1', restaurantId: 'rest-costa', name: 'Ceviches & Tiraditos', description: 'Pesca artesanal fresca del litoral', sortOrder: 1, iconName: 'Fish' },
-  { id: 'cat-m2', restaurantId: 'rest-costa', name: 'Chicharrones & Wok', description: 'Frituras crocantes y arroces marineros', sortOrder: 2, iconName: 'Waves' },
-  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 3, iconName: 'GlassWater' },
-  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 4, iconName: 'GlassWater' }
+  { id: 'cat-m-causas', restaurantId: 'rest-costa', name: 'Causas Limeñas & Acevichadas', description: 'Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas', sortOrder: 2, iconName: 'Sparkles' },
+  { id: 'cat-m2', restaurantId: 'rest-costa', name: 'Chicharrones & Wok', description: 'Frituras crocantes y arroces marineros', sortOrder: 3, iconName: 'Waves' },
+  { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 4, iconName: 'GlassWater' },
+  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 5, iconName: 'GlassWater' }
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
@@ -896,7 +897,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-causa-acevichada',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
+    categoryId: 'cat-m-causas',
     name: 'Causa Acevichada al Ají Amarillo',
     description: 'Suave masa de papa amarilla prensada con pasta de ají amarillo y limón sutil, rellena de palta hass y cubierta con ceviche fresco bañado en salsa acevichada.',
     price: 32.00,
@@ -911,7 +912,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
     id: 'item-m-causa-pulpo',
     restaurantId: 'rest-costa',
-    categoryId: 'cat-m1',
+    categoryId: 'cat-m-causas',
     name: 'Causa de Pulpo al Olivo',
     description: 'Papa amarilla sazonada rellena de palta cremosa y coronada con láminas de pulpo tierno marinadas en crema de aceitunas botija iqueñas.',
     price: 34.00,

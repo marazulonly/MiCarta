@@ -456,15 +456,15 @@ export default function App() {
           setCategories(prev => {
             const map = new Map<string, MenuCategory>();
             INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
-            prev.forEach(c => map.set(c.id, c));
             remoteData.categories.forEach(c => map.set(c.id, c));
+            prev.forEach(c => map.set(c.id, c)); // Local state & user edits take precedence
             return Array.from(map.values());
           });
         }
 
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(prev => mergeMenuItemsById(mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), prev), cleanItems));
+          setMenuItems(prev => mergeMenuItemsById(mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), cleanItems), prev)); // Local state & user edits take precedence
         }
         if (remoteData.orders?.length) {
           setOrders(prev => {
@@ -823,6 +823,42 @@ export default function App() {
     showToast(`Plantilla "${updated.name}" actualizada con éxito.`);
   };
 
+  const handleImportBackupJSON = (imported: {
+    restaurants: Restaurant[];
+    categories: MenuCategory[];
+    items: MenuItem[];
+    users?: User[];
+  }) => {
+    if (imported.restaurants && imported.restaurants.length > 0) {
+      setRestaurants(prev => {
+        const map = new Map<string, Restaurant>();
+        prev.forEach(r => map.set(r.id, r));
+        imported.restaurants.forEach(r => map.set(r.id, r));
+        return Array.from(map.values());
+      });
+    }
+    if (imported.categories && imported.categories.length > 0) {
+      setCategories(prev => {
+        const map = new Map<string, MenuCategory>();
+        prev.forEach(c => map.set(c.id, c));
+        imported.categories.forEach(c => map.set(c.id, c));
+        return Array.from(map.values());
+      });
+    }
+    if (imported.items && imported.items.length > 0) {
+      setMenuItems(prev => mergeMenuItemsById(prev, imported.items));
+    }
+    if (imported.users && imported.users.length > 0) {
+      setUsers(prev => {
+        const map = new Map<string, User>();
+        prev.forEach(u => map.set(u.id, u));
+        imported.users?.forEach(u => map.set(u.id, u));
+        return Array.from(map.values());
+      });
+    }
+    showToast('✓ Backup en formato JSON cargado y restaurado exitosamente.');
+  };
+
   const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {
     setOrders(prev => {
       const updatedList = prev.map(o => {
@@ -1028,6 +1064,7 @@ export default function App() {
                 showToast('Se requieren credenciales de Administrador (DNI: 00448157) para acceder a la vista global SaaS.');
                 setIsLoginModalOpen(true);
               }}
+              onImportBackupJSON={handleImportBackupJSON}
             />
           )}
 
@@ -1230,6 +1267,7 @@ export default function App() {
                 onUpdateMenuItem={handleUpdateMenuItem}
                 onAddMenuItem={handleAddMenuItem}
                 onOpenCustomerPreview={handleOpenCustomerPreview}
+                onImportBackupJSON={handleImportBackupJSON}
               />
             )}
 

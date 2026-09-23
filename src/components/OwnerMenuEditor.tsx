@@ -29,7 +29,9 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Download,
+  FileJson
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -40,6 +42,7 @@ import {
   MenuTemplate
 } from '../types';
 import { saveRestaurantMenuToFirebase } from '../lib/firebase';
+import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
@@ -56,6 +59,7 @@ interface OwnerMenuEditorProps {
   onDeleteCategory: (categoryId: string) => void;
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => void;
+  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
 }
 
 export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
@@ -73,6 +77,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   onDeleteCategory,
   onReorderCategories,
   onOpenCustomerPreview,
+  onImportBackupJSON,
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -593,6 +598,28 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     showToast(`✓ Foto del plato "${updated.name}" actualizada con éxito`);
   };
 
+  const handleImportJSONFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) return;
+        const parsed = parseImportedJSON(text);
+        if (onImportBackupJSON) {
+          onImportBackupJSON(parsed);
+        } else {
+          showToast('✓ Backup JSON leído correctamente');
+        }
+      } catch (err: any) {
+        showToast('⚠️ Error al leer JSON: ' + (err.message || 'Formato no válido'));
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6">
       
@@ -608,11 +635,31 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             </span>
           </div>
           <p className="text-xs text-neutral-400 mt-1">
-            Crea y edita categorías, platos, adicionales, observaciones y fondos independientes para Salón y Delivery sin alterar la plantilla maestra.
+            Crea y edita categorías, platos, adicionales, observaciones y fondos independientes. Descarga copia JSON al disco local.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => downloadRestaurantJSON(restaurant, categories, items)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition cursor-pointer"
+            title="Descargar copia de seguridad en archivo JSON al disco duro"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Descargar JSON</span>
+          </button>
+
+          <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 text-xs font-bold transition cursor-pointer">
+            <FileJson className="w-3.5 h-3.5 text-amber-400" />
+            <span>Cargar JSON</span>
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportJSONFile}
+            />
+          </label>
+
           <button
             onClick={() => onOpenCustomerPreview(restaurant, 'DINE_IN')}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-white transition border border-neutral-700 cursor-pointer"
