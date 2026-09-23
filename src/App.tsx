@@ -491,32 +491,55 @@ export default function App() {
       if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
         const rawLoadedRests = cloudData.restaurants?.length 
           ? sanitizeRestaurants(cloudData.restaurants) 
-          : restaurants;
+          : [];
         const rawLoadedUsers = cloudData.users?.length 
           ? cloudData.users 
-          : users;
+          : [];
 
-        const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(rawLoadedUsers, rawLoadedRests);
+        // Guaranteed non-destructive merge for restaurants: Keep INITIAL_RESTAURANTS + local state + remote cloud
+        const restMap = new Map<string, Restaurant>();
+        INITIAL_RESTAURANTS.forEach(r => restMap.set(r.id, r));
+        restaurants.forEach(r => restMap.set(r.id, r));
+        rawLoadedRests.forEach(r => restMap.set(r.id, r));
+        const mergedRests = Array.from(restMap.values());
+
+        // Guaranteed non-destructive merge for users
+        const userMap = new Map<string, User>();
+        INITIAL_USERS.forEach(u => userMap.set(u.id, u));
+        users.forEach(u => userMap.set(u.id, u));
+        rawLoadedUsers.forEach(u => userMap.set(u.id, u));
+        const mergedUsers = deduplicateUsers(Array.from(userMap.values()));
+
+        const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(mergedUsers, mergedRests);
 
         setRestaurants(cleanedRests);
+        setUsers(cleanedUsers);
 
-        setUsers(prev => {
-          const map = new Map<string, User>();
-          prev.forEach(u => map.set(u.id, u));
-          cleanedUsers.forEach(u => map.set(u.id, u));
-          return deduplicateUsers(Array.from(map.values()));
-        });
-
+        // Guaranteed non-destructive merge for categories
+        const catMap = new Map<string, MenuCategory>();
+        INITIAL_CATEGORIES.forEach(c => catMap.set(c.id, c));
+        categories.forEach(c => catMap.set(c.id, c));
         if (cloudData.categories?.length) {
-          setCategories(cloudData.categories);
+          cloudData.categories.forEach(c => catMap.set(c.id, c));
         }
+        setCategories(Array.from(catMap.values()));
 
+        // Guaranteed non-destructive merge for menu items
+        const itemMap = new Map<string, MenuItem>();
+        sanitizeMenuItems(INITIAL_MENU_ITEMS).forEach(i => itemMap.set(i.id, i));
+        menuItems.forEach(i => itemMap.set(i.id, i));
         if (cloudData.items?.length) {
-          setMenuItems(sanitizeMenuItems(cloudData.items));
+          sanitizeMenuItems(cloudData.items).forEach(i => itemMap.set(i.id, i));
         }
+        setMenuItems(Array.from(itemMap.values()));
 
         if (cloudData.orders?.length) {
-          setOrders(cloudData.orders);
+          setOrders(prev => {
+            const ordMap = new Map<string, Order>();
+            prev.forEach(o => ordMap.set(o.id, o));
+            cloudData.orders!.forEach(o => ordMap.set(o.id, o));
+            return Array.from(ordMap.values());
+          });
         }
 
         // Update previewRestaurant immediately with the authoritative cloud branding & data
@@ -529,6 +552,15 @@ export default function App() {
           const match = cleanedRests.find(r => r.id === prev.id || r.slug === prev.slug);
           return match || cleanedRests[0];
         });
+
+        // Sync full non-destructive state back to cloud so Upstash has all 4 restaurants permanently
+        saveFullCloudMenu({
+          restaurants: cleanedRests,
+          categories: Array.from(catMap.values()),
+          items: Array.from(itemMap.values()),
+          users: cleanedUsers,
+          orders: cloudData.orders || []
+        }).catch(() => {});
       }
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
@@ -541,20 +573,39 @@ export default function App() {
         const d = event.data;
         if (d.restaurants?.length) {
           const cleanR = sanitizeRestaurants(d.restaurants);
-          setRestaurants(cleanR);
-          setPreviewRestaurant(prev => {
-            if (initialRequestedSlug) {
-              const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
-              if (match) return match;
-            }
-            return prev ? (cleanR.find(r => r.id === prev.id) || cleanR[0]) : cleanR[0];
+          setRestaurants(prev => {
+            const map = new Map<string, Restaurant>();
+            INITIAL_RESTAURANTS.forEach(r => map.set(r.id, r));
+            prev.forEach(r => map.set(r.id, r));
+            cleanR.forEach(r => map.set(r.id, r));
+            const merged = Array.from(map.values());
+            setPreviewRestaurant(p => {
+              if (initialRequestedSlug) {
+                const match = findRestaurantBySlug(merged, initialRequestedSlug);
+                if (match) return match;
+              }
+              return p ? (merged.find(r => r.id === p.id) || merged[0]) : merged[0];
+            });
+            return merged;
           });
         }
         if (d.categories?.length) {
-          setCategories(d.categories);
+          setCategories(prev => {
+            const map = new Map<string, MenuCategory>();
+            INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+            prev.forEach(c => map.set(c.id, c));
+            d.categories.forEach(c => map.set(c.id, c));
+            return Array.from(map.values());
+          });
         }
         if (d.items?.length) {
-          setMenuItems(sanitizeMenuItems(d.items));
+          setMenuItems(prev => {
+            const map = new Map<string, MenuItem>();
+            sanitizeMenuItems(INITIAL_MENU_ITEMS).forEach(i => map.set(i.id, i));
+            prev.forEach(i => map.set(i.id, i));
+            sanitizeMenuItems(d.items).forEach(i => map.set(i.id, i));
+            return Array.from(map.values());
+          });
         }
         if (d.orders?.length) {
           setOrders(d.orders);
