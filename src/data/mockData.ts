@@ -88,6 +88,8 @@ export const generateShiftsForRestaurant = (
   }
 ];
 
+export const CEVICHITO_PLIZ_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgQGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9RnJlZG9rYTp3Z2h0QDcwMDs4MDAmYW1wO2Rpc3BsYXk9c3dhcCIpOwogICAgICAuYnJhbmQtdGl0bGUgeyBmb250LWZhbWlseTogIkZyZWRva2EiLCAiT3V0Zml0IiwgIkFyaWFsIEJsYWNrIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogIzFCNjY3QTsgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSI0NCIgbGV0dGVyLXNwYWNpbmc9IjEuNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXRpdGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMS41IDIwMCA1NSkiPkNFVklDSElUTzwvdGV4dD4KICA8cG9seWdvbiBwb2ludHM9IjExMCw4OCAxMjYsODEgMTI2LDk1IiBmaWxsPSIjMUI2NjdBIi8+CiAgPHRleHQgeD0iMjAwIiB5PSI5NCIgZm9udC1zaXplPSIzOCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEuNSAyMDAgOTQpIj5QTElaPC90ZXh0PgogIDxwb2x5Z29uIHBvaW50cz0iMjkwLDg4IDI3NCw4MSAyNzQsOTUiIGZpbGw9IiMxQjY2N0EiLz4KPC9zdmc+';
+
 export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
     id: 'rest-brasas',
@@ -309,7 +311,7 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     phone: '+51 945 678 901',
     rating: 4.9,
     reviewCount: 390,
-    logoUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=160&auto=format&fit=crop&q=80',
+    logoUrl: CEVICHITO_PLIZ_LOGO_SVG,
     coverUrl: 'https://images.unsplash.com/photo-1535400255456-984241443b29?w=900&auto=format&fit=crop&q=80',
     ownerId: 'u-3',
     templateId: 'tmpl-marine',
@@ -325,7 +327,14 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       buttonColor: '#D98262',        // Botón terracota
       buttonTextColor: '#EAEBDC',    // Texto crema marfil
       restaurantNameFont: 'Outfit, sans-serif',
-      restaurantNameColor: '#1B667A' // Nombre en azul verdoso oscuro
+      restaurantNameColor: '#1B667A', // Nombre en azul verdoso oscuro
+      headerLogoUrl: CEVICHITO_PLIZ_LOGO_SVG,
+      headerDisplayMode: 'IMAGE_ONLY',
+      showHeaderName: false,
+      showHeaderTagline: false,
+      showHeaderBadge: false,
+      headerLogoFit: 'contain',
+      headerBannerHeight: 95
     },
     metrics: {
       dailyRevenue: 4150.20,

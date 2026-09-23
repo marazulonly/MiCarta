@@ -221,18 +221,14 @@ const STORAGE_KEYS = {
 };
 
 function getInitialStorageState() {
-  let cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
-  let cachedCategories = INITIAL_CATEGORIES;
-  let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
+  const cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
+  const cachedCategories = INITIAL_CATEGORIES;
+  const cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
   let cachedUsers = INITIAL_USERS;
   let cachedOrders = INITIAL_ORDERS;
   let cachedAuth: User | null = null;
 
-  const isPublicOrAnonymous = typeof window !== 'undefined' && (
-    Boolean(window.location?.search?.match(/(\?|&)(r|rest|restaurant)=/i)) ||
-    !localStorage.getItem(STORAGE_KEYS.AUTH)
-  );
-
+  // Only read auth and user credentials from localStorage, never stale menu/restaurant data
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
@@ -245,49 +241,12 @@ function getInitialStorageState() {
           cachedUsers = Array.from(map.values());
         }
       }
-      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
-      if (storedRests) {
-        const parsed = JSON.parse(storedRests);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const map = new Map<string, Restaurant>();
-          sanitizeRestaurants(INITIAL_RESTAURANTS).forEach(r => map.set(r.id, r));
-          sanitizeRestaurants(parsed).forEach(r => map.set(r.id, r));
-          cachedRests = Array.from(map.values());
-        }
-      }
-
-      const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (storedCats) {
-        const parsed = JSON.parse(storedCats);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const map = new Map<string, MenuCategory>();
-          INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
-          parsed.forEach(c => map.set(c.id, c));
-          cachedCategories = Array.from(map.values());
-        }
-      }
-
-      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-      if (storedItems) {
-        const parsed = JSON.parse(storedItems);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
-        }
-      }
-
-      const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      if (storedOrders) {
-        const parsed = JSON.parse(storedOrders);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedOrders = parsed;
-        }
-      }
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
       }
     } catch (e) {
-      console.warn('[Storage] Error reading initial cache:', e);
+      console.warn('[Storage] Error reading initial auth:', e);
     }
   }
 
@@ -493,39 +452,27 @@ export default function App() {
         });
 
         if (cloudData.categories?.length) {
-          setCategories(mergeRemoteCategoriesWithLocal(cloudData.categories, INITIAL_CATEGORIES));
+          setCategories(cloudData.categories);
         }
 
         if (cloudData.items?.length) {
-          setMenuItems(mergeRemoteWithLocal(cloudData.items, INITIAL_MENU_ITEMS));
+          setMenuItems(sanitizeMenuItems(cloudData.items));
         }
 
         if (cloudData.orders?.length) {
           setOrders(cloudData.orders);
         }
 
-        // Update previewRestaurant immediately with the latest cloud branding & data
+        // Update previewRestaurant immediately with the authoritative cloud branding & data
         setPreviewRestaurant(prev => {
+          if (initialRequestedSlug) {
+            const match = findRestaurantBySlug(cleanedRests, initialRequestedSlug);
+            if (match) return match;
+          }
           if (!prev) return cleanedRests[0];
           const match = cleanedRests.find(r => r.id === prev.id || r.slug === prev.slug);
-          return match || prev;
+          return match || cleanedRests[0];
         });
-      } else {
-        // Only seed to cloud if current client is an authenticated or existing session with local changes
-        // NEVER overwrite cloud from an incognito or empty fresh client!
-        const hasCustomData = typeof window !== 'undefined' && (
-          Boolean(localStorage.getItem(STORAGE_KEYS.ITEMS)) || 
-          Boolean(localStorage.getItem(STORAGE_KEYS.RESTS))
-        );
-        if (hasCustomData) {
-          saveFullCloudMenu({
-            restaurants: initialState.cachedRests,
-            items: initialState.cachedItems,
-            categories: initialState.cachedCategories,
-            users: initialState.cachedUsers,
-            orders: initialState.cachedOrders,
-          }).catch(() => {});
-        }
       }
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
@@ -539,7 +486,13 @@ export default function App() {
         if (d.restaurants?.length) {
           const cleanR = sanitizeRestaurants(d.restaurants);
           setRestaurants(cleanR);
-          setPreviewRestaurant(prev => (prev ? (cleanR.find(r => r.id === prev.id) || prev) : cleanR[0]));
+          setPreviewRestaurant(prev => {
+            if (initialRequestedSlug) {
+              const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
+              if (match) return match;
+            }
+            return prev ? (cleanR.find(r => r.id === prev.id) || cleanR[0]) : cleanR[0];
+          });
         }
         if (d.categories?.length) {
           setCategories(d.categories);
