@@ -1096,9 +1096,22 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 962 345 678',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-criollo', 'rest-costa'],
+    restaurantIds: ['rest-criollo'],
     status: 'active',
     lastActive: 'Hace 1 hora'
+  },
+  {
+    id: 'u-owner-stephanie',
+    name: 'Stephanie Leon',
+    email: 'stephanie.leon@cevichitopliz.pe',
+    dni: '89309927',
+    password: 'password',
+    role: 'OWNER',
+    phone: '+51 989 309 927',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-costa'],
+    status: 'active',
+    lastActive: 'En línea'
   },
   {
     id: 'u-4',

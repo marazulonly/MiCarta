@@ -34,7 +34,9 @@ import {
   saveMenuItemToFirebase,
   deleteMenuItemFromFirebase,
   saveCategoryToFirebase,
+  deleteCategoryFromFirebase,
   saveUserToFirebase,
+  deleteUserFromFirebase,
   saveOrderToFirebase
 } from './lib/firebase';
 
@@ -168,20 +170,142 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
   return Array.from(map.values());
 }
 
-// Initial default state without reading device localStorage
-const initialState = {
-  cachedRests: sanitizeRestaurants(INITIAL_RESTAURANTS),
-  cachedCategories: INITIAL_CATEGORIES,
-  cachedItems: sanitizeMenuItems(INITIAL_MENU_ITEMS),
-  cachedUsers: INITIAL_USERS,
-  cachedOrders: INITIAL_ORDERS,
+// Storage cache keys for instant offline-first persistence across all reloads
+const STORAGE_KEYS = {
+  RESTS: 'micarta_restaurants_v2',
+  ITEMS: 'micarta_menu_items_v2',
+  CATEGORIES: 'micarta_categories_v2',
+  USERS: 'micarta_users_v2',
+  ORDERS: 'micarta_orders_v2',
+  AUTH: 'micarta_logged_user_v2'
 };
+
+function getInitialStorageState() {
+  let cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
+  let cachedCategories = INITIAL_CATEGORIES;
+  let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS);
+  let cachedUsers = INITIAL_USERS;
+  let cachedOrders = INITIAL_ORDERS;
+  let cachedAuth: User | null = null;
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (storedUsers) {
+        const parsed = JSON.parse(storedUsers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, User>();
+          INITIAL_USERS.forEach(u => map.set(u.id, u));
+          parsed.forEach(u => map.set(u.id, u));
+          cachedUsers = Array.from(map.values());
+        }
+      }
+      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
+      if (storedRests) {
+        const parsed = JSON.parse(storedRests);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, Restaurant>();
+          sanitizeRestaurants(INITIAL_RESTAURANTS).forEach(r => map.set(r.id, r));
+          sanitizeRestaurants(parsed).forEach(r => map.set(r.id, r));
+          cachedRests = Array.from(map.values());
+        }
+      }
+      const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCats) {
+        const parsed = JSON.parse(storedCats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, MenuCategory>();
+          INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
+          parsed.forEach(c => map.set(c.id, c));
+          cachedCategories = Array.from(map.values());
+        }
+      }
+      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (storedItems) {
+        const parsed = JSON.parse(storedItems);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedItems = mergeMenuItemsById(sanitizeMenuItems(INITIAL_MENU_ITEMS), sanitizeMenuItems(parsed));
+        }
+      }
+      const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
+      if (storedOrders) {
+        const parsed = JSON.parse(storedOrders);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedOrders = parsed;
+        }
+      }
+      const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+      if (storedAuth) {
+        cachedAuth = JSON.parse(storedAuth);
+      }
+    } catch (e) {
+      console.warn('[Storage] Error reading initial cache:', e);
+    }
+  }
+
+  const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(cachedUsers, cachedRests);
+
+  return {
+    cachedRests: cleanedRests,
+    cachedCategories,
+    cachedItems,
+    cachedUsers: cleanedUsers,
+    cachedOrders,
+    cachedAuth
+  };
+}
+
+const initialState = getInitialStorageState();
 const initParams = getInitialUrlParams();
 
 const initialRequestedSlug = initParams.restSlug;
 const initialFoundRest = initialRequestedSlug 
   ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
   : null;
+
+function cleanseUserRestaurantAssociations(rawUsers: User[], rawRests: Restaurant[]) {
+  const modifiedUsers: User[] = [];
+  const modifiedRests: Restaurant[] = [];
+
+  const updatedUsers = rawUsers.map(u => {
+    if (u.dni === '89309927' || u.name.trim().toLowerCase().includes('stephanie leon')) {
+      if (u.restaurantIds && u.restaurantIds.includes('rest-brasas')) {
+        const cleaned = {
+          ...u,
+          restaurantIds: u.restaurantIds.filter(id => id !== 'rest-brasas')
+        };
+        modifiedUsers.push(cleaned);
+        return cleaned;
+      }
+    }
+    return u;
+  });
+
+  const updatedRests = rawRests.map(r => {
+    if (r.id === 'rest-brasas' || r.slug === 'brasas-y-fuegos') {
+      const stephanie = rawUsers.find(u => u.dni === '89309927' || u.name.trim().toLowerCase().includes('stephanie leon'));
+      if (stephanie && r.ownerId === stephanie.id) {
+        const cleaned = {
+          ...r,
+          ownerId: 'u-2'
+        };
+        modifiedRests.push(cleaned);
+        return cleaned;
+      }
+    }
+    return r;
+  });
+
+  // Sync corrected entities to Firebase in background
+  if (modifiedUsers.length > 0) {
+    modifiedUsers.forEach(u => saveUserToFirebase(u).catch(() => {}));
+  }
+  if (modifiedRests.length > 0) {
+    modifiedRests.forEach(r => saveRestaurantToFirebase(r).catch(() => {}));
+  }
+
+  return { cleanedUsers: updatedUsers, cleanedRests: updatedRests };
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -196,12 +320,12 @@ export default function App() {
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(initialState.cachedRests[0]?.id || 'rest-brasas');
   
-  // Authenticated user state: default to null (prompts for DNI and password upon entry)
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
+  const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Active Role Simulator (synced with currentUser)
-  const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
+  const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
 
   // Customer preview modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(Boolean(initialRequestedSlug && initialFoundRest));
@@ -211,6 +335,47 @@ export default function App() {
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
     (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
   );
+
+  // Synchronous LocalStorage write effects to guarantee zero data loss between renders or reloads
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    } catch {}
+  }, [users]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(restaurants));
+    } catch {}
+  }, [restaurants]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(menuItems));
+    } catch {}
+  }, [menuItems]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    } catch {}
+  }, [categories]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+    } catch {}
+  }, [orders]);
+
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.AUTH);
+      }
+    } catch {}
+  }, [currentUser]);
 
   // Firebase state
   const [isSavingFirebase, setIsSavingFirebase] = useState(false);
@@ -251,46 +416,70 @@ export default function App() {
     }
   }, [restaurants]);
 
-  // Pure direct remote download from Firebase Firestore without reading device localStorage
+  // Pure direct remote download from Firebase Firestore with safe merging
   useEffect(() => {
     loadAllDataFromFirebase().then(remoteData => {
-      if (remoteData && (remoteData.restaurants?.length > 0 || remoteData.items?.length > 0)) {
-        if (remoteData.restaurants?.length) {
-          const cleanRests = sanitizeRestaurants(remoteData.restaurants);
-          setRestaurants(cleanRests);
-        }
+      if (remoteData && (remoteData.restaurants?.length > 0 || remoteData.items?.length > 0 || remoteData.users?.length > 0)) {
+        const rawLoadedRests = remoteData.restaurants?.length 
+          ? sanitizeRestaurants(remoteData.restaurants) 
+          : restaurants;
+        const rawLoadedUsers = remoteData.users?.length 
+          ? remoteData.users 
+          : users;
+
+        const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(rawLoadedUsers, rawLoadedRests);
+
+        setRestaurants(prev => {
+          const map = new Map<string, Restaurant>();
+          prev.forEach(r => map.set(r.id, r));
+          cleanedRests.forEach(r => map.set(r.id, r));
+          return Array.from(map.values());
+        });
+
+        setUsers(prev => {
+          const map = new Map<string, User>();
+          prev.forEach(u => map.set(u.id, u));
+          cleanedUsers.forEach(u => map.set(u.id, u));
+          return Array.from(map.values());
+        });
+
         if (remoteData.categories?.length) {
-          setCategories(remoteData.categories);
-        }
-        if (remoteData.items?.length) {
-          const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(cleanItems);
-        }
-        if (remoteData.users?.length) {
-          setUsers(prev => {
-            const map = new Map<string, User>();
-            prev.forEach(u => map.set(u.id, u));
-            remoteData.users.forEach(u => map.set(u.id, u));
+          setCategories(prev => {
+            const map = new Map<string, MenuCategory>();
+            prev.forEach(c => map.set(c.id, c));
+            remoteData.categories.forEach(c => map.set(c.id, c));
             return Array.from(map.values());
           });
         }
-        if (remoteData.orders?.length) {
-          setOrders(remoteData.orders);
+        if (remoteData.items?.length) {
+          const cleanItems = sanitizeMenuItems(remoteData.items);
+          setMenuItems(prev => mergeMenuItemsById(prev, cleanItems));
         }
-      } else {
-        // Auto-seed to Firebase Firestore on first run to ensure cloud database has all restaurants and items
-        saveAllDataToFirebase({
-          restaurants: sanitizeRestaurants(INITIAL_RESTAURANTS),
-          items: sanitizeMenuItems(INITIAL_MENU_ITEMS),
-          categories: INITIAL_CATEGORIES,
-          users: INITIAL_USERS,
-          orders: INITIAL_ORDERS
-        }).catch(() => {});
+        if (remoteData.orders?.length) {
+          setOrders(prev => {
+            const map = new Map<string, Order>();
+            prev.forEach(o => map.set(o.id, o));
+            remoteData.orders.forEach(o => map.set(o.id, o));
+            return Array.from(map.values());
+          });
+        }
       }
     }).catch(err => {
       console.warn('[Firebase] Notice during initial remote fetch:', err);
     });
   }, []);
+
+  // Synchronize currentUser whenever users or restaurants are updated
+  useEffect(() => {
+    if (currentUser) {
+      const freshUser = users.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
+      if (freshUser) {
+        if (JSON.stringify(freshUser.restaurantIds) !== JSON.stringify(currentUser.restaurantIds)) {
+          setCurrentUser(freshUser);
+        }
+      }
+    }
+  }, [users, currentUser]);
 
   const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
 
@@ -300,23 +489,29 @@ export default function App() {
     try {
       const remoteData = await loadAllDataFromFirebase();
       if (remoteData) {
-        if (remoteData.restaurants?.length) {
-          setRestaurants(sanitizeRestaurants(remoteData.restaurants));
-        }
+        let loadedRests = remoteData.restaurants?.length 
+          ? sanitizeRestaurants(remoteData.restaurants) 
+          : restaurants;
+        let loadedUsers = remoteData.users?.length 
+          ? remoteData.users 
+          : users;
+
+        const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(loadedUsers, loadedRests);
+
+        setRestaurants(cleanedRests);
+        setUsers(prev => {
+          const map = new Map<string, User>();
+          prev.forEach(u => map.set(u.id, u));
+          cleanedUsers.forEach(u => map.set(u.id, u));
+          return Array.from(map.values());
+        });
+
         if (remoteData.items?.length) {
           const cleanItems = sanitizeMenuItems(remoteData.items);
           setMenuItems(prev => mergeMenuItemsById(prev, cleanItems));
         }
         if (remoteData.categories?.length) {
           setCategories(remoteData.categories);
-        }
-        if (remoteData.users?.length) {
-          setUsers(prev => {
-            const map = new Map<string, User>();
-            prev.forEach(u => map.set(u.id, u));
-            remoteData.users.forEach(u => map.set(u.id, u));
-            return Array.from(map.values());
-          });
         }
         if (remoteData.orders?.length) {
           setOrders(remoteData.orders);
@@ -566,6 +761,7 @@ export default function App() {
 
   const handleDeleteCategory = (categoryId: string) => {
     setCategories(prev => prev.filter(c => c.id !== categoryId));
+    deleteCategoryFromFirebase(categoryId);
     showToast(`Categoría eliminada.`);
   };
 
@@ -579,6 +775,12 @@ export default function App() {
     setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
     saveUserToFirebase(updated);
     showToast(`Usuario "${updated.name}" actualizado.`);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    deleteUserFromFirebase(userId);
+    showToast(`Usuario eliminado del sistema.`);
   };
 
   const handleUpdateTemplate = (updated: MenuTemplate) => {

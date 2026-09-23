@@ -122,9 +122,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
   const ownedRestaurants = restaurants.filter(r => {
     if (isOwnerLogged && currentUser) {
-      return r.ownerId === currentUser.id || (currentUser.restaurantIds && (currentUser.restaurantIds.includes(r.id) || currentUser.restaurantIds.includes('all')));
+      if (currentUser.role === 'ADMIN' || (currentUser.restaurantIds && currentUser.restaurantIds.includes('all'))) {
+        return true;
+      }
+      const isAssigned = Array.isArray(currentUser.restaurantIds) && currentUser.restaurantIds.includes(r.id);
+      const isCreator = Boolean(r.ownerId && r.ownerId === currentUser.id);
+      return isAssigned || isCreator;
     }
-    return r.ownerId === currentOwner?.id || (currentOwner?.restaurantIds && currentOwner.restaurantIds.includes(r.id));
+    const isAssigned = Array.isArray(currentOwner?.restaurantIds) && currentOwner.restaurantIds.includes(r.id);
+    const isCreator = Boolean(r.ownerId && r.ownerId === currentOwner?.id);
+    return isAssigned || isCreator;
   });
 
   // Selected Restaurant being managed

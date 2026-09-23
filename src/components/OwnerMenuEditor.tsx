@@ -33,7 +33,7 @@ import {
   MenuAccessSettings,
   MenuTemplate
 } from '../types';
-import { saveAllDataToFirebase } from '../lib/firebase';
+import { saveRestaurantMenuToFirebase } from '../lib/firebase';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
@@ -98,13 +98,13 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const handleSaveToFirebase = async () => {
     setIsSavingFirebase(true);
     try {
-      const res = await saveAllDataToFirebase({
-        restaurants: [restaurant],
-        items: items,
-        categories: categories,
+      const res = await saveRestaurantMenuToFirebase({
+        restaurant,
+        items,
+        categories,
       });
       if (res.success) {
-        showToast('✓ ' + res.message);
+        showToast('✓ Carta y restaurante guardados exitosamente en Firebase');
       } else {
         showToast('⚠️ ' + res.message);
       }
