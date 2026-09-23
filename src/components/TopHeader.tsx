@@ -85,9 +85,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   SaaS v2.5
                 </span>
               </div>
-              <span className="text-[11px] text-neutral-400 block -mt-0.5">
-                4 Restaurantes Conectados
-              </span>
+              <div className="flex items-center gap-2 -mt-0.5 flex-wrap">
+                <span className="text-[11px] text-neutral-400">
+                  4 Restaurantes Conectados
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Auto-sync Nube (Incógnito listo) ✓
+                </span>
+              </div>
             </div>
           </div>
 

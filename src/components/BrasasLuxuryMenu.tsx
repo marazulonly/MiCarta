@@ -20,7 +20,8 @@ import {
   MapPin,
   Edit3,
   Camera,
-  Sliders
+  Sliders,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order, OrderType } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -348,6 +349,16 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Marca & Fondos</span>
+                  </button>
+                )}
+                {onEditHeader && (
+                  <button
+                    onClick={onEditHeader}
+                    className="px-2.5 py-1 rounded-lg bg-fuchsia-950/80 hover:bg-fuchsia-900 text-fuchsia-200 border border-fuchsia-500/60 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
+                    title="Editar cabecera, subir logo y autoajustar"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Cabecera & Logo</span>
                   </button>
                 )}
                 {onSaveToFirebase && (

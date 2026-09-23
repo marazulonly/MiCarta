@@ -38,8 +38,19 @@ import {
   deleteCategoryFromFirebase,
   saveUserToFirebase,
   deleteUserFromFirebase,
-  saveOrderToFirebase
+  saveOrderToFirebase,
+  FIRESTORE_UPGRADE_URL
 } from './lib/firebase';
+import {
+  fetchLatestCloudMenu,
+  saveFullCloudMenu,
+  autoSyncMenuItem,
+  autoDeleteMenuItem,
+  autoSyncRestaurant,
+  autoSyncCategory,
+  autoDeleteCategory,
+  subscribeToCloudUpdates,
+} from './lib/cloudSync';
 
 // Helper function to normalize slugs for matching URLs, names, and IDs
 export const normalizeSlug = (str?: string): string => {
@@ -157,6 +168,34 @@ function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
     }
     return it;
   });
+}
+
+// Helper to reliably merge menu items: remote cloud data is strictly authoritative
+function mergeRemoteWithLocal(remoteItems: MenuItem[], fallbackLocal: MenuItem[]): MenuItem[] {
+  const cleanRemote = sanitizeMenuItems(remoteItems);
+  const remoteRestIds = new Set(cleanRemote.map(i => i.restaurantId).filter(Boolean));
+  const remainingFallbacks = fallbackLocal.filter(i => !remoteRestIds.has(i.restaurantId));
+  const map = new Map<string, MenuItem>();
+  remainingFallbacks.forEach(it => {
+    if (it && it.id) map.set(it.id, it);
+  });
+  cleanRemote.forEach(it => {
+    if (it && it.id) map.set(it.id, it);
+  });
+  return Array.from(map.values());
+}
+
+function mergeRemoteCategoriesWithLocal(remoteCats: MenuCategory[], fallbackLocal: MenuCategory[]): MenuCategory[] {
+  const remoteRestIds = new Set(remoteCats.map(c => c.restaurantId).filter(Boolean));
+  const remainingFallbacks = fallbackLocal.filter(c => !remoteRestIds.has(c.restaurantId));
+  const map = new Map<string, MenuCategory>();
+  remainingFallbacks.forEach(c => {
+    if (c && c.id) map.set(c.id, c);
+  });
+  remoteCats.forEach(c => {
+    if (c && c.id) map.set(c.id, c);
+  });
+  return Array.from(map.values());
 }
 
 // Helper to reliably merge menu items by unique ID preserving manually entered and recovered dishes
@@ -427,25 +466,24 @@ export default function App() {
     }
   }, [restaurants]);
 
-  // Pure direct remote download from Firebase Firestore with safe merging
+  // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
-    loadAllDataFromFirebase().then(remoteData => {
-      if (remoteData && (remoteData.restaurants?.length > 0 || remoteData.items?.length > 0 || remoteData.users?.length > 0)) {
-        const rawLoadedRests = remoteData.restaurants?.length 
-          ? sanitizeRestaurants(remoteData.restaurants) 
+    let isMounted = true;
+
+    // 1. Initial Cloud Fetch (works instantly in incognito mode with server backing & Firestore)
+    fetchLatestCloudMenu().then(cloudData => {
+      if (!isMounted) return;
+      if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
+        const rawLoadedRests = cloudData.restaurants?.length 
+          ? sanitizeRestaurants(cloudData.restaurants) 
           : restaurants;
-        const rawLoadedUsers = remoteData.users?.length 
-          ? remoteData.users 
+        const rawLoadedUsers = cloudData.users?.length 
+          ? cloudData.users 
           : users;
 
         const { cleanedUsers, cleanedRests } = cleanseUserRestaurantAssociations(rawLoadedUsers, rawLoadedRests);
 
-        setRestaurants(prev => {
-          const map = new Map<string, Restaurant>();
-          prev.forEach(r => map.set(r.id, r));
-          cleanedRests.forEach(r => map.set(r.id, r));
-          return Array.from(map.values());
-        });
+        setRestaurants(cleanedRests);
 
         setUsers(prev => {
           const map = new Map<string, User>();
@@ -454,40 +492,102 @@ export default function App() {
           return deduplicateUsers(Array.from(map.values()));
         });
 
-        if (remoteData.categories?.length) {
-          setCategories(prev => {
-            const map = new Map<string, MenuCategory>();
-            // 1. Initial defaults
-            INITIAL_CATEGORIES.forEach(c => map.set(c.id, c));
-            // 2. Remote Firestore data
-            remoteData.categories.forEach(c => map.set(c.id, c));
-            // 3. Local state updates (overriding matching IDs)
-            prev.forEach(c => {
-              // Ensure we don't restore old cat-m1 if INITIAL_CATEGORIES or remoteData replaced it
-              if (c.id === 'cat-m1' && map.has('cat-m-entradas')) return;
-              map.set(c.id, c);
-            });
-            return Array.from(map.values());
-          });
+        if (cloudData.categories?.length) {
+          setCategories(mergeRemoteCategoriesWithLocal(cloudData.categories, INITIAL_CATEGORIES));
         }
 
-        if (remoteData.items?.length) {
-          const cleanItems = sanitizeMenuItems(remoteData.items);
-          setMenuItems(prev => mergeMenuItemsById(cleanItems, prev));
+        if (cloudData.items?.length) {
+          setMenuItems(mergeRemoteWithLocal(cloudData.items, INITIAL_MENU_ITEMS));
         }
-        if (remoteData.orders?.length) {
-          setOrders(prev => {
-            const map = new Map<string, Order>();
-            prev.forEach(o => map.set(o.id, o));
-            remoteData.orders.forEach(o => map.set(o.id, o));
-            return Array.from(map.values());
-          });
+
+        if (cloudData.orders?.length) {
+          setOrders(cloudData.orders);
         }
+
+        // Update previewRestaurant immediately with the latest cloud branding & data
+        setPreviewRestaurant(prev => {
+          if (!prev) return cleanedRests[0];
+          const match = cleanedRests.find(r => r.id === prev.id || r.slug === prev.slug);
+          return match || prev;
+        });
+      } else {
+        // First boot or empty cloud: automatically seed current state to cloud
+        saveFullCloudMenu({
+          restaurants: initialState.cachedRests,
+          items: initialState.cachedItems,
+          categories: initialState.cachedCategories,
+          users: initialState.cachedUsers,
+          orders: initialState.cachedOrders,
+        }).catch(() => {});
       }
     }).catch(err => {
-      console.warn('[Firebase] Notice during initial remote fetch:', err);
+      console.warn('[CloudSync] Notice during initial remote fetch:', err);
     });
+
+    // 2. Real-time Subscription: updates all sessions and incognito windows instantly when any change occurs
+    const unsubscribe = subscribeToCloudUpdates((event) => {
+      if (!isMounted) return;
+      if (event.type === 'FULL_SYNC' && event.data) {
+        const d = event.data;
+        if (d.restaurants?.length) {
+          const cleanR = sanitizeRestaurants(d.restaurants);
+          setRestaurants(cleanR);
+          setPreviewRestaurant(prev => (prev ? (cleanR.find(r => r.id === prev.id) || prev) : cleanR[0]));
+        }
+        if (d.categories?.length) {
+          setCategories(d.categories);
+        }
+        if (d.items?.length) {
+          setMenuItems(sanitizeMenuItems(d.items));
+        }
+        if (d.orders?.length) {
+          setOrders(d.orders);
+        }
+      } else if (event.type === 'ITEM_UPDATED' && event.item) {
+        setMenuItems(prev => {
+          const idx = prev.findIndex(i => i.id === event.item!.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = event.item!;
+            return next;
+          }
+          return [event.item!, ...prev];
+        });
+      } else if (event.type === 'ITEM_DELETED' && event.itemId) {
+        setMenuItems(prev => prev.filter(i => i.id !== event.itemId));
+      } else if (event.type === 'RESTAURANT_UPDATED' && event.restaurant) {
+        setRestaurants(prev => prev.map(r => r.id === event.restaurant!.id ? event.restaurant! : r));
+        setPreviewRestaurant(prev => (prev && prev.id === event.restaurant!.id ? event.restaurant! : prev));
+      } else if (event.type === 'CATEGORY_UPDATED' && event.category) {
+        setCategories(prev => {
+          const idx = prev.findIndex(c => c.id === event.category!.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = event.category!;
+            return next;
+          }
+          return [...prev, event.category!];
+        });
+      } else if (event.type === 'CATEGORY_DELETED' && event.categoryId) {
+        setCategories(prev => prev.filter(c => c.id !== event.categoryId));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
+
+  // Keep previewRestaurant synchronized with restaurants array whenever restaurants update
+  useEffect(() => {
+    if (previewRestaurant) {
+      const match = restaurants.find(r => r.id === previewRestaurant.id);
+      if (match && JSON.stringify(match) !== JSON.stringify(previewRestaurant)) {
+        setPreviewRestaurant(match);
+      }
+    }
+  }, [restaurants, previewRestaurant]);
 
   // Synchronize currentUser whenever users or restaurants are updated
   useEffect(() => {
@@ -627,6 +727,7 @@ export default function App() {
 
     setRestaurants(prev => [newRestaurant, ...prev]);
     saveRestaurantToFirebase(newRestaurant);
+    autoSyncRestaurant(newRestaurant);
     if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
       const updatedUser: User = {
         ...currentUser,
@@ -702,7 +803,8 @@ export default function App() {
       });
     }
 
-    showToast(`Restaurante "${updated.name}" actualizado y sincronizado.`);
+    showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
+    autoSyncRestaurant(updated);
   };
 
   const handleDeleteRestaurant = (restaurantId: string) => {
@@ -743,70 +845,71 @@ export default function App() {
       } : null);
     }
 
-    // 4. Delete from Firebase
+    // 4. Delete from Firebase & Cloud
     deleteRestaurantFromFirebase(restaurantId);
+    saveFullCloudMenu({
+      restaurants: nextRestaurants,
+      items: menuItems.filter(i => i.restaurantId !== restaurantId),
+      categories: categories.filter(c => c.restaurantId !== restaurantId),
+    });
 
     showToast(`Restaurante "${restName}" eliminado exitosamente.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {
     setMenuItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-    saveMenuItemToFirebase(updated);
-    showToast(`Plato "${updated.name}" actualizado y guardado en Firebase.`);
+    autoSyncMenuItem(updated);
+    showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
     setMenuItems(prev => [newItem, ...prev]);
-    saveMenuItemToFirebase(newItem);
-    showToast(`Nuevo plato "${newItem.name}" guardado permanentemente en Firebase.`);
+    autoSyncMenuItem(newItem);
+    showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
     setMenuItems(prev => prev.filter(i => i.id !== itemId));
-    deleteMenuItemFromFirebase(itemId);
-    showToast(`Plato eliminado.`);
+    autoDeleteMenuItem(itemId);
+    showToast(`✓ Plato eliminado y actualizado en la nube.`);
   };
 
   const handleReorderCategories = (reorderedCats: MenuCategory[]) => {
-    setCategories(prev => {
-      const restId = reorderedCats[0]?.restaurantId;
-      if (!restId) return prev;
-      const otherCats = prev.filter(c => c.restaurantId !== restId);
-      const updatedList = [...otherCats, ...reorderedCats];
-      reorderedCats.forEach(c => saveCategoryToFirebase(c).catch(() => {}));
-      return updatedList;
-    });
-    showToast(`✓ Orden de categorías actualizado.`);
+    const restId = reorderedCats[0]?.restaurantId;
+    if (!restId) return;
+    const otherCats = categories.filter(c => c.restaurantId !== restId);
+    const updatedList = [...otherCats, ...reorderedCats];
+    setCategories(updatedList);
+    saveFullCloudMenu({ categories: updatedList, restaurants, items: menuItems, users, orders });
+    showToast(`✓ Orden de categorías guardado en la nube.`);
   };
 
   const handleReorderMenuItems = (reorderedItems: MenuItem[]) => {
-    setMenuItems(prev => {
-      const restId = reorderedItems[0]?.restaurantId;
-      if (!restId) return prev;
-      const otherItems = prev.filter(i => i.restaurantId !== restId);
-      const updatedList = [...otherItems, ...reorderedItems];
-      reorderedItems.forEach(i => saveMenuItemToFirebase(i).catch(() => {}));
-      return updatedList;
-    });
-    showToast(`✓ Orden de platos actualizado.`);
+    const restId = reorderedItems[0]?.restaurantId;
+    if (!restId) return;
+    const otherItems = menuItems.filter(i => i.restaurantId !== restId);
+    const updatedList = [...otherItems, ...reorderedItems];
+    setMenuItems(updatedList);
+    saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
+    showToast(`✓ Orden de platos guardado en la nube.`);
   };
 
   const handleAddCategory = (newCategory: MenuCategory) => {
     setCategories(prev => [...prev, newCategory]);
-    saveCategoryToFirebase(newCategory);
-    showToast(`Categoría "${newCategory.name}" agregada.`);
+    autoSyncCategory(newCategory);
+    showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
 
   const handleUpdateCategory = (updatedCategory: MenuCategory) => {
     setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
-    saveCategoryToFirebase(updatedCategory);
-    showToast(`Categoría "${updatedCategory.name}" actualizada.`);
+    autoSyncCategory(updatedCategory);
+    showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
     setCategories(prev => prev.filter(c => c.id !== categoryId));
-    deleteCategoryFromFirebase(categoryId);
-    showToast(`Categoría eliminada.`);
+    autoDeleteCategory(categoryId);
+    showToast(`✓ Categoría eliminada de la nube.`);
   };
 
   const handleAddUser = (newUser: User) => {
@@ -927,8 +1030,19 @@ export default function App() {
       });
     }
 
+    // 4. Immediately persist imported carta to cloud so incognito users and all devices see it
+    setTimeout(() => {
+      saveFullCloudMenu({
+        restaurants: preparedRestaurants.length > 0 ? preparedRestaurants : restaurants,
+        categories: preparedCategories.length > 0 ? preparedCategories : categories,
+        items: preparedItems.length > 0 ? preparedItems : menuItems,
+        users,
+        orders,
+      }).catch(() => {});
+    }, 100);
+
     const modeText = mode === 'REPLACE' ? 'reemplazada completamente' : 'añadida / fusionada';
-    showToast(`✓ Carta ${modeText} con éxito desde el archivo JSON.`);
+    showToast(`✓ Carta ${modeText} con éxito y guardada en la nube.`);
   };
 
   const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {

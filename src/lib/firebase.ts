@@ -246,6 +246,22 @@ export async function saveRestaurantMenuToFirebase(data: {
   });
 }
 
+export const FIRESTORE_UPGRADE_URL = `https://console.firebase.google.com/project/${rawConfig.projectId || 'ai-studio-applet-webapp-112e7'}/firestore/databases/${rawConfig.firestoreDatabaseId || 'ai-studio-micarta-b9a39da7-a299-48ec-98b9-8ba17e9a72ad'}/data?openUpgradeDialog=true`;
+
+let quotaExceededNotified = false;
+
+export function checkQuotaError(err: any): boolean {
+  const msg = String(err?.message || err || '');
+  if (msg.includes('Quota exceeded') || msg.includes('quota metric') || msg.includes('Quota limit exceeded')) {
+    if (!quotaExceededNotified) {
+      console.warn(`[Firebase] Aviso de límite de cuota gratuita diaria de Firestore. Puedes revisar la cuota o actualizar en: ${FIRESTORE_UPGRADE_URL}`);
+      quotaExceededNotified = true;
+    }
+    return true;
+  }
+  return false;
+}
+
 /**
  * Loads data from Firestore if present, consolidating snapshot and items collections
  */
@@ -264,6 +280,8 @@ export async function loadAllDataFromFirebase(): Promise<{
     const itemsMap = new Map<string, MenuItem>();
     const usersMap = new Map<string, User>();
     const ordersMap = new Map<string, Order>();
+
+    let hasSnapshotData = false;
 
     // 1. Leer snapshot 'system_snapshot/latest' como base inicial si existe
     try {
@@ -297,13 +315,28 @@ export async function loadAllDataFromFirebase(): Promise<{
               if (o && o.id) ordersMap.set(o.id, o);
             });
           }
+          if (itemsMap.size > 0 || restaurantsMap.size > 0) {
+            hasSnapshotData = true;
+          }
         }
       }
     } catch (e) {
+      checkQuotaError(e);
       console.warn('[Firebase] Notice reading system_snapshot:', e);
     }
 
-    // 2. Leer SIEMPRE directamente de todas las colecciones independientes de Firestore (Fuente Viva de Verdad)
+    // 2. Si el snapshot ya contenía datos, retornamos inmediatamente para no malgastar cuota de lecturas
+    if (hasSnapshotData) {
+      return {
+        restaurants: Array.from(restaurantsMap.values()),
+        items: Array.from(itemsMap.values()),
+        categories: Array.from(categoriesMap.values()),
+        users: Array.from(usersMap.values()),
+        orders: Array.from(ordersMap.values()),
+      };
+    }
+
+    // 3. Leer SIEMPRE directamente de todas las colecciones independientes de Firestore (Fuente Viva de Verdad)
     await Promise.allSettled([
       // Colección 'restaurants'
       (async () => {
@@ -319,6 +352,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading restaurants collection:', e);
         }
       })(),
@@ -337,6 +371,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading categories collection:', e);
         }
       })(),
@@ -355,6 +390,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading items collection:', e);
         }
 
@@ -370,6 +406,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading menu_items collection:', e);
         }
       })(),
@@ -388,6 +425,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading users collection:', e);
         }
       })(),
@@ -405,6 +443,7 @@ export async function loadAllDataFromFirebase(): Promise<{
             }
           });
         } catch (e) {
+          checkQuotaError(e);
           console.warn('[Firebase] Notice reading orders collection:', e);
         }
       })()

@@ -16,7 +16,8 @@ import {
   MapPin,
   Edit3,
   Camera,
-  Sliders
+  Sliders,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -367,6 +368,17 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Marca & Fondos</span>
+                  </button>
+                )}
+                {onEditHeader && (
+                  <button
+                    onClick={onEditHeader}
+                    style={{ backgroundColor: '#D946EF', color: '#FFFFFF', borderColor: '#F472B6' }}
+                    className="px-2.5 py-1 rounded-lg border font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
+                    title="Editar cabecera de la carta, subir logo y autoajustar"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Cabecera & Logo</span>
                   </button>
                 )}
                 {onSaveToFirebase && (
