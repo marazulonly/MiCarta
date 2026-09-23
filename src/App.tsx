@@ -843,13 +843,20 @@ export default function App() {
     restaurants: Restaurant[];
     categories: MenuCategory[];
     items: MenuItem[];
-    users?: User[];
   }) => {
     if (imported.restaurants && imported.restaurants.length > 0) {
       setRestaurants(prev => {
         const map = new Map<string, Restaurant>();
         prev.forEach(r => map.set(r.id, r));
-        imported.restaurants.forEach(r => map.set(r.id, r));
+        imported.restaurants.forEach(impRest => {
+          const existing = map.get(impRest.id);
+          // Preserve existing ownerId if restaurant already exists
+          const mergedRest: Restaurant = {
+            ...impRest,
+            ownerId: existing?.ownerId || impRest.ownerId,
+          };
+          map.set(impRest.id, mergedRest);
+        });
         return Array.from(map.values());
       });
     }
@@ -864,15 +871,7 @@ export default function App() {
     if (imported.items && imported.items.length > 0) {
       setMenuItems(prev => mergeMenuItemsById(prev, imported.items));
     }
-    if (imported.users && imported.users.length > 0) {
-      setUsers(prev => {
-        const map = new Map<string, User>();
-        prev.forEach(u => map.set(u.id, u));
-        imported.users?.forEach(u => map.set(u.id, u));
-        return Array.from(map.values());
-      });
-    }
-    showToast('✓ Backup en formato JSON cargado y restaurado exitosamente.');
+    showToast('✓ Carta e información del restaurante cargadas exitosamente desde el JSON.');
   };
 
   const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {
