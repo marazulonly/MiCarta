@@ -839,18 +839,53 @@ export default function App() {
     showToast(`Plantilla "${updated.name}" actualizada con éxito.`);
   };
 
-  const handleImportBackupJSON = (imported: {
-    restaurants: Restaurant[];
-    categories: MenuCategory[];
-    items: MenuItem[];
-  }) => {
-    if (imported.restaurants && imported.restaurants.length > 0) {
+  const handleImportBackupJSON = (
+    imported: {
+      restaurants: Restaurant[];
+      categories: MenuCategory[];
+      items: MenuItem[];
+    },
+    mode: 'MERGE' | 'REPLACE' = 'MERGE',
+    targetRestaurantId?: string
+  ) => {
+    let preparedCategories = [...imported.categories];
+    let preparedItems = [...imported.items];
+    let preparedRestaurants = [...imported.restaurants];
+
+    // If targetRestaurantId was explicitly selected and imported data has 1 restaurant,
+    // remap categories and items to target restaurant ID
+    if (targetRestaurantId && imported.restaurants.length === 1) {
+      const singleRest = imported.restaurants[0];
+      if (singleRest.id !== targetRestaurantId) {
+        preparedCategories = imported.categories.map(c => ({
+          ...c,
+          restaurantId: targetRestaurantId
+        }));
+        preparedItems = imported.items.map(i => ({
+          ...i,
+          restaurantId: targetRestaurantId
+        }));
+        preparedRestaurants = [{
+          ...singleRest,
+          id: targetRestaurantId
+        }];
+      }
+    }
+
+    const targetRestIds = new Set<string>();
+    if (targetRestaurantId) {
+      targetRestIds.add(targetRestaurantId);
+    } else {
+      preparedRestaurants.forEach(r => targetRestIds.add(r.id));
+    }
+
+    // 1. Update restaurants (always preserve ownerId)
+    if (preparedRestaurants && preparedRestaurants.length > 0) {
       setRestaurants(prev => {
         const map = new Map<string, Restaurant>();
         prev.forEach(r => map.set(r.id, r));
-        imported.restaurants.forEach(impRest => {
+        preparedRestaurants.forEach(impRest => {
           const existing = map.get(impRest.id);
-          // Preserve existing ownerId if restaurant already exists
           const mergedRest: Restaurant = {
             ...impRest,
             ownerId: existing?.ownerId || impRest.ownerId,
@@ -860,18 +895,40 @@ export default function App() {
         return Array.from(map.values());
       });
     }
-    if (imported.categories && imported.categories.length > 0) {
+
+    // 2. Update categories
+    if (preparedCategories && preparedCategories.length > 0) {
       setCategories(prev => {
-        const map = new Map<string, MenuCategory>();
-        prev.forEach(c => map.set(c.id, c));
-        imported.categories.forEach(c => map.set(c.id, c));
-        return Array.from(map.values());
+        if (mode === 'REPLACE') {
+          // Replace categories belonging to target restaurants with the imported ones
+          const remaining = prev.filter(c => !targetRestIds.has(c.restaurantId));
+          return [...remaining, ...preparedCategories];
+        } else {
+          // Merge categories by ID
+          const map = new Map<string, MenuCategory>();
+          prev.forEach(c => map.set(c.id, c));
+          preparedCategories.forEach(c => map.set(c.id, c));
+          return Array.from(map.values());
+        }
       });
     }
-    if (imported.items && imported.items.length > 0) {
-      setMenuItems(prev => mergeMenuItemsById(prev, imported.items));
+
+    // 3. Update menu items
+    if (preparedItems && preparedItems.length > 0) {
+      setMenuItems(prev => {
+        if (mode === 'REPLACE') {
+          // Replace items belonging to target restaurants with the imported ones
+          const remaining = prev.filter(i => !targetRestIds.has(i.restaurantId));
+          return [...remaining, ...preparedItems];
+        } else {
+          // Merge items by ID
+          return mergeMenuItemsById(prev, preparedItems);
+        }
+      });
     }
-    showToast('✓ Carta e información del restaurante cargadas exitosamente desde el JSON.');
+
+    const modeText = mode === 'REPLACE' ? 'reemplazada completamente' : 'añadida / fusionada';
+    showToast(`✓ Carta ${modeText} con éxito desde el archivo JSON.`);
   };
 
   const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {

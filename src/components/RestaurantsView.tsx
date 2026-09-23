@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory } from '../types';
 import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } from '../lib/jsonExportImport';
+import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -29,7 +30,11 @@ interface RestaurantsViewProps {
   onUpdateMenuItem: (updated: MenuItem) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
-  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
+  onImportBackupJSON?: (
+    data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
+    mode?: ImportMenuMode,
+    targetRestaurantId?: string
+  ) => void;
 }
 
 export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
@@ -145,6 +150,14 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
     setNewDishDesc('');
   };
 
+  // State for Import Menu JSON modal with mode selection (MERGE vs REPLACE)
+  const [pendingImportData, setPendingImportData] = useState<{
+    restaurants: Restaurant[];
+    categories: MenuCategory[];
+    items: MenuItem[];
+  } | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const handleImportJSONFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -155,11 +168,12 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
         const text = event.target?.result as string;
         if (!text) return;
         const parsed = parseImportedJSON(text);
-        if (onImportBackupJSON) {
-          onImportBackupJSON(parsed);
-        }
+        setPendingImportData(parsed);
+        setIsImportModalOpen(true);
       } catch (err: any) {
-        alert('Error al importar backup JSON: ' + (err.message || 'Formato no válido'));
+        alert('Error al leer el archivo JSON: ' + (err.message || 'Formato no válido'));
+      } finally {
+        e.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -741,6 +755,23 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal to choose between Merge (Añadir) or Replace (Reemplazar) when importing JSON */}
+      <ImportMenuModal
+        isOpen={isImportModalOpen}
+        onClose={() => {
+          setIsImportModalOpen(false);
+          setPendingImportData(null);
+        }}
+        importedData={pendingImportData}
+        currentRestaurant={currentRestaurant}
+        allRestaurants={restaurants}
+        onConfirmImport={(data, mode, targetId) => {
+          if (onImportBackupJSON) {
+            onImportBackupJSON(data, mode, targetId);
+          }
+        }}
+      />
 
     </div>
   );

@@ -43,6 +43,7 @@ import {
 } from '../types';
 import { saveRestaurantMenuToFirebase } from '../lib/firebase';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
+import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
@@ -59,7 +60,11 @@ interface OwnerMenuEditorProps {
   onDeleteCategory: (categoryId: string) => void;
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => void;
-  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
+  onImportBackupJSON?: (
+    data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
+    mode?: ImportMenuMode,
+    targetRestaurantId?: string
+  ) => void;
 }
 
 export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
@@ -598,6 +603,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     showToast(`✓ Foto del plato "${updated.name}" actualizada con éxito`);
   };
 
+  // State for Import Menu JSON modal with mode selection (MERGE vs REPLACE)
+  const [pendingImportData, setPendingImportData] = useState<{
+    restaurants: Restaurant[];
+    categories: MenuCategory[];
+    items: MenuItem[];
+  } | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const handleImportJSONFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -608,13 +621,12 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         const text = event.target?.result as string;
         if (!text) return;
         const parsed = parseImportedJSON(text);
-        if (onImportBackupJSON) {
-          onImportBackupJSON(parsed);
-        } else {
-          showToast('✓ Backup JSON leído correctamente');
-        }
+        setPendingImportData(parsed);
+        setIsImportModalOpen(true);
       } catch (err: any) {
         showToast('⚠️ Error al leer JSON: ' + (err.message || 'Formato no válido'));
+      } finally {
+        e.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -2612,6 +2624,23 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal to choose between Merge (Añadir) or Replace (Reemplazar) when importing JSON */}
+      <ImportMenuModal
+        isOpen={isImportModalOpen}
+        onClose={() => {
+          setIsImportModalOpen(false);
+          setPendingImportData(null);
+        }}
+        importedData={pendingImportData}
+        currentRestaurant={restaurant}
+        allRestaurants={[restaurant]}
+        onConfirmImport={(data, mode, targetId) => {
+          if (onImportBackupJSON) {
+            onImportBackupJSON(data, mode, targetId || restaurant.id);
+          }
+        }}
+      />
 
     </div>
   );

@@ -82,7 +82,11 @@ interface OwnerDashboardProps {
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
   onSwitchToAdminView: () => void;
-  onImportBackupJSON?: (data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] }) => void;
+  onImportBackupJSON?: (
+    data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
+    mode?: 'MERGE' | 'REPLACE',
+    targetRestaurantId?: string
+  ) => void;
 }
 
 type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates';
