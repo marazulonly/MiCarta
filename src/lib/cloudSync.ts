@@ -26,6 +26,9 @@ export type CloudSyncListener = (event: {
 export const UPSTASH_REST_URL = 'https://tough-raccoon-293580.upstash.io';
 export const UPSTASH_REST_TOKEN = 'gQAAAAAABHrMAAIgcDExYmEwMjliM2FlZTg0NjJjOTM3ZWRhOTI3MmY4MTlmYg';
 
+let lastSavedTimestamp: string | null = null;
+let lastLocalWriteTime = 0;
+
 /**
  * Direct client-side fetch from Upstash Cloud Redis hosting.
  * Works universally across Vercel, incognito windows, mobile devices, and local environments.
@@ -65,10 +68,14 @@ export async function fetchFromUpstashDirectly(): Promise<CloudMenuPayload | nul
  */
 export async function saveToUpstashDirectly(payload: CloudMenuPayload): Promise<boolean> {
   try {
+    const nowIso = new Date().toISOString();
     const cleanPayload = {
       ...payload,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowIso
     };
+    lastSavedTimestamp = nowIso;
+    lastLocalWriteTime = Date.now();
+
     const res = await fetch(`${UPSTASH_REST_URL}/set/applet_menu_snapshot`, {
       method: 'POST',
       headers: {
@@ -310,9 +317,20 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
   const pollInterval = setInterval(async () => {
     if (isClosed) return;
     try {
+      // Do not overwrite user while they are actively making local saves (within 3.5s)
+      if (Date.now() - lastLocalWriteTime < 3500) {
+        return;
+      }
+
       const remoteData = await fetchFromUpstashDirectly();
       if (remoteData) {
         const currentStamp = remoteData.updatedAt || 'initial';
+        // Ignore if this is the exact snapshot we just saved ourselves
+        if (lastSavedTimestamp && currentStamp === lastSavedTimestamp) {
+          lastSeenTimestamp = currentStamp;
+          return;
+        }
+
         if (lastSeenTimestamp && currentStamp !== lastSeenTimestamp) {
           listener({ type: 'FULL_SYNC', data: remoteData });
         }

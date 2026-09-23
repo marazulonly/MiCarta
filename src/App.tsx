@@ -134,7 +134,7 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Robust sanitization to guarantee Cevichito Pliz brand name, slug and dishes across all caches
+// Robust sanitization to guarantee Cevichito Pliz brand name and slug across all caches without overwriting custom branding
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   return rests.map(r => {
     if (
@@ -144,14 +144,13 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       r.slug === 'cevichito-pliz' ||
       r.name?.toLowerCase().includes('costa marina')
     ) {
-      const defaultCosta = INITIAL_RESTAURANTS.find(ir => ir.id === 'rest-costa');
       return {
         ...r,
         id: 'rest-costa',
-        name: 'Cevichito Pliz',
+        name: r.name === 'Costa Marina' ? 'Cevichito Pliz' : r.name,
         slug: 'cevichito-pliz',
-        tagline: 'Cevichería Contemporánea & Pesca Artesanal del Día',
-        branding: defaultCosta?.branding ? { ...defaultCosta.branding } : r.branding
+        tagline: r.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día',
+        branding: r.branding ? { ...r.branding } : undefined
       };
     }
     return r;
