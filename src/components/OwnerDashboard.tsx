@@ -75,9 +75,11 @@ interface OwnerDashboardProps {
   onAddMenuItem?: (newItem: MenuItem) => void;
   onUpdateMenuItem?: (updatedItem: MenuItem) => void;
   onDeleteMenuItem?: (itemId: string) => void;
+  onReorderMenuItems?: (newItems: MenuItem[]) => void;
   onAddCategory?: (newCategory: MenuCategory) => void;
   onUpdateCategory?: (updatedCategory: MenuCategory) => void;
   onDeleteCategory?: (categoryId: string) => void;
+  onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
   onSwitchToAdminView: () => void;
 }
@@ -99,9 +101,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onAddMenuItem,
   onUpdateMenuItem,
   onDeleteMenuItem,
+  onReorderMenuItems,
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onReorderCategories,
   onOpenCustomerPreview,
   onSwitchToAdminView,
 }) => {
@@ -763,65 +767,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
       )}
 
-      {/* Top Header & Role Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-amber-400 text-black font-bold">
-              PORTAL DE DUEÑOS
-            </span>
-            <span className="text-xs text-neutral-400 font-mono">Control de Franquicia</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1">
-            Gestión de Mis Restaurantes y Accesos
-          </h1>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            {isOwnerLogged 
-              ? `Bienvenido, ${currentOwner.name}. Aquí puedes gestionar únicamente tus sedes creadas o asignadas y personalizar tu carta.`
-              : 'Administra tus locales, personal de salón, repartidores, accesos de clientes QR y diseña tu carta digital.'
-            }
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          {/* Active Owner display */}
-          {isOwnerLogged ? (
-            <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
-              <span className="text-[11px] text-neutral-400">Dueño Activo:</span>
-              <span className="text-xs text-amber-400 font-bold">{currentOwner.name}</span>
-              <span className="text-[10px] text-neutral-400 font-mono">({currentOwner.dni})</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
-              <span className="text-[11px] text-neutral-400">Ver como Dueño:</span>
-              <select
-                value={selectedOwnerId}
-                onChange={(e) => {
-                  setSelectedOwnerId(e.target.value);
-                  const firstRest = restaurants.find(r => r.ownerId === e.target.value || users.find(u => u.id === e.target.value)?.restaurantIds.includes(r.id));
-                  if (firstRest) handleSelectRestaurant(firstRest.id);
-                }}
-                className="bg-transparent text-xs text-white font-bold cursor-pointer focus:outline-none"
-              >
-                {ownersList.map(o => (
-                  <option key={o.id} value={o.id} className="bg-neutral-900 text-white">
-                    {o.name} ({o.dni})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <button
-            onClick={onSwitchToAdminView}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-200 transition cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Volver a Admin</span>
-          </button>
-        </div>
-      </div>
-
       {/* ------------------------------------------------------------- */}
       {/* 1. LISTA DE RESTAURANTES DEL DUEÑO                            */}
       {/* ------------------------------------------------------------- */}
@@ -1147,9 +1092,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onAddMenuItem={onAddMenuItem || (() => {})}
               onUpdateMenuItem={onUpdateMenuItem || (() => {})}
               onDeleteMenuItem={onDeleteMenuItem || (() => {})}
+              onReorderMenuItems={onReorderMenuItems}
               onAddCategory={onAddCategory || (() => {})}
               onUpdateCategory={onUpdateCategory || (() => {})}
               onDeleteCategory={onDeleteCategory || (() => {})}
+              onReorderCategories={onReorderCategories}
               onOpenCustomerPreview={onOpenCustomerPreview}
             />
           </div>

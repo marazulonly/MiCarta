@@ -747,6 +747,30 @@ export default function App() {
     showToast(`Plato eliminado.`);
   };
 
+  const handleReorderCategories = (reorderedCats: MenuCategory[]) => {
+    setCategories(prev => {
+      const restId = reorderedCats[0]?.restaurantId;
+      if (!restId) return prev;
+      const otherCats = prev.filter(c => c.restaurantId !== restId);
+      const updatedList = [...otherCats, ...reorderedCats];
+      reorderedCats.forEach(c => saveCategoryToFirebase(c).catch(() => {}));
+      return updatedList;
+    });
+    showToast(`✓ Orden de categorías actualizado.`);
+  };
+
+  const handleReorderMenuItems = (reorderedItems: MenuItem[]) => {
+    setMenuItems(prev => {
+      const restId = reorderedItems[0]?.restaurantId;
+      if (!restId) return prev;
+      const otherItems = prev.filter(i => i.restaurantId !== restId);
+      const updatedList = [...otherItems, ...reorderedItems];
+      reorderedItems.forEach(i => saveMenuItemToFirebase(i).catch(() => {}));
+      return updatedList;
+    });
+    showToast(`✓ Orden de platos actualizado.`);
+  };
+
   const handleAddCategory = (newCategory: MenuCategory) => {
     setCategories(prev => [...prev, newCategory]);
     saveCategoryToFirebase(newCategory);
@@ -983,9 +1007,11 @@ export default function App() {
               onAddMenuItem={handleAddMenuItem}
               onUpdateMenuItem={handleUpdateMenuItem}
               onDeleteMenuItem={handleDeleteMenuItem}
+              onReorderMenuItems={handleReorderMenuItems}
               onAddCategory={handleAddCategory}
               onUpdateCategory={handleUpdateCategory}
               onDeleteCategory={handleDeleteCategory}
+              onReorderCategories={handleReorderCategories}
               onOpenCustomerPreview={handleOpenCustomerPreview}
               onSwitchToAdminView={() => {
                 showToast('Se requieren credenciales de Administrador (DNI: 00448157) para acceder a la vista global SaaS.');

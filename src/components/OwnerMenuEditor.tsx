@@ -23,7 +23,13 @@ import {
   ShieldCheck,
   UploadCloud,
   FileText,
-  Upload
+  Upload,
+  GripVertical,
+  GripHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -44,9 +50,11 @@ interface OwnerMenuEditorProps {
   onAddMenuItem: (newItem: MenuItem) => void;
   onUpdateMenuItem: (updatedItem: MenuItem) => void;
   onDeleteMenuItem: (itemId: string) => void;
+  onReorderMenuItems?: (newItems: MenuItem[]) => void;
   onAddCategory: (newCategory: MenuCategory) => void;
   onUpdateCategory: (updatedCategory: MenuCategory) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => void;
 }
 
@@ -59,9 +67,11 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   onAddMenuItem,
   onUpdateMenuItem,
   onDeleteMenuItem,
+  onReorderMenuItems,
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onReorderCategories,
   onOpenCustomerPreview,
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
@@ -228,13 +238,102 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     }
   }, [restaurant]);
 
-  // Filter categories and items for this restaurant
-  const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  // Filter & sort categories and items for this restaurant
+  const restaurantCategories = [...categories.filter(c => c.restaurantId === restaurant.id)]
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
   const restaurantItems = items.filter(i => {
     const matchRest = i.restaurantId === restaurant.id;
     if (selectedCategoryFilter === 'all') return matchRest;
     return matchRest && i.categoryId === selectedCategoryFilter;
   });
+
+  // --- Drag & Drop Reordering State ---
+  const [draggedCatId, setDraggedCatId] = useState<string | null>(null);
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
+
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+
+  // Category Reorder Handlers
+  const handleMoveCategory = (catId: string, direction: 'up' | 'down') => {
+    const list = [...restaurantCategories];
+    const idx = list.findIndex(c => c.id === catId);
+    if (idx < 0) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+
+    const [moved] = list.splice(idx, 1);
+    list.splice(targetIdx, 0, moved);
+
+    const reordered = list.map((c, i) => ({ ...c, sortOrder: i + 1 }));
+    if (onReorderCategories) {
+      onReorderCategories(reordered);
+    } else {
+      reordered.forEach(c => onUpdateCategory(c));
+    }
+    showToast(`✓ Categoría "${moved.name}" movida`);
+  };
+
+  const handleCategoryDrop = (targetCatId: string) => {
+    if (!draggedCatId || draggedCatId === targetCatId) return;
+    const list = [...restaurantCategories];
+    const fromIdx = list.findIndex(c => c.id === draggedCatId);
+    const toIdx = list.findIndex(c => c.id === targetCatId);
+    if (fromIdx < 0 || toIdx < 0) return;
+
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+
+    const reordered = list.map((c, i) => ({ ...c, sortOrder: i + 1 }));
+    if (onReorderCategories) {
+      onReorderCategories(reordered);
+    } else {
+      reordered.forEach(c => onUpdateCategory(c));
+    }
+    setDraggedCatId(null);
+    setDragOverCatId(null);
+    showToast(`✓ Categoría "${moved.name}" reordenada.`);
+  };
+
+  // Item Reorder Handlers
+  const handleMoveItem = (itemId: string, direction: 'up' | 'down') => {
+    const currentList = [...restaurantItems];
+    const idx = currentList.findIndex(i => i.id === itemId);
+    if (idx < 0) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentList.length) return;
+
+    const [moved] = currentList.splice(idx, 1);
+    currentList.splice(targetIdx, 0, moved);
+
+    if (onReorderMenuItems) {
+      onReorderMenuItems(currentList);
+    } else {
+      currentList.forEach(i => onUpdateMenuItem(i));
+    }
+    showToast(`✓ Plato "${moved.name}" movido.`);
+  };
+
+  const handleItemDrop = (targetItemId: string) => {
+    if (!draggedItemId || draggedItemId === targetItemId) return;
+    const currentList = [...restaurantItems];
+    const fromIdx = currentList.findIndex(i => i.id === draggedItemId);
+    const toIdx = currentList.findIndex(i => i.id === targetItemId);
+    if (fromIdx < 0 || toIdx < 0) return;
+
+    const [moved] = currentList.splice(fromIdx, 1);
+    currentList.splice(toIdx, 0, moved);
+
+    if (onReorderMenuItems) {
+      onReorderMenuItems(currentList);
+    } else {
+      currentList.forEach(i => onUpdateMenuItem(i));
+    }
+    setDraggedItemId(null);
+    setDragOverItemId(null);
+    showToast(`✓ Plato "${moved.name}" reordenado.`);
+  };
 
   // --- Modal: Crear / Editar Plato ---
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -607,20 +706,69 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 Todos los Platos ({items.filter(i => i.restaurantId === restaurant.id).length})
               </button>
 
-              {restaurantCategories.map(cat => {
+              {restaurantCategories.map((cat, catIdx) => {
                 const count = items.filter(i => i.restaurantId === restaurant.id && i.categoryId === cat.id).length;
+                const isDragging = draggedCatId === cat.id;
+                const isOver = dragOverCatId === cat.id;
+
                 return (
-                  <button
+                  <div
                     key={cat.id}
-                    onClick={() => setSelectedCategoryFilter(cat.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      selectedCategoryFilter === cat.id
-                        ? 'bg-white text-black'
-                        : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-                    }`}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', cat.id);
+                      setDraggedCatId(cat.id);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverCatId(cat.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedCatId(null);
+                      setDragOverCatId(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleCategoryDrop(cat.id);
+                    }}
+                    className={`flex items-center gap-0.5 rounded-lg transition shrink-0 ${
+                      isDragging ? 'opacity-40 scale-95' : ''
+                    } ${isOver ? 'ring-2 ring-amber-400 bg-amber-400/20' : ''}`}
                   >
-                    {cat.name} ({count})
-                  </button>
+                    <button
+                      onClick={() => setSelectedCategoryFilter(cat.id)}
+                      className={`px-3 py-1.5 rounded-l-lg text-xs font-bold transition whitespace-nowrap cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
+                        selectedCategoryFilter === cat.id
+                          ? 'bg-amber-400 text-black shadow font-black'
+                          : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800'
+                      }`}
+                      title="Arrastra para cambiar el orden de esta categoría"
+                    >
+                      <GripHorizontal className="w-3 h-3 text-neutral-400 shrink-0" />
+                      <span>{cat.name} ({count})</span>
+                    </button>
+
+                    <div className="flex items-center bg-neutral-950 border border-neutral-800 rounded-r-lg p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(cat.id, 'up')}
+                        disabled={catIdx === 0}
+                        className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                        title="Mover categoría a la izquierda"
+                      >
+                        <ArrowLeft className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(cat.id, 'down')}
+                        disabled={catIdx === restaurantCategories.length - 1}
+                        className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                        title="Mover categoría a la derecha"
+                      >
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -636,17 +784,69 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
           {/* Dishes Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {restaurantItems.map(item => {
+            {restaurantItems.map((item, itemIdx) => {
               const catObj = restaurantCategories.find(c => c.id === item.categoryId);
               const addonsCount = item.availableAddons?.length || 0;
               const obsCount = item.suggestedObservations?.length || 0;
+              const isDragging = draggedItemId === item.id;
+              const isOver = dragOverItemId === item.id;
 
               return (
                 <div 
                   key={item.id}
-                  className="rounded-2xl bg-neutral-900/90 border border-neutral-800 overflow-hidden flex flex-col justify-between hover:border-neutral-700 transition"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    setDraggedItemId(item.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverItemId(item.id);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedItemId(null);
+                    setDragOverItemId(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleItemDrop(item.id);
+                  }}
+                  className={`rounded-2xl bg-neutral-900/90 border transition overflow-hidden flex flex-col justify-between ${
+                    isDragging ? 'opacity-30 scale-95 border-amber-400 border-dashed' : ''
+                  } ${
+                    isOver ? 'border-amber-400 ring-2 ring-amber-400/50 scale-[1.01]' : 'border-neutral-800 hover:border-neutral-700'
+                  }`}
                 >
                   <div>
+                    {/* Reorder Bar & Drag Grip */}
+                    <div className="px-3 py-1.5 bg-neutral-950 border-b border-neutral-800/80 flex items-center justify-between text-[10px] text-neutral-400 font-mono">
+                      <div className="flex items-center gap-1 cursor-grab active:cursor-grabbing font-bold text-amber-400/90 hover:text-amber-300">
+                        <GripVertical className="w-3.5 h-3.5" />
+                        <span>Arrastrar orden</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-neutral-500 mr-1">#{itemIdx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveItem(item.id, 'up')}
+                          disabled={itemIdx === 0}
+                          className="px-1.5 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer transition"
+                          title="Mover plato hacia arriba / antes"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveItem(item.id, 'down')}
+                          disabled={itemIdx === restaurantItems.length - 1}
+                          className="px-1.5 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer transition"
+                          title="Mover plato hacia abajo / después"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Image Header */}
                     <div className="relative h-40 w-full overflow-hidden bg-black">
                       <img 
@@ -808,17 +1008,70 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {restaurantCategories.map(cat => {
+            {restaurantCategories.map((cat, catIdx) => {
               const dishCount = items.filter(i => i.restaurantId === restaurant.id && i.categoryId === cat.id).length;
+              const isDragging = draggedCatId === cat.id;
+              const isOver = dragOverCatId === cat.id;
+
               return (
                 <div 
                   key={cat.id}
-                  className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3 flex flex-col justify-between"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', cat.id);
+                    setDraggedCatId(cat.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverCatId(cat.id);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedCatId(null);
+                    setDragOverCatId(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleCategoryDrop(cat.id);
+                  }}
+                  className={`p-4 rounded-2xl bg-neutral-900 border space-y-3 flex flex-col justify-between transition ${
+                    isDragging ? 'opacity-30 scale-95 border-amber-400 border-dashed' : ''
+                  } ${
+                    isOver ? 'border-amber-400 ring-2 ring-amber-400/50 scale-[1.01]' : 'border-neutral-800 hover:border-neutral-700'
+                  }`}
                 >
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
+                    {/* Reorder Grip Header */}
+                    <div className="flex items-center justify-between text-[10px] text-neutral-400 font-mono pb-2 border-b border-neutral-800">
+                      <div className="flex items-center gap-1 cursor-grab active:cursor-grabbing font-bold text-amber-400/90 hover:text-amber-300">
+                        <GripVertical className="w-3.5 h-3.5" />
+                        <span>Arrastrar categoría</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-neutral-500 mr-1">#{catIdx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveCategory(cat.id, 'up')}
+                          disabled={catIdx === 0}
+                          className="px-1.5 py-0.5 rounded bg-neutral-950 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer"
+                          title="Mover categoría arriba"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveCategory(cat.id, 'down')}
+                          disabled={catIdx === restaurantCategories.length - 1}
+                          className="px-1.5 py-0.5 rounded bg-neutral-950 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer"
+                          title="Mover categoría abajo"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5" />
+                      <span className="text-sm font-black text-amber-400 flex items-center gap-1.5">
+                        <Layers className="w-4 h-4" />
                         <span>{cat.name}</span>
                       </span>
                       <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-neutral-800 text-neutral-300">
