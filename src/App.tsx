@@ -1197,8 +1197,36 @@ export default function App() {
   const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
+  // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
+  const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
+
+  // If accessing via link but no matching restaurant exists anywhere
+  if (isDirectLinkAccess && notFoundSlugError && !previewRestaurant) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-4 selection:bg-amber-400 selection:text-black">
+        <div className="w-full max-w-md p-8 rounded-3xl bg-neutral-900 border border-amber-500/40 text-white shadow-2xl space-y-5 text-center">
+          <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7 stroke-[2.5]" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-amber-300">Carta No Disponible</h3>
+            <p className="text-xs text-neutral-300 mt-2">
+              Se intentó acceder a la carta digital con el parámetro:
+            </p>
+            <div className="mt-3 px-4 py-2 rounded-xl bg-black/60 border border-neutral-800 text-amber-400 font-mono text-sm inline-block font-bold">
+              ?r={notFoundSlugError}
+            </div>
+            <p className="text-xs text-neutral-400 mt-4 leading-relaxed">
+              No se encontró ninguna carta registrada para esta dirección. Por política de seguridad y fidelidad, no se mostrará la carta de ningún otro restaurante.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links or when customer preview is open without logged-in session
-  if (!currentUser && (initParams.isQr || initParams.restSlug || isCustomerModalOpen) && previewRestaurant) {
+  if ((isDirectLinkAccess || (!currentUser && isCustomerModalOpen)) && previewRestaurant) {
     // If the guest explicitly closed the menu, show ONLY the thank you screen without any login buttons
     if (isMenuClosedByGuest) {
       const restColor = previewRestaurant?.branding?.darkBgColor || previewRestaurant?.branding?.primaryColor || '#1B667A';
@@ -1221,7 +1249,7 @@ export default function App() {
               <img 
                 src={restLogo} 
                 alt={previewRestaurant?.name} 
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-contain shadow-2xl border border-white/20 p-2 bg-black/40"
+                className="max-h-28 max-w-[240px] rounded-2xl object-contain shadow-2xl border border-white/20 p-2 bg-black/40"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -1301,17 +1329,6 @@ export default function App() {
             version: publishedMenuData.version,
             publishedAt: publishedMenuData.publishedAt
           } : undefined}
-        />
-
-        {/* Authentication Modal with DNI (if opened by staff) */}
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-          users={users}
-          currentUser={currentUser}
-          onLogin={handleLogin}
-          onLogout={handleLogout}
-          onUpdateUser={handleUpdateUser}
         />
 
         {/* Floating Toast Notification */}
