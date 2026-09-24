@@ -134,7 +134,7 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Robust sanitization to guarantee Cevichito Pliz brand name, slug, and complete fallback metrics/branding across all caches
+// Sanitization function that preserves 100% of user modifications (names, logos, colors, tables, prices) from cloud storage
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   return rests.map(r => {
     const fallback = INITIAL_RESTAURANTS.find(initR => initR.id === r.id || initR.slug === r.slug);
@@ -143,7 +143,7 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       activeOrders: 0,
       avgTicket: 0,
       customerRating: 5.0,
-      totalTables: r.totalTablesCount || 10,
+      totalTables: r.totalTablesCount || (r.tables?.length) || 10,
       occupancyRate: 0,
       ...(fallback?.metrics || {}),
       ...(r.metrics || {})
@@ -167,41 +167,20 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       headerLogoUrl: r.branding?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '',
     };
 
-    let base: Restaurant = fallback 
-      ? { ...fallback, ...r, branding: mergedBranding, logoUrl: r.logoUrl || mergedBranding.headerLogoUrl || fallback.logoUrl, metrics: safeMetrics } 
-      : { ...r, branding: mergedBranding, metrics: safeMetrics };
-
-    if (
-      base.id === 'rest-costa' || 
-      base.name === 'Costa Marina' || 
-      base.slug === 'costa-marina' || 
-      base.slug === 'cevichito-pliz' ||
-      base.name?.toLowerCase().includes('costa marina')
-    ) {
-      return {
-        ...base,
-        id: 'rest-costa',
-        name: base.name === 'Costa Marina' ? 'Cevichito Pliz' : (base.name || 'Cevichito Pliz'),
-        slug: 'cevichito-pliz',
-        tagline: base.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día',
-        branding: mergedBranding,
-        metrics: safeMetrics
-      };
-    }
-    return base;
+    // User data in 'r' takes precedence over fallbacks to ensure user cloud edits are strictly respected
+    return {
+      ...(fallback || {}),
+      ...r,
+      branding: mergedBranding,
+      metrics: safeMetrics,
+      logoUrl: r.logoUrl || mergedBranding.headerLogoUrl || fallback?.logoUrl || '',
+    };
   });
 }
 
 function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
-  return items.map(it => {
-    if (it.restaurantId === 'rest-costa' || it.name.includes('Costa Marina')) {
-      return {
-        ...it,
-        name: it.name.replace(/Costa Marina/gi, 'Cevichito Pliz')
-      };
-    }
-    return it;
-  });
+  // Preserve user dish modifications exactly as stored in cloud
+  return items;
 }
 
 // Helper to reliably merge menu items: remote cloud data is strictly authoritative
