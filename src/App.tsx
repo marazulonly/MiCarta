@@ -7,7 +7,7 @@ import {
   INITIAL_ORDERS 
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
-import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate } from './types';
+import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics } from './types';
 import { deduplicateUsers } from './lib/userUtils';
 import { TopHeader } from './components/TopHeader';
 import { FloatingNavBar } from './components/FloatingNavBar';
@@ -36,6 +36,10 @@ import {
   autoSyncRestaurant,
   autoSyncCategory,
   autoDeleteCategory,
+  autoSyncUser,
+  autoDeleteUser,
+  publishRestaurantMenu,
+  fetchPublicPublishedMenu,
   subscribeToCloudUpdates,
 } from './lib/cloudSync';
 
@@ -130,26 +134,41 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Robust sanitization to guarantee Cevichito Pliz brand name and slug across all caches without overwriting custom branding
+// Robust sanitization to guarantee Cevichito Pliz brand name, slug, and complete fallback metrics/branding across all caches
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   return rests.map(r => {
+    const fallback = INITIAL_RESTAURANTS.find(initR => initR.id === r.id || initR.slug === r.slug);
+    const safeMetrics: RestaurantMetrics = {
+      dailyRevenue: 0,
+      activeOrders: 0,
+      avgTicket: 0,
+      customerRating: 5.0,
+      totalTables: r.totalTablesCount || 10,
+      occupancyRate: 0,
+      ...(fallback?.metrics || {}),
+      ...(r.metrics || {})
+    };
+
+    let base: Restaurant = fallback ? { ...fallback, ...r, metrics: safeMetrics } : { ...r, metrics: safeMetrics };
+
     if (
-      r.id === 'rest-costa' || 
-      r.name === 'Costa Marina' || 
-      r.slug === 'costa-marina' || 
-      r.slug === 'cevichito-pliz' ||
-      r.name?.toLowerCase().includes('costa marina')
+      base.id === 'rest-costa' || 
+      base.name === 'Costa Marina' || 
+      base.slug === 'costa-marina' || 
+      base.slug === 'cevichito-pliz' ||
+      base.name?.toLowerCase().includes('costa marina')
     ) {
       return {
-        ...r,
+        ...base,
         id: 'rest-costa',
-        name: r.name === 'Costa Marina' ? 'Cevichito Pliz' : r.name,
+        name: base.name === 'Costa Marina' ? 'Cevichito Pliz' : (base.name || 'Cevichito Pliz'),
         slug: 'cevichito-pliz',
-        tagline: r.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día',
-        branding: r.branding ? { ...r.branding } : undefined
+        tagline: base.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día',
+        branding: base.branding || fallback?.branding,
+        metrics: safeMetrics
       };
     }
-    return r;
+    return base;
   });
 }
 
@@ -273,43 +292,6 @@ const initialFoundRest = initialRequestedSlug
   ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
   : null;
 
-function cleanseUserRestaurantAssociations(rawUsers: User[], rawRests: Restaurant[]) {
-  const modifiedUsers: User[] = [];
-  const modifiedRests: Restaurant[] = [];
-
-  const updatedUsers = rawUsers.map(u => {
-    if (u.dni === '89309927' || u.name.trim().toLowerCase().includes('stephanie leon')) {
-      const targetIds = ['rest-costa'];
-      if (JSON.stringify(u.restaurantIds) !== JSON.stringify(targetIds)) {
-        const cleaned = {
-          ...u,
-          restaurantIds: targetIds
-        };
-        modifiedUsers.push(cleaned);
-        return cleaned;
-      }
-    }
-    return u;
-  });
-
-  const updatedRests = rawRests.map(r => {
-    if (r.id === 'rest-brasas' || r.slug === 'brasas-y-fuegos') {
-      const stephanie = rawUsers.find(u => u.dni === '89309927' || u.name.trim().toLowerCase().includes('stephanie leon'));
-      if (stephanie && r.ownerId === stephanie.id) {
-        const cleaned = {
-          ...r,
-          ownerId: 'u-2'
-        };
-        modifiedRests.push(cleaned);
-        return cleaned;
-      }
-    }
-    return r;
-  });
-
-  return { cleanedUsers: updatedUsers, cleanedRests: updatedRests };
-}
-
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
@@ -342,6 +324,17 @@ export default function App() {
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
     (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
   );
+
+  // Authoritative Published Menu state for public anonymous visitors and QR diners
+  const [publishedMenuData, setPublishedMenuData] = useState<{
+    published: boolean;
+    version: number;
+    publishedAt: string;
+    restaurant: Restaurant;
+    categories: MenuCategory[];
+    items: MenuItem[];
+  } | null>(null);
+  const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(false);
 
   // Keep user authentication session synced
   useEffect(() => {
@@ -401,24 +394,45 @@ export default function App() {
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const restaurantSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
+      const restaurantSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant') || initialRequestedSlug;
       const table = urlParams.get('mesa') || urlParams.get('table');
       const mode = urlParams.get('mode') as 'DINE_IN' | 'DELIVERY' | null;
 
       if (restaurantSlug) {
-        const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
-
-        if (foundRest) {
-          setPreviewRestaurant(foundRest);
-          setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
-          if (table) setPreviewTableNumber(table);
-          setIsCustomerModalOpen(true);
-          setNotFoundSlugError(null);
-        } else {
-          // STRICT RULE: If the requested menu does NOT exist, DO NOT show a wrong fallback menu!
-          setIsCustomerModalOpen(false);
-          setNotFoundSlugError(restaurantSlug);
-        }
+        setIsLoadingPublishedMenu(true);
+        fetchPublicPublishedMenu(restaurantSlug).then(pub => {
+          if (pub && pub.success && pub.restaurant) {
+            setPublishedMenuData(pub);
+            setPreviewRestaurant(pub.restaurant);
+            setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+            if (table) setPreviewTableNumber(table);
+            setIsCustomerModalOpen(true);
+            setNotFoundSlugError(null);
+          } else {
+            const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
+            if (foundRest) {
+              setPreviewRestaurant(foundRest);
+              setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+              if (table) setPreviewTableNumber(table);
+              setIsCustomerModalOpen(true);
+              setNotFoundSlugError(null);
+            } else {
+              setIsCustomerModalOpen(false);
+              setNotFoundSlugError(restaurantSlug);
+            }
+          }
+        }).catch(() => {
+          const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
+          if (foundRest) {
+            setPreviewRestaurant(foundRest);
+            setIsCustomerModalOpen(true);
+            setNotFoundSlugError(null);
+          } else {
+            setNotFoundSlugError(restaurantSlug);
+          }
+        }).finally(() => {
+          setIsLoadingPublishedMenu(false);
+        });
       }
     } catch {
       // Ignored if window not available
@@ -429,57 +443,37 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Initial Cloud Fetch (works instantly in incognito mode with server backing & Firestore)
+    // 1. Initial Cloud Fetch from authoritative backend
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
       if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
-        // Authoritative filtering to wipe out fake restaurants and users forever
-        const cleanLoadedRests = (cloudData.restaurants && Array.isArray(cloudData.restaurants)
+        // Keep all loaded restaurants, sanitize brandings without wiping custom restaurants
+        const cleanLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
           ? sanitizeRestaurants(cloudData.restaurants)
-          : []).filter(r => r.id !== 'rest-brasas' && r.id !== 'rest-criollo' && r.id !== 'rest-loop');
+          : [];
 
-        const cleanLoadedUsers = (cloudData.users && Array.isArray(cloudData.users)
+        const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
           ? cloudData.users
-          : []).filter(u => {
-            // Keep actual admin or owner of Cevichito Pliz, or users assigned to real remaining restaurants
-            if (u.role === 'ADMIN') return true;
-            if (u.id === 'u-owner-stephanie') return true;
-            return u.restaurantIds?.some(rid => cleanLoadedRests.some(r => r.id === rid || rid === 'all'));
-          });
+          : [];
 
-        const cleanLoadedCategories = (cloudData.categories && Array.isArray(cloudData.categories)
+        const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
           ? cloudData.categories
-          : []).filter(c => cleanLoadedRests.some(r => r.id === c.restaurantId));
+          : [];
 
-        const cleanLoadedItems = (cloudData.items && Array.isArray(cloudData.items)
+        const cleanLoadedItems = cloudData.items && Array.isArray(cloudData.items)
           ? sanitizeMenuItems(cloudData.items)
-          : []).filter(i => cleanLoadedRests.some(r => r.id === i.restaurantId));
+          : [];
 
-        const cleanLoadedOrders = (cloudData.orders && Array.isArray(cloudData.orders)
+        const cleanLoadedOrders = cloudData.orders && Array.isArray(cloudData.orders)
           ? cloudData.orders
-          : []).filter(o => cleanLoadedRests.some(r => r.id === o.restaurantId));
-
-        // Detect if any fake/fictional records were purged and force-save the sanitized version back to Upstash Cloud Redis
-        const hadFakes = (cloudData.restaurants?.some((r: any) => r.id === 'rest-brasas' || r.id === 'rest-criollo' || r.id === 'rest-loop')) ||
-                         (cloudData.items?.some((i: any) => i.restaurantId === 'rest-brasas' || i.restaurantId === 'rest-criollo' || i.restaurantId === 'rest-loop'));
-
-        if (hadFakes) {
-          saveFullCloudMenu({
-            restaurants: cleanLoadedRests,
-            categories: cleanLoadedCategories,
-            items: cleanLoadedItems,
-            users: deduplicateUsers(cleanLoadedUsers),
-            orders: cleanLoadedOrders
-          }).catch(() => {});
-        }
+          : [];
 
         // Set authoritative states
-        setRestaurants(cleanLoadedRests);
-        setUsers(deduplicateUsers(cleanLoadedUsers));
-        setCategories(cleanLoadedCategories);
-        setMenuItems(cleanLoadedItems);
-
-        setOrders(cleanLoadedOrders);
+        if (cleanLoadedRests.length > 0) setRestaurants(cleanLoadedRests);
+        if (cleanLoadedUsers.length > 0) setUsers(deduplicateUsers(cleanLoadedUsers));
+        if (cleanLoadedCategories.length > 0) setCategories(cleanLoadedCategories);
+        if (cleanLoadedItems.length > 0) setMenuItems(cleanLoadedItems);
+        if (cleanLoadedOrders.length > 0) setOrders(cleanLoadedOrders);
 
         // Update previewRestaurant immediately with the authoritative cloud branding & data
         setPreviewRestaurant(prev => {
@@ -491,16 +485,6 @@ export default function App() {
           const match = cleanLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
           return match || cleanLoadedRests[0] || defaultFallbackRest;
         });
-
-      } else {
-        // If there is no cloud snapshot, initialize it with the default template mock data so the platform is ready
-        saveFullCloudMenu({
-          restaurants: sanitizeRestaurants(INITIAL_RESTAURANTS),
-          categories: INITIAL_CATEGORIES.filter(c => INITIAL_RESTAURANTS.some(r => r.id === c.restaurantId)),
-          items: sanitizeMenuItems(INITIAL_MENU_ITEMS).filter(i => INITIAL_RESTAURANTS.some(r => r.id === i.restaurantId)),
-          users: deduplicateUsers(INITIAL_USERS),
-          orders: INITIAL_ORDERS.filter(o => INITIAL_RESTAURANTS.some(r => r.id === o.restaurantId))
-        }).catch(() => {});
       }
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
@@ -511,7 +495,7 @@ export default function App() {
       if (!isMounted) return;
       if (event.type === 'FULL_SYNC' && event.data) {
         const d = event.data;
-        if (d.restaurants && Array.isArray(d.restaurants)) {
+        if (d.restaurants && Array.isArray(d.restaurants) && d.restaurants.length > 0) {
           const cleanR = sanitizeRestaurants(d.restaurants);
           setRestaurants(cleanR);
           setPreviewRestaurant(p => {
@@ -534,6 +518,18 @@ export default function App() {
         if (d.orders && Array.isArray(d.orders)) {
           setOrders(d.orders);
         }
+      } else if (event.type === 'MENU_PUBLISHED') {
+        const targetId = event.restaurantId || event.slug;
+        if (targetId) {
+          fetchPublicPublishedMenu(targetId).then(pubData => {
+            if (pubData && pubData.restaurant) {
+              setPublishedMenuData(pubData);
+              if (previewRestaurant && (previewRestaurant.id === pubData.restaurant.id || previewRestaurant.slug === pubData.restaurant.slug)) {
+                setPreviewRestaurant(pubData.restaurant);
+              }
+            }
+          });
+        }
       } else if (event.type === 'ITEM_UPDATED' && event.item) {
         setMenuItems(prev => {
           const idx = prev.findIndex(i => i.id === event.item!.id);
@@ -547,7 +543,15 @@ export default function App() {
       } else if (event.type === 'ITEM_DELETED' && event.itemId) {
         setMenuItems(prev => prev.filter(i => i.id !== event.itemId));
       } else if (event.type === 'RESTAURANT_UPDATED' && event.restaurant) {
-        setRestaurants(prev => prev.map(r => r.id === event.restaurant!.id ? event.restaurant! : r));
+        setRestaurants(prev => {
+          const idx = prev.findIndex(r => r.id === event.restaurant!.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = event.restaurant!;
+            return next;
+          }
+          return [event.restaurant!, ...prev];
+        });
         setPreviewRestaurant(prev => (prev && prev.id === event.restaurant!.id ? event.restaurant! : prev));
       } else if (event.type === 'CATEGORY_UPDATED' && event.category) {
         setCategories(prev => {
@@ -561,6 +565,13 @@ export default function App() {
         });
       } else if (event.type === 'CATEGORY_DELETED' && event.categoryId) {
         setCategories(prev => prev.filter(c => c.id !== event.categoryId));
+      } else if (event.type === 'USER_UPDATED' && event.user) {
+        setUsers(prev => deduplicateUsers(prev.map(u => (u.id === event.user!.id || (event.user!.dni && u.dni === event.user!.dni)) ? event.user! : u)));
+        if (currentUser && (currentUser.id === event.user.id || (event.user.dni && currentUser.dni === event.user.dni))) {
+          setCurrentUser(event.user);
+        }
+      } else if (event.type === 'USER_DELETED' && event.userId) {
+        setUsers(prev => prev.filter(u => u.id !== event.userId));
       }
     });
 
@@ -649,6 +660,7 @@ export default function App() {
 
     // Ensure the new restaurant has at least 1 default category
     const hasCategory = categories.some(c => c.restaurantId === newRestaurant.id);
+    let nextCategories = categories;
     if (!hasCategory) {
       const defaultCat: MenuCategory = {
         id: `cat-${newRestaurant.id}-general`,
@@ -657,12 +669,16 @@ export default function App() {
         sortOrder: 1,
         isActive: true,
       };
-      setCategories(prev => [...prev, defaultCat]);
+      nextCategories = [...categories, defaultCat];
+      setCategories(nextCategories);
       autoSyncCategory(defaultCat);
     }
 
-    setRestaurants(prev => [newRestaurant, ...prev]);
+    const nextRestaurants = [newRestaurant, ...restaurants];
+    setRestaurants(nextRestaurants);
     autoSyncRestaurant(newRestaurant);
+
+    let nextUsers = users;
     if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
       const updatedUser: User = {
         ...currentUser,
@@ -671,10 +687,22 @@ export default function App() {
           : [...currentUser.restaurantIds, newRestaurant.id]
       };
       setCurrentUser(updatedUser);
-      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      nextUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+      setUsers(nextUsers);
+      autoSyncUser(updatedUser);
     }
+
+    // Full atomic persistence to server disk
+    saveFullCloudMenu({
+      restaurants: nextRestaurants,
+      categories: nextCategories,
+      items: menuItems,
+      users: nextUsers,
+      orders
+    }).catch(() => {});
+
     setSelectedRestaurantId(newRestaurant.id);
-    showToast(`Restaurante "${newRestaurant.name}" creado y guardado.`);
+    showToast(`Restaurante "${newRestaurant.name}" creado y guardado permanentemente.`);
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
@@ -689,52 +717,64 @@ export default function App() {
       return;
     }
 
-    setRestaurants(prev => prev.map(r => r.id === updated.id ? updated : r));
+    const nextRestaurants = restaurants.map(r => r.id === updated.id ? updated : r);
+    setRestaurants(nextRestaurants);
     if (previewRestaurant && previewRestaurant.id === updated.id) {
       setPreviewRestaurant(updated);
     }
 
+    let nextUsers = users;
+
     // If owner was reassigned, update users state
     if (prevOwnerId && prevOwnerId !== newOwnerId) {
-      setUsers(prevUsers => {
-        return prevUsers.map(u => {
-          if (u.id === prevOwnerId) {
-            const updatedUser: User = {
-              ...u,
-              restaurantIds: (u.restaurantIds || []).filter(id => id !== updated.id)
-            };
-            return updatedUser;
-          }
-          if (u.id === newOwnerId) {
-            const updatedUser: User = {
-              ...u,
-              restaurantIds: (u.restaurantIds || []).includes(updated.id)
-                ? u.restaurantIds
-                : [...(u.restaurantIds || []), updated.id]
-            };
-            return updatedUser;
-          }
-          return u;
-        });
+      nextUsers = users.map(u => {
+        if (u.id === prevOwnerId) {
+          const updatedUser: User = {
+            ...u,
+            restaurantIds: (u.restaurantIds || []).filter(id => id !== updated.id)
+          };
+          autoSyncUser(updatedUser);
+          return updatedUser;
+        }
+        if (u.id === newOwnerId) {
+          const updatedUser: User = {
+            ...u,
+            restaurantIds: (u.restaurantIds || []).includes(updated.id)
+              ? u.restaurantIds
+              : [...(u.restaurantIds || []), updated.id]
+          };
+          autoSyncUser(updatedUser);
+          return updatedUser;
+        }
+        return u;
       });
+      setUsers(nextUsers);
     } else if (newOwnerId) {
       // Ensure the designated owner has this restaurant in their list
-      setUsers(prevUsers => {
-        return prevUsers.map(u => {
-          if (u.id === newOwnerId && !(u.restaurantIds || []).includes(updated.id)) {
-            const updatedUser: User = {
-              ...u,
-              restaurantIds: [...(u.restaurantIds || []), updated.id]
-            };
-            return updatedUser;
-          }
-          return u;
-        });
+      nextUsers = users.map(u => {
+        if (u.id === newOwnerId && !(u.restaurantIds || []).includes(updated.id)) {
+          const updatedUser: User = {
+            ...u,
+            restaurantIds: [...(u.restaurantIds || []), updated.id]
+          };
+          autoSyncUser(updatedUser);
+          return updatedUser;
+        }
+        return u;
       });
+      setUsers(nextUsers);
     }
 
-    showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
     autoSyncRestaurant(updated);
+    saveFullCloudMenu({
+      restaurants: nextRestaurants,
+      categories,
+      items: menuItems,
+      users: nextUsers,
+      orders
+    }).catch(() => {});
+
+    showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
   };
 
   const handleDeleteRestaurant = (restaurantId: string) => {
@@ -848,16 +888,31 @@ export default function App() {
   };
 
   const handleAddUser = (newUser: User) => {
-    setUsers(prev => deduplicateUsers([newUser, ...prev]));
-    showToast(`Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado automáticamente.`);
+    const nextUsers = deduplicateUsers([newUser, ...users]);
+    setUsers(nextUsers);
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+    } catch {}
+    autoSyncUser(newUser);
+    saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
+    showToast(`✓ Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado permanentemente.`);
   };
 
   const handleUpdateUser = (updated: User) => {
-    setUsers(prev => deduplicateUsers(prev.map(u => u.id === updated.id ? updated : u)));
+    const nextUsers = deduplicateUsers(users.map(u => u.id === updated.id ? updated : u));
+    setUsers(nextUsers);
     if (currentUser?.id === updated.id) {
       setCurrentUser(updated);
     }
-    showToast(`Usuario "${updated.name}" actualizado.`);
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+      if (currentUser?.id === updated.id) {
+        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(updated));
+      }
+    } catch {}
+    autoSyncUser(updated);
+    saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
+    showToast(`✓ Usuario "${updated.name}" actualizado y guardado permanentemente.`);
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -867,7 +922,13 @@ export default function App() {
     if (currentUser?.id === userId) {
       setCurrentUser(null);
     }
-    // Update cloud authoritatively
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+      if (currentUser?.id === userId) {
+        localStorage.removeItem(STORAGE_KEYS.AUTH);
+      }
+    } catch {}
+    autoDeleteUser(userId);
     saveFullCloudMenu({
       restaurants,
       categories,
@@ -875,7 +936,37 @@ export default function App() {
       users: nextUsers,
       orders
     }).catch(() => {});
-    showToast(`Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado.`);
+    showToast(`✓ Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado.`);
+  };
+
+  const handlePublishMenu = async (
+    restaurantId: string,
+    restaurant: Restaurant,
+    restCategories: MenuCategory[],
+    restItems: MenuItem[]
+  ) => {
+    const filterCats = restCategories.filter(c => c.restaurantId === restaurantId);
+    const filterItems = restItems.filter(i => i.restaurantId === restaurantId);
+    const res = await publishRestaurantMenu(restaurantId, restaurant, filterCats, filterItems, currentUser?.name || 'Administrador');
+    if (res.success) {
+      const newSnapshot = {
+        published: true,
+        version: res.version || 1,
+        publishedAt: res.publishedAt || new Date().toISOString(),
+        restaurant,
+        categories: filterCats,
+        items: filterItems
+      };
+      setPublishedMenuData(newSnapshot);
+      setRestaurants(prev => prev.map(r => r.id === restaurantId ? restaurant : r));
+      if (previewRestaurant && previewRestaurant.id === restaurantId) {
+        setPreviewRestaurant(restaurant);
+      }
+      showToast(`✓ ¡Carta oficial de "${restaurant.name}" publicada con éxito (Versión ${res.version})!`);
+    } else {
+      showToast(`⚠️ Error al publicar carta: ${res.message || 'Error de conexión'}`);
+    }
+    return res;
   };
 
   const handleUpdateTemplate = (updated: MenuTemplate) => {
@@ -1065,13 +1156,11 @@ export default function App() {
   };
 
   const handleCustomerMenuClose = () => {
-    if (currentUser) {
-      setIsCustomerModalOpen(false);
-    } else {
-      try {
-        window.close();
-      } catch {}
-      setIsMenuClosedByGuest(true);
+    setIsCustomerModalOpen(false);
+    if (!currentUser) {
+      if (initParams.isQr || initParams.restSlug) {
+        setIsMenuClosedByGuest(true);
+      }
     }
   };
 
@@ -1082,6 +1171,13 @@ export default function App() {
     setPreviewTableNumber(tableNumber);
     setIsMenuClosedByGuest(false);
     setIsCustomerModalOpen(true);
+    if (target) {
+      fetchPublicPublishedMenu(target.slug || target.id).then(pub => {
+        if (pub && pub.restaurant) {
+          setPublishedMenuData(pub);
+        }
+      }).catch(() => {});
+    }
   };
 
   // Effective role user for specific role components
@@ -1101,8 +1197,8 @@ export default function App() {
   const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
-  // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links without logged-in session
-  if (!currentUser && (initParams.isQr || initParams.restSlug) && previewRestaurant) {
+  // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links or when customer preview is open without logged-in session
+  if (!currentUser && (initParams.isQr || initParams.restSlug || isCustomerModalOpen) && previewRestaurant) {
     // If the guest explicitly closed the menu, show ONLY the thank you screen
     if (isMenuClosedByGuest) {
       const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
@@ -1171,15 +1267,29 @@ export default function App() {
       );
     }
 
-    // Direct standalone full-screen digital menu for QR scan visitors
+    // Direct standalone full-screen digital menu for QR scan / public visitors (authoritative published snapshot)
+    const isTargetPublished = Boolean(
+      publishedMenuData && (
+        publishedMenuData.restaurant?.id === previewRestaurant.id ||
+        publishedMenuData.restaurant?.slug === previewRestaurant.slug
+      )
+    );
+    const targetRest = isTargetPublished && publishedMenuData ? publishedMenuData.restaurant : previewRestaurant;
+    const targetCategories = isTargetPublished && publishedMenuData 
+      ? publishedMenuData.categories 
+      : categories.filter(c => c.restaurantId === previewRestaurant.id);
+    const targetItems = isTargetPublished && publishedMenuData 
+      ? publishedMenuData.items 
+      : menuItems.filter(i => i.restaurantId === previewRestaurant.id);
+
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
         <CustomerMenuModal
           isOpen={true}
           onClose={handleCustomerMenuClose}
-          restaurant={previewRestaurant}
-          categories={categories}
-          items={menuItems}
+          restaurant={targetRest}
+          categories={targetCategories}
+          items={targetItems}
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
           initialTableNumber={previewTableNumber}
@@ -1190,6 +1300,10 @@ export default function App() {
           onUpdateCategory={handleUpdateCategory}
           onAddCategory={handleAddCategory}
           isOwnerOrAdmin={false}
+          publishedSnapshotInfo={isTargetPublished && publishedMenuData ? {
+            version: publishedMenuData.version,
+            publishedAt: publishedMenuData.publishedAt
+          } : undefined}
         />
 
         {/* Authentication Modal with DNI (if opened by staff) */}
@@ -1273,6 +1387,7 @@ export default function App() {
               onDeleteCategory={handleDeleteCategory}
               onReorderCategories={handleReorderCategories}
               onOpenCustomerPreview={handleOpenCustomerPreview}
+              onPublishMenu={handlePublishMenu}
               onSwitchToAdminView={() => {
                 showToast('Se requieren credenciales de Administrador (DNI: 00448157) para acceder a la vista global SaaS.');
                 setIsLoginModalOpen(true);
@@ -1480,6 +1595,7 @@ export default function App() {
                 onUpdateMenuItem={handleUpdateMenuItem}
                 onAddMenuItem={handleAddMenuItem}
                 onOpenCustomerPreview={handleOpenCustomerPreview}
+                onPublishMenu={handlePublishMenu}
                 onImportBackupJSON={handleImportBackupJSON}
               />
             )}

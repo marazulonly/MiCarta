@@ -43,6 +43,10 @@ interface CustomerMenuModalProps {
   onUpdateCategory?: (updated: MenuCategory) => void;
   onAddCategory?: (newCat: MenuCategory) => void;
   isOwnerOrAdmin?: boolean;
+  publishedSnapshotInfo?: {
+    version: number;
+    publishedAt: string;
+  };
 }
 
 const PRESET_DISH_PHOTOS = [
@@ -76,7 +80,14 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   onUpdateCategory,
   onAddCategory,
   isOwnerOrAdmin = false,
+  publishedSnapshotInfo,
 }) => {
+  // Scoped categories and items for this specific restaurant to prevent cross-contamination
+  const scopedCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const effectiveCategories = scopedCategories.length > 0 ? scopedCategories : categories;
+  const scopedItems = items.filter(i => i.restaurantId === restaurant.id);
+  const effectiveItems = scopedItems.length > 0 ? scopedItems : items;
+
   // Live Editing Mode (ONLY accessible to verified Owner or Admin, default false)
   const [isLiveEditActive, setIsLiveEditActive] = useState(false);
   
@@ -428,8 +439,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
@@ -441,8 +452,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
@@ -454,8 +465,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
@@ -467,8 +478,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
@@ -480,8 +491,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
@@ -493,14 +504,24 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           restaurant={restaurant}
-          categories={categories}
-          items={items}
+          categories={effectiveCategories}
+          items={effectiveItems}
           onOrderCreated={onOrderCreated}
           initialMode={initialMode}
           initialTableNumber={initialTableNumber}
           isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
           {...liveEditProps}
         />
+      )}
+
+      {/* Discrete Official Published Badge for Public Diners & QR Guests */}
+      {publishedSnapshotInfo && (
+        <div className="fixed bottom-4 left-4 z-[9998] px-3.5 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-emerald-500/60 text-emerald-300 text-[11px] font-mono flex items-center gap-2 shadow-2xl pointer-events-none select-none">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>
+            <strong>Carta Oficial Publicada</strong> • v{publishedSnapshotInfo.version}
+          </span>
+        </div>
       )}
 
       {/* MODAL 1: EDIT DISH IN LIVE PREVIEW */}

@@ -45,6 +45,7 @@ import {
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
+import { publishRestaurantMenu, fetchPublicPublishedMenu } from '../lib/cloudSync';
 
 interface OwnerMenuEditorProps {
   restaurant: Restaurant;
@@ -61,6 +62,12 @@ interface OwnerMenuEditorProps {
   onDeleteCategory: (categoryId: string) => void;
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY') => void;
+  onPublishMenu?: (
+    restaurantId: string,
+    restaurant: Restaurant,
+    categories: MenuCategory[],
+    items: MenuItem[]
+  ) => Promise<{ success: boolean; version?: number; publishedAt?: string } | void> | void;
   onImportBackupJSON?: (
     data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
     mode?: ImportMenuMode,
@@ -83,11 +90,52 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   onDeleteCategory,
   onReorderCategories,
   onOpenCustomerPreview,
+  onPublishMenu,
   onImportBackupJSON,
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [lastPublishedVersion, setLastPublishedVersion] = useState<number | null>(null);
+  const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
+
+  // Fetch current published version status
+  useEffect(() => {
+    fetchPublicPublishedMenu(restaurant.id).then(pub => {
+      if (pub && pub.version) {
+        setLastPublishedVersion(pub.version);
+        setLastPublishedAt(pub.publishedAt);
+      }
+    });
+  }, [restaurant.id]);
+
+  const handlePublishClick = async () => {
+    if (isPublishing) return;
+    setIsPublishing(true);
+    try {
+      if (onPublishMenu) {
+        const res = await onPublishMenu(restaurant.id, restaurant, categories, items);
+        if (res && res.version) {
+          setLastPublishedVersion(res.version);
+          setLastPublishedAt(res.publishedAt || new Date().toISOString());
+        }
+      } else {
+        const res = await publishRestaurantMenu(restaurant.id, restaurant, categories, items);
+        if (res.success) {
+          setLastPublishedVersion(res.version || 1);
+          setLastPublishedAt(res.publishedAt || new Date().toISOString());
+          showToast(`✓ ¡Carta publicada exitosamente (v${res.version})! Los comensales y visitantes anónimos ya pueden verla.`);
+        } else {
+          showToast(`⚠️ Error al publicar: ${res.message}`);
+        }
+      }
+    } catch (err: any) {
+      showToast(`⚠️ Error al publicar: ${err?.message || 'Error de red'}`);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -694,8 +742,34 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span>+ Nuevo Plato</span>
           </button>
+
+          <button
+            onClick={handlePublishClick}
+            disabled={isPublishing}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition cursor-pointer shadow-md disabled:opacity-50"
+            title="Publicar esta versión oficial de la carta para visitantes públicos y códigos QR"
+          >
+            <UploadCloud className="w-4 h-4 stroke-[2.5]" />
+            <span>{isPublishing ? 'Publicando...' : 'Publicar Carta'}</span>
+          </button>
         </div>
       </div>
+
+      {/* Publication Status Banner */}
+      {lastPublishedVersion !== null && (
+        <div className="px-4 py-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              <strong>Carta Oficial Publicada:</strong> Versión {lastPublishedVersion}
+              {lastPublishedAt && ` — ${new Date(lastPublishedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+            </span>
+          </div>
+          <span className="text-[11px] text-emerald-400/80 font-mono bg-emerald-900/40 px-2 py-0.5 rounded">
+            Única fuente de verdad activa para comensales y QR
+          </span>
+        </div>
+      )}
 
       {/* Subtabs Selector */}
       <div className="flex items-center gap-2 border-b border-neutral-800 pb-2 flex-wrap">

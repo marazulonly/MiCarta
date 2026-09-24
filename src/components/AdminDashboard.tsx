@@ -619,7 +619,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div>
                         <span className="text-neutral-400 block mb-0.5">Capacidad</span>
                         <span className="font-bold text-neutral-800 block">
-                          {rest.metrics.totalTables} Mesas ({rest.metrics.occupancyRate}%)
+                          {rest.metrics?.totalTables ?? rest.totalTablesCount ?? 0} Mesas ({rest.metrics?.occupancyRate ?? 0}%)
                         </span>
                       </div>
                     </div>
@@ -1575,7 +1575,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-neutral-400">Capacidad:</span>
-                <span className="text-neutral-300">{restaurantToDelete.metrics.totalTables} Mesas</span>
+                <span className="text-neutral-300">{restaurantToDelete.metrics?.totalTables ?? restaurantToDelete.totalTablesCount ?? 0} Mesas</span>
               </div>
             </div>
 

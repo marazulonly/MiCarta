@@ -82,6 +82,12 @@ interface OwnerDashboardProps {
   onDeleteCategory?: (categoryId: string) => void;
   onReorderCategories?: (newCategories: MenuCategory[]) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
+  onPublishMenu?: (
+    restaurantId: string,
+    restaurant: Restaurant,
+    categories: MenuCategory[],
+    items: MenuItem[]
+  ) => Promise<{ success: boolean; version?: number; publishedAt?: string } | void> | void;
   onSwitchToAdminView: () => void;
   onImportBackupJSON?: (
     data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
@@ -113,6 +119,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onDeleteCategory,
   onReorderCategories,
   onOpenCustomerPreview,
+  onPublishMenu,
   onSwitchToAdminView,
   onImportBackupJSON,
 }) => {
@@ -1026,6 +1033,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onDeleteCategory={onDeleteCategory || (() => {})}
               onReorderCategories={onReorderCategories}
               onOpenCustomerPreview={onOpenCustomerPreview}
+              onPublishMenu={onPublishMenu}
               onImportBackupJSON={onImportBackupJSON}
             />
           </div>

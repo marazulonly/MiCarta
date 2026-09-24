@@ -712,7 +712,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 </span>
                 <div className="flex items-baseline justify-between mt-1">
                   <span className="text-lg font-black font-mono text-white">
-                    S/ {(currentRest.metrics.dailyRevenue + (activeSimOrder?.total || 0)).toFixed(2)}
+                    S/ {((currentRest?.metrics?.dailyRevenue || 0) + (activeSimOrder?.total || 0)).toFixed(2)}
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
                     +1 Comanda

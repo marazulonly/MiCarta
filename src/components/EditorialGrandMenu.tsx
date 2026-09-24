@@ -48,6 +48,8 @@ interface EditorialGrandMenuProps {
   onAddNewItem?: (categoryId?: string) => void;
   onEditBranding?: () => void;
   onEditHeader?: () => void;
+  onSaveToFirebase?: () => void;
+  isSavingFirebase?: boolean;
 }
 
 interface CartEntry {
@@ -76,6 +78,8 @@ export const EditorialGrandMenu: React.FC<EditorialGrandMenuProps> = ({
   onAddNewItem,
   onEditBranding,
   onEditHeader,
+  onSaveToFirebase,
+  isSavingFirebase = false,
 }) => {
   const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
   const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;

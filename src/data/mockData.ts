@@ -172,6 +172,51 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       welcomeMessage: 'Bienvenidos a Cevichito Pliz - Pesca artesanal del litoral peruano y ceviches al momento.',
       wifiPassword: 'CevichitoPliz2026'
     }
+  },
+  {
+    id: 'rest-1790204393895',
+    name: 'Voraz',
+    tagline: 'Cocina Urbana & Fusión',
+    cuisineType: 'Fusión & Carnes',
+    slug: 'voraz',
+    address: 'Av. La Mar 850, Miraflores',
+    phone: '+51 987 654 321',
+    rating: 4.8,
+    reviewCount: 120,
+    logoUrl: '',
+    coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&auto=format&fit=crop&q=80',
+    ownerId: 'u-owner-stephanie',
+    templateId: 'tmpl-modern',
+    branding: {
+      primaryColor: '#E11D48',
+      secondaryColor: '#4B5563',
+      accentColor: '#111827',
+      darkBgColor: '#0F172A',
+      cardBgColor: '#1E293B',
+      dishCardBgColor: '#0F172A',
+      textColor: '#F8FAFC',
+      fontDisplay: 'Outfit, sans-serif',
+      buttonColor: '#E11D48',
+      buttonTextColor: '#FFFFFF',
+      restaurantNameFont: 'Outfit, sans-serif',
+      restaurantNameColor: '#FFFFFF',
+      headerDisplayMode: 'IMAGE_AND_TEXT',
+      showHeaderName: true,
+      showHeaderTagline: true,
+      showHeaderBadge: true,
+      headerLogoFit: 'contain',
+      headerBannerHeight: 120
+    },
+    metrics: {
+      dailyRevenue: 2850.00,
+      activeOrders: 0,
+      avgTicket: 35.00,
+      customerRating: 4.8,
+      totalTables: 16,
+      occupancyRate: 0
+    },
+    isOpen: true,
+    totalTablesCount: 16
   }
 ];
 
@@ -569,7 +614,7 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 989 309 927',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-costa'],
+    restaurantIds: ['rest-costa', 'rest-1790204393895'],
     status: 'active',
     lastActive: 'En línea'
   },

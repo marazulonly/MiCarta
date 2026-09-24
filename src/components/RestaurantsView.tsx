@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Download,
   FileJson,
-  Sliders
+  Sliders,
+  UploadCloud
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory } from '../types';
 import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } from '../lib/jsonExportImport';
@@ -32,6 +33,12 @@ interface RestaurantsViewProps {
   onUpdateMenuItem: (updated: MenuItem) => void;
   onAddMenuItem: (newItem: MenuItem) => void;
   onOpenCustomerPreview: (restaurant: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => void;
+  onPublishMenu?: (
+    restaurantId: string,
+    restaurant: Restaurant,
+    categories: MenuCategory[],
+    items: MenuItem[]
+  ) => Promise<{ success: boolean; version?: number; publishedAt?: string }>;
   onImportBackupJSON?: (
     data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
     mode?: ImportMenuMode,
@@ -48,13 +55,32 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   onUpdateMenuItem,
   onAddMenuItem,
   onOpenCustomerPreview,
+  onPublishMenu,
   onImportBackupJSON,
 }) => {
   const [selectedRestId, setSelectedRestId] = useState<string>(restaurants[0]?.id || 'rest-brasas');
   const [activeTab, setActiveTab] = useState<'link' | 'branding' | 'menu'>('link');
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   
   const currentRestaurant = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
+
+  const handlePublishCurrentRestaurant = async () => {
+    if (isPublishing || !currentRestaurant) return;
+    setIsPublishing(true);
+    try {
+      if (onPublishMenu) {
+        const res = await onPublishMenu(currentRestaurant.id, currentRestaurant, categories, items);
+        if (res && res.success) {
+          setPublishSuccessMsg(`¡Carta de ${currentRestaurant.name} publicada exitosamente (v${res.version})!`);
+          setTimeout(() => setPublishSuccessMsg(null), 4000);
+        }
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   // Slug editing
   const [editableSlug, setEditableSlug] = useState<string>(currentRestaurant.slug);
@@ -233,8 +259,27 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Ver Carta Pública</span>
           </button>
+
+          {onPublishMenu && (
+            <button
+              onClick={handlePublishCurrentRestaurant}
+              disabled={isPublishing}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition cursor-pointer shadow disabled:opacity-50"
+              title="Publicar versión oficial para todos los visitantes públicos y códigos QR"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>{isPublishing ? 'Publicando...' : 'Publicar Carta'}</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {publishSuccessMsg && (
+        <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="font-semibold">{publishSuccessMsg}</span>
+        </div>
+      )}
 
       {/* 4 Restaurant Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">

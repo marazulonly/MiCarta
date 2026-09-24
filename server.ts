@@ -95,11 +95,27 @@ async function saveToVercelKV(data: any): Promise<boolean> {
   }
 }
 
+// Helper function to normalize slugs for matching URLs, names, and IDs
+function normalizeSlug(str?: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function loadCloudDataFromDisk() {
   try {
     if (fs.existsSync(CLOUD_STORAGE_FILE)) {
       const raw = fs.readFileSync(CLOUD_STORAGE_FILE, 'utf-8');
       cachedCloudData = JSON.parse(raw);
+      if (!cachedCloudData.publishedMenus) {
+        cachedCloudData.publishedMenus = {};
+      }
       return cachedCloudData;
     }
   } catch (err) {
@@ -112,14 +128,15 @@ function saveCloudDataToDisk(data: any) {
   try {
     cachedCloudData = {
       ...data,
+      publishedMenus: data.publishedMenus || cachedCloudData?.publishedMenus || {},
       updatedAt: new Date().toISOString(),
     };
     fs.writeFileSync(CLOUD_STORAGE_FILE, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
     
-    // Asynchronously push to Vercel KV if configured
+    // Asynchronously push to Vercel KV if configured (do not let Upstash errors fail the operation)
     if (kvRestUrl && kvRestToken) {
       saveToVercelKV(cachedCloudData).catch(err => {
-        console.warn('[Server] Background Vercel KV sync error:', err);
+        console.warn('[Server] Background Vercel KV sync notice (size/payload):', err);
       });
     }
 
@@ -130,22 +147,26 @@ function saveCloudDataToDisk(data: any) {
   }
 }
 
-// Initialize on startup & query Vercel KV if available
+// Initialize on startup: LOCAL DISK IS AUTHORITATIVE.
+// NEVER overwrite existing disk data with remote/stale KV data.
 loadCloudDataFromDisk();
 if (kvRestUrl && kvRestToken) {
-  fetchFromVercelKV().then(remoteData => {
-    if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
-      cachedCloudData = remoteData;
-      saveCloudDataToDisk(remoteData);
-      console.log('[Server] Successfully hydrated cache from Vercel KV / Upstash');
-    } else if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length)) {
-      saveToVercelKV(cachedCloudData).then(() => {
-        console.log('[Server] Initialized Upstash with local menu data snapshot');
-      }).catch(err => {
-        console.warn('[Server] Error pushing initial snapshot to Upstash:', err);
-      });
-    }
-  }).catch(() => {});
+  // Only attempt hydration if local disk has no data at all
+  if (!cachedCloudData || (!cachedCloudData.restaurants?.length && !cachedCloudData.items?.length)) {
+    fetchFromVercelKV().then(remoteData => {
+      if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
+        cachedCloudData = remoteData;
+        if (!cachedCloudData.publishedMenus) cachedCloudData.publishedMenus = {};
+        saveCloudDataToDisk(remoteData);
+        console.log('[Server] Hydrated empty local storage from Vercel KV / Upstash');
+      }
+    }).catch(() => {});
+  } else {
+    // If local disk already has real data, push it to Upstash as backup without overwriting disk
+    saveToVercelKV(cachedCloudData).then(() => {
+      console.log('[Server] Synced existing local menu data snapshot to Upstash backup');
+    }).catch(() => {});
+  }
 }
 
 // Connected SSE clients for live menu updates
@@ -176,6 +197,9 @@ async function startServer() {
 
   // GET: Retrieve latest cloud menu
   app.get('/api/cloud-menu', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     if (!cachedCloudData) {
       loadCloudDataFromDisk();
     }
@@ -183,6 +207,168 @@ async function startServer() {
       success: true,
       data: cachedCloudData,
       timestamp: cachedCloudData?.updatedAt || new Date().toISOString()
+    });
+  });
+
+  // GET: Retrieve atomic published menu for a restaurant (for anonymous visitors & public QR)
+  app.get('/api/public/menu/:slugOrId', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
+    const { slugOrId } = req.params;
+    const target = normalizeSlug(slugOrId);
+
+    // 1. Look in publishedMenus by restaurantId or slug
+    const publishedMenus = current.publishedMenus || {};
+    let matchedSnapshot: any = null;
+
+    for (const [restId, snapshot] of Object.entries(publishedMenus)) {
+      if (!snapshot) continue;
+      const snapRest = (snapshot as any).restaurant;
+      if (
+        normalizeSlug(restId) === target || 
+        normalizeSlug(snapRest?.id) === target || 
+        normalizeSlug(snapRest?.slug) === target ||
+        normalizeSlug(snapRest?.name) === target
+      ) {
+        matchedSnapshot = snapshot;
+        break;
+      }
+    }
+
+    // 2. If already published, return the atomic snapshot
+    if (matchedSnapshot) {
+      res.json({
+        success: true,
+        published: true,
+        version: matchedSnapshot.version || 1,
+        publishedAt: matchedSnapshot.publishedAt || current.updatedAt,
+        restaurant: matchedSnapshot.restaurant,
+        categories: matchedSnapshot.categories || [],
+        items: matchedSnapshot.items || []
+      });
+      return;
+    }
+
+    // 3. Fallback: Find restaurant in draft data, create initial published snapshot v1, and return atomically
+    const rests = current.restaurants || [];
+    const matchedRest = rests.find((r: any) => 
+      normalizeSlug(r.id) === target || 
+      normalizeSlug(r.slug) === target || 
+      normalizeSlug(r.name) === target
+    );
+
+    if (matchedRest) {
+      const restCategories = (current.categories || []).filter((c: any) => c.restaurantId === matchedRest.id);
+      const restItems = (current.items || []).filter((i: any) => i.restaurantId === matchedRest.id);
+      const initialSnapshot = {
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        publishedBy: 'System Bootstrap',
+        restaurant: matchedRest,
+        categories: restCategories,
+        items: restItems
+      };
+
+      current.publishedMenus = current.publishedMenus || {};
+      current.publishedMenus[matchedRest.id] = initialSnapshot;
+      saveCloudDataToDisk(current);
+
+      res.json({
+        success: true,
+        published: true,
+        version: 1,
+        publishedAt: initialSnapshot.publishedAt,
+        restaurant: matchedRest,
+        categories: restCategories,
+        items: restItems
+      });
+      return;
+    }
+
+    res.status(404).json({
+      success: false,
+      message: `No se encontró la carta para el identificador "${slugOrId}"`
+    });
+  });
+
+  // POST: Publish a restaurant's menu atomically (guaranteeing exact single source of truth for public visitors)
+  app.post('/api/menu/publish', (req, res) => {
+    const { restaurantId, restaurant, categories, items, publishedBy } = req.body;
+    if (!restaurantId || !restaurant) {
+      res.status(400).json({ success: false, message: 'Se requiere restaurantId y datos del restaurante para publicar' });
+      return;
+    }
+
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
+    const publishedMenus = current.publishedMenus || {};
+    const prevSnapshot = publishedMenus[restaurantId];
+    const nextVersion = (prevSnapshot?.version || 0) + 1;
+    const nowIso = new Date().toISOString();
+
+    const newSnapshot = {
+      version: nextVersion,
+      publishedAt: nowIso,
+      publishedBy: publishedBy || 'Admin / Owner',
+      restaurant,
+      categories: categories || [],
+      items: items || []
+    };
+
+    publishedMenus[restaurantId] = newSnapshot;
+
+    // Synchronize current draft restaurant, categories, and items with the published version
+    const updatedRestaurants = [...(current.restaurants || [])];
+    const rIdx = updatedRestaurants.findIndex((r: any) => r.id === restaurantId);
+    if (rIdx >= 0) {
+      updatedRestaurants[rIdx] = restaurant;
+    } else {
+      updatedRestaurants.push(restaurant);
+    }
+
+    // Replace items of this restaurant with published items
+    const otherItems = (current.items || []).filter((i: any) => i.restaurantId !== restaurantId);
+    const updatedItems = [...otherItems, ...(items || [])];
+
+    // Replace categories of this restaurant with published categories
+    const otherCategories = (current.categories || []).filter((c: any) => c.restaurantId !== restaurantId);
+    const updatedCategories = [...otherCategories, ...(categories || [])];
+
+    const updatedData = {
+      ...current,
+      restaurants: updatedRestaurants,
+      categories: updatedCategories,
+      items: updatedItems,
+      publishedMenus,
+      updatedAt: nowIso
+    };
+
+    saveCloudDataToDisk(updatedData);
+
+    // Broadcast publish event to all connected devices and incognito tabs
+    broadcastMenuUpdate({
+      type: 'MENU_PUBLISHED',
+      restaurantId,
+      slug: restaurant.slug,
+      version: nextVersion,
+      publishedAt: nowIso,
+      snapshot: newSnapshot
+    });
+
+    res.json({
+      success: true,
+      message: `¡Carta de "${restaurant.name}" publicada con éxito (Versión ${nextVersion})!`,
+      version: nextVersion,
+      publishedAt: nowIso
     });
   });
 
@@ -333,6 +519,58 @@ async function startServer() {
     saveCloudDataToDisk(updatedData);
     broadcastMenuUpdate({ type: 'CATEGORY_DELETED', categoryId: id, categories });
     res.json({ success: true, message: 'Categoría eliminada de la nube' });
+  });
+
+  // POST: Update or create user (guarantees photo and restaurant assignment persistence)
+  app.post('/api/cloud-menu/user', (req, res) => {
+    const user = req.body;
+    if (!user || (!user.id && !user.dni)) {
+      res.status(400).json({ success: false, message: 'Usuario inválido' });
+      return;
+    }
+
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+    const users = [...(current.users || [])];
+    const idx = users.findIndex((u: any) => u.id === user.id || (user.dni && u.dni === user.dni));
+
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...user };
+    } else {
+      users.unshift(user);
+    }
+
+    const updatedData = {
+      ...current,
+      users,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveCloudDataToDisk(updatedData);
+    broadcastMenuUpdate({ type: 'USER_UPDATED', user, users });
+    res.json({ success: true, message: `Usuario "${user.name}" guardado permanentemente en la nube`, user });
+  });
+
+  // DELETE: Delete user
+  app.delete('/api/cloud-menu/user/:id', (req, res) => {
+    const { id } = req.params;
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+    const users = (current.users || []).filter((u: any) => u.id !== id);
+
+    const updatedData = {
+      ...current,
+      users,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveCloudDataToDisk(updatedData);
+    broadcastMenuUpdate({ type: 'USER_DELETED', userId: id, users });
+    res.json({ success: true, message: 'Usuario eliminado permanentemente de la nube' });
   });
 
   // POST: Configure and verify Vercel KV / Upstash Redis directly

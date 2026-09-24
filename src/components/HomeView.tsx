@@ -87,9 +87,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   }, [activeRole]);
 
-  const totalRevenue = restaurants.reduce((acc, r) => acc + r.metrics.dailyRevenue, 0);
+  const totalRevenue = restaurants.reduce((acc, r) => acc + (r.metrics?.dailyRevenue || 0), 0);
   const activeOrdersCount = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length;
-  const avgOccupancy = Math.round(restaurants.reduce((acc, r) => acc + r.metrics.occupancyRate, 0) / restaurants.length);
+  const avgOccupancy = restaurants.length > 0
+    ? Math.round(restaurants.reduce((acc, r) => acc + (r.metrics?.occupancyRate || 0), 0) / restaurants.length)
+    : 0;
 
   return (
     <div className="space-y-6">

@@ -10,7 +10,7 @@ export interface CloudMenuPayload {
 }
 
 export type CloudSyncListener = (event: {
-  type: 'FULL_SYNC' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'RESTAURANT_UPDATED' | 'CATEGORY_UPDATED' | 'CATEGORY_DELETED' | 'CONNECTED';
+  type: 'FULL_SYNC' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'RESTAURANT_UPDATED' | 'CATEGORY_UPDATED' | 'CATEGORY_DELETED' | 'USER_UPDATED' | 'USER_DELETED' | 'MENU_PUBLISHED' | 'CONNECTED';
   data?: any;
   item?: MenuItem;
   items?: MenuItem[];
@@ -20,6 +20,14 @@ export type CloudSyncListener = (event: {
   category?: MenuCategory;
   categories?: MenuCategory[];
   categoryId?: string;
+  user?: User;
+  users?: User[];
+  userId?: string;
+  restaurantId?: string;
+  slug?: string;
+  version?: number;
+  publishedAt?: string;
+  snapshot?: any;
 }) => void;
 
 // Upstash Cloud Redis credentials
@@ -92,19 +100,20 @@ export async function saveToUpstashDirectly(payload: CloudMenuPayload): Promise<
 }
 
 /**
- * Fetch latest menu from cloud hosting (Upstash).
- * Prioritizes remote cloud hosting over anything local.
+ * Fetch latest menu from backend cloud hosting.
+ * Prioritizes the Express backend (with persistent disk storage and 50MB limits)
+ * and falls back to Upstash if backend is unreachable.
  */
 export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
-  // 1. Direct Upstash Cloud Hosting (Primary)
-  const upstashData = await fetchFromUpstashDirectly();
-  if (upstashData && (upstashData.restaurants?.length || upstashData.items?.length)) {
-    return upstashData;
-  }
-
-  // 2. Fallback to Express backend endpoint if present
+  // 1. Primary: Express backend local persistent disk endpoint
   try {
-    const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { 
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     if (res.ok) {
       const json = await res.json();
       if (json.success && json.data) {
@@ -113,11 +122,18 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
     }
   } catch {}
 
+  // 2. Fallback to direct Upstash Cloud Hosting if backend endpoint is unavailable
+  const upstashData = await fetchFromUpstashDirectly();
+  if (upstashData && (upstashData.restaurants?.length || upstashData.items?.length)) {
+    return upstashData;
+  }
+
   return null;
 }
 
 /**
- * Save complete menu data to cloud hosting (Upstash).
+ * Save complete menu data to cloud hosting.
+ * Saves to Express backend disk first, and mirrors to Upstash in background.
  */
 export async function saveFullCloudMenu(payload: {
   restaurants?: Restaurant[];
@@ -135,19 +151,131 @@ export async function saveFullCloudMenu(payload: {
     updatedAt: new Date().toISOString()
   };
 
-  // 1. Save directly to Upstash Cloud Hosting
-  const ok = await saveToUpstashDirectly(fullPayload);
+  let backendOk = false;
 
-  // 2. Mirror to Express server if reachable
+  // 1. Primary: Save to Express backend (persists safely to disk without payload size limits)
   try {
-    fetch('/api/cloud-menu', {
+    const res = await fetch('/api/cloud-menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fullPayload)
-    }).catch(() => {});
-  } catch {}
+    });
+    if (res.ok) {
+      backendOk = true;
+    }
+  } catch (err) {
+    console.warn('[CloudSync] Express backend save error:', err);
+  }
 
-  return ok;
+  // 2. Secondary: Mirror to Upstash in background
+  saveToUpstashDirectly(fullPayload).catch(() => {});
+
+  return backendOk;
+}
+
+/**
+ * Atomically publishes a restaurant's menu snapshot.
+ * Guarantees that public visitors and QR diners view the exact single source of truth.
+ */
+export async function publishRestaurantMenu(
+  restaurantId: string,
+  restaurant: Restaurant,
+  categories: MenuCategory[],
+  items: MenuItem[],
+  publishedBy?: string
+): Promise<{ success: boolean; version?: number; publishedAt?: string; message?: string }> {
+  try {
+    const res = await fetch('/api/menu/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantId,
+        restaurant,
+        categories,
+        items,
+        publishedBy
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        success: true,
+        version: data.version,
+        publishedAt: data.publishedAt,
+        message: data.message
+      };
+    }
+    const err = await res.json().catch(() => ({}));
+    return { success: false, message: err.message || 'Error al publicar la carta' };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Error de conexión al publicar' };
+  }
+}
+
+/**
+ * Retrieves the atomic published menu snapshot for public anonymous visitors and QR scanners.
+ * Bypasses all browser caches with strict no-store directives.
+ */
+export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
+  success: boolean;
+  published: boolean;
+  version: number;
+  publishedAt: string;
+  restaurant: Restaurant;
+  categories: MenuCategory[];
+  items: MenuItem[];
+} | null> {
+  try {
+    const res = await fetch(`/api/public/menu/${encodeURIComponent(slugOrId)}?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.restaurant) {
+        return data;
+      }
+    }
+  } catch (err) {
+    console.warn('[CloudSync] Error fetching public published menu:', err);
+  }
+  return null;
+}
+
+/**
+ * Automatically saves a user modification (including photo and assigned restaurants) to the backend.
+ */
+export async function autoSyncUser(user: User): Promise<boolean> {
+  try {
+    const res = await fetch('/api/cloud-menu/user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[CloudSync] autoSyncUser error:', err);
+    return false;
+  }
+}
+
+/**
+ * Automatically deletes a user from the backend.
+ */
+export async function autoDeleteUser(userId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/cloud-menu/user/${encodeURIComponent(userId)}`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[CloudSync] autoDeleteUser error:', err);
+    return false;
+  }
 }
 
 /**
@@ -309,11 +437,40 @@ export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
  * Continuously polls Upstash Cloud Redis every 4 seconds with cache-busting,
  * ensuring all devices, incognito windows, and customers see updates automatically.
  */
+/**
+ * Subscribe to real-time cloud menu changes.
+ * Listens to Server-Sent Events (SSE) from the Express backend for immediate sub-10ms updates,
+ * and maintains a fallback background poll with cache-busting so all incognito tabs and devices stay in sync.
+ */
 export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void {
   let isClosed = false;
   let lastSeenTimestamp: string | null = null;
+  let eventSource: EventSource | null = null;
 
-  // Poll Upstash every 4 seconds
+  // 1. Live SSE Connection (Sub-10ms cross-tab & cross-device synchronization)
+  if (typeof window !== 'undefined' && window.EventSource) {
+    try {
+      eventSource = new EventSource('/api/cloud-menu/events');
+
+      eventSource.onmessage = (e) => {
+        if (isClosed || !e.data) return;
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload && payload.type) {
+            listener(payload);
+          }
+        } catch {}
+      };
+
+      eventSource.onerror = () => {
+        // SSE may reconnect automatically
+      };
+    } catch (err) {
+      console.warn('[CloudSync] EventSource error, relying on poll:', err);
+    }
+  }
+
+  // 2. Fallback polling every 4 seconds to the backend /api/cloud-menu
   const pollInterval = setInterval(async () => {
     if (isClosed) return;
     try {
@@ -322,10 +479,9 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
         return;
       }
 
-      const remoteData = await fetchFromUpstashDirectly();
+      const remoteData = await fetchLatestCloudMenu();
       if (remoteData) {
         const currentStamp = remoteData.updatedAt || 'initial';
-        // Ignore if this is the exact snapshot we just saved ourselves
         if (lastSavedTimestamp && currentStamp === lastSavedTimestamp) {
           lastSeenTimestamp = currentStamp;
           return;
@@ -341,6 +497,10 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
 
   return () => {
     isClosed = true;
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
     clearInterval(pollInterval);
   };
 }
