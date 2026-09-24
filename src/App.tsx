@@ -1221,35 +1221,53 @@ export default function App() {
   if (!currentUser && (initParams.isQr || initParams.restSlug || isCustomerModalOpen) && previewRestaurant) {
     // If the guest explicitly closed the menu, show ONLY the thank you screen without any login buttons
     if (isMenuClosedByGuest) {
-      const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
+      const restColor = previewRestaurant?.branding?.darkBgColor || previewRestaurant?.branding?.primaryColor || '#1B667A';
       const secColor = previewRestaurant?.branding?.secondaryColor || '#8A9B57';
       const btnColor = previewRestaurant?.branding?.buttonColor || '#D98262';
       const creamColor = previewRestaurant?.branding?.buttonTextColor || '#EAEBDC';
+      const restLogo = previewRestaurant?.branding?.headerLogoUrl || previewRestaurant?.logoUrl;
 
       return (
         <div 
           className="min-h-screen flex flex-col items-center justify-center p-6 text-center select-none font-sans"
-          style={{ backgroundColor: `${restColor}F5`, color: creamColor }}
+          style={{ backgroundColor: restColor, color: '#FFFFFF' }}
         >
           <div 
-            className="max-w-md w-full p-8 rounded-3xl border shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in zoom-in-95 duration-200"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)', borderColor: `${secColor}60` }}
+            className="max-w-md w-full p-8 rounded-3xl border shadow-2xl backdrop-blur-md space-y-6 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)', borderColor: `${secColor}60` }}
           >
-            <div 
-              className="w-16 h-16 mx-auto rounded-full border flex items-center justify-center"
-              style={{ backgroundColor: `${secColor}30`, borderColor: secColor }}
-            >
-              <CheckCircle2 className="w-8 h-8" style={{ color: secColor }} />
-            </div>
+            {/* Restaurant Logo */}
+            {restLogo ? (
+              <img 
+                src={restLogo} 
+                alt={previewRestaurant?.name} 
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-contain shadow-2xl border border-white/20 p-2 bg-black/40"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div 
+                className="w-16 h-16 rounded-2xl border flex items-center justify-center shadow-xl"
+                style={{ backgroundColor: `${secColor}30`, borderColor: secColor }}
+              >
+                <CheckCircle2 className="w-8 h-8" style={{ color: secColor }} />
+              </div>
+            )}
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: 'Fredoka, Outfit, sans-serif' }}>
+              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: previewRestaurant?.branding?.restaurantNameFont || 'Fredoka, Outfit, sans-serif' }}>
                 ¡Gracias por tu visita!
               </h2>
               <p className="text-sm opacity-85 leading-relaxed">
-                Has cerrado la carta digital de <strong>{previewRestaurant?.name || 'nuestro restaurante'}</strong>. Ya puedes cerrar esta pestaña de tu navegador.
+                Has cerrado la carta digital de <strong>{previewRestaurant?.name || 'nuestro restaurante'}</strong>. ¡Esperamos volver a atenderte muy pronto!
               </p>
             </div>
+
+            {(previewRestaurant?.address || previewRestaurant?.phone) && (
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1 w-full font-mono text-neutral-300">
+                {previewRestaurant.address && <div>📍 {previewRestaurant.address}</div>}
+                {previewRestaurant.phone && <div>📞 {previewRestaurant.phone}</div>}
+              </div>
+            )}
             
             <button
               onClick={() => {
