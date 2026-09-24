@@ -53,9 +53,11 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
           
           {/* Brand & Role info */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow">
-              MC
-            </div>
+            <img 
+              src="/huevofrito.png" 
+              alt="Micarta" 
+              className="w-9 h-9 rounded-xl object-contain bg-white border border-neutral-200 shadow"
+            />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-black tracking-widest text-neutral-950 uppercase">

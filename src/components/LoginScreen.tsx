@@ -194,9 +194,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <header className="w-full border-b border-neutral-200/60 bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#1E1F24] text-white flex items-center justify-center font-black text-base shadow">
-              MC
-            </div>
+            <img 
+              src="/huevofrito.png" 
+              alt="Micarta" 
+              className="w-9 h-9 rounded-xl object-contain bg-white border border-neutral-200 shadow"
+            />
           </div>
 
           <div className="flex items-center gap-2">

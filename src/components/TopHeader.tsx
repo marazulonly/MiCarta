@@ -68,9 +68,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-black text-sm tracking-tighter">
-              MC
-            </div>
+            <img 
+              src="/huevofrito.png" 
+              alt="Micarta" 
+              className="w-8 h-8 rounded-lg object-contain bg-white border border-neutral-200 shadow-sm"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-black tracking-widest text-neutral-950 uppercase">

@@ -154,7 +154,11 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       const existing = map.get(r.id);
       map.set(r.id, {
         ...(existing || {}),
-        ...cleaned
+        ...cleaned,
+        branding: {
+          ...(existing?.branding || {}),
+          ...(cleaned.branding || {})
+        }
       });
     }
   });
@@ -174,7 +178,6 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       ...(r.metrics || {})
     };
 
-    // Generic fallback branding (neutral dark palette) used ONLY if fields are entirely missing
     const genericDefaultBranding: RestaurantBranding = {
       primaryColor: '#F59E0B',
       secondaryColor: '#F59E0B',
@@ -189,23 +192,25 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       headerLogoUrl: '',
     };
 
-    // Determine authoritative user logo: prioritize user-saved headerLogoUrl or logoUrl on r
-    const userLogo = r.branding?.headerLogoUrl || r.logoUrl || (r.branding ? '' : (fallback?.branding?.headerLogoUrl || fallback?.logoUrl || ''));
+    const fbBrand = fallback?.branding;
+    const userBrand = r.branding;
+    const userLogo = userBrand?.headerLogoUrl || userBrand?.logoUrl || r.logoUrl || fbBrand?.headerLogoUrl || fbBrand?.logoUrl || '';
 
-    // Construct merged branding without injecting fallback mock brandings over user customization
     const mergedBranding: RestaurantBranding = {
       ...genericDefaultBranding,
-      ...(r.branding ? {} : (fallback?.branding || {})),
-      ...(r.branding || {}),
+      ...(fbBrand || {}),
+      ...(userBrand || {}),
       headerLogoUrl: userLogo,
-      darkBgColor: r.branding?.darkBgColor || r.branding?.backgroundColor || (r.branding ? '#0A0A0A' : (fallback?.branding?.darkBgColor || '#0A0A0A')),
-      cardBgColor: r.branding?.dishCardBgColor || r.branding?.cardBgColor || (r.branding ? '#171717' : (fallback?.branding?.cardBgColor || '#171717')),
-      buttonColor: r.branding?.buttonColor || r.branding?.accentColor || r.branding?.primaryColor || (r.branding ? '#F59E0B' : (fallback?.branding?.buttonColor || '#F59E0B')),
-      primaryColor: r.branding?.primaryColor || r.branding?.buttonColor || r.branding?.accentColor || (r.branding ? '#F59E0B' : (fallback?.branding?.primaryColor || '#F59E0B')),
-      accentColor: r.branding?.accentColor || r.branding?.buttonColor || r.branding?.primaryColor || (r.branding ? '#F59E0B' : (fallback?.branding?.accentColor || '#F59E0B')),
+      darkBgColor: userBrand?.darkBgColor || userBrand?.backgroundColor || fbBrand?.darkBgColor || genericDefaultBranding.darkBgColor,
+      cardBgColor: userBrand?.dishCardBgColor || userBrand?.cardBgColor || fbBrand?.cardBgColor || fbBrand?.dishCardBgColor || genericDefaultBranding.cardBgColor,
+      dishCardBgColor: userBrand?.dishCardBgColor || userBrand?.cardBgColor || fbBrand?.dishCardBgColor || fbBrand?.cardBgColor || genericDefaultBranding.dishCardBgColor,
+      textColor: userBrand?.textColor || fbBrand?.textColor || genericDefaultBranding.textColor,
+      buttonColor: userBrand?.buttonColor || userBrand?.accentColor || userBrand?.primaryColor || fbBrand?.buttonColor || fbBrand?.primaryColor || genericDefaultBranding.buttonColor,
+      buttonTextColor: userBrand?.buttonTextColor || fbBrand?.buttonTextColor || genericDefaultBranding.buttonTextColor,
+      primaryColor: userBrand?.primaryColor || userBrand?.buttonColor || userBrand?.accentColor || fbBrand?.primaryColor || genericDefaultBranding.primaryColor,
+      accentColor: userBrand?.accentColor || userBrand?.buttonColor || userBrand?.primaryColor || fbBrand?.accentColor || genericDefaultBranding.accentColor,
     };
 
-    // User data in 'r' takes total precedence to ensure user cloud edits are strictly respected and saved
     return {
       ...(fallback || {}),
       ...r,
@@ -1058,64 +1063,72 @@ export default function App() {
       preparedRestaurants.forEach(r => targetRestIds.add(r.id));
     }
 
-    // 1. Update restaurants (always preserve ownerId)
+    // 1. Calculate merged restaurants while preserving ALL existing restaurants in system
+    let nextRestaurants = [...restaurants];
     if (preparedRestaurants && preparedRestaurants.length > 0) {
-      setRestaurants(prev => {
-        const map = new Map<string, Restaurant>();
-        prev.forEach(r => map.set(r.id, r));
-        preparedRestaurants.forEach(impRest => {
-          const existing = map.get(impRest.id);
-          const mergedRest: Restaurant = {
-            ...impRest,
-            ownerId: existing?.ownerId || impRest.ownerId,
-          };
-          map.set(impRest.id, mergedRest);
-        });
-        return Array.from(map.values());
+      const restMap = new Map<string, Restaurant>();
+      restaurants.forEach(r => restMap.set(r.id, r));
+      preparedRestaurants.forEach(impRest => {
+        const existing = restMap.get(impRest.id);
+        const mergedRest: Restaurant = {
+          ...(existing || {}),
+          ...impRest,
+          ownerId: existing?.ownerId || impRest.ownerId,
+          branding: {
+            ...(existing?.branding || {}),
+            ...(impRest.branding || {})
+          }
+        };
+        restMap.set(impRest.id, mergedRest);
       });
+      nextRestaurants = sanitizeRestaurants(Array.from(restMap.values()));
     }
 
-    // 2. Update categories
+    // 2. Calculate merged categories
+    let nextCategories: MenuCategory[] = [...categories];
     if (preparedCategories && preparedCategories.length > 0) {
-      setCategories(prev => {
-        if (mode === 'REPLACE') {
-          // Replace categories belonging to target restaurants with the imported ones
-          const remaining = prev.filter(c => !targetRestIds.has(c.restaurantId));
-          return [...remaining, ...preparedCategories];
-        } else {
-          // Merge categories by ID
-          const map = new Map<string, MenuCategory>();
-          prev.forEach(c => map.set(c.id, c));
-          preparedCategories.forEach(c => map.set(c.id, c));
-          return Array.from(map.values());
-        }
-      });
+      if (mode === 'REPLACE') {
+        const remaining = categories.filter(c => !targetRestIds.has(c.restaurantId));
+        nextCategories = [...remaining, ...preparedCategories];
+      } else {
+        const catMap = new Map<string, MenuCategory>();
+        categories.forEach(c => catMap.set(c.id, c));
+        preparedCategories.forEach(c => catMap.set(c.id, c));
+        nextCategories = Array.from(catMap.values());
+      }
     }
 
-    // 3. Update menu items
+    // 3. Calculate merged menu items
+    let nextItems: MenuItem[] = [...menuItems];
     if (preparedItems && preparedItems.length > 0) {
-      setMenuItems(prev => {
-        if (mode === 'REPLACE') {
-          // Replace items belonging to target restaurants with the imported ones
-          const remaining = prev.filter(i => !targetRestIds.has(i.restaurantId));
-          return [...remaining, ...preparedItems];
-        } else {
-          // Merge items by ID
-          return mergeMenuItemsById(prev, preparedItems);
-        }
-      });
+      if (mode === 'REPLACE') {
+        const remaining = menuItems.filter(i => !targetRestIds.has(i.restaurantId));
+        nextItems = [...remaining, ...preparedItems];
+      } else {
+        nextItems = mergeMenuItemsById(menuItems, preparedItems);
+      }
     }
 
-    // 4. Immediately persist imported carta to cloud so incognito users and all devices see it
-    setTimeout(() => {
-      saveFullCloudMenu({
-        restaurants: preparedRestaurants.length > 0 ? preparedRestaurants : restaurants,
-        categories: preparedCategories.length > 0 ? preparedCategories : categories,
-        items: preparedItems.length > 0 ? preparedItems : menuItems,
-        users,
-        orders,
-      }).catch(() => {});
-    }, 100);
+    // 4. Update local state
+    setRestaurants(nextRestaurants);
+    setCategories(nextCategories);
+    setMenuItems(nextItems);
+
+    if (previewRestaurant && targetRestIds.has(previewRestaurant.id)) {
+      const updatedPrev = nextRestaurants.find(r => r.id === previewRestaurant.id);
+      if (updatedPrev) setPreviewRestaurant(updatedPrev);
+    }
+
+    // 5. Immediately persist full merged dataset to cloud (Server Disk & Upstash)
+    saveFullCloudMenu({
+      restaurants: nextRestaurants,
+      categories: nextCategories,
+      items: nextItems,
+      users,
+      orders,
+    }).catch(err => {
+      console.error('[Import] Error saving to cloud:', err);
+    });
 
     const modeText = mode === 'REPLACE' ? 'reemplazada completamente' : 'añadida / fusionada';
     showToast(`✓ Carta ${modeText} con éxito y guardada en la nube.`);
