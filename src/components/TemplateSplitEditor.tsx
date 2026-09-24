@@ -253,11 +253,11 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const handleSaveToRestaurant = () => {
     if (!selectedRestaurant) return;
 
-    const safeHeaderLogo = selectedRestaurant.branding?.headerLogoUrl || selectedRestaurant.logoUrl || workingBranding.headerLogoUrl;
+    const safeHeaderLogo = workingBranding.headerLogoUrl || selectedRestaurant.branding?.headerLogoUrl || selectedRestaurant.logoUrl || '';
     const updatedRest: Restaurant = {
       ...selectedRestaurant,
       templateId: activeTemplateId,
-      logoUrl: selectedRestaurant.logoUrl || safeHeaderLogo || '',
+      logoUrl: safeHeaderLogo || selectedRestaurant.logoUrl,
       branding: {
         ...selectedRestaurant.branding,
         ...workingBranding,

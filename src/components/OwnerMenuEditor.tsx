@@ -565,7 +565,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       coverUrl: safeCover,
       branding: {
         ...restaurant.branding,
-        headerLogoUrl: restaurant.branding?.headerLogoUrl || safeLogo,
+        headerLogoUrl: safeLogo,
         primaryColor: brandPrimaryColor,
         darkBgColor: brandDarkBgColor,
         secondaryColor: brandSecondaryColor,

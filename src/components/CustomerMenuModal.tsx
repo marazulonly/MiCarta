@@ -121,38 +121,68 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [enableDineIn, setEnableDineIn] = useState(restaurant.menuAccessSettings?.enableDineIn !== false);
   const [enableDelivery, setEnableDelivery] = useState(restaurant.menuAccessSettings?.enableDelivery !== false);
 
+  const compressAndOptimizeImage = (file: File, maxDim: number, callback: (url: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawResult = event.target?.result as string;
+      if (!rawResult) return;
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimized = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.88);
+          callback(optimized);
+        } else {
+          callback(rawResult);
+        }
+      };
+      img.onerror = () => callback(rawResult);
+      img.src = rawResult;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 5MB. Selecciona una más liviana.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 8MB. Selecciona una más liviana.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setBrandLogoUrl(reader.result);
-        showToast('✓ Logo subido desde el disco.');
-      }
-    };
-    reader.readAsDataURL(file);
+    compressAndOptimizeImage(file, 1200, (url) => {
+      setBrandLogoUrl(url);
+      showToast('✓ Logo cargado y optimizado con éxito.');
+    });
+    e.target.value = '';
   };
 
   const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 5MB.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 8MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setBrandCoverUrl(reader.result);
-        showToast('✓ Portada subida desde el disco.');
-      }
-    };
-    reader.readAsDataURL(file);
+    compressAndOptimizeImage(file, 1600, (url) => {
+      setBrandCoverUrl(url);
+      showToast('✓ Portada cargada y optimizada con éxito.');
+    });
+    e.target.value = '';
   };
 
   // New item form state
@@ -369,7 +399,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       coverUrl: safeCover,
       branding: {
         ...restaurant.branding,
-        headerLogoUrl: restaurant.branding?.headerLogoUrl || safeLogo,
+        headerLogoUrl: safeLogo,
         darkBgColor: brandDarkBgColor,
         buttonColor: brandButtonColor,
         buttonTextColor: brandButtonTextColor,
