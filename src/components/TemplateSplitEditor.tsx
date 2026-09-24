@@ -228,25 +228,17 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     showNotification(`Paleta "${pal.name}" aplicada a la vista previa.`);
   };
 
-  // Apply a template preset
+  // Apply a template preset (Only alters template visualization structure, preserving user's custom colors & logos)
   const handleSelectTemplate = (tmpl: MenuTemplate) => {
     setActiveTemplateId(tmpl.id);
     setWorkingBranding(prev => ({
       ...prev,
-      primaryColor: tmpl.primaryColor,
-      accentColor: tmpl.primaryColor,
-      darkBgColor: tmpl.darkBgColor,
-      cardBgColor: tmpl.cardBgColor || tmpl.darkBgColor,
-      dishCardBgColor: tmpl.cardBgColor || tmpl.darkBgColor,
-      buttonColor: tmpl.buttonColor || tmpl.primaryColor,
-      buttonTextColor: tmpl.buttonTextColor || '#000000',
-      textColor: tmpl.textColor || '#FFFFFF',
-      fontDisplay: tmpl.fontDisplay,
-      cardBorderRadius: tmpl.cardBorderRadius || '12px',
-      cardStyle: tmpl.cardStyle || 'grid',
-      headerStyle: tmpl.headerStyle || 'banner'
+      fontDisplay: tmpl.fontDisplay || prev.fontDisplay,
+      cardBorderRadius: tmpl.cardBorderRadius || prev.cardBorderRadius || '12px',
+      cardStyle: tmpl.cardStyle || prev.cardStyle || 'grid',
+      headerStyle: tmpl.headerStyle || prev.headerStyle || 'banner'
     }));
-    showNotification(`Plantilla "${tmpl.name}" seleccionada.`);
+    showNotification(`Plantilla "${tmpl.name}" seleccionada. Tus colores y logo se conservan intactos.`);
   };
 
   // Save changes to current restaurant

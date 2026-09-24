@@ -35,6 +35,7 @@ interface CustomerMenuModalProps {
   onOrderCreated?: (newOrder: Order) => void;
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
+  isLoading?: boolean;
   // Live Editing Callbacks
   onUpdateRestaurant?: (updated: Restaurant) => void;
   onUpdateMenuItem?: (updated: MenuItem) => void;
@@ -73,6 +74,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   onOrderCreated,
   initialMode = 'DINE_IN',
   initialTableNumber,
+  isLoading = false,
   onUpdateRestaurant,
   onUpdateMenuItem,
   onAddMenuItem,
@@ -92,27 +94,35 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [isPreloading, setIsPreloading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
 
-  // Preloader Progress Effect
+  // Preloader Progress Effect: Keeps preloader visible while background cloud menu loads
   React.useEffect(() => {
     if (isOpen) {
       setIsPreloading(true);
-      setPreloadProgress(10);
+      setPreloadProgress(prev => (prev === 0 ? 15 : prev));
       
       const interval = setInterval(() => {
         setPreloadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setIsPreloading(false), 200);
-            return 100;
+          if (isLoading) {
+            // While cloud data is loading in background, advance smoothly up to 88%
+            if (prev >= 88) return 88;
+            const increment = Math.floor(Math.random() * 12) + 8;
+            return Math.min(88, prev + increment);
+          } else {
+            // Cloud data loaded: finish progress bar to 100% and hide preloader overlay
+            if (prev >= 100) {
+              clearInterval(interval);
+              setTimeout(() => setIsPreloading(false), 200);
+              return 100;
+            }
+            const increment = Math.floor(Math.random() * 20) + 15;
+            return Math.min(100, prev + increment);
           }
-          const increment = Math.floor(Math.random() * 20) + 15;
-          return Math.min(100, prev + increment);
         });
-      }, 60);
+      }, 70);
 
       return () => clearInterval(interval);
     }
-  }, [isOpen, restaurant.id]);
+  }, [isOpen, restaurant.id, isLoading]);
 
   // Live Editing Mode (ONLY accessible to verified Owner or Admin, default false)
   const [isLiveEditActive, setIsLiveEditActive] = useState(false);
@@ -417,6 +427,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     if (!onUpdateRestaurant) return;
     const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
+    const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.cardBgColor || brandDarkBgColor;
+
     const updatedRest: Restaurant = {
       ...restaurant,
       name: brandName.trim() || restaurant.name,
@@ -427,13 +439,16 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
         ...restaurant.branding,
         headerLogoUrl: safeLogo,
         darkBgColor: brandDarkBgColor,
+        backgroundColor: brandDarkBgColor,
         buttonColor: brandButtonColor,
         buttonTextColor: brandButtonTextColor,
         accentColor: brandButtonColor,
+        primaryColor: brandButtonColor,
         textColor: brandTextColor,
+        cardBgColor: safeCardBg,
+        dishCardBgColor: safeCardBg,
         restaurantNameFont: brandRestaurantNameFont,
         restaurantNameColor: brandRestaurantNameColor,
-        dishCardBgColor: brandDishCardBgColor,
         dishNameFont: brandDishNameFont,
         dishDescFont: brandDishDescFont,
         dishPriceFont: brandDishPriceFont,
@@ -446,7 +461,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     };
     onUpdateRestaurant(updatedRest);
     setIsBrandingModalOpen(false);
-    showToast('✓ Personalización de marca, colores, fuentes y canales guardada.');
+    showToast('✓ Personalización de marca, colores, logotipo y canales guardada en la nube.');
   };
 
   // Template resolution: strict templateId checking with intuitive fallbacks

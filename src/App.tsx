@@ -149,31 +149,44 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       ...(r.metrics || {})
     };
 
-    const defaultBranding: RestaurantBranding = {
-      primaryColor: '#EA580C',
+    // Generic fallback branding (neutral dark palette) used ONLY if fields are entirely missing
+    const genericDefaultBranding: RestaurantBranding = {
+      primaryColor: '#F59E0B',
       secondaryColor: '#F59E0B',
       accentColor: '#F59E0B',
       darkBgColor: '#0A0A0A',
       cardBgColor: '#171717',
       textColor: '#FFFFFF',
+      buttonColor: '#F59E0B',
+      buttonTextColor: '#000000',
+      dishCardBgColor: '#171717',
       fontDisplay: 'Playfair Display, serif',
       headerLogoUrl: '',
-      ...(fallback?.branding || {}),
     };
 
+    // Determine authoritative user logo: prioritize user-saved headerLogoUrl or logoUrl on r
+    const userLogo = r.branding?.headerLogoUrl || r.logoUrl || (r.branding ? '' : (fallback?.branding?.headerLogoUrl || fallback?.logoUrl || ''));
+
+    // Construct merged branding without injecting fallback mock brandings over user customization
     const mergedBranding: RestaurantBranding = {
-      ...defaultBranding,
+      ...genericDefaultBranding,
+      ...(r.branding ? {} : (fallback?.branding || {})),
       ...(r.branding || {}),
-      headerLogoUrl: r.branding?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '',
+      headerLogoUrl: userLogo,
+      darkBgColor: r.branding?.darkBgColor || r.branding?.backgroundColor || (r.branding ? '#0A0A0A' : (fallback?.branding?.darkBgColor || '#0A0A0A')),
+      cardBgColor: r.branding?.dishCardBgColor || r.branding?.cardBgColor || (r.branding ? '#171717' : (fallback?.branding?.cardBgColor || '#171717')),
+      buttonColor: r.branding?.buttonColor || r.branding?.accentColor || r.branding?.primaryColor || (r.branding ? '#F59E0B' : (fallback?.branding?.buttonColor || '#F59E0B')),
+      primaryColor: r.branding?.primaryColor || r.branding?.buttonColor || r.branding?.accentColor || (r.branding ? '#F59E0B' : (fallback?.branding?.primaryColor || '#F59E0B')),
+      accentColor: r.branding?.accentColor || r.branding?.buttonColor || r.branding?.primaryColor || (r.branding ? '#F59E0B' : (fallback?.branding?.accentColor || '#F59E0B')),
     };
 
-    // User data in 'r' takes precedence over fallbacks to ensure user cloud edits are strictly respected
+    // User data in 'r' takes total precedence to ensure user cloud edits are strictly respected and saved
     return {
       ...(fallback || {}),
       ...r,
       branding: mergedBranding,
       metrics: safeMetrics,
-      logoUrl: r.logoUrl || mergedBranding.headerLogoUrl || fallback?.logoUrl || '',
+      logoUrl: userLogo,
     };
   });
 }
@@ -333,7 +346,7 @@ export default function App() {
     categories: MenuCategory[];
     items: MenuItem[];
   } | null>(null);
-  const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(false);
+  const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(Boolean(initialRequestedSlug));
 
   // Keep user authentication session synced
   useEffect(() => {
@@ -1318,6 +1331,7 @@ export default function App() {
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
           initialTableNumber={previewTableNumber}
+          isLoading={isLoadingPublishedMenu}
           onUpdateRestaurant={handleUpdateRestaurant}
           onUpdateMenuItem={handleUpdateMenuItem}
           onAddMenuItem={handleAddMenuItem}

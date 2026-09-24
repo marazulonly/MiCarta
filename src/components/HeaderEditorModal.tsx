@@ -178,11 +178,11 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
     }, 400);
   };
 
-  // Check if marine theme colors apply
+  // Respect custom restaurant branding colors, using theme defaults only if unconfigured
   const isMarine = restaurant.templateId === 'tmpl-costa-marina' || restaurant.id === 'rest-cevichito-pliz';
-  const previewBgColor = isMarine ? '#EAEBDC' : (restaurant.branding?.darkBgColor || '#171717');
-  const previewTextColor = isMarine ? '#1B667A' : (restaurant.branding?.textColor || '#ffffff');
-  const previewAccentColor = isMarine ? '#8A9B57' : '#f59e0b';
+  const previewBgColor = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor || (isMarine ? '#EAEBDC' : '#171717');
+  const previewTextColor = restaurant.branding?.textColor || (isMarine ? '#1B667A' : '#ffffff');
+  const previewAccentColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || (isMarine ? '#8A9B57' : '#f59e0b');
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
