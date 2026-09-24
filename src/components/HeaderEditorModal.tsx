@@ -56,6 +56,22 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
   const [showGuideOutline, setShowGuideOutline] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Sync state whenever the restaurant prop changes or modal opens
+  React.useEffect(() => {
+    if (restaurant) {
+      const cb = restaurant.branding || {} as RestaurantBranding;
+      setHeaderLogoUrl(cb.headerLogoUrl || restaurant.logoUrl || '');
+      setHeaderDisplayMode(cb.headerDisplayMode || 'IMAGE_AND_TEXT');
+      setShowHeaderName(cb.showHeaderName !== undefined ? cb.showHeaderName : true);
+      setShowHeaderTagline(cb.showHeaderTagline !== undefined ? cb.showHeaderTagline : true);
+      setShowHeaderBadge(cb.showHeaderBadge !== undefined ? cb.showHeaderBadge : true);
+      setHeaderLogoFit(cb.headerLogoFit || 'contain');
+      setHeaderBannerHeight(cb.headerBannerHeight || 100);
+      setRestaurantName(restaurant.name);
+      setRestaurantTagline(restaurant.tagline || '');
+    }
+  }, [restaurant.id, restaurant.name, restaurant.tagline, isOpen]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);

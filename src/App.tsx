@@ -143,10 +143,18 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   });
   (rests || []).forEach(r => {
     if (r && r.id) {
+      let cleaned = { ...r };
+      // Prevent rest-costa from taking Voraz's name or slug if accidentally overwritten in modal
+      if (r.id === 'rest-costa' && (r.name?.trim().toLowerCase() === 'voraz' || r.slug === 'voraz')) {
+        cleaned.name = 'Cevichito Pliz';
+        cleaned.slug = 'cevichito-pliz';
+        cleaned.tagline = 'Cevichería Contemporánea & Pesca Artesanal del Día';
+        cleaned.cuisineType = 'Cevichería & Mariscos';
+      }
       const existing = map.get(r.id);
       map.set(r.id, {
         ...(existing || {}),
-        ...r
+        ...cleaned
       });
     }
   });
