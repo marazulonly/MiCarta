@@ -1044,13 +1044,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'tables' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-neutral-900" />
                   <span>Configuración de Mesas y Asignación de Mozos</span>
                 </h3>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   Define la cantidad de mesas físicas, sus capacidades y qué mozos atenderán cada una. Los clientes escanearán el QR de cada mesa para abrir la carta con el número asignado.
                 </p>
               </div>
@@ -1067,7 +1067,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewTableNotes('');
                     setIsCreatingTable(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 text-xs font-bold transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Agregar Mesa</span>
@@ -1075,7 +1075,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                 <button
                   onClick={handleSaveTables}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Guardar Mesas</span>
@@ -1084,21 +1084,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* Quick Generator Toolbar */}
-            <div className="p-4 rounded-xl bg-black/40 border border-neutral-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="text-xs font-semibold text-neutral-300">Generador Rápido de Cuadrícula:</span>
+                <Sparkles className="w-4 h-4 text-neutral-800 shrink-0" />
+                <span className="text-xs font-bold text-neutral-800">Generador Rápido de Cuadrícula:</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-400">Total de mesas:</span>
+                <span className="text-xs text-neutral-500 font-medium">Total de mesas:</span>
                 {[6, 12, 18, 24].map(count => (
                   <button
                     key={count}
                     onClick={() => handleBatchGenerateTables(count)}
-                    className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
                       tablesState.length === count 
-                        ? 'bg-amber-400 text-black' 
-                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                        ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm' 
+                        : 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-300'
                     }`}
                   >
                     {count} mesas
@@ -1111,44 +1111,39 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {tablesState.map((tbl) => {
                 const assignedStaff = users.filter(u => tbl.assignedWaiterIds?.includes(u.id));
-                const zoneColor = 
-                  tbl.zone === 'SALON' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                  tbl.zone === 'TERRAZA' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                  tbl.zone === 'VIP' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
-                  'bg-sky-500/20 text-sky-300 border-sky-500/30';
 
                 return (
                   <div 
                     key={tbl.id} 
-                    className="p-4 rounded-xl bg-neutral-950/60 border border-neutral-800 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                    className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-3"
                   >
                     <div>
                       {/* Top badges */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center font-mono font-bold text-white text-sm">
+                          <span className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center font-mono font-bold text-white text-sm">
                             {tbl.number < 10 ? `0${tbl.number}` : tbl.number}
                           </span>
                           <div>
-                            <h4 className="text-xs font-bold text-white leading-tight">{tbl.name}</h4>
-                            <span className="text-[10px] text-neutral-400">{tbl.capacity} personas</span>
+                            <h4 className="text-xs font-bold text-neutral-900 leading-tight">{tbl.name}</h4>
+                            <span className="text-[11px] text-neutral-500 font-medium">{tbl.capacity} personas</span>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${zoneColor}`}>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
                           {tbl.zone}
                         </span>
                       </div>
 
                       {/* Notes if any */}
                       {tbl.notes && (
-                        <p className="text-[11px] text-neutral-400 italic mb-2 line-clamp-1">
+                        <p className="text-[11px] text-neutral-600 italic mb-2 line-clamp-1">
                           "{tbl.notes}"
                         </p>
                       )}
 
                       {/* Assigned Waiters */}
-                      <div className="p-2 rounded-lg bg-black/40 border border-neutral-800/80 mb-2">
+                      <div className="p-2.5 rounded-xl bg-white border border-neutral-200 mb-2">
                         <span className="text-[10px] text-neutral-500 block uppercase font-bold tracking-wider mb-1">
                           Mozos Asignados:
                         </span>
@@ -1157,9 +1152,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             {assignedStaff.map(waiter => (
                               <span 
                                 key={waiter.id} 
-                                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 border border-neutral-700 font-medium"
+                                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200 font-medium"
                               >
-                                <ChefHat className="w-3 h-3 text-amber-400" />
+                                <ChefHat className="w-3 h-3 text-neutral-600" />
                                 <span>{waiter.name.split(' ')[0]}</span>
                               </span>
                             ))}
@@ -1173,23 +1168,23 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between gap-1 text-xs">
+                    <div className="pt-2.5 border-t border-neutral-200 flex items-center justify-between gap-1 text-xs">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setSelectedTableForQr(tbl)}
-                          className="flex items-center gap-1 px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition cursor-pointer text-[11px] font-medium"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[11px] font-bold shadow-sm"
                           title="Ver e Imprimir Código QR"
                         >
-                          <QrCode className="w-3 h-3 text-emerald-400" />
+                          <QrCode className="w-3 h-3 text-neutral-700" />
                           <span>QR</span>
                         </button>
 
                         <button
                           onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', `${tbl.number}`)}
-                          className="flex items-center gap-1 px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition cursor-pointer text-[11px] font-medium"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[11px] font-bold shadow-sm"
                           title="Probar Carta como Cliente en esta Mesa"
                         >
-                          <Eye className="w-3 h-3 text-amber-400" />
+                          <Eye className="w-3 h-3 text-neutral-700" />
                           <span>Carta</span>
                         </button>
                       </div>
@@ -1197,7 +1192,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setEditingTable({ ...tbl })}
-                          className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
                           title="Editar Mesa y Asignación"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -1205,7 +1200,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                         <button
                           onClick={() => handleDeleteTable(tbl.id)}
-                          className="p-1 rounded bg-neutral-800 hover:bg-red-950 hover:text-red-400 text-neutral-400 transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200 transition cursor-pointer shadow-sm"
                           title="Eliminar Mesa"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1224,13 +1219,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'schedules' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-sky-400" />
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-neutral-900" />
                   <span>Horarios de Atención Semanales ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   Configura los horarios de apertura y cierre de cada día de la semana. Los clientes y mozos verán estos horarios en la carta digital y en la cabecera.
                 </p>
               </div>
@@ -1238,7 +1233,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleSaveWeeklySchedule}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Guardar Horarios</span>
@@ -1247,27 +1242,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* Presets Toolbar */}
-            <div className="p-4 rounded-xl bg-black/40 border border-neutral-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-                <span className="text-xs font-semibold text-neutral-300">Plantillas de Horario Rápidas:</span>
+                <Sparkles className="w-4 h-4 text-neutral-800 shrink-0" />
+                <span className="text-xs font-bold text-neutral-800">Plantillas de Horario Rápidas:</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handleApplySchedulePreset('standard')}
-                  className="px-2.5 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
                   Horario Estándar (12:00 - 23:00)
                 </button>
                 <button
                   onClick={() => handleApplySchedulePreset('copy_monday')}
-                  className="px-2.5 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
                   Copiar Lunes a toda la semana
                 </button>
                 <button
                   onClick={() => handleApplySchedulePreset('weekend_extended')}
-                  className="px-2.5 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
                   Fin de Semana Extendido (02:00 am)
                 </button>
@@ -1279,26 +1274,26 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               {scheduleState.map((dayItem, idx) => (
                 <div 
                   key={dayItem.day} 
-                  className={`p-3.5 sm:p-4 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
                     dayItem.isOpen 
-                      ? 'bg-neutral-950/60 border-neutral-800' 
-                      : 'bg-neutral-950/20 border-neutral-800/40 opacity-70'
+                      ? 'bg-neutral-50 border-neutral-200 shadow-sm' 
+                      : 'bg-neutral-50/60 border-neutral-200/60 opacity-60'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-[140px]">
-                    <span className="w-7 h-7 rounded-lg bg-neutral-800 flex items-center justify-center font-bold text-xs text-white">
+                    <span className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center font-bold text-xs text-white">
                       {dayItem.day.slice(0, 2)}
                     </span>
                     <div>
-                      <h4 className="text-xs font-bold text-white">{dayItem.day}</h4>
-                      <span className={`text-[10px] font-semibold ${dayItem.isOpen ? 'text-emerald-400' : 'text-neutral-500'}`}>
-                        {dayItem.isOpen ? 'Atención Abierta' : 'Cerrado'}
+                      <h4 className="text-xs font-bold text-neutral-900">{dayItem.day}</h4>
+                      <span className={`text-[11px] font-bold ${dayItem.isOpen ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                        {dayItem.isOpen ? '● Abierto' : '○ Cerrado'}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 flex-1">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-300">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
                       <input
                         type="checkbox"
                         checked={dayItem.isOpen}
@@ -1307,7 +1302,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           updated[idx] = { ...updated[idx], isOpen: e.target.checked };
                           setScheduleState(updated);
                         }}
-                        className="w-4 h-4 rounded text-sky-500 focus:ring-0 border-neutral-700 bg-neutral-900 cursor-pointer"
+                        className="w-4 h-4 rounded text-neutral-900 accent-neutral-900 focus:ring-0 border-neutral-300 bg-white cursor-pointer"
                       />
                       <span>{dayItem.isOpen ? 'Habilitado' : 'Deshabilitado'}</span>
                     </label>
@@ -1315,7 +1310,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     {dayItem.isOpen && (
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-neutral-400">Apertura:</span>
+                          <span className="text-[11px] font-medium text-neutral-600">Apertura:</span>
                           <input
                             type="time"
                             value={dayItem.openTime}
@@ -1324,14 +1319,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               updated[idx] = { ...updated[idx], openTime: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs font-mono text-white"
+                            className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
                           />
                         </div>
 
-                        <span className="text-neutral-500">—</span>
+                        <span className="text-neutral-400">—</span>
 
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-neutral-400">Cierre:</span>
+                          <span className="text-[11px] font-medium text-neutral-600">Cierre:</span>
                           <input
                             type="time"
                             value={dayItem.closeTime}
@@ -1340,12 +1335,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               updated[idx] = { ...updated[idx], closeTime: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs font-mono text-white"
+                            className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
                           />
                         </div>
 
                         <div className="flex items-center gap-1.5 flex-1 min-w-[180px]">
-                          <span className="text-[11px] text-neutral-400">Nota:</span>
+                          <span className="text-[11px] font-medium text-neutral-600">Nota:</span>
                           <input
                             type="text"
                             placeholder="Ej: Almuerzos y cenas, DJ en vivo..."
@@ -1355,7 +1350,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               updated[idx] = { ...updated[idx], notes: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="w-full px-2.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs text-white placeholder-neutral-500"
+                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 placeholder:text-neutral-400"
                           />
                         </div>
                       </div>
@@ -1372,13 +1367,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'shifts' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-neutral-900" />
                   <span>Turnos de Meseros y Repartidores ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   Define los turnos operativos y asigna personal para la atención de salón y despacho de delivery.
                 </p>
               </div>
@@ -1394,7 +1389,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewShiftUsers([]);
                     setIsCreatingShift(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 text-xs font-bold transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Crear Nuevo Turno</span>
@@ -1402,7 +1397,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                 <button
                   onClick={handleSaveShifts}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Guardar Turnos</span>
@@ -1414,31 +1409,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {shiftsState.map((shift) => {
                 const assignedUsers = users.filter(u => shift.assignedUserIds?.includes(u.id));
-                const roleBadge = 
-                  shift.roleTarget === 'WAITER' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
-                  shift.roleTarget === 'DELIVERY' ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
-                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
 
                 return (
                   <div 
                     key={shift.id} 
-                    className="p-4 rounded-xl bg-neutral-950/60 border border-neutral-800 hover:border-neutral-700 transition flex flex-col justify-between gap-3"
+                    className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-3"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="p-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white">
-                            <Clock className="w-4 h-4 text-amber-400" />
+                          <span className="p-2 rounded-lg bg-neutral-900 text-white">
+                            <Clock className="w-4 h-4 text-white" />
                           </span>
                           <div>
-                            <h4 className="text-xs font-bold text-white">{shift.name}</h4>
-                            <span className="text-[11px] text-neutral-400 font-mono">
+                            <h4 className="text-xs font-bold text-neutral-900">{shift.name}</h4>
+                            <span className="text-[11px] text-neutral-600 font-mono font-bold">
                               {shift.startTime} — {shift.endTime}
                             </span>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${roleBadge}`}>
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
                           {shift.roleTarget === 'WAITER' ? 'Salón / Mozos' : shift.roleTarget === 'DELIVERY' ? 'Delivery / Riders' : 'General'}
                         </span>
                       </div>
@@ -1454,8 +1445,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                 key={d} 
                                 className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
                                   isIncluded 
-                                    ? 'bg-neutral-800 text-neutral-200 border border-neutral-700' 
-                                    : 'bg-neutral-950 text-neutral-600'
+                                    ? 'bg-neutral-900 text-white font-bold' 
+                                    : 'bg-neutral-200 text-neutral-400'
                                 }`}
                               >
                                 {d.slice(0, 3)}
@@ -1466,16 +1457,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       </div>
 
                       {/* Staff Assigned */}
-                      <div className="p-2.5 rounded-lg bg-black/40 border border-neutral-800/80">
+                      <div className="p-2.5 rounded-xl bg-white border border-neutral-200">
                         <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-1.5">
                           Personal Asignado ({assignedUsers.length}):
                         </span>
                         {assignedUsers.length > 0 ? (
                           <div className="space-y-1">
                             {assignedUsers.map(u => (
-                              <div key={u.id} className="flex items-center justify-between text-xs text-neutral-300">
+                              <div key={u.id} className="flex items-center justify-between text-xs text-neutral-800 font-medium">
                                 <div className="flex items-center gap-2">
-                                  {u.role === 'WAITER' ? <ChefHat className="w-3.5 h-3.5 text-amber-400" /> : <Bike className="w-3.5 h-3.5 text-blue-400" />}
+                                  {u.role === 'WAITER' ? <ChefHat className="w-3.5 h-3.5 text-neutral-600" /> : <Bike className="w-3.5 h-3.5 text-neutral-600" />}
                                   <span>{u.name}</span>
                                 </div>
                                 <span className="text-[10px] font-mono text-neutral-500">DNI: {u.dni}</span>
@@ -1489,10 +1480,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </div>
 
                     {/* Shift Actions */}
-                    <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-end gap-2">
+                    <div className="pt-2.5 border-t border-neutral-200 flex items-center justify-end gap-2">
                       <button
                         onClick={() => setEditingShift({ ...shift })}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs transition cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                       >
                         <Edit3 className="w-3 h-3" />
                         <span>Editar</span>
@@ -1500,7 +1491,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                       <button
                         onClick={() => handleDeleteShift(shift.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-800 hover:bg-red-950 text-neutral-400 hover:text-red-400 text-xs transition cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs border border-neutral-200 transition cursor-pointer shadow-sm"
                       >
                         <Trash2 className="w-3 h-3" />
                         <span>Eliminar</span>
@@ -1520,13 +1511,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="p-5 sm:p-6 space-y-6">
             
             {/* Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-orange-400" />
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-neutral-900" />
                   <span>Gestión del Rol Cocina & Pantalla KDS ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
+                <p className="text-xs text-neutral-600 mt-1">
                   Gestiona jefes de cocina, cocineros de partida, permisos de pase de salón y control de inventario de platos agotados (Lista 86).
                 </p>
               </div>
@@ -1543,7 +1534,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewUserShift('TARDE');
                     setIsCreatingUser(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 hover:bg-orange-500/30 text-xs font-bold transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>+ Alta Personal Cocina</span>
@@ -1551,7 +1542,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                 <button
                   onClick={handleSaveKitchenPerms}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 text-xs font-bold transition shadow cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Guardar Configuración Cocina</span>
@@ -1562,21 +1553,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             {/* Assigned Kitchen Staff Cards */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-2">
                   <span>Equipo de Cocina Asignado ({assignedKitchen.length})</span>
                 </h4>
               </div>
 
               {assignedKitchen.length === 0 ? (
-                <div className="p-6 rounded-xl border border-dashed border-neutral-800 text-center text-xs text-neutral-500">
-                  <Flame className="w-6 h-6 text-neutral-600 mx-auto mb-2" />
-                  <p>No hay cocineros o jefes de cocina asignados a esta sede.</p>
+                <div className="p-8 rounded-2xl border border-dashed border-neutral-300 text-center text-xs text-neutral-600 bg-neutral-50">
+                  <Flame className="w-6 h-6 text-neutral-400 mx-auto mb-2" />
+                  <p className="font-medium">No hay cocineros o jefes de cocina asignados a esta sede.</p>
                   <button
                     onClick={() => {
                       setNewUserRole('KITCHEN');
                       setIsCreatingUser(true);
                     }}
-                    className="mt-2 text-orange-400 font-bold hover:underline cursor-pointer"
+                    className="mt-2 text-neutral-900 font-bold hover:underline cursor-pointer"
                   >
                     + Registrar primer personal de cocina
                   </button>
@@ -1584,31 +1575,31 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   {assignedKitchen.map((chef) => (
-                    <div key={chef.id} className="p-3.5 rounded-xl bg-neutral-950/70 border border-neutral-800 hover:border-neutral-700 transition flex items-center justify-between gap-3">
+                    <div key={chef.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3">
                         <img 
                           src={chef.avatar || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=120&auto=format&fit=crop&q=80'} 
                           alt={chef.name} 
-                          className="w-10 h-10 rounded-xl object-cover border border-neutral-700 shrink-0" 
+                          className="w-10 h-10 rounded-xl object-cover border border-neutral-200 shrink-0" 
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-white">{chef.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 font-mono">
+                            <span className="text-xs font-bold text-neutral-900">{chef.name}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-900 text-white font-mono font-bold">
                               KDS
                             </span>
                           </div>
-                          <div className="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1.5">
-                            <span>DNI: <strong className="font-mono text-neutral-300">{chef.dni}</strong></span>
+                          <div className="text-[11px] text-neutral-600 mt-0.5 flex items-center gap-1.5 font-medium">
+                            <span>DNI: <strong className="font-mono text-neutral-900">{chef.dni}</strong></span>
                             <span>•</span>
-                            <span className="text-orange-300 font-medium">{chef.kitchenStation || 'Cocina General'}</span>
+                            <span className="text-neutral-700 font-bold">{chef.kitchenStation || 'Cocina General'}</span>
                           </div>
                         </div>
                       </div>
 
                       <button
                         onClick={() => setEditingUser(chef)}
-                        className="px-2.5 py-1 rounded bg-neutral-900 border border-neutral-700 hover:border-white text-[11px] text-white font-medium transition cursor-pointer shrink-0"
+                        className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 hover:bg-neutral-100 text-[11px] text-neutral-800 font-bold transition cursor-pointer shrink-0 shadow-sm"
                       >
                         Permisos
                       </button>
@@ -1620,18 +1611,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
             {/* Master Kitchen Permissions & Policies */}
             <div>
-              <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-orange-400" />
+              <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-800" />
                 <span>Políticas y Facultades del Rol Cocina</span>
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* canMarkReady */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Marcar Platos Listos para Servir</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Marcar Platos Listos para Servir</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Permite al personal de cocina cambiar el estado de platos a "Listo" y notificar automáticamente al mozo o pase de salón.
                     </p>
                   </div>
@@ -1639,15 +1630,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.canMarkReady}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canMarkReady: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
                 {/* canManageStockOut (Lista 86) */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Control de Lista 86 (Platos Agotados)</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Control de Lista 86 (Platos Agotados)</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Faculta a cocina para agotar platos al instante cuando se terminan insumos, ocultándolos inmediatamente de las cartas QR.
                     </p>
                   </div>
@@ -1655,15 +1646,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.canManageStockOut}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canManageStockOut: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
                 {/* canRejectItems */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Observaciones y Ajustes con Salón</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Observaciones y Ajustes con Salón</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Permite solicitar rectificación o confirmación al mozo respecto a términos de cocción o alergias de la mesa.
                     </p>
                   </div>
@@ -1671,15 +1662,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.canRejectItems}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canRejectItems: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
                 {/* canReorderQueue */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Reordenar Cola de Comandas en Pantalla</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Reordenar Cola de Comandas en Pantalla</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Permite al Jefe de Cocina priorizar tickets por orden de llegada, marcha de entradas o cortes a punto.
                     </p>
                   </div>
@@ -1687,15 +1678,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.canReorderQueue}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canReorderQueue: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
                 {/* autoPrintTickets */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Recepción Inmediata en KDS</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Recepción Inmediata en KDS</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Las comandas generadas por clientes vía QR o mozos ingresan al instante a la pantalla de cocina sin retardo.
                     </p>
                   </div>
@@ -1703,15 +1694,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.autoPrintTickets}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, autoPrintTickets: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
                 {/* soundAlerts */}
-                <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                   <div>
-                    <div className="text-xs font-bold text-white">Campana Acústica de Nueva Comanda</div>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <div className="text-xs font-bold text-neutral-900">Campana Acústica de Nueva Comanda</div>
+                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                       Emite un timbre sonoro en el dispositivo de cocina cada vez que ingresa un nuevo pedido de salón o delivery.
                     </p>
                   </div>
@@ -1719,7 +1710,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="checkbox"
                     checked={kitchenPerms.soundAlerts}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, soundAlerts: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-orange-500 focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                   />
                 </div>
 
@@ -1727,17 +1718,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* Default Station Filter */}
-            <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-white block">Estación Predeterminada del Local</span>
-                <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                <span className="text-xs font-bold text-neutral-900 block">Estación Predeterminada del Local</span>
+                <span className="text-[11px] text-neutral-600 mt-0.5 block">
                   Filtro visual por defecto que se aplicará a la vista KDS para este restaurante.
                 </span>
               </div>
               <select
                 value={kitchenPerms.stationFilter || 'Todas las estaciones'}
                 onChange={(e) => setKitchenPerms({ ...kitchenPerms, stationFilter: e.target.value })}
-                className="px-3 py-1.5 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-orange-500 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer shadow-sm"
               >
                 <option value="Todas las estaciones">Todas las estaciones</option>
                 <option value="Parrilla & Carnes">Parrilla & Carnes</option>
@@ -1755,21 +1746,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'waiters' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div>
-              <h3 className="text-sm font-bold text-white">
+            <div className="pb-4 border-b border-neutral-200">
+              <h3 className="text-base font-bold text-neutral-900">
                 Permisos Operativos del Personal de Salón ({currentRestaurant.name})
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 mt-1">
                 Define qué acciones pueden realizar los mozos asignados a este restaurante sin requerir autorización de gerencia.
               </p>
             </div>
 
             {/* Waiter Switch List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Anular Platos y Comandas</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Anular Platos y Comandas</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Permite al mozo dar de baja platos ya enviados a cocina sin clave de supervisor.
                   </p>
                 </div>
@@ -1777,14 +1768,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canCancelOrders}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canCancelOrders: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-amber-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Aplicar Cortesías y Descuentos</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Aplicar Cortesías y Descuentos</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Permite al mesero aplicar descuentos promocionales directamente en la cuenta.
                   </p>
                 </div>
@@ -1792,14 +1783,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canApplyDiscounts}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canApplyDiscounts: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-amber-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Reasignar Mesas y Juntar Cuentas</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Reasignar Mesas y Juntar Cuentas</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Permite mover comensales entre mesas físicas o unir mesas para grupos grandes.
                   </p>
                 </div>
@@ -1807,14 +1798,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canAssignTables}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canAssignTables: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-amber-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Dividir Cuentas (Split Bill)</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Dividir Cuentas (Split Bill)</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Habilita el cobro fraccionado por ítem o por comensal al momento del cierre.
                   </p>
                 </div>
@@ -1822,14 +1813,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canSplitBills}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canSplitBills: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-amber-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Exigir PIN de Supervisor para Modificaciones</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Exigir PIN de Supervisor para Modificaciones</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Bloquea cambios críticos si no se ingresa el código PIN del administrador.
                   </p>
                 </div>
@@ -1837,14 +1828,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.requireSupervisorPin}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, requireSupervisorPin: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-amber-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Límite de Mesas Simultáneas por Mozo</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Límite de Mesas Simultáneas por Mozo</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Tope para garantizar un servicio ágil y sin cuellos de botella.
                   </p>
                 </div>
@@ -1855,17 +1846,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     max={15}
                     value={waiterPerms.maxActiveTables}
                     onChange={(e) => setWaiterPerms({ ...waiterPerms, maxActiveTables: parseInt(e.target.value) || 5 })}
-                    className="w-16 px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs text-white font-mono text-center"
+                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-400">mesas</span>
+                  <span className="text-xs text-neutral-500 font-medium">mesas</span>
                 </div>
               </div>
             </div>
 
             {/* List of Assigned Waiters */}
-            <div className="pt-4 border-t border-neutral-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white block">
+            <div className="pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-neutral-900 block">
                   Meseros Registrados y Asignados a Esta Sede ({assignedWaiters.length}):
                 </span>
                 <button
@@ -1874,33 +1865,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewUserRestId(currentRestaurant.id);
                     setIsCreatingUser(true);
                   }}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-amber-400 hover:text-amber-300"
+                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   <span>Registrar Mesero</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {assignedWaiters.map(waiter => (
-                  <div key={waiter.id} className="p-3 rounded-lg bg-black/50 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div key={waiter.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
                     <div className="flex items-center gap-3">
-                      <img src={waiter.avatar} alt={waiter.name} className="w-10 h-10 rounded-lg object-cover" />
+                      <img src={waiter.avatar} alt={waiter.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
                       <div>
-                        <div className="text-xs font-bold text-white">{waiter.name}</div>
+                        <div className="text-xs font-bold text-neutral-900">{waiter.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-amber-300 border border-neutral-800">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {waiter.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-neutral-400 mt-0.5">
-                          Turno: {waiter.assignedShift || 'TARDE'} · PIN: {waiter.pinCode || '1234'}
+                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                          Turno: <strong className="text-neutral-800">{waiter.assignedShift || 'TARDE'}</strong> · PIN: <strong className="font-mono text-neutral-800">{waiter.pinCode || '1234'}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(waiter)}
-                      className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition cursor-pointer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1910,10 +1901,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-neutral-800">
+            <div className="flex justify-end pt-4 border-t border-neutral-200">
               <button
                 onClick={handleSaveWaiterPerms}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shadow"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Accesos de Meseros</span>
@@ -1927,20 +1918,20 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'delivery' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div>
-              <h3 className="text-sm font-bold text-white">
+            <div className="pb-4 border-b border-neutral-200">
+              <h3 className="text-base font-bold text-neutral-900">
                 Reglas de Operación y Accesos de Reparto ({currentRestaurant.name})
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 mt-1">
                 Configura los parámetros de seguridad, cobro y despacho para los motorizados de este local.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Permitir Cobro en Efectivo contra Entrega</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Permitir Cobro en Efectivo contra Entrega</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Habilita a los repartidores recibir dinero en mano y reportar cuadre en caja.
                   </p>
                 </div>
@@ -1948,14 +1939,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={deliveryPerms.canAcceptCash}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, canAcceptCash: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-blue-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Asignación Inteligente por Proximidad GPS</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Asignación Inteligente por Proximidad GPS</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Asigna automáticamente el pedido al rider más cercano al restaurante o al cliente.
                   </p>
                 </div>
@@ -1963,14 +1954,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={deliveryPerms.autoAssignZone}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, autoAssignZone: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-blue-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Telemetría y Control de Velocidad</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Telemetría y Control de Velocidad</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Envía avisos a gerencia si el motorizado excede límites de velocidad en ruta.
                   </p>
                 </div>
@@ -1978,14 +1969,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={deliveryPerms.gpsSpeedTracking}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, gpsSpeedTracking: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-blue-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Máximo de Pedidos Simultáneos por Rider</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Máximo de Pedidos Simultáneos por Rider</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Evita que un motorizado lleve más órdenes de las que puede entregar en caliente.
                   </p>
                 </div>
@@ -1996,16 +1987,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     max={6}
                     value={deliveryPerms.maxActiveOrders}
                     onChange={(e) => setDeliveryPerms({ ...deliveryPerms, maxActiveOrders: parseInt(e.target.value) || 3 })}
-                    className="w-16 px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs text-white font-mono text-center"
+                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-400">pedidos</span>
+                  <span className="text-xs text-neutral-500 font-medium">pedidos</span>
                 </div>
               </div>
             </div>
 
             {/* Allowed Delivery Zones */}
-            <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 space-y-2">
-              <span className="text-xs font-bold text-white block">Zonas de Cobertura Habilitadas:</span>
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
+              <span className="text-xs font-bold text-neutral-900 block">Zonas de Cobertura Habilitadas:</span>
               <div className="flex flex-wrap gap-2">
                 {['San Isidro', 'Miraflores', 'Barranco', 'Surco', 'San Borja', 'Jesús María', 'Magdalena', 'Lince', 'Breña', 'Centro de Lima'].map((zone) => {
                   const isZoneActive = deliveryPerms.allowedZones.includes(zone);
@@ -2019,10 +2010,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           : [...deliveryPerms.allowedZones, zone];
                         setDeliveryPerms({ ...deliveryPerms, allowedZones: newZones });
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
                         isZoneActive
-                          ? 'bg-blue-950 text-blue-300 border-blue-700'
-                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                          ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+                          : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100'
                       }`}
                     >
                       {isZoneActive ? `✓ ${zone}` : `+ ${zone}`}
@@ -2033,9 +2024,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* List of Assigned Delivery Personnel */}
-            <div className="pt-4 border-t border-neutral-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white block">
+            <div className="pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-neutral-900 block">
                   Repartidores Habilitados para {currentRestaurant.name} ({assignedRiders.length}):
                 </span>
                 <button
@@ -2044,33 +2035,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewUserRestId(currentRestaurant.id);
                     setIsCreatingUser(true);
                   }}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300"
+                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   <span>Registrar Repartidor</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {assignedRiders.map(rider => (
-                  <div key={rider.id} className="p-3 rounded-lg bg-black/50 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div key={rider.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
                     <div className="flex items-center gap-3">
-                      <img src={rider.avatar} alt={rider.name} className="w-10 h-10 rounded-lg object-cover" />
+                      <img src={rider.avatar} alt={rider.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
                       <div>
-                        <div className="text-xs font-bold text-white">{rider.name}</div>
+                        <div className="text-xs font-bold text-neutral-900">{rider.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-blue-300 border border-neutral-800">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {rider.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-neutral-400 mt-0.5">
-                          {rider.vehicleType} · Placa: {rider.licensePlate || 'S/P'}
+                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                          {rider.vehicleType} · Placa: <strong className="font-mono text-neutral-800">{rider.licensePlate || 'S/P'}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(rider)}
-                      className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition cursor-pointer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -2080,10 +2071,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-neutral-800">
+            <div className="flex justify-end pt-4 border-t border-neutral-200">
               <button
                 onClick={handleSaveDeliveryPerms}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shadow"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Accesos de Repartidores</span>
@@ -2097,20 +2088,20 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'customers' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div>
-              <h3 className="text-sm font-bold text-white">
+            <div className="pb-4 border-b border-neutral-200">
+              <h3 className="text-base font-bold text-neutral-900">
                 Políticas de Autoservicio y Pedidos QR para Clientes ({currentRestaurant.name})
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 mt-1">
                 Controla la experiencia que ven los comensales cuando escanean el código QR en la mesa.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Habilitar Pedido Directo desde QR (Self-Ordering)</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Habilitar Pedido Directo desde QR (Self-Ordering)</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Permite al cliente enviar platos directo a cocina desde su teléfono inteligente.
                   </p>
                 </div>
@@ -2118,14 +2109,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={customerSettings.qrOrderingEnabled}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, qrOrderingEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-emerald-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Permitir Comanda como Invitado (Sin Registro)</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Permitir Comanda como Invitado (Sin Registro)</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Los comensales no están forzados a crear una cuenta ni dar contraseña para ordenar.
                   </p>
                 </div>
@@ -2133,14 +2124,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={customerSettings.guestCheckout}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, guestCheckout: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-emerald-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Permitir Pago en Efectivo Llamando al Mozo</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Permitir Pago en Efectivo Llamando al Mozo</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Muestra el botón "Pagar en efectivo" en el checkout digital de la carta.
                   </p>
                 </div>
@@ -2148,14 +2139,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={customerSettings.allowCashAtTable}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, allowCashAtTable: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-700 cursor-pointer text-emerald-500 focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-start justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
                 <div>
-                  <div className="text-xs font-bold text-white">Descuento Automático Clientes VIP (%)</div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className="text-xs font-bold text-neutral-900">Descuento Automático Clientes VIP (%)</div>
+                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
                     Beneficio directo aplicado en la carta para comensales frecuentes reconocidos.
                   </p>
                 </div>
@@ -2166,9 +2157,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     max={50}
                     value={customerSettings.vipDiscountPercent}
                     onChange={(e) => setCustomerSettings({ ...customerSettings, vipDiscountPercent: parseInt(e.target.value) || 0 })}
-                    className="w-16 px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-xs text-white font-mono text-center"
+                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-400">%</span>
+                  <span className="text-xs text-neutral-500 font-medium">%</span>
                 </div>
               </div>
             </div>
@@ -2176,37 +2167,37 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             {/* Custom Welcome Message and WiFi */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                <label className="text-xs font-bold text-neutral-900 block mb-1">
                   Mensaje de Bienvenida en la Carta Digital
                 </label>
                 <input
                   type="text"
                   value={customerSettings.welcomeMessage}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, welcomeMessage: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                <label className="text-xs font-bold text-neutral-900 block mb-1">
                   Contraseña de WiFi del Local (Visible al cliente)
                 </label>
                 <div className="relative">
-                  <Wifi className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Wifi className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={customerSettings.wifiPassword}
                     onChange={(e) => setCustomerSettings({ ...customerSettings, wifiPassword: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-mono focus:outline-none focus:border-neutral-900 shadow-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* List of Registered Customers */}
-            <div className="pt-4 border-t border-neutral-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white block">
+            <div className="pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-neutral-900 block">
                   Clientes Registrados con Acceso al Portal y Carta ({assignedCustomers.length}):
                 </span>
                 <button
@@ -2215,33 +2206,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewUserRestId(currentRestaurant.id);
                     setIsCreatingUser(true);
                   }}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
+                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   <span>Registrar Cliente</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {assignedCustomers.map(customer => (
-                  <div key={customer.id} className="p-3 rounded-lg bg-black/50 border border-neutral-800 flex items-start justify-between gap-3">
+                  <div key={customer.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
                     <div className="flex items-center gap-3">
-                      <img src={customer.avatar} alt={customer.name} className="w-10 h-10 rounded-lg object-cover" />
+                      <img src={customer.avatar} alt={customer.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
                       <div>
-                        <div className="text-xs font-bold text-white">{customer.name}</div>
+                        <div className="text-xs font-bold text-neutral-900">{customer.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-emerald-300 border border-neutral-800">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {customer.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-neutral-400 mt-0.5">
-                          Nivel: {customer.vipTier || 'STANDARD'} · Saldo: S/ {customer.creditBalance || 0}
+                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                          Nivel: <strong className="text-neutral-800">{customer.vipTier || 'STANDARD'}</strong> · Saldo: <strong className="text-neutral-800">S/ {customer.creditBalance || 0}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(customer)}
-                      className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition cursor-pointer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -2251,10 +2242,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-neutral-800">
+            <div className="flex justify-end pt-4 border-t border-neutral-200">
               <button
                 onClick={handleSaveCustomerSettings}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shadow"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Accesos de Clientes & QR</span>
@@ -2268,15 +2259,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* ============================================================= */}
         {activeSubTab === 'templates' && (
           <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-900/60 p-4 rounded-2xl border border-neutral-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200">
               <div>
                 <div className="flex items-center gap-2">
-                  <LayoutTemplate className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-sm font-bold text-white">
+                  <LayoutTemplate className="w-5 h-5 text-neutral-900" />
+                  <h3 className="text-sm font-bold text-neutral-900">
                     Personalización & Plantillas para {currentRestaurant.name}
                   </h3>
                 </div>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   Elige la plantilla y personaliza colores, tipografías y tarjetas con el editor en tiempo real.
                 </p>
               </div>
@@ -2285,7 +2276,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSplitEditorOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   <span>Editor de Pantalla Dividida (Split-Screen)</span>
@@ -2294,9 +2285,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenCustomerPreview(currentRestaurant)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-white border border-neutral-700 transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-neutral-100 text-xs font-semibold text-neutral-800 border border-neutral-300 transition cursor-pointer shadow-sm"
                 >
-                  <Eye className="w-3.5 h-3.5 text-amber-400" />
+                  <Eye className="w-3.5 h-3.5 text-neutral-700" />
                   <span>Ver Carta Completa</span>
                 </button>
               </div>
@@ -2310,10 +2301,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 return (
                   <div
                     key={tmpl.id}
-                    className={`rounded-xl border overflow-hidden transition flex flex-col justify-between ${
+                    className={`rounded-2xl border overflow-hidden transition flex flex-col justify-between shadow-sm ${
                       isCurrent
-                        ? 'border-amber-400 ring-2 ring-amber-400/30 bg-neutral-900/90'
-                        : 'border-neutral-800 bg-neutral-900/40 hover:border-neutral-700'
+                        ? 'border-neutral-900 ring-2 ring-neutral-900/20 bg-white'
+                        : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white'
                     }`}
                   >
                     <div className="relative h-36 bg-black">
@@ -2325,14 +2316,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                       
                       <div className="absolute top-2.5 left-2.5">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-black/80 text-amber-300 border border-amber-500/40 backdrop-blur-md">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-black/80 text-white border border-neutral-700 backdrop-blur-md">
                           {tmpl.badge}
                         </span>
                       </div>
 
                       {isCurrent && (
                         <div className="absolute top-2.5 right-2.5">
-                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-400 text-black shadow-lg">
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-white text-black shadow-lg">
                             ✓ Activa
                           </span>
                         </div>
@@ -2346,11 +2337,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </div>
 
                     <div className="p-3.5 space-y-3 flex-1 flex flex-col justify-between">
-                      <p className="text-[11px] text-neutral-400 line-clamp-2">
+                      <p className="text-[11px] text-neutral-600 line-clamp-2 leading-relaxed">
                         {tmpl.description}
                       </p>
 
-                      <div className="pt-2.5 border-t border-neutral-800/80 flex items-center justify-between gap-2">
+                      <div className="pt-2.5 border-t border-neutral-200 flex items-center justify-between gap-2">
                         {/* Preview button */}
                         <button
                           type="button"
@@ -2360,15 +2351,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               templateId: tmpl.id
                             });
                           }}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-[11px] font-bold text-neutral-300 hover:text-white transition cursor-pointer border border-neutral-700"
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-[11px] font-bold text-neutral-800 transition cursor-pointer border border-neutral-300 shadow-sm"
                           title="Previsualizar esta plantilla con los platos de este local"
                         >
-                          <Eye className="w-3 h-3 text-amber-400" />
+                          <Eye className="w-3 h-3 text-neutral-700" />
                           <span>Previsualizar</span>
                         </button>
 
                         {isCurrent ? (
-                          <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                          <span className="text-xs font-bold text-neutral-900 flex items-center gap-1">
                             <Check className="w-3.5 h-3.5" />
                             <span>En Uso</span>
                           </span>
@@ -2376,7 +2367,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           <button
                             type="button"
                             onClick={() => handleSelectTemplate(tmpl.id)}
-                            className="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-sm"
                           >
                             Activar
                           </button>
@@ -2401,7 +2392,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
-                <Store className="w-5 h-5 text-amber-400" />
+                <Store className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Crear Nuevo Restaurante</h3>
               </div>
               <button
@@ -2420,7 +2411,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="Ej: Costa Marina - Sede Miraflores"
                   value={newRestName}
                   onChange={(e) => setNewRestName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2431,7 +2422,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="Ej: Sabores del mar y tradición norteña"
                   value={newRestTagline}
                   onChange={(e) => setNewRestTagline(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2442,7 +2433,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="Av. Larco 1234, Miraflores, Lima"
                   value={newRestAddress}
                   onChange={(e) => setNewRestAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2453,7 +2444,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="+51 987 654 321"
                   value={newRestPhone}
                   onChange={(e) => setNewRestPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2462,7 +2453,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <select
                   value={newRestTemplateId}
                   onChange={(e) => setNewRestTemplateId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 >
                   {templates.map(t => (
                     <option key={t.id} value={t.id}>{t.name} ({t.badge})</option>
@@ -2480,7 +2471,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleCreateRestaurant}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Crear y Asignar a mi Cuenta
               </button>
@@ -2497,7 +2488,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5 text-amber-400" />
+                <UserIcon className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Registrar Usuario para mis Sedes</h3>
               </div>
               <button
@@ -2514,7 +2505,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <select
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value as 'WAITER' | 'DELIVERY' | 'CUSTOMER' | 'KITCHEN')}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 >
                   <option value="KITCHEN">Cocina / Jefe de Partida / KDS</option>
                   <option value="WAITER">Mesero / Camarero</option>
@@ -2530,7 +2521,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="Ej: Carlos Mendoza"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2543,7 +2534,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     placeholder="12345678"
                     value={newUserDni}
                     onChange={(e) => setNewUserDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-white"
                   />
                   <span className="text-[10px] text-neutral-400 block mt-0.5">Identificador único</span>
                 </div>
@@ -2554,7 +2545,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     placeholder="12345678"
                     value={newUserPassword}
                     onChange={(e) => setNewUserPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-white"
                   />
                   <span className="text-[10px] text-neutral-400 block mt-0.5">Por defecto: 12345678</span>
                 </div>
@@ -2567,7 +2558,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   placeholder="carlos@ejemplo.com"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2576,7 +2567,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <select
                   value={newUserRestId}
                   onChange={(e) => setNewUserRestId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 >
                   {ownedRestaurants.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -2694,7 +2685,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleCreateUser}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Registrar Usuario
               </button>
@@ -2711,7 +2702,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-amber-400" />
+                <ShieldCheck className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Editar Accesos y Permisos</h3>
               </div>
               <button
@@ -2737,7 +2728,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="text"
                   value={editingUser.name}
                   onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2749,7 +2740,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     maxLength={8}
                     value={editingUser.dni || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, dni: e.target.value.replace(/\D/g, '').slice(0, 8) })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-white"
                   />
                 </div>
                 <div>
@@ -2758,7 +2749,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="text"
                     value={editingUser.password || '12345678'}
                     onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs font-mono text-white focus:outline-none focus:border-white"
                   />
                 </div>
               </div>
@@ -2769,7 +2760,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="email"
                   value={editingUser.email}
                   onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 />
               </div>
 
@@ -2778,7 +2769,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <select
                   value={editingUser.restaurantId || currentRestaurant.id}
                   onChange={(e) => setEditingUser({ ...editingUser, restaurantId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 >
                   {ownedRestaurants.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -2865,7 +2856,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleSaveEditedUser}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Guardar Cambios
               </button>
@@ -2898,7 +2889,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
               <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-emerald-400" />
+                <Layers className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Agregar Nueva Mesa</h3>
               </div>
               <button 
@@ -3005,16 +2996,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   setNewTableWaiters(newTableWaiters.filter(id => id !== waiter.id));
                                 }
                               }}
-                              className="w-3.5 h-3.5 rounded text-emerald-500 focus:ring-0 border-neutral-700"
+                              className="w-3.5 h-3.5 rounded text-neutral-900 focus:ring-0 border-neutral-700"
                             />
                             <span className="text-white font-medium">{waiter.name}</span>
                           </div>
-                          <span className="text-[10px] text-neutral-500 font-mono">DNI: {waiter.dni}</span>
+                          <span className="text-[10px] text-neutral-400 font-mono">DNI: {waiter.dni}</span>
                         </label>
                       );
                     })
                   ) : (
-                    <span className="text-xs text-neutral-500 italic block text-center py-2">
+                    <span className="text-xs text-neutral-400 italic block text-center py-2">
                       No hay mozos asignados a este restaurante.
                     </span>
                   )}
@@ -3031,7 +3022,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleCreateNewTable}
-                className="px-4 py-2 rounded-lg bg-emerald-400 text-black hover:bg-emerald-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Crear Mesa & Generar QR
               </button>
@@ -3048,7 +3039,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
               <div className="flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-400" />
+                <Edit3 className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Editar Mesa {editingTable.name}</h3>
               </div>
               <button 
@@ -3148,16 +3139,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   setEditingTable({ ...editingTable, assignedWaiterIds: current.filter(id => id !== waiter.id) });
                                 }
                               }}
-                              className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-0 border-neutral-700"
+                              className="w-3.5 h-3.5 rounded text-neutral-900 focus:ring-0 border-neutral-700"
                             />
                             <span className="text-white font-medium">{waiter.name}</span>
                           </div>
-                          <span className="text-[10px] text-neutral-500 font-mono">DNI: {waiter.dni}</span>
+                          <span className="text-[10px] text-neutral-400 font-mono">DNI: {waiter.dni}</span>
                         </label>
                       );
                     })
                   ) : (
-                    <span className="text-xs text-neutral-500 italic block text-center py-2">
+                    <span className="text-xs text-neutral-400 italic block text-center py-2">
                       No hay mozos registrados en esta sede.
                     </span>
                   )}
@@ -3174,7 +3165,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleSaveEditedTable}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Guardar Cambios de Mesa
               </button>
@@ -3191,7 +3182,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-400" />
+                <Calendar className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Crear Nuevo Turno</h3>
               </div>
               <button 
@@ -3267,7 +3258,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         }}
                         className={`px-2 py-1.5 rounded text-[11px] font-medium transition cursor-pointer border ${
                           isSelected 
-                            ? 'bg-amber-400 text-black border-amber-300 font-bold' 
+                            ? 'bg-white text-black border-white font-bold' 
                             : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-white'
                         }`}
                       >
@@ -3305,11 +3296,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   setNewShiftUsers(newShiftUsers.filter(id => id !== u.id));
                                 }
                               }}
-                              className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-0 border-neutral-700"
+                              className="w-3.5 h-3.5 rounded text-neutral-900 focus:ring-0 border-neutral-700"
                             />
                             <span className="text-white font-medium">{u.name}</span>
                           </div>
-                          <span className="text-[10px] text-neutral-500 font-mono">DNI: {u.dni}</span>
+                          <span className="text-[10px] text-neutral-400 font-mono">DNI: {u.dni}</span>
                         </label>
                       );
                     })}
@@ -3326,7 +3317,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleCreateNewShift}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Crear Turno
               </button>
@@ -3343,7 +3334,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
               <div className="flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-400" />
+                <Edit3 className="w-5 h-5 text-neutral-200" />
                 <h3 className="text-base font-bold text-white">Editar {editingShift.name}</h3>
               </div>
               <button 
@@ -3419,7 +3410,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         }}
                         className={`px-2 py-1.5 rounded text-[11px] font-medium transition cursor-pointer border ${
                           isSelected 
-                            ? 'bg-amber-400 text-black border-amber-300 font-bold' 
+                            ? 'bg-white text-black border-white font-bold' 
                             : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-white'
                         }`}
                       >
@@ -3458,11 +3449,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   setEditingShift({ ...editingShift, assignedUserIds: current.filter(id => id !== u.id) });
                                 }
                               }}
-                              className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-0 border-neutral-700"
+                              className="w-3.5 h-3.5 rounded text-neutral-900 focus:ring-0 border-neutral-700"
                             />
                             <span className="text-white font-medium">{u.name}</span>
                           </div>
-                          <span className="text-[10px] text-neutral-500 font-mono">DNI: {u.dni}</span>
+                          <span className="text-[10px] text-neutral-400 font-mono">DNI: {u.dni}</span>
                         </label>
                       );
                     })}
@@ -3479,7 +3470,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </button>
               <button
                 onClick={handleSaveEditedShift}
-                className="px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300 text-xs font-bold transition shadow"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-bold transition shadow"
               >
                 Guardar Turno
               </button>

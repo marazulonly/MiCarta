@@ -125,17 +125,26 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
-  const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
+  const branding = restaurant.branding;
+  const brandingBg = branding?.darkBgColor || branding?.backgroundColor;
 
-  // 4 Palette Colors for Costa Marina (Cevichito Pliz) (Grayscale adaptation)
-  const COLOR_TEAL = '#111111';      // Black (Barra superior, marcos, títulos, pestañas activas, badge de precio)
-  const COLOR_CREAM = '#FFFFFF';     // White (Fondo general, tarjetas de platos, texto claro en botones)
-  const COLOR_TERRACOTTA = '#111111'; // Black (Botón Pedir, acciones destacadas, alertas)
-  const COLOR_OLIVE = '#71717A';      // Dark gray (Subtítulos, íconos, tiempo de preparación, bordes secundarios)
+  // Dynamic Palette Colors from branding with fallback defaults
+  const COLOR_BG = branding?.darkBgColor || '#EAEBDC';
+  const COLOR_CARD = branding?.dishCardBgColor || branding?.cardBgColor || '#FFFFFF';
+  const COLOR_BTN = branding?.buttonColor || branding?.accentColor || '#111111';
+  const COLOR_BTN_TEXT = branding?.buttonTextColor || '#FFFFFF';
+  const COLOR_TEXT = branding?.textColor || '#111111';
+  const COLOR_REST_NAME = branding?.restaurantNameColor || COLOR_TEXT;
+  const COLOR_SUBTEXT = branding?.secondaryColor || '#71717A';
+
+  const restNameFont = branding?.restaurantNameFont || branding?.fontDisplay || 'inherit';
+  const dishNameFont = branding?.dishNameFont || 'inherit';
+  const dishDescFont = branding?.dishDescFont || 'inherit';
+  const dishPriceFont = branding?.dishPriceFont || 'monospace';
 
   let marineStyle: React.CSSProperties = {
-    backgroundColor: restaurant.branding?.darkBgColor || COLOR_CREAM,
-    color: restaurant.branding?.textColor || COLOR_TEAL,
+    backgroundColor: COLOR_BG,
+    color: COLOR_TEXT,
   };
 
   if (!brandingBg) {
@@ -145,10 +154,10 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           backgroundImage: `linear-gradient(rgba(234, 235, 220, 0.92), rgba(234, 235, 220, 0.96)), url("${accessSettings.deliveryBgValue}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          color: COLOR_TEAL,
+          color: COLOR_TEXT,
         };
       } else if (accessSettings.deliveryBgType === 'color') {
-        marineStyle = { backgroundColor: accessSettings.deliveryBgValue || COLOR_CREAM, color: COLOR_TEAL };
+        marineStyle = { backgroundColor: accessSettings.deliveryBgValue || COLOR_BG, color: COLOR_TEXT };
       }
     } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
       if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
@@ -156,10 +165,10 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           backgroundImage: `linear-gradient(rgba(234, 235, 220, 0.92), rgba(234, 235, 220, 0.96)), url("${accessSettings.presentialBgValue}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          color: COLOR_TEAL,
+          color: COLOR_TEXT,
         };
       } else if (accessSettings.presentialBgType === 'color') {
-        marineStyle = { backgroundColor: accessSettings.presentialBgValue || COLOR_CREAM, color: COLOR_TEAL };
+        marineStyle = { backgroundColor: accessSettings.presentialBgValue || COLOR_BG, color: COLOR_TEXT };
       }
     }
   }
@@ -229,7 +238,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
         
         {/* Outer Shell Marine Theme */}
         <div 
-          style={{ ...marineStyle, borderColor: COLOR_TEAL }}
+          style={{ ...marineStyle, borderColor: COLOR_BTN }}
           className={`relative w-full ${
             isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
           } rounded-2xl overflow-hidden flex flex-col shadow-2xl border transition-all duration-300`}
@@ -237,12 +246,12 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {/* Top Bar - Únicamente visible para administradores y dueños, oculto para comensales y clientes anónimos */}
           {isOwnerOrAdmin && (
             <div 
-              style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+              style={{ backgroundColor: COLOR_BTN, borderColor: COLOR_SUBTEXT }}
               className="relative z-30 px-2.5 py-1.5 border-b flex items-center justify-between text-xs"
             >
               <div className="flex items-center gap-2">
                 <span 
-                  style={{ color: COLOR_CREAM }}
+                  style={{ color: COLOR_BTN_TEXT }}
                   className="font-mono tracking-wider uppercase text-[11px] font-bold"
                 >
                   {restaurant.name.toUpperCase()} · CARTA DIGITAL
@@ -250,7 +259,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 
                 {/* Channel switcher */}
                 <div 
-                  style={{ backgroundColor: `${COLOR_TEAL}e6`, borderColor: COLOR_OLIVE }}
+                  style={{ backgroundColor: `${COLOR_BTN}e6`, borderColor: COLOR_SUBTEXT }}
                   className="flex items-center gap-1 p-0.5 rounded-lg border"
                 >
                   <button
@@ -258,8 +267,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                     onClick={() => setActiveChannel('DINE_IN')}
                     style={
                       activeChannel === 'DINE_IN'
-                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
-                        : { backgroundColor: 'transparent', color: COLOR_CREAM }
+                        ? { backgroundColor: COLOR_CARD, color: COLOR_TEXT }
+                        : { backgroundColor: 'transparent', color: COLOR_BTN_TEXT }
                     }
                     className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
                       !isDineInEnabled ? 'opacity-40 cursor-not-allowed' : ''
@@ -274,8 +283,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                     onClick={() => setActiveChannel('DELIVERY')}
                     style={
                       activeChannel === 'DELIVERY'
-                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }
-                        : { backgroundColor: 'transparent', color: COLOR_CREAM }
+                        ? { backgroundColor: COLOR_CARD, color: COLOR_TEXT }
+                        : { backgroundColor: 'transparent', color: COLOR_BTN_TEXT }
                     }
                     className={`px-2 py-0.5 rounded text-[10px] font-mono transition cursor-pointer flex items-center gap-1 font-bold ${
                       !isDeliveryEnabled ? 'opacity-40 cursor-not-allowed' : ''
@@ -294,8 +303,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                     onClick={onToggleLiveEdit}
                     style={
                       isLiveEditActive
-                        ? { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM, borderColor: COLOR_CREAM }
-                        : { backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }
+                        ? { backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }
+                        : { backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT, borderColor: COLOR_SUBTEXT }
                     }
                     className="px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
                     title="Habilita la edición de la carta directamente sobre esta vista"
@@ -307,7 +316,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                 {initialTableNumber && (
                   <span 
-                    style={{ backgroundColor: `${COLOR_OLIVE}30`, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
+                    style={{ backgroundColor: `${COLOR_SUBTEXT}30`, color: COLOR_BTN_TEXT, borderColor: COLOR_SUBTEXT }}
                     className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold font-mono"
                   >
                     <MapPin className="w-3 h-3" />
@@ -316,7 +325,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 )}
                 <button
                   onClick={() => setIsScheduleModalOpen(true)}
-                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                   className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
                   title="Ver Horarios de Atención"
                 >
@@ -325,14 +334,14 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 </button>
                 <button
                   onClick={() => setIsFullscreen(!isFullscreen)}
-                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                   className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
                 >
                   {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 </button>
                 <button
                   onClick={copyUrl}
-                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                   className="p-1.5 rounded hover:brightness-110 transition cursor-pointer flex items-center gap-1"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -340,7 +349,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 </button>
                 <button
                   onClick={onClose}
-                  style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM }}
+                  style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                   className="p-1.5 rounded hover:brightness-110 transition cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -352,11 +361,11 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {/* Live Edit Mode Floating Banner */}
           {isLiveEditActive && (
             <div 
-              style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE, color: COLOR_CREAM }}
+              style={{ backgroundColor: COLOR_BTN, borderColor: COLOR_SUBTEXT, color: COLOR_BTN_TEXT }}
               className="relative z-30 px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 text-xs"
             >
               <div className="flex items-center gap-2">
-                <span style={{ backgroundColor: COLOR_TERRACOTTA }} className="w-2 h-2 rounded-full animate-ping" />
+                <span style={{ backgroundColor: COLOR_CARD }} className="w-2 h-2 rounded-full animate-ping" />
                 <span className="font-bold text-xs">Modo Edición en Vivo:</span>
                 <span className="text-[11px] hidden sm:inline opacity-90">
                   Toca sobre cualquier plato, precio, foto o marca para editar directamente en esta carta.
@@ -366,7 +375,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 {onAddNewItem && (
                   <button
                     onClick={onAddNewItem}
-                    style={{ backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }}
+                    style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT }}
                     className="px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -376,7 +385,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 {onEditBranding && (
                   <button
                     onClick={onEditBranding}
-                    style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
+                    style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT, borderColor: COLOR_SUBTEXT }}
                     className="px-2.5 py-1 rounded-lg border font-bold text-[11px] flex items-center gap-1 cursor-pointer transition hover:brightness-110"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -398,7 +407,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                   <button
                     onClick={onSaveToFirebase}
                     disabled={isSavingFirebase}
-                    style={{ backgroundColor: COLOR_OLIVE, color: COLOR_CREAM }}
+                    style={{ backgroundColor: COLOR_SUBTEXT, color: '#FFFFFF' }}
                     className="px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow disabled:opacity-50 hover:brightness-110"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -422,7 +431,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                   type="button"
                   onClick={onClose}
                   aria-label="Cerrar carta"
-                  style={{ backgroundColor: `${COLOR_TEAL}18`, color: COLOR_TEAL }}
+                  style={{ backgroundColor: `${COLOR_BTN}18`, color: COLOR_TEXT }}
                   className="absolute top-0 right-0 p-2 rounded-full hover:bg-black/10 transition cursor-pointer z-20"
                 >
                   <X className="w-4 h-4" />
@@ -452,7 +461,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                           alt={restaurant.name} 
                           style={{ 
                             maxHeight: `${bannerHeight}px`,
-                            borderColor: logoFit === 'cover' ? undefined : COLOR_TEAL 
+                            borderColor: logoFit === 'cover' ? undefined : COLOR_BTN 
                           }}
                           className={`transition-all duration-300 ${
                             logoFit === 'cover' 
@@ -473,7 +482,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                     {showBadge && (
                       <span 
-                        style={{ color: COLOR_OLIVE }}
+                        style={{ color: COLOR_SUBTEXT }}
                         className="text-[11px] font-mono tracking-widest uppercase font-bold block"
                       >
                         {activeChannel === 'DELIVERY' ? 'CEVICHERÍA DELIVERY EXPRESS' : 'CEVICHERÍA & COCINA MARINA'}
@@ -483,8 +492,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                     {showName && (
                       <h1 
                         style={{ 
-                          fontFamily: restaurant.branding?.restaurantNameFont || restaurant.branding?.fontDisplay || 'inherit',
-                          color: COLOR_TEAL
+                          fontFamily: restNameFont,
+                          color: COLOR_REST_NAME
                         }}
                         className="text-3xl font-black"
                       >
@@ -494,7 +503,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                     {showTagline && (
                       <p 
-                        style={{ color: COLOR_TEAL }}
+                        style={{ color: COLOR_TEXT, fontFamily: dishDescFont }}
                         className="text-xs font-semibold"
                       >
                         {restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}
@@ -507,7 +516,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               {initialTableNumber && (
                 <div className="flex justify-center pt-0.5">
                   <span 
-                    style={{ backgroundColor: `${COLOR_OLIVE}20`, color: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+                    style={{ backgroundColor: `${COLOR_SUBTEXT}20`, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[11px] font-bold font-mono shadow-sm"
                   >
                     <MapPin className="w-3.5 h-3.5" />
@@ -523,8 +532,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       type="button"
                       onClick={onEditHeader}
                       style={{
-                        backgroundColor: COLOR_TERRACOTTA,
-                        color: COLOR_CREAM,
+                        backgroundColor: COLOR_BTN,
+                        color: COLOR_BTN_TEXT,
                       }}
                       className="px-3 py-1 rounded-lg hover:brightness-110 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
                     >
@@ -537,9 +546,9 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       type="button"
                       onClick={onEditBranding}
                       style={{
-                        backgroundColor: `${COLOR_TEAL}15`,
-                        color: COLOR_TEAL,
-                        borderColor: COLOR_TEAL
+                        backgroundColor: `${COLOR_BTN}15`,
+                        color: COLOR_TEXT,
+                        borderColor: COLOR_BTN
                       }}
                       className="px-3 py-1 rounded-lg hover:brightness-125 border text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition shadow"
                     >
@@ -553,7 +562,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
             {/* Category Tabs */}
             <div 
-              style={{ borderColor: COLOR_OLIVE }}
+              style={{ borderColor: `${COLOR_SUBTEXT}40` }}
               className="flex items-center justify-between gap-2 overflow-x-auto pb-2 border-b"
             >
               <div className="flex items-center gap-2">
@@ -566,8 +575,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       onClick={() => setSelectedCategoryId(cat.id)}
                       style={
                         isSelected
-                          ? { backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_TEAL }
-                          : { backgroundColor: COLOR_CREAM, color: COLOR_TEAL, borderColor: COLOR_OLIVE }
+                          ? { backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT, borderColor: COLOR_BTN }
+                          : { backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: `${COLOR_SUBTEXT}60` }
                       }
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
                         isSelected ? 'shadow-md scale-[1.02]' : 'hover:brightness-95'
@@ -583,8 +592,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                   type="button"
                   onClick={() => onAddNewItem(selectedCategoryId)}
                   style={{
-                    backgroundColor: COLOR_TERRACOTTA,
-                    color: COLOR_CREAM
+                    backgroundColor: COLOR_BTN,
+                    color: COLOR_BTN_TEXT
                   }}
                   className="shrink-0 px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
                 >
@@ -598,30 +607,27 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {displayedItems.map(item => {
                 const inCart = cart.find(c => c.item.id === item.id);
-                const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
-                const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
-                const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
 
                 return (
                   <div
                     key={item.id}
                     style={{ 
-                      backgroundColor: COLOR_CREAM, 
-                      borderColor: COLOR_OLIVE,
-                      color: COLOR_TEAL
+                      backgroundColor: COLOR_CARD, 
+                      borderColor: `${COLOR_BTN}50`,
+                      color: COLOR_TEXT
                     }}
                     className="relative p-2 rounded-2xl border transition flex flex-col justify-between space-y-2 shadow-md group"
                   >
                     {/* Live Edit Action Badges */}
                     {isLiveEditActive && (
                       <div 
-                        style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+                        style={{ backgroundColor: COLOR_CARD, borderColor: COLOR_SUBTEXT }}
                         className="absolute top-2 right-2 z-30 flex items-center gap-1 p-1 rounded-lg border shadow-xl backdrop-blur"
                       >
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); onEditItem && onEditItem(item); }}
-                          style={{ backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }}
+                          style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                           className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition shadow"
                           title="Editar nombre, descripción, precio y detalles"
                         >
@@ -631,7 +637,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); onQuickPriceItem && onQuickPriceItem(item); }}
-                          style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
+                          style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
                           className="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono cursor-pointer transition border"
                           title="Modificar precio rápido"
                         >
@@ -640,7 +646,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); onQuickPhotoItem && onQuickPhotoItem(item); }}
-                          style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE }}
+                          style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
                           className="p-1 rounded text-[10px] cursor-pointer transition border"
                           title="Cambiar foto del plato"
                         >
@@ -651,8 +657,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                           onClick={(e) => { e.stopPropagation(); onToggleAvailability && onToggleAvailability(item); }}
                           style={
                             item.isAvailable !== false
-                              ? { backgroundColor: COLOR_OLIVE, color: COLOR_CREAM, borderColor: COLOR_OLIVE }
-                              : { backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM, borderColor: COLOR_TERRACOTTA }
+                              ? { backgroundColor: COLOR_SUBTEXT, color: '#FFFFFF', borderColor: COLOR_SUBTEXT }
+                              : { backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT, borderColor: COLOR_BTN }
                           }
                           className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono cursor-pointer transition border"
                           title="Alternar entre disponible o agotado"
@@ -671,8 +677,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                           referrerPolicy="no-referrer"
                         />
                         <div 
-                          style={{ backgroundColor: COLOR_TEAL, color: COLOR_CREAM, borderColor: COLOR_OLIVE, fontFamily: dishPriceFont }}
-                          className="absolute top-2 left-2 px-2.5 py-1 rounded-md text-xs font-extrabold shadow-md border"
+                          style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT, fontFamily: dishPriceFont }}
+                          className="absolute top-2 left-2 px-2.5 py-1 rounded-md text-xs font-extrabold shadow-md border border-white/20"
                         >
                           S/ {item.price.toFixed(2)}
                         </div>
@@ -680,14 +686,14 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                       <div>
                         <h3 
-                          style={{ fontFamily: dishNameFont, color: COLOR_TEAL }}
+                          style={{ fontFamily: dishNameFont, color: COLOR_TEXT }}
                           className="text-sm font-black uppercase tracking-tight"
                         >
                           {item.name}
                         </h3>
                         <p 
-                          style={{ fontFamily: dishDescFont, color: COLOR_TEAL }}
-                          className="text-xs line-clamp-2 mt-0.5 font-medium opacity-90"
+                          style={{ fontFamily: dishDescFont, color: COLOR_TEXT }}
+                          className="text-xs line-clamp-2 mt-0.5 font-medium opacity-85"
                         >
                           {item.description}
                         </p>
@@ -695,11 +701,11 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                     </div>
 
                     <div 
-                      style={{ borderColor: `${COLOR_OLIVE}60` }}
+                      style={{ borderColor: `${COLOR_SUBTEXT}40` }}
                       className="pt-2 border-t flex items-center justify-between"
                     >
                       <span 
-                        style={{ color: COLOR_OLIVE }}
+                        style={{ color: COLOR_SUBTEXT }}
                         className="text-[11px] font-mono flex items-center gap-1 font-bold"
                       >
                         <Clock className="w-3 h-3" />
@@ -707,7 +713,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                       </span>
                       <button
                         onClick={() => setSelectedItemForCustomization(item)}
-                        style={{ backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }}
+                        style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
                         className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-md hover:brightness-110 active:scale-95"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -724,22 +730,22 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {/* Floating Cart Trigger */}
           {cart.length > 0 && (
             <div 
-              style={{ backgroundColor: COLOR_TEAL, borderColor: COLOR_OLIVE }}
+              style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
               className="absolute bottom-0 left-0 right-0 z-30 p-3 border-t shadow-2xl backdrop-blur-md flex items-center justify-between"
             >
               <div>
-                <span style={{ color: COLOR_CREAM }} className="text-[11px] block font-mono">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'plato marino listo' : 'platos marinos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                <span style={{ color: COLOR_BTN_TEXT }} className="text-[11px] block font-mono opacity-90">
+                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
                 </span>
-                <span style={{ color: COLOR_CREAM }} className="text-sm font-black font-mono">
+                <span style={{ color: COLOR_BTN_TEXT }} className="text-sm font-black font-mono">
                   Total: S/ {cartTotal.toFixed(2)}
                 </span>
               </div>
 
               <button
                 onClick={() => setIsCartDrawerOpen(true)}
-                style={{ backgroundColor: COLOR_TERRACOTTA, color: COLOR_CREAM }}
-                className="px-4 py-2 rounded-xl font-bold text-xs shadow-lg transition cursor-pointer flex items-center gap-2 hover:brightness-110"
+                style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
+                className="px-4 py-2 rounded-xl font-bold text-xs shadow-lg transition border cursor-pointer flex items-center gap-2 hover:brightness-110"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Revisar y Enviar Pedido</span>
@@ -757,14 +763,15 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleConfirmItemUnits}
-          themeAccentColor={COLOR_TERRACOTTA}
-          themeDarkBg={COLOR_CREAM}
-          buttonTextColor={COLOR_CREAM}
-          textColor={COLOR_TEAL}
-          secondaryColor={COLOR_OLIVE}
-          dishNameFont={restaurant.branding?.dishNameFont}
-          dishDescFont={restaurant.branding?.dishDescFont}
-          dishPriceFont={restaurant.branding?.dishPriceFont}
+          themeAccentColor={COLOR_BTN}
+          themeDarkBg={COLOR_BG}
+          dishCardBgColor={COLOR_CARD}
+          buttonTextColor={COLOR_BTN_TEXT}
+          textColor={COLOR_TEXT}
+          secondaryColor={COLOR_SUBTEXT}
+          dishNameFont={dishNameFont}
+          dishDescFont={dishDescFont}
+          dishPriceFont={dishPriceFont}
         />
       )}
 

@@ -19,6 +19,7 @@ interface ItemOrderModalProps {
   onConfirm: (item: MenuItem, quantity: number, units: OrderItemUnit[]) => void;
   themeAccentColor?: string;
   themeDarkBg?: string;
+  dishCardBgColor?: string;
   buttonTextColor?: string;
   textColor?: string;
   secondaryColor?: string;
@@ -38,7 +39,7 @@ function isLightColor(colorStr?: string): boolean {
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 160;
+  return brightness > 155;
 }
 
 export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
@@ -46,9 +47,10 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   onClose,
   item,
   onConfirm,
-  themeAccentColor = '#D98262',
-  themeDarkBg = '#EAEBDC',
-  buttonTextColor = '#EAEBDC',
+  themeAccentColor = '#f5a519',
+  themeDarkBg,
+  dishCardBgColor,
+  buttonTextColor,
   textColor,
   secondaryColor,
   dishNameFont,
@@ -64,23 +66,27 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const availableAddons = item?.availableAddons || [];
   const suggestedObs = item?.suggestedObservations || [];
 
-  // Color calculation for clean contrast
-  const modalBg = themeDarkBg || '#EAEBDC';
+  // Color calculation for clean contrast & harmony
+  const modalBg = themeDarkBg || '#18181B';
   const bgIsLight = isLightColor(modalBg);
 
-  const primaryText = textColor || (bgIsLight ? '#1B667A' : '#EAEBDC');
-  const subText = secondaryColor || (bgIsLight ? '#8A9B57' : '#B0C4DE');
-  const accentColor = themeAccentColor || '#D98262';
-  const btnTextColor = buttonTextColor || '#EAEBDC';
+  const primaryText = textColor || (bgIsLight ? '#18181B' : '#F9FAFB');
+  const textIsLight = isLightColor(primaryText);
+  const subText = secondaryColor || (bgIsLight ? '#4B5563' : '#9CA3AF');
+  const accentColor = themeAccentColor || '#f5a519';
+  const btnTextColor = buttonTextColor || (isLightColor(accentColor) ? '#000000' : '#FFFFFF');
 
-  const cardBg = bgIsLight ? 'rgba(27, 102, 122, 0.05)' : 'rgba(255, 255, 255, 0.06)';
-  const cardBorder = bgIsLight ? 'rgba(138, 155, 87, 0.4)' : 'rgba(255, 255, 255, 0.15)';
+  const cardBg = dishCardBgColor || (bgIsLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.07)');
+  const cardIsLight = isLightColor(cardBg) || bgIsLight;
+  const cardBorder = bgIsLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)';
   
-  const inputBg = bgIsLight ? '#FFFFFF' : 'rgba(0, 0, 0, 0.4)';
-  const inputBorder = bgIsLight ? 'rgba(27, 102, 122, 0.3)' : 'rgba(255, 255, 255, 0.2)';
-  const inputText = bgIsLight ? primaryText : '#FFFFFF';
+  const inputBg = cardIsLight ? '#FFFFFF' : 'rgba(0, 0, 0, 0.45)';
+  const inputBorder = cardIsLight ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.2)';
+  const inputText = cardIsLight ? '#111827' : '#F9FAFB';
 
-  const footerBg = bgIsLight ? '#E3E4D6' : 'rgba(0, 0, 0, 0.5)';
+  const footerBg = bgIsLight 
+    ? (dishCardBgColor ? dishCardBgColor : 'rgba(0, 0, 0, 0.04)') 
+    : 'rgba(0, 0, 0, 0.55)';
 
   // Reset when item opens
   useEffect(() => {
@@ -177,7 +183,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
       >
         
         {/* Header with Dish Image preview & Close */}
-        <div className="relative h-44 sm:h-48 w-full shrink-0 overflow-hidden bg-neutral-900">
+        <div className="relative h-44 sm:h-52 w-full shrink-0 overflow-hidden bg-neutral-900">
           <img 
             src={item.imageUrl} 
             alt={item.name} 
@@ -186,13 +192,13 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           />
           <div 
             className="absolute inset-0"
-            style={{ backgroundImage: `linear-gradient(to top, rgba(14, 38, 48, 0.95) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)` }} 
+            style={{ backgroundImage: `linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.2) 100%)` }} 
           />
           
           <button
             onClick={onClose}
-            style={{ backgroundColor: primaryText, color: modalBg }}
-            className="absolute top-3 right-3 p-2 rounded-full shadow-md transition cursor-pointer hover:scale-105"
+            className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-md transition cursor-pointer hover:scale-105"
+            aria-label="Cerrar ventana"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
           </button>
@@ -209,19 +215,19 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             </span>
             <h2 
               style={{ fontFamily: dishNameFont }}
-              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-sm"
+              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-md"
             >
               {item.name}
             </h2>
             <div className="flex items-center gap-3 mt-1">
               <span 
-                style={{ color: '#EAEBDC', fontFamily: dishPriceFont }}
-                className="text-sm font-black font-mono bg-black/40 px-2 py-0.5 rounded border border-white/20"
+                style={{ fontFamily: dishPriceFont, color: '#FFFFFF' }}
+                className="text-sm font-black font-mono bg-black/60 px-2.5 py-0.5 rounded-md border border-white/30 backdrop-blur-sm"
               >
                 S/ {item.price.toFixed(2)} c/u
               </span>
               {item.prepTimeMinutes && (
-                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1">
+                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1 drop-shadow-sm">
                   ⏱ {item.prepTimeMinutes} min de preparación
                 </span>
               )}
@@ -251,20 +257,26 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
               <button
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= 1}
-                style={{ backgroundColor: primaryText, color: modalBg }}
+                style={{ 
+                  backgroundColor: accentColor, 
+                  color: btnTextColor 
+                }}
                 className="w-8 h-8 rounded-lg disabled:opacity-30 font-bold flex items-center justify-center transition cursor-pointer shadow-sm hover:brightness-110"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
               <span style={{ color: primaryText }} className="w-8 text-center font-black text-base font-mono">
                 {quantity}
               </span>
               <button
                 onClick={() => handleQuantityChange(quantity + 1)}
-                style={{ backgroundColor: primaryText, color: modalBg }}
+                style={{ 
+                  backgroundColor: accentColor, 
+                  color: btnTextColor 
+                }}
                 className="w-8 h-8 rounded-lg font-bold flex items-center justify-center transition cursor-pointer shadow-sm hover:brightness-110"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             </div>
           </div>
@@ -350,11 +362,11 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                         type="button"
                         onClick={() => handleToggleAddon(activeUnitTab, addon)}
                         style={isSelected ? {
-                          backgroundColor: `${accentColor}18`,
+                          backgroundColor: `${accentColor}25`,
                           borderColor: accentColor,
                           color: primaryText
                         } : {
-                          backgroundColor: bgIsLight ? '#FFFFFF' : 'rgba(0,0,0,0.2)',
+                          backgroundColor: inputBg,
                           borderColor: cardBorder,
                           color: primaryText
                         }}
@@ -362,7 +374,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                       >
                         <div className="flex items-center gap-2">
                           <div 
-                            style={isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : { borderColor: cardBorder }}
+                            style={isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : { borderColor: cardBorder, backgroundColor: inputBg }}
                             className="w-4 h-4 rounded flex items-center justify-center border transition"
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: btnTextColor }} />}
@@ -407,7 +419,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           borderColor: accentColor,
                           color: btnTextColor
                         } : {
-                          backgroundColor: bgIsLight ? '#FFFFFF' : 'rgba(0,0,0,0.3)',
+                          backgroundColor: inputBg,
                           borderColor: cardBorder,
                           color: primaryText
                         }}
@@ -432,7 +444,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                   borderColor: inputBorder,
                   color: inputText
                 }}
-                className="w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none transition resize-none font-medium shadow-inner"
+                className="w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none transition resize-none font-medium shadow-inner placeholder:text-neutral-400"
               />
             </div>
           </div>
@@ -484,8 +496,12 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              style={{ backgroundColor: bgIsLight ? '#DCDED0' : 'rgba(255,255,255,0.1)', color: primaryText }}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer hover:brightness-90"
+              style={{ 
+                backgroundColor: cardBg, 
+                color: primaryText,
+                borderColor: cardBorder 
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold transition border cursor-pointer hover:brightness-90"
             >
               Cancelar
             </button>
@@ -494,7 +510,10 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 onConfirm(item, quantity, units);
                 onClose();
               }}
-              style={{ backgroundColor: accentColor, color: btnTextColor }}
+              style={{ 
+                backgroundColor: accentColor, 
+                color: btnTextColor 
+              }}
               className="px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95"
             >
               <Check className="w-4 h-4 stroke-[3]" />
@@ -507,4 +526,3 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
     </div>
   );
 };
-

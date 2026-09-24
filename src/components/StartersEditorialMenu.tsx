@@ -614,6 +614,15 @@ export const StartersEditorialMenu: React.FC<StartersEditorialMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleAddToCartCustomized}
+          themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#F59E0B'}
+          themeDarkBg={restaurant.branding?.darkBgColor || '#0D1117'}
+          dishCardBgColor={restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor}
+          buttonTextColor={restaurant.branding?.buttonTextColor || '#000000'}
+          textColor={restaurant.branding?.textColor}
+          secondaryColor={restaurant.branding?.secondaryColor}
+          dishNameFont={restaurant.branding?.dishNameFont}
+          dishDescFont={restaurant.branding?.dishDescFont}
+          dishPriceFont={restaurant.branding?.dishPriceFont}
         />
       )}
 

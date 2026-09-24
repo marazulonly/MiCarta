@@ -668,6 +668,15 @@ export const EditorialGrandMenu: React.FC<EditorialGrandMenuProps> = ({
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
           onConfirm={handleAddToCartCustomized}
+          themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#D97706'}
+          themeDarkBg={restaurant.branding?.darkBgColor || '#18181B'}
+          dishCardBgColor={restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor}
+          buttonTextColor={restaurant.branding?.buttonTextColor || '#FFFFFF'}
+          textColor={restaurant.branding?.textColor}
+          secondaryColor={restaurant.branding?.secondaryColor}
+          dishNameFont={restaurant.branding?.dishNameFont}
+          dishDescFont={restaurant.branding?.dishDescFont}
+          dishPriceFont={restaurant.branding?.dishPriceFont}
         />
       )}
 

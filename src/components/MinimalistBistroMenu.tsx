@@ -305,6 +305,15 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
               handleConfirmItemUnits(item, qty, units);
               setSelectedItemForCustomization(null);
             }}
+            themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#18181B'}
+            themeDarkBg={restaurant.branding?.darkBgColor || '#FFFFFF'}
+            dishCardBgColor={restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor}
+            buttonTextColor={restaurant.branding?.buttonTextColor || '#FFFFFF'}
+            textColor={restaurant.branding?.textColor || '#18181B'}
+            secondaryColor={restaurant.branding?.secondaryColor}
+            dishNameFont={restaurant.branding?.dishNameFont}
+            dishDescFont={restaurant.branding?.dishDescFont}
+            dishPriceFont={restaurant.branding?.dishPriceFont}
           />
         )}
 

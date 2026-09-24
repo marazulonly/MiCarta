@@ -418,6 +418,15 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
               handleConfirmItemUnits(item, qty, units);
               setSelectedItemForCustomization(null);
             }}
+            themeAccentColor={restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38BDF8'}
+            themeDarkBg={restaurant.branding?.darkBgColor || '#090D16'}
+            dishCardBgColor={restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor}
+            buttonTextColor={restaurant.branding?.buttonTextColor || '#000000'}
+            textColor={restaurant.branding?.textColor}
+            secondaryColor={restaurant.branding?.secondaryColor}
+            dishNameFont={restaurant.branding?.dishNameFont}
+            dishDescFont={restaurant.branding?.dishDescFont}
+            dishPriceFont={restaurant.branding?.dishPriceFont}
           />
         )}
 
