@@ -240,7 +240,7 @@ function getInitialStorageState() {
   let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS).filter(i => INITIAL_RESTAURANTS.some(r => r.id === i.restaurantId));
   let cachedUsers = deduplicateUsers(INITIAL_USERS);
   let cachedOrders = INITIAL_ORDERS.filter(o => INITIAL_RESTAURANTS.some(r => r.id === o.restaurantId));
-  let cachedAuth: User | null = INITIAL_USERS[0] || null;
+  let cachedAuth: User | null = null;
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
@@ -1199,7 +1199,7 @@ export default function App() {
 
   // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links or when customer preview is open without logged-in session
   if (!currentUser && (initParams.isQr || initParams.restSlug || isCustomerModalOpen) && previewRestaurant) {
-    // If the guest explicitly closed the menu, show ONLY the thank you screen
+    // If the guest explicitly closed the menu, show ONLY the thank you screen without any login buttons
     if (isMenuClosedByGuest) {
       const restColor = previewRestaurant?.branding?.primaryColor || '#1B667A';
       const secColor = previewRestaurant?.branding?.secondaryColor || '#8A9B57';
@@ -1242,27 +1242,6 @@ export default function App() {
               Volver a abrir la Carta Digital
             </button>
           </div>
-
-          {/* Discrete staff portal trigger */}
-          <div className="mt-8">
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="text-xs opacity-35 hover:opacity-90 transition underline underline-offset-4 cursor-pointer"
-            >
-              Acceso exclusivo para el personal
-            </button>
-          </div>
-
-          {/* Authentication Modal with DNI for Staff */}
-          <LoginModal
-            isOpen={isLoginModalOpen}
-            onClose={() => setIsLoginModalOpen(false)}
-            users={users}
-            currentUser={currentUser}
-            onLogin={handleLogin}
-            onLogout={handleLogout}
-            onUpdateUser={handleUpdateUser}
-          />
         </div>
       );
     }
