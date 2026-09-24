@@ -438,7 +438,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-extrabold text-neutral-900">{owner.name}</h3>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            owner.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-red-50 text-red-700 border border-red-200/60'
+                            owner.status === 'active' ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-300'
                           }`}>
                             {owner.status === 'active' ? 'Activo' : 'Inactivo'}
                           </span>
@@ -481,7 +481,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onDeleteUser(owner.id);
                             }
                           }}
-                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          className="p-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition cursor-pointer shrink-0"
                           title="Eliminar Dueño"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -508,9 +508,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ))}
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50/50 border border-amber-200/60">
-                        <span className="text-[11px] text-amber-800 font-bold flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-neutral-100 border border-neutral-300">
+                        <span className="text-[11px] text-neutral-800 font-bold flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
                           <span>Sin restaurantes asignados (Cuenta de dueño conservada)</span>
                         </span>
                         <button
@@ -519,7 +519,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             setEditError(null);
                             setEditingOwner(owner);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100/40 text-[10px] text-amber-800 font-extrabold border border-amber-200 transition cursor-pointer shrink-0"
+                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-200 text-[10px] text-neutral-900 font-extrabold border border-neutral-300 transition cursor-pointer shrink-0"
                         >
                           + Asignar Sede
                         </button>
@@ -560,7 +560,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-extrabold text-neutral-900">{rest.name}</h3>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                              rest.isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
+                              rest.isOpen ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                             }`}>
                               {rest.isOpen ? 'Abierto' : 'Cerrado'}
                             </span>
@@ -686,7 +686,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-extrabold text-neutral-900">{waiter.name}</h3>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            waiter.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
+                            waiter.status === 'active' ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                           }`}>
                             {waiter.status === 'active' ? 'En Turno' : 'Inactivo'}
                           </span>
@@ -722,7 +722,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onDeleteUser(waiter.id);
                             }
                           }}
-                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          className="p-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition cursor-pointer shrink-0"
                           title="Eliminar Mesero"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -765,7 +765,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-extrabold text-neutral-900">{rider.name}</h3>
-                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60">
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-neutral-900 text-white border border-neutral-800">
                             {rider.vehicleType || 'MOTO'}
                           </span>
                         </div>
@@ -799,7 +799,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onDeleteUser(rider.id);
                             }
                           }}
-                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          className="p-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition cursor-pointer shrink-0"
                           title="Eliminar Repartidor"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -846,9 +846,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-extrabold text-neutral-900">{client.name}</h3>
                           <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono ${
-                            client.vipTier === 'BLACK_VIP' ? 'bg-neutral-900 text-amber-400 border border-amber-600/30' :
-                            client.vipTier === 'GOLD' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
-                            client.vipTier === 'SILVER' ? 'bg-neutral-50 text-neutral-600 border border-neutral-200/60' :
+                            client.vipTier === 'BLACK_VIP' ? 'bg-neutral-900 text-white border border-neutral-700' :
+                            client.vipTier === 'GOLD' ? 'bg-neutral-800 text-white border border-neutral-700' :
+                            client.vipTier === 'SILVER' ? 'bg-neutral-200 text-neutral-900 border border-neutral-300' :
                             'bg-neutral-100 text-neutral-500 border border-neutral-200'
                           }`}>
                             {client.vipTier || 'STANDARD'}
@@ -885,7 +885,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onDeleteUser(client.id);
                             }
                           }}
-                          className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer shrink-0"
+                          className="p-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition cursor-pointer shrink-0"
                           title="Eliminar Cliente"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -896,7 +896,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div className="pt-2.5 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
                     <span>{client.lastActive}</span>
-                    <span className="text-emerald-600 font-bold">
+                    <span className="text-neutral-900 font-bold">
                       Saldo a Favor: ${client.creditBalance?.toFixed(2) || '0.00'}
                     </span>
                   </div>

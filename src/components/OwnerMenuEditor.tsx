@@ -555,14 +555,17 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [menuSettings, setMenuSettings] = useState<MenuAccessSettings>(initialSettings);
 
   const handleSaveCustomization = () => {
+    const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+    const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const updatedRest: Restaurant = {
       ...restaurant,
       name: brandName.trim() || restaurant.name,
       tagline: brandTagline.trim(),
-      logoUrl: brandLogoUrl.trim(),
-      coverUrl: brandCoverUrl.trim(),
+      logoUrl: safeLogo,
+      coverUrl: safeCover,
       branding: {
         ...restaurant.branding,
+        headerLogoUrl: restaurant.branding?.headerLogoUrl || safeLogo,
         primaryColor: brandPrimaryColor,
         darkBgColor: brandDarkBgColor,
         secondaryColor: brandSecondaryColor,

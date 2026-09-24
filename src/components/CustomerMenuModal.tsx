@@ -359,14 +359,17 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const handleSaveBranding = (e: React.FormEvent) => {
     e.preventDefault();
     if (!onUpdateRestaurant) return;
+    const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+    const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const updatedRest: Restaurant = {
       ...restaurant,
       name: brandName.trim() || restaurant.name,
       tagline: brandTagline.trim(),
-      logoUrl: brandLogoUrl.trim(),
-      coverUrl: brandCoverUrl.trim(),
+      logoUrl: safeLogo,
+      coverUrl: safeCover,
       branding: {
         ...restaurant.branding,
+        headerLogoUrl: restaurant.branding?.headerLogoUrl || safeLogo,
         darkBgColor: brandDarkBgColor,
         buttonColor: brandButtonColor,
         buttonTextColor: brandButtonTextColor,

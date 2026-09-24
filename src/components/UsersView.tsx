@@ -337,7 +337,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
                     <td className="py-3 px-4">
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                         user.status === 'active' 
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/50' 
+                          ? 'bg-neutral-800 text-white border border-neutral-700' 
                           : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
                       }`}>
                         {user.status === 'active' ? 'Activo' : 'Suspendido'}

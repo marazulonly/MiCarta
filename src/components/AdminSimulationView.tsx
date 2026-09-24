@@ -379,10 +379,10 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
       {/* ============================================================= */}
       {/* PC ONLY WARNING BANNER (Shows only on < lg screens)           */}
       {/* ============================================================= */}
-      <div className="lg:hidden p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
-        <Monitor className="w-6 h-6 shrink-0 text-amber-400" />
+      <div className="lg:hidden p-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs flex items-center gap-3">
+        <Monitor className="w-6 h-6 shrink-0 text-white" />
         <div>
-          <strong className="font-bold block">Vista Optimizada para PC / Pantalla Panorámica</strong>
+          <strong className="font-bold block text-white">Vista Optimizada para PC / Pantalla Panorámica</strong>
           <span>Esta simulación sincronizada en tiempo real muestra 3 dispositivos móviles en paralelo. Te recomendamos ampliar la ventana o usar tu ordenador para una experiencia visual completa.</span>
         </div>
       </div>
@@ -390,21 +390,21 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
       {/* ============================================================= */}
       {/* SIMULATION COMMAND CENTER HEADER                              */}
       {/* ============================================================= */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-neutral-900/90 border border-neutral-800 backdrop-blur-md shadow-2xl space-y-5">
+      <div className="p-5 sm:p-6 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl space-y-5">
         
         {/* Top Title & Actions */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-amber-400 text-black shadow-lg shadow-amber-400/20">
-                <Sparkles className="w-5 h-5 font-black" />
+              <span className="p-2 rounded-xl bg-white text-black shadow-lg">
+                <Sparkles className="w-5 h-5 font-black text-black" />
               </span>
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-black tracking-tight text-white uppercase">
                     Simulador Multi-Dispositivo en Tiempo Real
                   </h2>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold font-mono">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-200 border border-neutral-700 font-bold font-mono">
                     LIVE SYNC
                   </span>
                 </div>
@@ -421,7 +421,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
                 soundEnabled 
-                  ? 'bg-neutral-800 border-neutral-700 text-amber-400' 
+                  ? 'bg-neutral-800 border-neutral-700 text-white' 
                   : 'bg-neutral-900 border-neutral-800 text-neutral-500'
               }`}
               title={soundEnabled ? 'Sonidos de alerta activados' : 'Sonidos silenciados'}
@@ -447,10 +447,10 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
             {/* Exit Simulation Checkbox toggle */}
             <button
               onClick={onCloseSimulation}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 text-black hover:bg-amber-300 font-bold text-xs transition shadow-lg shadow-amber-400/10 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs transition shadow-lg cursor-pointer"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>Salir de Simulación</span>
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Cerrar Simulación</span>
             </button>
           </div>
         </div>
@@ -486,7 +486,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => setOrderSource('CUSTOMER_DINE_IN')}
                 className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer border ${
                   orderSource === 'CUSTOMER_DINE_IN'
-                    ? 'bg-amber-400 text-black border-amber-300'
+                    ? 'bg-white text-black border-white'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -497,7 +497,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => setOrderSource('WAITER_TABLE')}
                 className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer border ${
                   orderSource === 'WAITER_TABLE'
-                    ? 'bg-sky-400 text-black border-sky-300'
+                    ? 'bg-white text-black border-white'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -508,7 +508,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => setOrderSource('CUSTOMER_DELIVERY')}
                 className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer border ${
                   orderSource === 'CUSTOMER_DELIVERY'
-                    ? 'bg-blue-400 text-black border-blue-300'
+                    ? 'bg-white text-black border-white'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -539,7 +539,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                     onClick={() => setSelectedTableNumber(num)}
                     className={`px-2 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
                       selectedTableNumber === num 
-                        ? 'bg-emerald-400 text-black' 
+                        ? 'bg-white text-black' 
                         : 'bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border border-neutral-800'
                     }`}
                   >
@@ -558,19 +558,19 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => handleApplyScenario('parrilla')}
-                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-amber-300 text-[11px] font-semibold transition truncate cursor-pointer text-center"
+                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-[11px] font-semibold transition truncate cursor-pointer text-center"
               >
                 🥩 Parrilla M04
               </button>
               <button
                 onClick={() => handleApplyScenario('ceviche')}
-                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-sky-300 text-[11px] font-semibold transition truncate cursor-pointer text-center"
+                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-[11px] font-semibold transition truncate cursor-pointer text-center"
               >
                 🐟 Ceviche M08
               </button>
               <button
                 onClick={() => handleApplyScenario('delivery')}
-                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-emerald-300 text-[11px] font-semibold transition truncate cursor-pointer text-center"
+                className="flex-1 py-1 px-1.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-[11px] font-semibold transition truncate cursor-pointer text-center"
               >
                 🛵 Delivery
               </button>
@@ -583,9 +583,9 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
         {activeSimOrder && (
           <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
               <span className="text-xs font-bold text-white">
-                Comanda Activa: <span className="font-mono text-amber-300">{activeSimOrder.orderNumber}</span> ({activeSimOrder.tableNumber || 'Delivery'})
+                Comanda Activa: <span className="font-mono text-neutral-200">{activeSimOrder.orderNumber}</span> ({activeSimOrder.tableNumber || 'Delivery'})
               </span>
               <span className="text-xs text-neutral-500 font-mono">
                 Total: S/ {activeSimOrder.total.toFixed(2)}
@@ -598,7 +598,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => handleUpdateSimStatus('PENDING')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
                   activeSimOrder.status === 'PENDING'
-                    ? 'bg-amber-400 text-black border-amber-300 shadow'
+                    ? 'bg-white text-black border-white shadow'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -611,7 +611,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => handleUpdateSimStatus('IN_KITCHEN')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
                   activeSimOrder.status === 'IN_KITCHEN'
-                    ? 'bg-orange-500 text-white border-orange-400 shadow'
+                    ? 'bg-neutral-200 text-black border-neutral-300 shadow font-black'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -625,7 +625,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => handleUpdateSimStatus('READY')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
                   activeSimOrder.status === 'READY'
-                    ? 'bg-emerald-500 text-black border-emerald-400 font-black shadow'
+                    ? 'bg-white text-black border-white font-black shadow'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -639,7 +639,7 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
                 onClick={() => handleUpdateSimStatus('DELIVERED')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
                   activeSimOrder.status === 'DELIVERED'
-                    ? 'bg-purple-500 text-white border-purple-400 shadow'
+                    ? 'bg-neutral-300 text-black border-neutral-400 shadow font-black'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
               >
@@ -662,12 +662,12 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
         {/* ------------------------------------------------------------- */}
         <div className="flex flex-col items-center">
           {/* Column Header Label */}
-          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-neutral-900 border border-neutral-800">
             <div className="flex items-center gap-2">
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-bold text-amber-300">COLUMNA 1: Móvil Dueño</span>
+              <Crown className="w-4 h-4 text-white" />
+              <span className="text-xs font-bold text-white">COLUMNA 1: Móvil Dueño</span>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono font-bold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-200 font-mono font-bold">
               OWNER APP
             </span>
           </div>
@@ -840,12 +840,12 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
         {/* ------------------------------------------------------------- */}
         <div className="flex flex-col items-center">
           {/* Column Header Label */}
-          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-sky-500/10 border border-sky-500/30">
+          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-neutral-900 border border-neutral-800">
             <div className="flex items-center gap-2">
-              <ChefHat className="w-4 h-4 text-sky-400" />
-              <span className="text-xs font-bold text-sky-300">COLUMNA 2: Móvil Mesero</span>
+              <ChefHat className="w-4 h-4 text-white" />
+              <span className="text-xs font-bold text-white">COLUMNA 2: Móvil Mesero</span>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-400/20 text-sky-300 font-mono font-bold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-200 font-mono font-bold">
               WAITER APP
             </span>
           </div>
@@ -1029,12 +1029,12 @@ export const AdminSimulationView: React.FC<AdminSimulationViewProps> = ({
         {/* ------------------------------------------------------------- */}
         <div className="flex flex-col items-center">
           {/* Column Header Label */}
-          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+          <div className="w-full max-w-[340px] flex items-center justify-between px-3 py-2 mb-2 rounded-xl bg-neutral-900 border border-neutral-800">
             <div className="flex items-center gap-2">
-              <UserIcon className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-bold text-emerald-300">COLUMNA 3: Móvil Cliente</span>
+              <UserIcon className="w-4 h-4 text-white" />
+              <span className="text-xs font-bold text-white">COLUMNA 3: Móvil Cliente</span>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300 font-mono font-bold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-200 font-mono font-bold">
               CUSTOMER MENU
             </span>
           </div>

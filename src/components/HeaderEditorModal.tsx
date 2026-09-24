@@ -63,7 +63,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
 
   if (!isOpen) return null;
 
-  // File Upload for JPG, PNG, SVG
+// File Upload for JPG, PNG, SVG
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -77,16 +77,59 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
-      alert('El archivo supera los 8MB. Por favor sube una imagen más optimizada.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('El archivo supera los 15MB. Por favor sube una imagen más optimizada.');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        setHeaderLogoUrl(reader.result);
-        showToast(isSvg ? '✓ Logotipo SVG vectorial cargado con éxito' : '✓ Logotipo cargado con éxito');
+        const rawResult = reader.result;
+        
+        // For SVGs, keep as raw data URL or string
+        if (isSvg) {
+          setHeaderLogoUrl(rawResult);
+          showToast('✓ Logotipo SVG vectorial guardado');
+          return;
+        }
+
+        // For bitmap images (JPG/PNG/WEBP), compress lightly via canvas to ensure it fits safely in localStorage & Cloud Redis
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const optimizedDataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.88);
+            setHeaderLogoUrl(optimizedDataUrl);
+            showToast('✓ Foto de cabecera optimizada y cargada con éxito');
+          } else {
+            setHeaderLogoUrl(rawResult);
+            showToast('✓ Imagen cargada con éxito');
+          }
+        };
+        img.onerror = () => {
+          setHeaderLogoUrl(rawResult);
+          showToast('✓ Imagen cargada con éxito');
+        };
+        img.src = rawResult;
       }
     };
     reader.readAsDataURL(file);
@@ -149,8 +192,8 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       >
         {/* Toast */}
         {toastMessage && (
-          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl bg-neutral-950 text-amber-300 border border-amber-400/60 shadow-2xl flex items-center gap-2 text-xs font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl bg-neutral-950 text-white border border-neutral-700 shadow-2xl flex items-center gap-2 text-xs font-bold">
+            <CheckCircle2 className="w-4 h-4 text-white" />
             <span>{toastMessage}</span>
           </div>
         )}
@@ -158,13 +201,13 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/70">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-white">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span>Personalizar Cabecera de la Carta</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-200 border border-neutral-700">
                   JPG · PNG · SVG
                 </span>
               </h2>
@@ -188,7 +231,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
           {/* Section 1: Modo de Visualización (Imagen + Texto vs Solo Imagen) */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-              <Type className="w-3.5 h-3.5 text-amber-400" />
+              <Type className="w-3.5 h-3.5 text-neutral-400" />
               <span>1. Formato de la Cabecera</span>
             </label>
 
@@ -198,14 +241,14 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 onClick={() => handleModeChange('IMAGE_AND_TEXT')}
                 className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
                   headerDisplayMode === 'IMAGE_AND_TEXT'
-                    ? 'bg-amber-400/10 border-amber-400/60 ring-1 ring-amber-400/30'
+                    ? 'bg-neutral-800/80 border-white ring-1 ring-white/20'
                     : 'bg-neutral-950/60 border-neutral-800 hover:border-neutral-700'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-4 h-4 rounded-full border mt-0.5 shrink-0 flex items-center justify-center ${
                     headerDisplayMode === 'IMAGE_AND_TEXT'
-                      ? 'border-amber-400 bg-amber-400 text-black'
+                      ? 'border-white bg-white text-black'
                       : 'border-neutral-600'
                   }`}>
                     {headerDisplayMode === 'IMAGE_AND_TEXT' && <Check className="w-3 h-3 stroke-[3]" />}
@@ -217,7 +260,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-1 text-[10px] text-amber-300 font-mono">
+                <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-1 text-[10px] text-neutral-300 font-mono">
                   <span>Recomendado para cartas tradicionales</span>
                 </div>
               </div>
@@ -227,14 +270,14 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 onClick={() => handleModeChange('IMAGE_ONLY')}
                 className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
                   headerDisplayMode === 'IMAGE_ONLY'
-                    ? 'bg-amber-400/10 border-amber-400/60 ring-1 ring-amber-400/30'
+                    ? 'bg-neutral-800/80 border-white ring-1 ring-white/20'
                     : 'bg-neutral-950/60 border-neutral-800 hover:border-neutral-700'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-4 h-4 rounded-full border mt-0.5 shrink-0 flex items-center justify-center ${
                     headerDisplayMode === 'IMAGE_ONLY'
-                      ? 'border-amber-400 bg-amber-400 text-black'
+                      ? 'border-white bg-white text-black'
                       : 'border-neutral-600'
                   }`}>
                     {headerDisplayMode === 'IMAGE_ONLY' && <Check className="w-3 h-3 stroke-[3]" />}
@@ -246,7 +289,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-1 text-[10px] text-sky-300 font-mono">
+                <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-1 text-[10px] text-neutral-300 font-mono">
                   <span>Ideal para logos con tipografía integrada o banners</span>
                 </div>
               </div>
@@ -257,7 +300,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
           <div className="p-4 rounded-xl bg-neutral-950/80 border border-neutral-800 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <Upload className="w-3.5 h-3.5 text-neutral-400" />
                 <span>2. Logotipo / Imagen de Cabecera (JPG, PNG o SVG)</span>
               </label>
 
@@ -265,7 +308,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setHeaderLogoUrl('')}
-                  className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold cursor-pointer transition"
+                  className="text-[11px] text-neutral-400 hover:text-white flex items-center gap-1 font-bold cursor-pointer transition"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Quitar imagen</span>
@@ -275,7 +318,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               {/* File upload button */}
-              <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition shrink-0">
+              <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-xs cursor-pointer shadow transition shrink-0">
                 <Upload className="w-4 h-4" />
                 <span>Subir archivo JPG / PNG / SVG</span>
                 <input
@@ -292,7 +335,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                   placeholder="O pega el enlace URL de la imagen (https://...)"
                   value={headerLogoUrl}
                   onChange={(e) => setHeaderLogoUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs focus:border-amber-400 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs focus:border-white outline-none"
                 />
               </div>
             </div>
@@ -319,7 +362,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                   onClick={() => setHeaderLogoFit('contain')}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
                     headerLogoFit === 'contain'
-                      ? 'bg-amber-400 text-black border-amber-400'
+                      ? 'bg-white text-black border-white'
                       : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
                   }`}
                 >
@@ -330,7 +373,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                   onClick={() => setHeaderLogoFit('cover')}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
                     headerLogoFit === 'cover'
-                      ? 'bg-amber-400 text-black border-amber-400'
+                      ? 'bg-white text-black border-white'
                       : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
                   }`}
                 >
@@ -341,7 +384,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                   onClick={() => setHeaderLogoFit('auto')}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
                     headerLogoFit === 'auto'
-                      ? 'bg-amber-400 text-black border-amber-400'
+                      ? 'bg-white text-black border-white'
                       : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
                   }`}
                 >
@@ -361,7 +404,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 <label className="text-xs font-bold text-neutral-300">
                   Altura Máxima de la Cabecera:
                 </label>
-                <span className="text-xs font-mono font-bold text-amber-300">
+                <span className="text-xs font-mono font-bold text-white">
                   {headerBannerHeight}px
                 </span>
               </div>
@@ -372,7 +415,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 step="5"
                 value={headerBannerHeight}
                 onChange={(e) => setHeaderBannerHeight(Number(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer"
+                className="w-full accent-white cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
                 <span>Compacto (60px)</span>
@@ -396,7 +439,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                     type="text"
                     value={restaurantName}
                     onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs outline-none focus:border-amber-400"
+                    className="w-full px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs outline-none focus:border-white"
                   />
                 </div>
 
@@ -406,38 +449,38 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                     type="text"
                     value={restaurantTagline}
                     onChange={(e) => setRestaurantTagline(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs outline-none focus:border-amber-400"
+                    className="w-full px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs outline-none focus:border-white"
                   />
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-300">
                   <input
                     type="checkbox"
                     checked={showHeaderName}
                     onChange={(e) => setShowHeaderName(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-500 accent-amber-400"
+                    className="w-4 h-4 rounded text-black accent-white"
                   />
                   <span>Mostrar Nombre en Texto</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-300">
                   <input
                     type="checkbox"
                     checked={showHeaderTagline}
                     onChange={(e) => setShowHeaderTagline(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-500 accent-amber-400"
+                    className="w-4 h-4 rounded text-black accent-white"
                   />
                   <span>Mostrar Eslogan en Texto</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-300">
                   <input
                     type="checkbox"
                     checked={showHeaderBadge}
                     onChange={(e) => setShowHeaderBadge(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-500 accent-amber-400"
+                    className="w-4 h-4 rounded text-black accent-white"
                   />
                   <span>Mostrar Distintivo de Cocina / Canal</span>
                 </label>
@@ -445,12 +488,12 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
             </div>
           )}
 
-          {/* Section 5: VISTA PREVIA EN VIVO (Con Guía Magenta de Área) */}
+          {/* Section 5: VISTA PREVIA EN VIVO */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-                <Eye className="w-3.5 h-3.5 text-amber-400" />
-                <span>Vista Previa en Vivo de la Cabecera</span>
+                <Eye className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Vista Previa de la Cabecera</span>
               </label>
 
               <button
@@ -458,17 +501,17 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 onClick={() => setShowGuideOutline(!showGuideOutline)}
                 className={`text-[11px] px-2.5 py-1 rounded-lg border font-mono transition cursor-pointer flex items-center gap-1.5 ${
                   showGuideOutline
-                    ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/50'
+                    ? 'bg-neutral-800 text-white border-neutral-600'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                 }`}
-                title="Muestra u oculta el marco magenta correspondiente al área señalada en la captura"
+                title="Muestra u oculta el marco de área de cabecera"
               >
-                <span className="w-2 h-2 rounded-full bg-fuchsia-400" />
-                <span>{showGuideOutline ? 'Guía Magenta: Activa' : 'Ocultar Guía'}</span>
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>{showGuideOutline ? 'Marco: Activo' : 'Ocultar Marco'}</span>
               </button>
             </div>
 
-            {/* Preview Box styled like the customer card in cabecc.jpg */}
+            {/* Preview Box styled with the restaurant's active colors */}
             <div 
               className="rounded-2xl p-4 sm:p-6 transition-all duration-300 relative shadow-inner overflow-hidden border border-neutral-700"
               style={{ backgroundColor: previewBgColor, color: previewTextColor }}
@@ -478,22 +521,22 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                 <X className="w-3.5 h-3.5" />
               </div>
 
-              {/* Magenta Box Guide matching the screenshot */}
+              {/* Box Guide */}
               <div 
                 className={`w-full transition-all duration-200 flex flex-col items-center justify-center rounded-xl relative ${
-                  showGuideOutline ? 'border-2 border-fuchsia-500 border-dashed bg-fuchsia-500/5 p-2' : 'p-1'
+                  showGuideOutline ? 'border-2 border-dashed border-neutral-400/50 bg-black/5 p-2' : 'p-1'
                 }`}
                 style={{
                   minHeight: `${headerBannerHeight + 10}px`
                 }}
               >
                 {showGuideOutline && (
-                  <span className="absolute -top-2.5 left-3 px-2 py-0.2 rounded bg-fuchsia-600 text-white font-mono text-[9px] font-bold tracking-wider uppercase shadow">
-                    Área Magenta de Cabecera (Autoajuste)
+                  <span className="absolute -top-2.5 left-3 px-2 py-0.2 rounded bg-neutral-900 text-white font-mono text-[9px] font-bold tracking-wider uppercase shadow border border-neutral-700">
+                    Área de Cabecera (Autoajuste)
                   </span>
                 )}
 
-                {/* The Logo/Image inside the magenta container */}
+                {/* The Logo/Image inside the container */}
                 {headerLogoUrl ? (
                   <div 
                     className="w-full flex items-center justify-center"
@@ -522,18 +565,18 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                   </div>
                 )}
 
-                {/* Subtitle inside magenta area if applicable and enabled */}
+                {/* Subtitle inside area if applicable and enabled */}
                 {headerDisplayMode === 'IMAGE_AND_TEXT' && showHeaderBadge && (
                   <span 
                     style={{ color: previewAccentColor }}
                     className="text-[10px] font-mono tracking-widest uppercase font-bold mt-1 block text-center"
                   >
-                    CEVICHERÍA & COCINA MARINA
+                    COCINA & ESPECIALIDADES
                   </span>
                 )}
               </div>
 
-              {/* Restaurant Name and Tagline below the magenta box */}
+              {/* Restaurant Name and Tagline below the box */}
               {headerDisplayMode === 'IMAGE_AND_TEXT' && (
                 <div className="text-center pt-2 space-y-1">
                   {showHeaderName && (
@@ -553,7 +596,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
                       style={{ color: previewTextColor }}
                       className="text-xs font-semibold opacity-90"
                     >
-                      {restaurantTagline || restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}
+                      {restaurantTagline || restaurant.tagline || 'Especialidades gastronómicas del día'}
                     </p>
                   )}
                 </div>
@@ -566,7 +609,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-neutral-800 bg-neutral-950/70 flex items-center justify-between gap-3">
           <div className="text-[11px] text-neutral-400 hidden sm:block">
-            Modo activo: <strong className="text-amber-300">{headerDisplayMode === 'IMAGE_ONLY' ? 'Solamente Imagen' : 'Imagen + Nombre y Slogan'}</strong>
+            Modo activo: <strong className="text-white">{headerDisplayMode === 'IMAGE_ONLY' ? 'Solamente Imagen' : 'Imagen + Nombre y Slogan'}</strong>
           </div>
 
           <div className="flex items-center gap-2.5 ml-auto">
@@ -581,7 +624,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
             <button
               type="button"
               onClick={() => handleSave()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition shadow-lg cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition shadow-lg cursor-pointer"
             >
               <Check className="w-3.5 h-3.5 stroke-[3]" />
               <span>Guardar Cabecera</span>

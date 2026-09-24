@@ -152,18 +152,18 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
     <div className="space-y-6 pb-28 text-white">
       
       {/* Top KDS Control Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-neutral-900/90 border border-neutral-800 shadow-xl backdrop-blur-md">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-xl">
         
         {/* Left: Chef identity & Restaurant */}
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 shrink-0">
-            <Flame className="w-6 h-6 animate-pulse" />
+          <div className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-white shrink-0">
+            <Flame className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
                 <span>Pantalla KDS Cocina</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/40 font-mono">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-200 border border-neutral-700 font-mono">
                   EN VIVO
                 </span>
               </h1>
@@ -175,7 +175,7 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
               {currentUser.kitchenStation && (
                 <>
                   <span>•</span>
-                  <span className="text-orange-400 font-semibold">{currentUser.kitchenStation}</span>
+                  <span className="text-neutral-300 font-semibold">{currentUser.kitchenStation}</span>
                 </>
               )}
             </p>
@@ -215,7 +215,7 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
           >
             {soundEnabled ? (
               <>
-                <Volume2 className="w-3.5 h-3.5 text-orange-400" />
+                <Volume2 className="w-3.5 h-3.5 text-white" />
                 <span className="hidden sm:inline">Sonido ON</span>
               </>
             ) : (
@@ -231,28 +231,28 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
             onClick={() => setIsStockOutModalOpen(true)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
               outOfStockCount > 0
-                ? 'bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20'
+                ? 'bg-neutral-800 border-neutral-600 text-white'
                 : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700'
             }`}
           >
-            <Ban className="w-3.5 h-3.5 text-red-400" />
+            <Ban className="w-3.5 h-3.5 text-neutral-400" />
             <span>Lista 86 {outOfStockCount > 0 && `(${outOfStockCount} agotados)`}</span>
           </button>
 
           {/* Simulate New Order button */}
           <button
             onClick={onSimulateNewOrder}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 text-xs font-bold transition cursor-pointer shadow-lg shadow-orange-500/20"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition cursor-pointer shadow-lg"
             title="Generar comanda de prueba en cocina"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-black" />
             <span>+ Simular Comanda</span>
           </button>
         </div>
       </div>
 
       {/* Filter Chips Bar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap text-xs bg-neutral-950/60 p-3 rounded-xl border border-neutral-800/80">
+      <div className="flex items-center justify-between gap-3 flex-wrap text-xs bg-neutral-950/80 p-3 rounded-xl border border-neutral-800">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-neutral-400 font-medium">Filtro Tipo:</span>
           <button
@@ -266,7 +266,7 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
           <button
             onClick={() => setTypeFilter('DINE_IN')}
             className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-              typeFilter === 'DINE_IN' ? 'bg-amber-400 text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'
+              typeFilter === 'DINE_IN' ? 'bg-neutral-200 text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'
             }`}
           >
             Mesas Salón
@@ -274,7 +274,7 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
           <button
             onClick={() => setTypeFilter('DELIVERY')}
             className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-              typeFilter === 'DELIVERY' ? 'bg-purple-400 text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'
+              typeFilter === 'DELIVERY' ? 'bg-neutral-200 text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'
             }`}
           >
             Delivery / Para Llevar
@@ -302,15 +302,15 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
         {/* ========================================================================= */}
         {/* COLUMNA 1: NUEVAS COMANDAS (PENDING)                                      */}
         {/* ========================================================================= */}
-        <div className="flex flex-col rounded-2xl border border-amber-500/30 bg-amber-950/10 p-4 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
+        <div className="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-900/80 p-4 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
-              <h2 className="font-bold text-sm text-amber-300 uppercase tracking-wider">
+              <span className="w-2.5 h-2.5 rounded-full bg-white" />
+              <h2 className="font-bold text-sm text-neutral-200 uppercase tracking-wider">
                 1. Nuevas / Por Iniciar
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-mono font-bold text-xs border border-amber-400/30">
+            <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-white font-mono font-bold text-xs border border-neutral-700">
               {pendingOrders.length}
             </span>
           </div>
@@ -331,8 +331,8 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
                     onUpdateOrderStatus(order.id, 'IN_KITCHEN');
                     playKitchenChime();
                   }}
-                  advanceLabel="🔥 Empezar a Cocinar"
-                  advanceColor="bg-amber-400 hover:bg-amber-300 text-black"
+                  advanceLabel="Empezar a Cocinar"
+                  advanceColor="bg-white hover:bg-neutral-200 text-black font-bold"
                 />
               ))
             )}
@@ -342,15 +342,15 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
         {/* ========================================================================= */}
         {/* COLUMNA 2: EN PREPARACIÓN / FUEGO (IN_KITCHEN)                           */}
         {/* ========================================================================= */}
-        <div className="flex flex-col rounded-2xl border border-orange-500/30 bg-orange-950/10 p-4 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-orange-500/20">
+        <div className="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-900/80 p-4 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-400 animate-bounce" />
-              <h2 className="font-bold text-sm text-orange-300 uppercase tracking-wider">
-                2. En Fuego / Cocinando
+              <Flame className="w-4 h-4 text-neutral-300" />
+              <h2 className="font-bold text-sm text-neutral-200 uppercase tracking-wider">
+                2. En Cocción
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono font-bold text-xs border border-orange-500/30">
+            <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-white font-mono font-bold text-xs border border-neutral-700">
               {inKitchenOrders.length}
             </span>
           </div>
@@ -370,8 +370,8 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
                     onUpdateOrderStatus(order.id, 'READY');
                     playKitchenChime();
                   }}
-                  advanceLabel="🔔 Listo para Servir"
-                  advanceColor="bg-orange-500 hover:bg-orange-400 text-white"
+                  advanceLabel="Listo para Servir"
+                  advanceColor="bg-white hover:bg-neutral-200 text-black font-bold"
                 />
               ))
             )}
@@ -381,15 +381,15 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
         {/* ========================================================================= */}
         {/* COLUMNA 3: LISTOS PARA DESPACHO / SERVIR (READY)                         */}
         {/* ========================================================================= */}
-        <div className="flex flex-col rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-4 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+        <div className="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-900/80 p-4 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <h2 className="font-bold text-sm text-emerald-300 uppercase tracking-wider">
+              <CheckCircle2 className="w-4 h-4 text-white" />
+              <h2 className="font-bold text-sm text-neutral-200 uppercase tracking-wider">
                 3. Listos / Pase de Salón
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-mono font-bold text-xs border border-emerald-400/30">
+            <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-white font-mono font-bold text-xs border border-neutral-700">
               {readyOrders.length}
             </span>
           </div>
@@ -398,8 +398,7 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
             {readyOrders.length === 0 ? (
               <div className="h-48 flex flex-col items-center justify-center text-center p-6 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-xs">
                 <CheckCircle2 className="w-8 h-8 text-neutral-600 mb-2" />
-                <p>No hay platos en pase de entrega.</p>
-                <p className="text-[11px] text-neutral-600 mt-1">Los platos terminados listos para que el mozo o repartidor los lleve estarán aquí.</p>
+                <p>No hay platos en el pase de salida.</p>
               </div>
             ) : (
               readyOrders.map(order => (
@@ -409,8 +408,8 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
                   onAdvance={() => {
                     onUpdateOrderStatus(order.id, 'DELIVERED');
                   }}
-                  advanceLabel="🍽️ Marcar Servido / Entregado"
-                  advanceColor="bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                  advanceLabel="Completar / Servido"
+                  advanceColor="bg-neutral-800 hover:bg-neutral-700 text-white font-bold border border-neutral-700"
                 />
               ))
             )}
@@ -565,7 +564,7 @@ const KitchenTicketCard: React.FC<KitchenTicketCardProps> = ({
                 MESA {order.tableNumber || '01'}
               </span>
             ) : (
-              <span className="px-2.5 py-1 rounded-lg bg-purple-500 text-white font-black text-xs tracking-wider">
+              <span className="px-2.5 py-1 rounded-lg bg-neutral-200 text-black font-black text-xs tracking-wider">
                 DELIVERY
               </span>
             )}
@@ -605,10 +604,10 @@ const KitchenTicketCard: React.FC<KitchenTicketCardProps> = ({
             {item.unitDetails && item.unitDetails.length > 0 && (
               <div className="pl-8 space-y-1 mt-1">
                 {item.unitDetails.map((unit) => (
-                  <div key={unit.unitNumber} className="text-[11px] bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded text-amber-200">
-                    <span className="font-bold text-amber-300">U#{unit.unitNumber}:</span> {unit.observation || 'Sin especificaciones'}
+                  <div key={unit.unitNumber} className="text-[11px] bg-neutral-800/80 border border-neutral-700 px-2 py-0.5 rounded text-neutral-200">
+                    <span className="font-bold text-white">U#{unit.unitNumber}:</span> {unit.observation || 'Sin especificaciones'}
                     {unit.selectedAddons && unit.selectedAddons.length > 0 && (
-                      <span className="text-amber-400 font-semibold block text-[10px]">
+                      <span className="text-neutral-300 font-semibold block text-[10px]">
                         + {unit.selectedAddons.map(a => a.name).join(', ')}
                       </span>
                     )}

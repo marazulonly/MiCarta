@@ -233,9 +233,9 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
 
             {/* Brand overlay */}
             <div className="absolute bottom-3 left-4 right-4 flex items-end gap-3.5">
-              {restaurant.logoUrl ? (
+              {(branding.headerLogoUrl || restaurant.logoUrl) ? (
                 <img 
-                  src={restaurant.logoUrl} 
+                  src={branding.headerLogoUrl || restaurant.logoUrl} 
                   alt={restaurant.name} 
                   className="w-14 h-14 rounded-2xl object-cover border-2 shadow-xl bg-black shrink-0"
                   style={{ borderColor: primaryColor }}

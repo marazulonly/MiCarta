@@ -7,7 +7,7 @@ import {
   INITIAL_ORDERS 
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
-import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics } from './types';
+import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
 import { deduplicateUsers } from './lib/userUtils';
 import { TopHeader } from './components/TopHeader';
 import { FloatingNavBar } from './components/FloatingNavBar';
@@ -149,7 +149,27 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       ...(r.metrics || {})
     };
 
-    let base: Restaurant = fallback ? { ...fallback, ...r, metrics: safeMetrics } : { ...r, metrics: safeMetrics };
+    const defaultBranding: RestaurantBranding = {
+      primaryColor: '#EA580C',
+      secondaryColor: '#F59E0B',
+      accentColor: '#F59E0B',
+      darkBgColor: '#0A0A0A',
+      cardBgColor: '#171717',
+      textColor: '#FFFFFF',
+      fontDisplay: 'Playfair Display, serif',
+      headerLogoUrl: '',
+      ...(fallback?.branding || {}),
+    };
+
+    const mergedBranding: RestaurantBranding = {
+      ...defaultBranding,
+      ...(r.branding || {}),
+      headerLogoUrl: r.branding?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '',
+    };
+
+    let base: Restaurant = fallback 
+      ? { ...fallback, ...r, branding: mergedBranding, logoUrl: r.logoUrl || mergedBranding.headerLogoUrl || fallback.logoUrl, metrics: safeMetrics } 
+      : { ...r, branding: mergedBranding, metrics: safeMetrics };
 
     if (
       base.id === 'rest-costa' || 
@@ -164,7 +184,7 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
         name: base.name === 'Costa Marina' ? 'Cevichito Pliz' : (base.name || 'Cevichito Pliz'),
         slug: 'cevichito-pliz',
         tagline: base.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día',
-        branding: base.branding || fallback?.branding,
+        branding: mergedBranding,
         metrics: safeMetrics
       };
     }

@@ -121,15 +121,15 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
     <div className="space-y-6 pb-28">
       
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-sky-950/40 via-neutral-900 to-black border border-sky-900/40">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-neutral-900 border border-neutral-800">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-white shrink-0">
             <ChefHat className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-white">Portal de Atención en Salón</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-800 text-neutral-200 border border-neutral-700 font-bold">
                 Rol: Mesero
               </span>
             </div>
@@ -143,17 +143,17 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
           {/* QR Scanner Trigger */}
           <button
             onClick={() => setIsQrScannerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-black text-xs font-bold hover:brightness-110 transition cursor-pointer shadow-lg shadow-sky-950/40"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black text-xs font-bold hover:bg-neutral-200 transition cursor-pointer shadow-lg"
           >
-            <Camera className="w-4 h-4" />
-            <span>📸 Escanear QR de Mesa</span>
+            <Camera className="w-4 h-4 text-black" />
+            <span>Escanear QR de Mesa</span>
           </button>
 
           <button
             onClick={() => onOpenCustomerPreview(activeRest, 'DINE_IN')}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5 text-sky-400" />
+            <Eye className="w-3.5 h-3.5 text-neutral-300" />
             <span>Ver Carta ({activeRest.name})</span>
           </button>
         </div>
@@ -163,12 +163,12 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
         {/* Restaurant selector if multiple */}
         <div className="flex items-center gap-2">
-          <Store className="w-4 h-4 text-sky-400" />
+          <Store className="w-4 h-4 text-neutral-400" />
           <span className="text-xs text-neutral-400 font-medium">Sede:</span>
           <select
             value={selectedRestId}
             onChange={(e) => setSelectedRestId(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-sky-500"
+            className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-neutral-600"
           >
             {waiterRestaurants.map(r => (
               <option key={r.id} value={r.id}>
@@ -184,7 +184,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
             onClick={() => setActiveTab('tables')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'tables'
-                ? 'bg-sky-400 text-black shadow-md'
+                ? 'bg-white text-black shadow-md'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
@@ -196,7 +196,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
             onClick={() => setActiveTab('orders')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'orders'
-                ? 'bg-sky-400 text-black shadow-md'
+                ? 'bg-white text-black shadow-md'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
@@ -208,7 +208,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
             onClick={() => setActiveTab('shifts')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'shifts'
-                ? 'bg-sky-400 text-black shadow-md'
+                ? 'bg-white text-black shadow-md'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
@@ -244,7 +244,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 onClick={() => setTableFilter('my-tables')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 ${
                   tableFilter === 'my-tables'
-                    ? 'bg-sky-400 text-black'
+                    ? 'bg-neutral-200 text-black'
                     : 'bg-neutral-800 text-neutral-400 hover:text-white'
                 }`}
               >
@@ -256,7 +256,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 onClick={() => setTableFilter('available')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   tableFilter === 'available'
-                    ? 'bg-emerald-400 text-black'
+                    ? 'bg-neutral-200 text-black'
                     : 'bg-neutral-800 text-neutral-400 hover:text-white'
                 }`}
               >
@@ -267,7 +267,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 onClick={() => setTableFilter('occupied')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   tableFilter === 'occupied'
-                    ? 'bg-amber-400 text-black'
+                    ? 'bg-neutral-200 text-black'
                     : 'bg-neutral-800 text-neutral-400 hover:text-white'
                 }`}
               >
@@ -304,10 +304,10 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                   key={tbl.id}
                   className={`p-3.5 rounded-2xl border transition flex flex-col justify-between space-y-3 relative group ${
                     isOccupied
-                      ? 'bg-amber-950/30 border-amber-500/50 shadow-md shadow-amber-950/20'
+                      ? 'bg-neutral-900 border-neutral-600 shadow-md'
                       : isReserved
-                      ? 'bg-purple-950/30 border-purple-500/50'
-                      : 'bg-neutral-900/60 border-neutral-800 hover:border-sky-500/80'
+                      ? 'bg-neutral-900/80 border-neutral-700'
+                      : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-600'
                   }`}
                 >
                   {/* Top Badges */}
@@ -316,10 +316,10 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                       {tbl.zone}
                     </span>
 
-                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                      isOccupied ? 'bg-amber-400 text-black' :
-                      isReserved ? 'bg-purple-400 text-black' :
-                      'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                      isOccupied ? 'bg-neutral-200 text-black border-white' :
+                      isReserved ? 'bg-neutral-800 text-neutral-300 border-neutral-700' :
+                      'bg-neutral-900 text-neutral-400 border-neutral-800'
                     }`}>
                       {isOccupied ? 'OCUPADA' : isReserved ? 'RESERVA' : 'LIBRE'}
                     </span>
@@ -335,7 +335,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                     </p>
 
                     {isMine && (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-sky-300 bg-sky-950/80 px-2 py-0.5 rounded-full border border-sky-800">
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-neutral-200 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
                         <UserCheck className="w-2.5 h-2.5" />
                         <span>Tu Mesa</span>
                       </span>
@@ -346,9 +346,9 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                   <div className="space-y-1.5 pt-2 border-t border-neutral-800/80">
                     <button
                       onClick={() => setSelectedTableForOrder(tbl)}
-                      className="w-full py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow"
+                      className="w-full py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3 h-3 text-black" />
                       <span>{isOccupied ? 'Ver / Pedir' : 'Tomar Pedido'}</span>
                     </button>
 
@@ -358,7 +358,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                         className="flex-1 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] font-bold transition cursor-pointer flex items-center justify-center gap-1"
                         title="Ver Código QR de Mesa"
                       >
-                        <QrCode className="w-2.5 h-2.5 text-amber-400" />
+                        <QrCode className="w-2.5 h-2.5 text-neutral-400" />
                         <span>Ver QR</span>
                       </button>
 
@@ -394,7 +394,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 onClick={() => setStatusFilter(st)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   statusFilter === st
-                    ? 'bg-sky-400 text-black shadow-md'
+                    ? 'bg-white text-black shadow-md'
                     : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
                 }`}
               >
@@ -439,11 +439,11 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                           </div>
                         </div>
 
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                          isPending ? 'bg-amber-950/80 text-amber-300 border border-amber-800' :
-                          isInKitchen ? 'bg-sky-950/80 text-sky-300 border border-sky-800' :
-                          isReady ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' :
-                          'bg-neutral-800 text-neutral-400'
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                          isPending ? 'bg-neutral-800 text-neutral-200 border-neutral-700' :
+                          isInKitchen ? 'bg-neutral-800 text-white border-neutral-600' :
+                          isReady ? 'bg-white text-black border-white font-black' :
+                          'bg-neutral-900 text-neutral-500 border-neutral-800'
                         }`}>
                           {isPending ? 'Pendiente' :
                            isInKitchen ? 'Cocina' :
@@ -461,7 +461,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                                 {item.name}
                               </span>
                               <span className="font-mono text-neutral-400">
-                                ${(item.price * item.quantity).toFixed(2)}
+                                S/ {(item.price * item.quantity).toFixed(2)}
                               </span>
                             </div>
 
@@ -469,7 +469,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                             {item.units && item.units.length > 0 && (
                               <div className="pl-3 border-l border-neutral-800 space-y-0.5">
                                 {item.units.map(u => (
-                                  <p key={u.unitNumber} className="text-[10px] text-amber-300/80">
+                                  <p key={u.unitNumber} className="text-[10px] text-neutral-400">
                                     • U{u.unitNumber}: {u.observation || 'Sin notas'} {u.selectedAddons && u.selectedAddons.length > 0 ? `(+${u.selectedAddons.map(a => a.name).join(', ')})` : ''}
                                   </p>
                                 ))}
@@ -481,7 +481,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
 
                       <div className="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/60">
                         <span className="text-neutral-400">Total comanda:</span>
-                        <span className="font-mono font-black text-white">${order.total.toFixed(2)}</span>
+                        <span className="font-mono font-black text-white">S/ {order.total.toFixed(2)}</span>
                       </div>
                     </div>
 
@@ -490,7 +490,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                       {isPending && (
                         <button
                           onClick={() => onUpdateOrderStatus(order.id, 'IN_KITCHEN')}
-                          className="w-full py-2 rounded-xl bg-sky-500 text-black font-bold text-xs hover:bg-sky-400 transition cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
                         >
                           <span>Enviar Comanda a Cocina</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -500,7 +500,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                       {isInKitchen && (
                         <button
                           onClick={() => onUpdateOrderStatus(order.id, 'READY')}
-                          className="w-full py-2 rounded-xl bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 transition cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Marcar Listo para Servir</span>
@@ -510,7 +510,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                       {isReady && (
                         <button
                           onClick={() => onUpdateOrderStatus(order.id, 'DELIVERED')}
-                          className="w-full py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5 text-black" />
                           <span>Servido en Mesa y Cobrado</span>
@@ -541,7 +541,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
           <div className="p-5 rounded-2xl bg-neutral-900/40 border border-neutral-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-sky-400" />
+                <Clock className="w-4 h-4 text-neutral-300" />
                 <span>Mis Turnos Asignados ({currentUser.name})</span>
               </h3>
               <span className="text-[10px] font-mono text-neutral-400">
@@ -557,7 +557,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-white">{shift.name}</h4>
-                    <span className="text-xs font-mono font-bold text-sky-400">
+                    <span className="text-xs font-mono font-bold text-neutral-200">
                       {shift.startTime} - {shift.endTime}
                     </span>
                   </div>
@@ -578,7 +578,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
           <div className="p-5 rounded-2xl bg-neutral-900/40 border border-neutral-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-amber-400" />
+                <Calendar className="w-4 h-4 text-neutral-300" />
                 <span>Horario General de la Sede ({activeRest.name})</span>
               </h3>
             </div>
@@ -591,11 +591,11 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                 >
                   <span className="font-bold text-white">{sched.day}</span>
                   {sched.isOpen ? (
-                    <span className="font-mono text-emerald-400">
+                    <span className="font-mono text-neutral-200 font-bold">
                       {sched.openTime} - {sched.closeTime}
                     </span>
                   ) : (
-                    <span className="text-rose-400 text-[10px] font-bold">Cerrado</span>
+                    <span className="text-neutral-500 text-[10px] font-bold">Cerrado</span>
                   )}
                 </div>
               ))}

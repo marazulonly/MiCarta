@@ -50,15 +50,15 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
     <div className="space-y-6 pb-28">
       
       {/* Top Courier Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-neutral-900 to-black border border-purple-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-white shrink-0">
             <Bike className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-white">Despacho y Reparto Motorizado</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-800 text-neutral-200 border border-neutral-700 font-bold">
                 Rol: Repartidor
               </span>
             </div>
@@ -73,7 +73,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
             <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 block">
               Entregas Realizadas Hoy
             </span>
-            <span className="text-base font-black text-emerald-400 font-mono">
+            <span className="text-base font-black text-white font-mono">
               {completedOrders.length} despachos (S/ {totalCashDelivered.toFixed(2)})
             </span>
           </div>
@@ -86,7 +86,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
           onClick={() => setFilterTab('active')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             filterTab === 'active'
-              ? 'bg-purple-400 text-black shadow-md'
+              ? 'bg-white text-black shadow-md'
               : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
@@ -98,7 +98,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
           onClick={() => setFilterTab('completed')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             filterTab === 'completed'
-              ? 'bg-white text-black shadow-md'
+              ? 'bg-neutral-800 text-white shadow-md'
               : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
@@ -143,7 +143,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                         <span className="font-mono font-black text-sm text-white">
                           {order.orderNumber}
                         </span>
-                        <span className="text-xs font-bold text-purple-300">
+                        <span className="text-xs font-bold text-neutral-300">
                           {rest?.name || 'Local'}
                         </span>
                       </div>
@@ -152,10 +152,10 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                       </span>
                     </div>
 
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
-                      isOnTheWay ? 'bg-amber-400 text-black animate-pulse' :
-                      isDelivered ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
-                      'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                      isOnTheWay ? 'bg-white text-black border-white' :
+                      isDelivered ? 'bg-neutral-800 text-neutral-200 border-neutral-700' :
+                      'bg-neutral-800 text-neutral-300 border-neutral-700'
                     }`}>
                       {isOnTheWay ? 'En Ruta (Motorizado)' :
                        isDelivered ? 'Entregado' :
@@ -168,7 +168,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                     
                     {/* Address (Mandatory) */}
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                      <MapPin className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <span className="text-[10px] font-mono uppercase text-neutral-400 block font-bold">
                           Dirección de Entrega:
@@ -187,7 +187,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                     {/* GPS Location (Optional) */}
                     {order.deliveryGpsLocation && (
                       <div className="flex items-center gap-2 pt-1 border-t border-neutral-800">
-                        <Compass className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                        <Compass className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         <span className="text-[11px] text-neutral-300 font-mono flex-1 truncate">
                           {order.deliveryGpsLocation}
                         </span>
@@ -197,7 +197,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                             : `https://maps.google.com/?q=${encodeURIComponent(order.deliveryAddress || '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] text-sky-400 hover:underline font-bold flex items-center gap-1 shrink-0"
+                          className="text-[10px] text-white hover:underline font-bold flex items-center gap-1 shrink-0"
                         >
                           <span>Ver Mapa</span>
                           <ExternalLink className="w-3 h-3" />
@@ -212,9 +212,9 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                           href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${order.customerName}, soy tu repartidor de ${rest?.name || 'Micarta'}. Ya tengo tu pedido ${order.orderNumber} en camino.`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition flex items-center gap-1.5 font-mono text-[11px] font-bold"
+                          className="px-2.5 py-1 rounded-lg bg-neutral-800 text-neutral-200 border border-neutral-700 hover:bg-neutral-700 transition flex items-center gap-1.5 font-mono text-[11px] font-bold"
                         >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <MessageCircle className="w-3.5 h-3.5 text-white" />
                           <span>WhatsApp: {phone}</span>
                         </a>
                       </div>
@@ -235,7 +235,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                         <div key={item.id} className="py-1.5 space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-neutral-200 font-medium">
-                              <strong className="text-amber-400 font-mono mr-1.5">{item.quantity}x</strong>
+                              <strong className="text-white font-mono mr-1.5">{item.quantity}x</strong>
                               {item.name}
                             </span>
                             <span className="font-mono text-white text-xs font-bold">
@@ -251,7 +251,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                                 const hasObs = !!u.observation?.trim();
                                 return (
                                   <div key={u.unitNumber} className="text-neutral-400">
-                                    <span className="text-amber-300 font-mono">U{u.unitNumber}:</span>{' '}
+                                    <span className="text-neutral-300 font-mono">U{u.unitNumber}:</span>{' '}
                                     {unitAddons.length > 0 && (
                                       <span className="text-neutral-300 font-medium">
                                         + {unitAddons.map(a => a.name).join(', ')}.{' '}
@@ -279,11 +279,11 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                       <span className="text-[10px] text-neutral-400 uppercase font-mono block">
                         Monto Total con Delivery
                       </span>
-                      <span className={`text-xs font-bold ${order.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        {order.paymentStatus === 'PAID' ? '✓ Pagado Online' : '⚠️ Cobrar en Efectivo / Yape'}
+                      <span className={`text-xs font-bold ${order.paymentStatus === 'PAID' ? 'text-neutral-300' : 'text-white'}`}>
+                        {order.paymentStatus === 'PAID' ? '✓ Pagado Online' : 'Cobrar en Efectivo / Yape'}
                       </span>
                     </div>
-                    <span className="text-base font-mono font-black text-amber-400">
+                    <span className="text-base font-mono font-black text-white">
                       S/ {order.total.toFixed(2)}
                     </span>
                   </div>
@@ -294,7 +294,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                   {(isPending || isInKitchen) && (
                     <button
                       onClick={() => onUpdateOrderStatus(order.id, 'ON_THE_WAY')}
-                      className="w-full py-2.5 rounded-xl bg-purple-400 text-black font-bold text-xs hover:bg-purple-300 transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                      className="w-full py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       <span>Tomar Pedido y Salir en Ruta</span>
@@ -304,7 +304,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                   {isOnTheWay && (
                     <button
                       onClick={() => onUpdateOrderStatus(order.id, 'DELIVERED')}
-                      className="w-full py-2.5 rounded-xl bg-emerald-400 text-black font-bold text-xs hover:bg-emerald-300 transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                      className="w-full py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
                     >
                       <CheckCircle2 className="w-4 h-4 text-black" />
                       <span>Confirmar Entrega en Domicilio</span>
@@ -312,7 +312,7 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
                   )}
 
                   {isDelivered && (
-                    <div className="text-center py-2 text-[11px] font-mono text-emerald-400 flex items-center justify-center gap-1.5 bg-emerald-950/30 rounded-xl border border-emerald-900/40">
+                    <div className="text-center py-2 text-[11px] font-mono text-neutral-300 flex items-center justify-center gap-1.5 bg-neutral-900 rounded-xl border border-neutral-800">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Entrega Completada y Liquidada</span>
                     </div>

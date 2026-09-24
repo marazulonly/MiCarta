@@ -308,6 +308,17 @@ export const StartersEditorialMenu: React.FC<StartersEditorialMenuProps> = ({
               </button>
             )}
 
+            {/* Custom Header Logo if provided */}
+            {(branding.headerLogoUrl || restaurant.logoUrl) && (
+              <div className="flex justify-center mb-3">
+                <img
+                  src={branding.headerLogoUrl || restaurant.logoUrl}
+                  alt={restaurant.name}
+                  className="max-h-20 max-w-full object-contain mx-auto"
+                />
+              </div>
+            )}
+
             {/* 1. "the" IN ELEGANT SCRIPT CURSIVE FONT */}
             <p 
               className="text-3xl sm:text-4xl text-neutral-900 font-normal tracking-wide -mb-2"

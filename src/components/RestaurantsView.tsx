@@ -130,7 +130,8 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
         primaryColor,
         secondaryColor,
         accentColor,
-        darkBgColor
+        darkBgColor,
+        headerLogoUrl: currentRestaurant.branding?.headerLogoUrl || currentRestaurant.logoUrl,
       }
     });
     setPaletteSaved(true);

@@ -253,11 +253,15 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const handleSaveToRestaurant = () => {
     if (!selectedRestaurant) return;
 
+    const safeHeaderLogo = selectedRestaurant.branding?.headerLogoUrl || selectedRestaurant.logoUrl || workingBranding.headerLogoUrl;
     const updatedRest: Restaurant = {
       ...selectedRestaurant,
       templateId: activeTemplateId,
+      logoUrl: selectedRestaurant.logoUrl || safeHeaderLogo || '',
       branding: {
-        ...workingBranding
+        ...selectedRestaurant.branding,
+        ...workingBranding,
+        headerLogoUrl: safeHeaderLogo,
       }
     };
 
@@ -268,11 +272,14 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   // Save changes to ALL restaurants
   const handleApplyToAllRestaurants = () => {
     restaurants.forEach(rest => {
+      const safeHeaderLogo = rest.branding?.headerLogoUrl || rest.logoUrl;
       const updatedRest: Restaurant = {
         ...rest,
         templateId: activeTemplateId,
         branding: {
-          ...workingBranding
+          ...rest.branding,
+          ...workingBranding,
+          headerLogoUrl: safeHeaderLogo,
         }
       };
       onUpdateRestaurant(updatedRest);

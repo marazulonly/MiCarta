@@ -949,7 +949,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   {currentRestaurant.name}
                 </h2>
                 <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                  currentRestaurant.isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-neutral-100 text-neutral-500'
+                  currentRestaurant.isOpen ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                 }`}>
                   {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
                 </span>
@@ -961,7 +961,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <button
               type="button"
               onClick={() => setIsSplitEditorOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-400/20 shrink-0"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md shrink-0"
               title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -971,7 +971,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             {onDeleteRestaurant && (
               <button
                 onClick={() => setRestaurantToDelete(currentRestaurant)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-400 hover:text-red-200 border border-red-900/80 text-xs font-semibold transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-semibold transition cursor-pointer"
                 title="Eliminar esta sede"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -984,15 +984,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* 8 Access Navigation SubTabs */}
         <div className="p-2 gap-1.5 flex flex-wrap bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs sm:text-xs">
           {[
-            { id: 'dishes', label: 'Carta & Platos', icon: Utensils, color: 'text-amber-500' },
-            { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers, color: 'text-emerald-500' },
-            { id: 'schedules', label: 'Horarios', icon: Clock, color: 'text-sky-500' },
-            { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar, color: 'text-amber-500' },
-            { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame, color: 'text-orange-500' },
-            { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat, color: 'text-amber-500' },
-            { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike, color: 'text-blue-500' },
-            { id: 'customers', label: 'Clientes & QR', icon: UserCheck, color: 'text-emerald-500' },
-            { id: 'templates', label: 'Plantillas', icon: LayoutTemplate, color: 'text-purple-500' },
+            { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
+            { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
+            { id: 'schedules', label: 'Horarios', icon: Clock },
+            { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar },
+            { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame },
+            { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat },
+            { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike },
+            { id: 'customers', label: 'Clientes & QR', icon: UserCheck },
+            { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
           ].map(tab => {
             const isActive = activeSubTab === tab.id;
             const IconComp = tab.icon;
@@ -1006,7 +1006,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                 }`}
               >
-                <IconComp className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.color} shrink-0`} />
+                <IconComp className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-neutral-500'} shrink-0`} />
                 <span className="truncate">{tab.label}</span>
               </button>
             );

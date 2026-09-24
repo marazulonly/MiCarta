@@ -160,6 +160,15 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
         {/* Editorial Top Bar */}
         <div className="p-4 sm:p-6 border-b border-neutral-800 flex items-start justify-between">
           <div>
+            {(branding.headerLogoUrl || restaurant.logoUrl) && (
+              <div className="mb-2">
+                <img
+                  src={branding.headerLogoUrl || restaurant.logoUrl}
+                  alt={restaurant.name}
+                  className="max-h-16 max-w-full object-contain"
+                />
+              </div>
+            )}
             <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-400 block mb-1">
               {restaurant.cuisineType || 'Bistró & Gastronomía'}
             </span>
