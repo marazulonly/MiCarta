@@ -142,56 +142,60 @@ export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {restaurants.map(rest => {
             const isCopied = copiedSlug === rest.slug;
+            const brandCardBg = rest.branding?.cardBgColor || rest.branding?.darkBgColor || '#12111A';
+            const brandTextColor = rest.branding?.textColor || '#FFFFFF';
+            const brandPrimaryColor = rest.branding?.buttonColor || rest.branding?.primaryColor || '#D4AF37';
+            const brandButtonText = rest.branding?.buttonTextColor || '#000000';
 
             return (
               <div
                 key={rest.id}
-                className="p-5 rounded-2xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition flex flex-col justify-between space-y-4"
+                style={{
+                  backgroundColor: brandCardBg,
+                  borderColor: `${brandPrimaryColor}60`,
+                  color: brandTextColor
+                }}
+                className="p-5 rounded-2xl border transition flex flex-col justify-between space-y-4 shadow-lg"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                    <span className="text-[10px] font-mono uppercase tracking-wider opacity-80" style={{ color: brandTextColor }}>
                       {rest.cuisine || rest.cuisineType}
                     </span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: brandPrimaryColor }} />
                   </div>
 
-                  <h3 className="text-sm font-black text-white">{rest.name}</h3>
-                  <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1">
+                  <h3 className="text-base font-black" style={{ color: brandTextColor }}>{rest.name}</h3>
+                  <p className="text-xs opacity-80 line-clamp-2 mt-1">
                     {rest.tagline}
                   </p>
 
                   {/* Direct Link box */}
-                  <div className="mt-3 p-2.5 rounded-xl bg-black/60 border border-neutral-800/80 flex items-center justify-between text-xs">
-                    <span className="font-mono text-[11px] text-neutral-300 truncate max-w-[140px]">
+                  <div 
+                    className="mt-3 p-2.5 rounded-xl border flex items-center justify-between text-xs"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'rgba(255,255,255,0.1)' }}
+                  >
+                    <span className="font-mono text-[11px] truncate max-w-[140px]" style={{ color: brandTextColor }}>
                       /?r={rest.slug}
                     </span>
                     <button
                       onClick={() => handleCopyLink(rest.slug)}
-                      className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white transition cursor-pointer"
+                      className="p-1 rounded hover:bg-white/10 transition cursor-pointer"
                       title="Copiar Enlace Directo para probar"
                     >
-                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" style={{ color: brandTextColor }} />}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-2">
                   <button
-                    onClick={() => {
-                      setSelectedRestForQr(rest);
-                      setSelectedTableNum('01');
-                      setSelectedChannel('DINE_IN');
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-bold text-white transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Ver Código QR Real de Mesa</span>
-                  </button>
-
-                  <button
                     onClick={() => onOpenCustomerPreview(rest, 'DINE_IN')}
-                    className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-neutral-200 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    style={{
+                      backgroundColor: brandPrimaryColor,
+                      color: brandButtonText
+                    }}
+                    className="w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
                   >
                     <span>Abrir Carta Digital</span>
                     <ArrowRight className="w-3.5 h-3.5" />

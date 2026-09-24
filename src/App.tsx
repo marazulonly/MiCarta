@@ -136,7 +136,24 @@ const getInitialUrlParams = () => {
 
 // Sanitization function that preserves 100% of user modifications (names, logos, colors, tables, prices) from cloud storage
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
-  return rests.map(r => {
+  // Pre-seed map with INITIAL_RESTAURANTS so no initial restaurant is lost if missing from cache/cloud
+  const map = new Map<string, Restaurant>();
+  INITIAL_RESTAURANTS.forEach(initR => {
+    map.set(initR.id, initR);
+  });
+  (rests || []).forEach(r => {
+    if (r && r.id) {
+      const existing = map.get(r.id);
+      map.set(r.id, {
+        ...(existing || {}),
+        ...r
+      });
+    }
+  });
+
+  const mergedRests = Array.from(map.values());
+
+  return mergedRests.map(r => {
     const fallback = INITIAL_RESTAURANTS.find(initR => initR.id === r.id || initR.slug === r.slug);
     const safeMetrics: RestaurantMetrics = {
       dailyRevenue: 0,

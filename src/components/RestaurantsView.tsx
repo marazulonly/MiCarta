@@ -495,37 +495,51 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
                 {restaurants.map(r => {
                   const restUrl = `${origin}/?r=${r.slug}`;
                   const isCopied = copiedRestId === r.id;
+                  const brandCardBg = r.branding?.cardBgColor || r.branding?.darkBgColor || '#12111A';
+                  const brandTextColor = r.branding?.textColor || '#FFFFFF';
+                  const brandPrimaryColor = r.branding?.buttonColor || r.branding?.primaryColor || '#D4AF37';
+                  const brandButtonText = r.branding?.buttonTextColor || '#000000';
 
                   return (
                     <div
                       key={r.id}
-                      className={`p-4 rounded-2xl border transition flex flex-col justify-between gap-3 ${
-                        r.id === currentRestaurant.id
-                          ? 'bg-neutral-900 border-amber-500/50 shadow-md'
-                          : 'bg-black/60 border-neutral-800 hover:border-neutral-700'
-                      }`}
+                      style={{
+                        backgroundColor: brandCardBg,
+                        borderColor: `${brandPrimaryColor}60`,
+                        color: brandTextColor
+                      }}
+                      className="p-4.5 rounded-2xl border transition flex flex-col justify-between gap-3 shadow-lg"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={r.logoUrl}
-                            alt={r.name}
-                            className="w-11 h-11 rounded-xl object-cover border border-neutral-700 shrink-0"
-                          />
+                          {r.logoUrl && (
+                            <img
+                              src={r.logoUrl}
+                              alt={r.name}
+                              className="w-12 h-12 rounded-xl object-cover border shrink-0 shadow"
+                              style={{ borderColor: `${brandPrimaryColor}80` }}
+                            />
+                          )}
                           <div>
                             <div className="flex items-center gap-2">
-                              <h5 className="text-sm font-bold text-white">{r.name}</h5>
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-mono">
+                              <h5 className="text-sm font-black" style={{ color: brandTextColor }}>{r.name}</h5>
+                              <span 
+                                className="text-[10px] px-2 py-0.5 rounded font-mono font-bold"
+                                style={{
+                                  backgroundColor: 'rgba(255,255,255,0.1)',
+                                  color: brandTextColor
+                                }}
+                              >
                                 {r.cuisineType}
                               </span>
                             </div>
-                            <span className="text-[11px] font-mono text-amber-400 block mt-0.5">
+                            <span className="text-[11px] font-mono block mt-0.5 font-bold" style={{ color: brandPrimaryColor }}>
                               /?r={r.slug}
                             </span>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
                           r.isOpen ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-neutral-800 text-neutral-400'
                         }`}>
                           {r.isOpen ? 'Activo' : 'Cerrado'}
@@ -533,7 +547,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
                       </div>
 
                       {/* Direct Test Links */}
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/80">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
                         <button
                           type="button"
                           onClick={() => {
@@ -541,33 +555,29 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
                             setCopiedRestId(r.id);
                             setTimeout(() => setCopiedRestId(null), 2500);
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-medium border border-neutral-700 flex items-center gap-1.5 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 cursor-pointer transition hover:bg-white/10"
+                          style={{
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            color: brandTextColor
+                          }}
                           title="Copiar URL completa"
                         >
-                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 opacity-80" />}
                           <span>{isCopied ? '¡Copiado!' : 'Copiar Link'}</span>
                         </button>
 
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onOpenCustomerPreview(r, 'DELIVERY')}
-                            className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-sky-400 hover:text-black text-neutral-300 text-xs font-medium transition cursor-pointer flex items-center gap-1"
-                            title="Probar pedido para delivery"
-                          >
-                            <Bike className="w-3.5 h-3.5 text-sky-400" />
-                            <span>Delivery</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => onOpenCustomerPreview(r, 'DINE_IN', '01')}
-                            className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-bold transition cursor-pointer shadow flex items-center gap-1.5"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Probar Carta</span>
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onOpenCustomerPreview(r, 'DINE_IN', '01')}
+                          style={{
+                            backgroundColor: brandPrimaryColor,
+                            color: brandButtonText
+                          }}
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Probar Carta</span>
+                        </button>
                       </div>
                     </div>
                   );
