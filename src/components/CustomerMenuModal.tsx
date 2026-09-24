@@ -485,72 +485,37 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   // Extract branding variables for Preloader
   const preloadLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
   const preloadBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor || '#0F172A';
-  const preloadTextColor = restaurant.branding?.textColor || '#FFFFFF';
   const preloadAccentColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38BDF8';
-  const preloadFont = restaurant.branding?.restaurantNameFont || 'inherit';
 
   return (
     <>
-      {/* Preloader Overlay (Pantalla de precarga con fondo de la carta, logo y barra animada) */}
+      {/* Preloader Overlay (Pantalla de precarga con fondo de la carta, logo limpio sin recuadros/efectos/textos y barra de precarga) */}
       {isPreloading && (
         <div 
           className="fixed inset-0 z-[999999] flex flex-col items-center justify-center p-6 text-center select-none transition-opacity duration-300"
-          style={{ backgroundColor: preloadBg, color: preloadTextColor }}
+          style={{ backgroundColor: preloadBg }}
         >
-          <div className="max-w-sm w-full flex flex-col items-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            {/* Logo */}
+          <div className="max-w-xs w-full flex flex-col items-center space-y-6 animate-in fade-in duration-200">
+            {/* Logo limpio con fondo transparente, sin recuadros ni sombras */}
             {preloadLogo ? (
-              <div className="relative">
-                <div 
-                  className="absolute -inset-3 rounded-3xl opacity-35 blur-xl animate-pulse"
-                  style={{ backgroundColor: preloadAccentColor }}
-                />
-                <img 
-                  src={preloadLogo} 
-                  alt={restaurant.name} 
-                  className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-contain shadow-2xl border border-white/20 p-2.5 bg-black/40 backdrop-blur-md"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ) : (
-              <div 
-                className="w-24 h-24 rounded-2xl flex items-center justify-center font-black text-4xl shadow-2xl border border-white/20"
-                style={{ backgroundColor: preloadAccentColor, color: '#000000' }}
-              >
-                {restaurant.name.charAt(0)}
-              </div>
-            )}
+              <img 
+                src={preloadLogo} 
+                alt={restaurant.name} 
+                className="max-h-28 max-w-[240px] sm:max-h-36 sm:max-w-[280px] object-contain bg-transparent border-0 shadow-none p-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : null}
 
-            {/* Title & Tagline */}
-            <div className="space-y-1.5 text-center">
-              <h1 
-                className="text-2xl sm:text-3xl font-black tracking-tight"
-                style={{ fontFamily: preloadFont }}
-              >
-                {restaurant.name}
-              </h1>
-              {restaurant.tagline && (
-                <p className="text-xs sm:text-sm opacity-80 font-medium max-w-xs mx-auto line-clamp-2">
-                  {restaurant.tagline}
-                </p>
-              )}
-            </div>
-
-            {/* Barra de Precarga (Animated Progress Bar) */}
-            <div className="w-full space-y-2 pt-2">
-              <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden border border-white/15 p-0.5 shadow-inner">
+            {/* Barra de Precarga limpia sin textos */}
+            <div className="w-full max-w-[200px] space-y-1">
+              <div className="w-full h-2 rounded-full bg-black/20 overflow-hidden border border-white/10 p-0.5">
                 <div 
-                  className="h-full rounded-full transition-all duration-150 ease-out shadow-lg"
+                  className="h-full rounded-full transition-all duration-150 ease-out"
                   style={{ 
                     width: `${preloadProgress}%`,
-                    backgroundColor: preloadAccentColor,
-                    boxShadow: `0 0 14px ${preloadAccentColor}`
+                    backgroundColor: preloadAccentColor
                   }}
                 />
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-mono font-bold opacity-80">
-                <span>Cargando carta personalizada...</span>
-                <span>{preloadProgress}%</span>
               </div>
             </div>
           </div>

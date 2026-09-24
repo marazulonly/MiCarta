@@ -786,6 +786,7 @@ export default function App() {
     }
 
     autoSyncRestaurant(updated);
+    publishRestaurantMenu(updated.id, updated, categories, menuItems).catch(() => {});
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       categories,
