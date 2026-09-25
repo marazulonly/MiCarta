@@ -34,6 +34,7 @@ import {
   autoSyncMenuItem,
   autoDeleteMenuItem,
   autoSyncRestaurant,
+  autoDeleteRestaurant,
   autoSyncCategory,
   autoDeleteCategory,
   autoSyncUser,
@@ -56,54 +57,20 @@ export const normalizeSlug = (str?: string): string => {
     .replace(/^-|-$/g, "");
 };
 
-// Helper function to locate a restaurant strictly by slug, ID, name, tagline, or custom alias
+// Helper function to locate a restaurant strictly by slug, ID, or name
 export const findRestaurantBySlug = (restaurantsList: Restaurant[], querySlug?: string | null): Restaurant | null => {
-  if (!querySlug) return null;
+  if (!querySlug || !Array.isArray(restaurantsList)) return null;
   const target = normalizeSlug(querySlug);
   if (!target) return null;
 
-  // 1. Exact match by slug, id, or name
+  // Strict exact match by slug, id, or normalized name
   const exact = restaurantsList.find(r => 
     normalizeSlug(r.slug) === target || 
     normalizeSlug(r.id) === target || 
     normalizeSlug(r.name) === target
   );
-  if (exact) return exact;
 
-  // 2. Alias or fuzzy match
-  const fuzzy = restaurantsList.find(r => {
-    const slugNorm = normalizeSlug(r.slug);
-    const idNorm = normalizeSlug(r.id);
-    const nameNorm = normalizeSlug(r.name);
-    const taglineNorm = normalizeSlug(r.tagline || '');
-
-    // Cevichito Pliz / Costa Marina alias mapping
-    if (
-      r.id === 'rest-costa' || 
-      slugNorm.includes('costa') || 
-      slugNorm.includes('cevichito') || 
-      nameNorm.includes('costa') || 
-      nameNorm.includes('cevichito') ||
-      taglineNorm.includes('cevichito')
-    ) {
-      if (
-        target.includes('cevichito') || 
-        target.includes('costa') || 
-        target.includes('marina') || 
-        target.includes('pliz')
-      ) {
-        return true;
-      }
-    }
-
-    if (slugNorm.includes(target) || target.includes(slugNorm)) return true;
-    if (nameNorm.includes(target) || target.includes(nameNorm)) return true;
-    if (taglineNorm.includes(target)) return true;
-
-    return false;
-  });
-
-  return fuzzy || null;
+  return exact || null;
 };
 
 // Parse initial URL search parameters synchronously before first render
@@ -337,7 +304,6 @@ const initialState = getInitialStorageState();
 const initParams = getInitialUrlParams();
 
 const initialRequestedSlug = initParams.restSlug;
-const defaultFallbackRest = initialState.cachedRests.find(r => r.id === 'rest-costa' || r.slug === 'cevichito-pliz') || initialState.cachedRests[0];
 const initialFoundRest = initialRequestedSlug 
   ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
   : null;
@@ -366,14 +332,12 @@ export default function App() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [isTemplateSplitEditorOpen, setIsTemplateSplitEditorOpen] = useState<boolean>(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant>(
-    initialFoundRest || defaultFallbackRest
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant | null>(
+    initialRequestedSlug ? initialFoundRest : (initialState.cachedRests[0] || null)
   );
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
-  const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(
-    (initialRequestedSlug && !initialFoundRest) ? initialRequestedSlug : null
-  );
+  const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(null);
 
   // Authoritative Published Menu state for public anonymous visitors and QR diners
   const [publishedMenuData, setPublishedMenuData] = useState<{
@@ -467,6 +431,8 @@ export default function App() {
               setIsCustomerModalOpen(true);
               setNotFoundSlugError(null);
             } else {
+              setPreviewRestaurant(null);
+              setPublishedMenuData(null);
               setIsCustomerModalOpen(false);
               setNotFoundSlugError(restaurantSlug);
             }
@@ -478,6 +444,9 @@ export default function App() {
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
           } else {
+            setPreviewRestaurant(null);
+            setPublishedMenuData(null);
+            setIsCustomerModalOpen(false);
             setNotFoundSlugError(restaurantSlug);
           }
         }).finally(() => {
@@ -518,11 +487,60 @@ export default function App() {
           ? cloudData.orders
           : [];
 
-        // Set authoritative states
-        if (cleanLoadedRests.length > 0) setRestaurants(cleanLoadedRests);
-        if (cleanLoadedUsers.length > 0) setUsers(deduplicateUsers(cleanLoadedUsers));
-        if (cleanLoadedCategories.length > 0) setCategories(cleanLoadedCategories);
-        if (cleanLoadedItems.length > 0) setMenuItems(cleanLoadedItems);
+        // Set authoritative states with merging so that locally created entities are never wiped
+        if (cleanLoadedRests.length > 0) {
+          setRestaurants(prev => {
+            const map = new Map<string, Restaurant>();
+            cleanLoadedRests.forEach(r => { if (r?.id) map.set(r.id, r); });
+            prev.forEach(r => { if (r?.id && !map.has(r.id)) map.set(r.id, r); });
+            const merged = Array.from(map.values());
+            try { localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+        
+        if (cleanLoadedUsers.length > 0) {
+          setUsers(prev => {
+            const map = new Map<string, User>();
+            cleanLoadedUsers.forEach(u => {
+              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+              if (key) map.set(key, u);
+            });
+            prev.forEach(u => {
+              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+              if (key && !map.has(key)) {
+                map.set(key, u);
+                autoSyncUser(u).catch(() => {});
+              }
+            });
+            const deduplicated = deduplicateUsers(Array.from(map.values()));
+            try { localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(deduplicated)); } catch {}
+            return deduplicated;
+          });
+        }
+
+        if (cleanLoadedCategories.length > 0) {
+          setCategories(prev => {
+            const map = new Map<string, MenuCategory>();
+            cleanLoadedCategories.forEach(c => { if (c?.id) map.set(c.id, c); });
+            prev.forEach(c => { if (c?.id && !map.has(c.id)) map.set(c.id, c); });
+            const merged = Array.from(map.values());
+            try { localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+
+        if (cleanLoadedItems.length > 0) {
+          setMenuItems(prev => {
+            const map = new Map<string, MenuItem>();
+            cleanLoadedItems.forEach(i => { if (i?.id) map.set(i.id, i); });
+            prev.forEach(i => { if (i?.id && !map.has(i.id)) map.set(i.id, i); });
+            const merged = Array.from(map.values());
+            try { localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+
         if (cleanLoadedOrders.length > 0) setOrders(cleanLoadedOrders);
 
         // Update previewRestaurant immediately with the authoritative cloud branding & data
@@ -530,10 +548,11 @@ export default function App() {
           if (initialRequestedSlug) {
             const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
             if (match) return match;
+            return prev;
           }
-          if (!prev) return cleanLoadedRests[0] || defaultFallbackRest;
+          if (!prev) return null;
           const match = cleanLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
-          return match || cleanLoadedRests[0] || defaultFallbackRest;
+          return match || prev;
         });
       }
     }).catch(err => {
@@ -547,23 +566,51 @@ export default function App() {
         const d = event.data;
         if (d.restaurants && Array.isArray(d.restaurants) && d.restaurants.length > 0) {
           const cleanR = sanitizeRestaurants(d.restaurants);
-          setRestaurants(cleanR);
+          setRestaurants(prev => {
+            const map = new Map<string, Restaurant>();
+            cleanR.forEach(r => { if (r?.id) map.set(r.id, r); });
+            prev.forEach(r => { if (r?.id && !map.has(r.id)) map.set(r.id, r); });
+            return Array.from(map.values());
+          });
           setPreviewRestaurant(p => {
             if (initialRequestedSlug) {
               const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
               if (match) return match;
+              return p;
             }
-            return p ? (cleanR.find(r => r.id === p.id) || cleanR[0]) : cleanR[0];
+            return p ? (cleanR.find(r => r.id === p.id) || p) : null;
           });
         }
         if (d.categories && Array.isArray(d.categories)) {
-          setCategories(d.categories);
+          setCategories(prev => {
+            const map = new Map<string, MenuCategory>();
+            d.categories.forEach((c: MenuCategory) => { if (c?.id) map.set(c.id, c); });
+            prev.forEach(c => { if (c?.id && !map.has(c.id)) map.set(c.id, c); });
+            return Array.from(map.values());
+          });
         }
         if (d.items && Array.isArray(d.items)) {
-          setMenuItems(sanitizeMenuItems(d.items));
+          const cleanItems = sanitizeMenuItems(d.items);
+          setMenuItems(prev => {
+            const map = new Map<string, MenuItem>();
+            cleanItems.forEach((i: MenuItem) => { if (i?.id) map.set(i.id, i); });
+            prev.forEach(i => { if (i?.id && !map.has(i.id)) map.set(i.id, i); });
+            return Array.from(map.values());
+          });
         }
         if (d.users && Array.isArray(d.users)) {
-          setUsers(deduplicateUsers(d.users));
+          setUsers(prev => {
+            const map = new Map<string, User>();
+            d.users.forEach((u: User) => {
+              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+              if (key) map.set(key, u);
+            });
+            prev.forEach(u => {
+              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+              if (key && !map.has(key)) map.set(key, u);
+            });
+            return deduplicateUsers(Array.from(map.values()));
+          });
         }
         if (d.orders && Array.isArray(d.orders)) {
           setOrders(d.orders);
@@ -710,16 +757,15 @@ export default function App() {
 
     // Ensure the new restaurant has at least 1 default category
     const hasCategory = categories.some(c => c.restaurantId === newRestaurant.id);
-    let nextCategories = categories;
+    const defaultCat: MenuCategory = {
+      id: `cat-${newRestaurant.id}-general`,
+      restaurantId: newRestaurant.id,
+      name: 'De la Casa',
+      sortOrder: 1,
+      isActive: true,
+    };
+    const nextCategories = hasCategory ? categories : [...categories, defaultCat];
     if (!hasCategory) {
-      const defaultCat: MenuCategory = {
-        id: `cat-${newRestaurant.id}-general`,
-        restaurantId: newRestaurant.id,
-        name: 'De la Casa',
-        sortOrder: 1,
-        isActive: true,
-      };
-      nextCategories = [...categories, defaultCat];
       setCategories(nextCategories);
       autoSyncCategory(defaultCat);
     }
@@ -728,21 +774,38 @@ export default function App() {
     setRestaurants(nextRestaurants);
     autoSyncRestaurant(newRestaurant);
 
+    // If an owner created this restaurant or it's assigned, ensure owner has it
     let nextUsers = users;
-    if (currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
-      const updatedUser: User = {
-        ...currentUser,
-        restaurantIds: currentUser.restaurantIds.includes(newRestaurant.id)
-          ? currentUser.restaurantIds
-          : [...currentUser.restaurantIds, newRestaurant.id]
-      };
-      setCurrentUser(updatedUser);
-      nextUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+    const targetOwnerId = newRestaurant.ownerId || (currentUser?.role === 'OWNER' ? currentUser.id : null);
+    if (targetOwnerId) {
+      nextUsers = users.map(u => {
+        if (u.id === targetOwnerId || (currentUser && u.id === currentUser.id)) {
+          const currentIds = u.restaurantIds || [];
+          return {
+            ...u,
+            restaurantIds: currentIds.includes(newRestaurant.id) ? currentIds : [...currentIds, newRestaurant.id]
+          };
+        }
+        return u;
+      });
       setUsers(nextUsers);
-      autoSyncUser(updatedUser);
+      const updatedUser = nextUsers.find(u => u.id === targetOwnerId);
+      if (updatedUser) autoSyncUser(updatedUser);
+      if (currentUser && (currentUser.id === targetOwnerId || currentUser.role === 'OWNER')) {
+        setCurrentUser(prev => prev ? {
+          ...prev,
+          restaurantIds: (prev.restaurantIds || []).includes(newRestaurant.id) ? prev.restaurantIds : [...(prev.restaurantIds || []), newRestaurant.id]
+        } : null);
+      }
     }
 
-    // Full atomic persistence to server disk
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+    } catch {}
+
+    // Full atomic persistence to server disk and remote backup
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       categories: nextCategories,
@@ -815,6 +878,11 @@ export default function App() {
       setUsers(nextUsers);
     }
 
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+    } catch {}
+
     autoSyncRestaurant(updated);
     publishRestaurantMenu(updated.id, updated, categories, menuItems).catch(() => {});
     saveFullCloudMenu({
@@ -866,7 +934,15 @@ export default function App() {
     const nextItems = menuItems.filter(i => i.restaurantId !== restaurantId);
     const nextCategories = categories.filter(c => c.restaurantId !== restaurantId);
 
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
+    } catch {}
+
     // 4. Delete from Cloud
+    autoDeleteRestaurant(restaurantId).catch(() => {});
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       items: nextItems,
@@ -879,20 +955,33 @@ export default function App() {
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {
-    setMenuItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+    const nextItems = menuItems.map(i => i.id === updated.id ? updated : i);
+    setMenuItems(nextItems);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
+    } catch {}
     autoSyncMenuItem(updated);
+    saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
-    setMenuItems(prev => [newItem, ...prev]);
+    const nextItems = [newItem, ...menuItems.filter(i => i.id !== newItem.id)];
+    setMenuItems(nextItems);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
+    } catch {}
     autoSyncMenuItem(newItem);
+    saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
     const updatedItems = menuItems.filter(i => i.id !== itemId);
     setMenuItems(updatedItems);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedItems));
+    } catch {}
     autoDeleteMenuItem(itemId);
     saveFullCloudMenu({ restaurants, categories, items: updatedItems, users, orders });
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
@@ -904,6 +993,9 @@ export default function App() {
     const otherCats = categories.filter(c => c.restaurantId !== restId);
     const updatedList = [...otherCats, ...reorderedCats];
     setCategories(updatedList);
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updatedList));
+    } catch {}
     saveFullCloudMenu({ categories: updatedList, restaurants, items: menuItems, users, orders });
     showToast(`✓ Orden de categorías guardado en la nube.`);
   };
@@ -914,25 +1006,41 @@ export default function App() {
     const otherItems = menuItems.filter(i => i.restaurantId !== restId);
     const updatedList = [...otherItems, ...reorderedItems];
     setMenuItems(updatedList);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedList));
+    } catch {}
     saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
 
   const handleAddCategory = (newCategory: MenuCategory) => {
-    setCategories(prev => [...prev, newCategory]);
+    const nextCategories = [...categories.filter(c => c.id !== newCategory.id), newCategory];
+    setCategories(nextCategories);
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+    } catch {}
     autoSyncCategory(newCategory);
+    saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
 
   const handleUpdateCategory = (updatedCategory: MenuCategory) => {
-    setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+    const nextCategories = categories.map(c => c.id === updatedCategory.id ? updatedCategory : c);
+    setCategories(nextCategories);
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+    } catch {}
     autoSyncCategory(updatedCategory);
+    saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
     const updatedCategories = categories.filter(c => c.id !== categoryId);
     setCategories(updatedCategories);
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updatedCategories));
+    } catch {}
     autoDeleteCategory(categoryId);
     saveFullCloudMenu({ restaurants, categories: updatedCategories, items: menuItems, users, orders });
     showToast(`✓ Categoría eliminada de la nube.`);
@@ -1259,8 +1367,24 @@ export default function App() {
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
 
-  // If accessing via link but no matching restaurant exists anywhere
-  if (isDirectLinkAccess && notFoundSlugError && !previewRestaurant) {
+  // 1. Loading screen while fetching the published menu for the requested link
+  // NEVER show any fallback restaurant while loading a direct restaurant link
+  if (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 selection:bg-amber-400 selection:text-black">
+        <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
+          <div className="w-10 h-10 rounded-full border-2 border-neutral-700 border-t-amber-400 animate-spin" />
+          <h2 className="text-base font-semibold text-white tracking-tight">Cargando carta digital...</h2>
+          <p className="text-xs text-neutral-400 font-mono">
+            {initialRequestedSlug ? `/?r=${initialRequestedSlug}` : 'Conectando con el restaurante...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. If accessing via link but no matching restaurant exists anywhere (not in cloud, not in local)
+  if (isDirectLinkAccess && !isLoadingPublishedMenu && !previewRestaurant && !publishedMenuData) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-4 selection:bg-amber-400 selection:text-black">
         <div className="w-full max-w-md p-8 rounded-3xl bg-neutral-900 border border-amber-500/40 text-white shadow-2xl space-y-5 text-center">
@@ -1273,7 +1397,7 @@ export default function App() {
               Se intentó acceder a la carta digital con el parámetro:
             </p>
             <div className="mt-3 px-4 py-2 rounded-xl bg-black/60 border border-neutral-800 text-amber-400 font-mono text-sm inline-block font-bold">
-              ?r={notFoundSlugError}
+              ?r={notFoundSlugError || initialRequestedSlug || ''}
             </div>
             <p className="text-xs text-neutral-400 mt-4 leading-relaxed">
               No se encontró ninguna carta registrada para esta dirección. Por política de seguridad y fidelidad, no se mostrará la carta de ningún otro restaurante.
@@ -1284,16 +1408,23 @@ export default function App() {
     );
   }
 
-  // 1. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links or when customer preview is open without logged-in session
-  if ((isDirectLinkAccess || (!currentUser && isCustomerModalOpen)) && previewRestaurant) {
+  // 3. Initial State: Directly display Digital Menu ONLY for QR links / restaurant slug links or when customer preview is open without logged-in session
+  const effectivePreviewRest = (
+    isDirectLinkAccess && publishedMenuData?.restaurant
+      ? publishedMenuData.restaurant
+      : (previewRestaurant || publishedMenuData?.restaurant)
+  );
+
+  if ((isDirectLinkAccess || (!currentUser && isCustomerModalOpen)) && effectivePreviewRest) {
+    const targetRest = effectivePreviewRest;
     // If the guest explicitly closed the menu, show ONLY the thank you screen without any login buttons
     if (isMenuClosedByGuest) {
-      const restColor = previewRestaurant?.branding?.darkBgColor || previewRestaurant?.branding?.primaryColor || '#1B667A';
-      const secColor = previewRestaurant?.branding?.secondaryColor || '#8A9B57';
-      const btnColor = previewRestaurant?.branding?.buttonColor || '#D98262';
-      const creamColor = previewRestaurant?.branding?.buttonTextColor || '#EAEBDC';
-      const restLogo = previewRestaurant?.branding?.headerLogoUrl || previewRestaurant?.logoUrl;
-      const textColor = previewRestaurant?.branding?.textColor || '#FFFFFF';
+      const restColor = targetRest?.branding?.darkBgColor || targetRest?.branding?.primaryColor || '#1B667A';
+      const secColor = targetRest?.branding?.secondaryColor || '#8A9B57';
+      const btnColor = targetRest?.branding?.buttonColor || '#D98262';
+      const creamColor = targetRest?.branding?.buttonTextColor || '#EAEBDC';
+      const restLogo = targetRest?.branding?.headerLogoUrl || targetRest?.logoUrl;
+      const textColor = targetRest?.branding?.textColor || '#FFFFFF';
 
       return (
         <div 
@@ -1307,7 +1438,7 @@ export default function App() {
             {restLogo ? (
               <img 
                 src={restLogo} 
-                alt={previewRestaurant?.name} 
+                alt={targetRest?.name} 
                 className="max-h-28 max-w-[240px] object-contain"
                 referrerPolicy="no-referrer"
               />
@@ -1320,15 +1451,15 @@ export default function App() {
             )}
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: previewRestaurant?.branding?.restaurantNameFont || 'Fredoka, Outfit, sans-serif', color: textColor }}>
+              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: targetRest?.branding?.restaurantNameFont || 'Fredoka, Outfit, sans-serif', color: textColor }}>
                 Vuelve siempre! Te esperamos
               </h2>
             </div>
 
-            {(previewRestaurant?.address || previewRestaurant?.phone) && (
+            {(targetRest?.address || targetRest?.phone) && (
               <div className="p-3 text-xs space-y-1 w-full font-mono opacity-80" style={{ color: textColor }}>
-                {previewRestaurant.address && <div>📍 {previewRestaurant.address}</div>}
-                {previewRestaurant.phone && <div>📞 {previewRestaurant.phone}</div>}
+                {targetRest.address && <div>📍 {targetRest.address}</div>}
+                {targetRest.phone && <div>📞 {targetRest.phone}</div>}
               </div>
             )}
             
@@ -1350,17 +1481,16 @@ export default function App() {
     // Direct standalone full-screen digital menu for QR scan / public visitors (authoritative published snapshot)
     const isTargetPublished = Boolean(
       publishedMenuData && (
-        publishedMenuData.restaurant?.id === previewRestaurant.id ||
-        publishedMenuData.restaurant?.slug === previewRestaurant.slug
+        normalizeSlug(publishedMenuData.restaurant?.id) === normalizeSlug(targetRest.id) ||
+        normalizeSlug(publishedMenuData.restaurant?.slug) === normalizeSlug(targetRest.slug)
       )
     );
-    const targetRest = isTargetPublished && publishedMenuData ? publishedMenuData.restaurant : previewRestaurant;
     const targetCategories = isTargetPublished && publishedMenuData 
       ? publishedMenuData.categories 
-      : categories.filter(c => c.restaurantId === previewRestaurant.id);
+      : categories.filter(c => c.restaurantId === targetRest.id);
     const targetItems = isTargetPublished && publishedMenuData 
       ? publishedMenuData.items 
-      : menuItems.filter(i => i.restaurantId === previewRestaurant.id);
+      : menuItems.filter(i => i.restaurantId === targetRest.id);
 
     return (
       <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
@@ -1516,7 +1646,7 @@ export default function App() {
         <CustomerMenuModal
           isOpen={isCustomerModalOpen}
           onClose={() => setIsCustomerModalOpen(false)}
-          restaurant={previewRestaurant}
+          restaurant={previewRestaurant || currentSelectedRest}
           categories={categories}
           items={menuItems}
           onOrderCreated={handleCreateOrder}
@@ -1706,7 +1836,7 @@ export default function App() {
       <CustomerMenuModal
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
-        restaurant={previewRestaurant}
+        restaurant={previewRestaurant || currentSelectedRest}
         categories={categories}
         items={menuItems}
         onOrderCreated={handleCreateOrder}

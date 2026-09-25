@@ -221,13 +221,20 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
 ];
 
 export const INITIAL_CATEGORIES: MenuCategory[] = [
+  // Cevichito Pliz (rest-costa)
   { id: 'cat-m-entradas', restaurantId: 'rest-costa', name: 'Entradas & Piqueos', description: 'Tequeños crocantes, tiraditos y piqueos marinos para compartir', sortOrder: 1, iconName: 'Utensils' },
   { id: 'cat-m-causitas', restaurantId: 'rest-costa', name: 'Nuestras Causitas', description: 'Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas', sortOrder: 2, iconName: 'Sparkles' },
   { id: 'cat-m-arroces', restaurantId: 'rest-costa', name: 'Arroces', description: 'Arroces marineros al wok, chaufa de mariscos y melosos al pisco', sortOrder: 3, iconName: 'Waves' },
   { id: 'cat-m-pulpos', restaurantId: 'rest-costa', name: 'Pulpos', description: 'Tentáculos enteros de pulpo a la brasa y al olivo', sortOrder: 4, iconName: 'Flame' },
   { id: 'cat-m-ceviches', restaurantId: 'rest-costa', name: 'Ceviches & Cevichitos', description: 'Pesca artesanal fresca del litoral, leche de tigre y tiraditos', sortOrder: 5, iconName: 'Fish' },
   { id: 'cat-m3', restaurantId: 'rest-costa', name: 'Cócteles de Autor', description: 'Chilcanos de maracuyá y pisco sour premium', sortOrder: 6, iconName: 'GlassWater' },
-  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 7, iconName: 'GlassWater' }
+  { id: 'cat-m4', restaurantId: 'rest-costa', name: 'Bebidas', description: 'Chicha morada tradicional, limonadas y bebidas refrescantes', sortOrder: 7, iconName: 'GlassWater' },
+
+  // Voraz (rest-1790204393895)
+  { id: 'cat-v-entradas', restaurantId: 'rest-1790204393895', name: 'Entradas & Piqueos Urbanos', description: 'Alitas crocantes con salsa secreta, tequeños rellenos y piqueos de brasa', sortOrder: 1, iconName: 'Utensils' },
+  { id: 'cat-v-hamburguesas', restaurantId: 'rest-1790204393895', name: 'Hamburguesas al Carbón', description: 'Carne Angus seleccionada al carbón, queso fundido y pan brioche artesanal', sortOrder: 2, iconName: 'Flame' },
+  { id: 'cat-v-parrillas', restaurantId: 'rest-1790204393895', name: 'Cortes & Parrillas Fusión', description: 'Bife angosto a las brasas, costillas BBQ al ron y cortes a fuego vivo', sortOrder: 3, iconName: 'Sparkles' },
+  { id: 'cat-v-bebidas', restaurantId: 'rest-1790204393895', name: 'Bebidas & Coctelería Urbana', description: 'Gin tonic botánico de frutos rojos, limonadas artesanales y refrescos', sortOrder: 4, iconName: 'GlassWater' }
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
@@ -575,10 +582,146 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     allergens: ['Mariscos', 'Gluten'],
     tags: ['Piqueo Marino', 'Recomendado'],
     targetMenuScope: 'ALL'
+  },
+
+  // Platos de Voraz (rest-1790204393895)
+  {
+    id: 'item-v-alitas',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-entradas',
+    name: 'ALITAS FUEGO VORAZ (X12)',
+    description: 'Alitas crocantes glaseadas en salsa BBQ picante con reducción de miel de abeja y ají limo, con papas rústicas y dip blue cheese.',
+    price: 36.00,
+    imageUrl: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 15,
+    allergens: ['Lácteos', 'Gluten'],
+    tags: ['Para Picar', 'Picante', 'Fuego Voraz'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-tequenos',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-entradas',
+    name: 'TEQUEÑOS DE ASADO MECHADO (X8)',
+    description: 'Wantanes artesanales rellenos de asado de tira braseado por 6 horas con mozzarella fundida y guacamole ahumado de la casa.',
+    price: 28.00,
+    imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 12,
+    allergens: ['Lácteos', 'Gluten'],
+    tags: ['Entrada', 'Carnes'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-burger-smash',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-hamburguesas',
+    name: 'BURGER VORAZ DOBLE SMASH',
+    description: 'Doble carne de res Angus (200g), doble cheddar madurado, tocino crujiente caramelizado, cebolla crispy y salsa secreta en pan brioche.',
+    price: 42.00,
+    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 18,
+    allergens: ['Lácteos', 'Gluten'],
+    tags: ['Especialidad Voraz', 'Smash Burger'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-burger-ahumada',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-hamburguesas',
+    name: 'BURGER FUEGO AHUMADO AL CARBÓN',
+    description: '220g de jugosa carne a la parrilla de leña con queso provolone fundido, chimichurri rústico, tomates asados y rúcula fresca.',
+    price: 44.00,
+    imageUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    prepTimeMinutes: 20,
+    allergens: ['Lácteos', 'Gluten'],
+    tags: ['A la Brasa', 'Gourmet'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-bife',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-parrillas',
+    name: 'BIFE ANGOSTO A LAS BRASAS (350G)',
+    description: 'Corte premium Angus sellado a fuego alto con mantequilla de finas hierbas y sal de Maras, papas amarillas doradas y ensalada fresca.',
+    price: 68.00,
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    isChefSpecial: true,
+    prepTimeMinutes: 22,
+    allergens: ['Lácteos'],
+    tags: ['Corte Premium', 'A la Parrilla'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-costillas',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-parrillas',
+    name: 'COSTILLAS BBQ AL RON DE CAÑA',
+    description: 'Costillar tierno glaseado lentamente al horno de brasa con reducción de BBQ artesanal y ron añejo, acompañado de papas crocantes.',
+    price: 58.00,
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 25,
+    allergens: [],
+    tags: ['Costillas BBQ', 'Al Horno de Brasa'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-gin',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-bebidas',
+    name: 'GIN TONIC BOTÁNICO DE FRUTOS ROJOS',
+    description: 'Gin premium con infusión de frutos del bosque, bayas de enebro, agua tónica artesanal y un toque de romero fresco quemado.',
+    price: 32.00,
+    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    isPopular: true,
+    prepTimeMinutes: 5,
+    allergens: [],
+    tags: ['Cóctel de Autor', 'Gin Tonic'],
+    targetMenuScope: 'ALL'
+  },
+  {
+    id: 'item-v-limonada',
+    restaurantId: 'rest-1790204393895',
+    categoryId: 'cat-v-bebidas',
+    name: 'LIMONADA DE MARACUYÁ & HIERBABUENA (JARRA 1L)',
+    description: 'Zumo fresco de limón recién exprimido, pulpa concentrada de maracuyá y hojas de hierbabuena machacadas al momento.',
+    price: 22.00,
+    imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80',
+    isAvailable: true,
+    prepTimeMinutes: 4,
+    allergens: [],
+    tags: ['Refrescante', 'Sin Alcohol', 'Jarra Familiar'],
+    targetMenuScope: 'ALL'
   }
 ];
 
 export const INITIAL_USERS: User[] = [
+  {
+    id: 'u-owner-alonso',
+    name: 'Alonso Jaramillo',
+    email: 'alonso.jaramillo@cevichitopliz.pe',
+    dni: '94639300',
+    password: 'password',
+    role: 'OWNER',
+    phone: '+51 946 393 000',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
+    restaurantIds: ['rest-costa', 'rest-1790204393895'],
+    status: 'active',
+    lastActive: 'En línea'
+  },
   {
     id: 'u-admin-herly',
     name: 'Herly Lizarazo',

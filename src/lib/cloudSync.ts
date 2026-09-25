@@ -373,6 +373,21 @@ export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolea
 }
 
 /**
+ * Automatically deletes a restaurant in the cloud hosting.
+ */
+export async function autoDeleteRestaurant(restaurantId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/cloud-menu/restaurant/${encodeURIComponent(restaurantId)}`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[CloudSync] autoDeleteRestaurant error:', err);
+    return false;
+  }
+}
+
+/**
  * Automatically saves a category modification to the cloud hosting.
  */
 export async function autoSyncCategory(category: MenuCategory): Promise<boolean> {

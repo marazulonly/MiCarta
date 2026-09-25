@@ -7,8 +7,7 @@ import {
   Utensils, 
   Sparkles, 
   MessageSquare, 
-  Layers, 
-  Info 
+  Layers 
 } from 'lucide-react';
 import { MenuItem, DishAddon, OrderItemUnit } from '../types';
 
@@ -87,6 +86,22 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const footerBg = bgIsLight 
     ? (dishCardBgColor ? dishCardBgColor : 'rgba(0, 0, 0, 0.04)') 
     : 'rgba(0, 0, 0, 0.55)';
+
+  // Contrast-enhanced styles for interactive addon buttons & observation chips
+  const buttonUnselectedBg = bgIsLight 
+    ? '#FFFFFF' 
+    : 'rgba(255, 255, 255, 0.12)';
+  const buttonUnselectedBorder = bgIsLight 
+    ? 'rgba(0, 0, 0, 0.22)' 
+    : 'rgba(255, 255, 255, 0.30)';
+  const buttonUnselectedText = bgIsLight 
+    ? '#18181B' 
+    : '#FFFFFF';
+
+  const addonSelectedBg = bgIsLight
+    ? `${accentColor}18`
+    : `${accentColor}30`;
+  const addonSelectedBorder = accentColor;
 
   // Reset when item opens
   useEffect(() => {
@@ -348,9 +363,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             {/* 1. Adicionales de esta unidad */}
             {availableAddons.length > 0 && (
               <div className="space-y-2">
-                <label style={{ color: primaryText }} className="text-xs font-bold flex items-center justify-between">
+                <label style={{ color: primaryText }} className="text-xs font-bold block">
                   <span>Adicionales Opcionales</span>
-                  <span style={{ color: subText }} className="text-[10px] font-medium">Cargados a este plato</span>
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -362,28 +376,33 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                         type="button"
                         onClick={() => handleToggleAddon(activeUnitTab, addon)}
                         style={isSelected ? {
-                          backgroundColor: `${accentColor}25`,
-                          borderColor: accentColor,
-                          color: primaryText
+                          backgroundColor: addonSelectedBg,
+                          borderColor: addonSelectedBorder,
+                          borderWidth: '1.5px',
+                          color: buttonUnselectedText
                         } : {
-                          backgroundColor: inputBg,
-                          borderColor: cardBorder,
-                          color: primaryText
+                          backgroundColor: buttonUnselectedBg,
+                          borderColor: buttonUnselectedBorder,
+                          borderWidth: '1.5px',
+                          color: buttonUnselectedText
                         }}
-                        className="p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer shadow-sm hover:brightness-105"
+                        className="p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer shadow-sm hover:brightness-110 active:scale-[0.99]"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           <div 
-                            style={isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : { borderColor: cardBorder, backgroundColor: inputBg }}
-                            className="w-4 h-4 rounded flex items-center justify-center border transition"
+                            style={isSelected 
+                              ? { backgroundColor: accentColor, borderColor: accentColor } 
+                              : { borderColor: bgIsLight ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.45)', backgroundColor: bgIsLight ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)' }
+                            }
+                            className="w-4 h-4 rounded flex items-center justify-center border transition shrink-0"
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: btnTextColor }} />}
                           </div>
-                          <span className="text-xs font-bold">{addon.name}</span>
+                          <span className="text-xs font-bold leading-tight">{addon.name}</span>
                         </div>
                         <span 
                           style={{ color: accentColor, fontFamily: dishPriceFont }}
-                          className="text-xs font-mono font-black"
+                          className="text-xs font-mono font-black shrink-0 ml-2"
                         >
                           +S/ {addon.price.toFixed(2)}
                         </span>
@@ -396,17 +415,16 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
 
             {/* 2. Observaciones / Instrucciones de preparación de esta unidad */}
             <div style={{ borderColor: cardBorder }} className="space-y-2 pt-2 border-t">
-              <label style={{ color: primaryText }} className="text-xs font-bold flex items-center justify-between">
+              <label style={{ color: primaryText }} className="text-xs font-bold flex items-center">
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5" style={{ color: accentColor }} />
                   <span>Observaciones para cocina</span>
                 </span>
-                <span style={{ color: subText }} className="text-[10px] font-medium">Sin sal, ají aparte, etc.</span>
               </label>
 
               {/* Quick suggestion chips */}
               {suggestedObs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {suggestedObs.map((chip, cIdx) => {
                     const isChipActive = currentUnit.observation?.includes(chip);
                     return (
@@ -419,11 +437,13 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           borderColor: accentColor,
                           color: btnTextColor
                         } : {
-                          backgroundColor: inputBg,
-                          borderColor: cardBorder,
-                          color: primaryText
+                          backgroundColor: buttonUnselectedBg,
+                          borderColor: buttonUnselectedBorder,
+                          color: buttonUnselectedText
                         }}
-                        className="text-[11px] px-2.5 py-1 rounded-full border transition cursor-pointer font-bold shadow-sm hover:scale-105"
+                        className={`text-xs px-3 py-1.5 rounded-full border transition cursor-pointer font-bold shadow-sm ${
+                          isChipActive ? 'scale-[1.03] shadow-md' : 'hover:brightness-110 hover:scale-105'
+                        }`}
                       >
                         {chip}
                       </button>
@@ -447,21 +467,6 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 className="w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none transition resize-none font-medium shadow-inner placeholder:text-neutral-400"
               />
             </div>
-          </div>
-
-          {/* Informative notice */}
-          <div 
-            style={{ 
-              backgroundColor: cardBg,
-              borderColor: cardBorder,
-              color: primaryText
-            }}
-            className="p-3 rounded-xl border flex items-start gap-2.5 text-[11px] font-medium shadow-sm"
-          >
-            <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
-            <span>
-              Las observaciones y adicionales ingresados serán enviados a cocina y comandas detallados por cada plato individual para una atención personalizada.
-            </span>
           </div>
 
         </div>

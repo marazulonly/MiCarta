@@ -372,7 +372,7 @@ async function startServer() {
     });
   });
 
-  // POST: Full save or update of cloud menu
+  // POST: Full save or update of cloud menu (with robust anti-erasure protection)
   app.post('/api/cloud-menu', (req, res) => {
     const { restaurants, items, categories, users, orders } = req.body;
     if (!restaurants && !items && !categories) {
@@ -380,13 +380,42 @@ async function startServer() {
       return;
     }
 
-    const current = cachedCloudData || {};
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
+
+    // Intelligent additive merge: preserve existing entities unless explicitly deleted via DELETE endpoints
+    const restMap = new Map<string, any>();
+    (current.restaurants || []).forEach((r: any) => { if (r?.id) restMap.set(r.id, r); });
+    (restaurants || []).forEach((r: any) => { if (r?.id) restMap.set(r.id, { ...(restMap.get(r.id) || {}), ...r }); });
+
+    const userMap = new Map<string, any>();
+    (current.users || []).forEach((u: any) => {
+      const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+      if (key) userMap.set(key, u);
+    });
+    (users || []).forEach((u: any) => {
+      const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+      if (key) userMap.set(key, { ...(userMap.get(key) || {}), ...u });
+    });
+
+    const catMap = new Map<string, any>();
+    (current.categories || []).forEach((c: any) => { if (c?.id) catMap.set(c.id, c); });
+    (categories || []).forEach((c: any) => { if (c?.id) catMap.set(c.id, { ...(catMap.get(c.id) || {}), ...c }); });
+
+    const itemMap = new Map<string, any>();
+    (current.items || []).forEach((i: any) => { if (i?.id) itemMap.set(i.id, i); });
+    (items || []).forEach((i: any) => { if (i?.id) itemMap.set(i.id, { ...(itemMap.get(i.id) || {}), ...i }); });
+
     const updatedData = {
-      restaurants: restaurants || current.restaurants || [],
-      items: items || current.items || [],
-      categories: categories || current.categories || [],
-      users: users || current.users || [],
+      ...current,
+      restaurants: Array.from(restMap.values()),
+      categories: Array.from(catMap.values()),
+      items: Array.from(itemMap.values()),
+      users: Array.from(userMap.values()),
       orders: orders || current.orders || [],
+      publishedMenus: current.publishedMenus || {},
       updatedAt: new Date().toISOString()
     };
 
@@ -474,6 +503,30 @@ async function startServer() {
     saveCloudDataToDisk(updatedData);
     broadcastMenuUpdate({ type: 'RESTAURANT_UPDATED', restaurant, restaurants });
     res.json({ success: true, message: `Restaurante "${restaurant.name}" guardado en la nube`, restaurant });
+  });
+
+  // DELETE: Delete restaurant
+  app.delete('/api/cloud-menu/restaurant/:id', (req, res) => {
+    const { id } = req.params;
+    if (!cachedCloudData) {
+      loadCloudDataFromDisk();
+    }
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+    const restaurants = (current.restaurants || []).filter((r: any) => r.id !== id);
+    const categories = (current.categories || []).filter((c: any) => c.restaurantId !== id);
+    const items = (current.items || []).filter((i: any) => i.restaurantId !== id);
+
+    const updatedData = {
+      ...current,
+      restaurants,
+      categories,
+      items,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveCloudDataToDisk(updatedData);
+    broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
+    res.json({ success: true, message: 'Restaurante eliminado permanentemente de la nube' });
   });
 
   // POST: Update or add category

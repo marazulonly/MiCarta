@@ -32,6 +32,7 @@ interface TopHeaderProps {
   isSimulationActive?: boolean;
   onToggleSimulation?: (active: boolean) => void;
   onOpenProfileSettings?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
 const ROLES_LIST: { role: UserRole; label: string }[] = [
@@ -59,6 +60,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   isSimulationActive = false,
   onToggleSimulation,
   onOpenProfileSettings,
+  onOpenLoginModal,
 }) => {
   const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
@@ -185,9 +187,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             {/* Login / Current User Profile Button */}
             <button
               id="header-btn-login-modal"
-              onClick={onOpenProfileSettings}
+              onClick={currentUser ? onOpenProfileSettings : onOpenLoginModal}
               className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
-              title="Configuración de Perfil (Editar datos y foto)"
+              title={currentUser ? "Configuración de Perfil (Editar datos y foto)" : "Ingresar con tu DNI"}
             >
               {currentUser ? (
                 <div className="flex items-center gap-2">

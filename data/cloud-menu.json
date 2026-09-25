@@ -3,10 +3,10 @@
     {
       "id": "rest-costa",
       "name": "Cevichito Pliz",
-      "tagline": "Cevichería Contemporánea & Pesca Artesanal del Día",
-      "cuisineType": "Cevichería & Mariscos",
+      "tagline": "Cevicher\u00eda Contempor\u00e1nea & Pesca Artesanal del D\u00eda",
+      "cuisineType": "Cevicher\u00eda & Mariscos",
       "slug": "cevichito-pliz",
-      "address": "Malecón de la Reserva 102, Miraflores",
+      "address": "Malec\u00f3n de la Reserva 102, Miraflores",
       "phone": "+51 945 678 901",
       "rating": 4.9,
       "reviewCount": 390,
@@ -48,8 +48,8 @@
     {
       "id": "rest-1790204393895",
       "name": "Voraz",
-      "tagline": "Cocina Urbana & Fusión",
-      "cuisineType": "Fusión & Carnes",
+      "tagline": "Cocina Urbana & Fusi\u00f3n",
+      "cuisineType": "Fusi\u00f3n & Carnes",
       "slug": "voraz",
       "address": "Av. La Mar 850, Miraflores",
       "phone": "+51 987 654 321",
@@ -96,15 +96,15 @@
       "id": "item-m-tequenos-queso",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
-      "name": "TEQUEÑOS DE QUESO (X8)",
-      "description": "Masa wantan rellena de queso acompañado con guacamole de la casa.",
+      "name": "TEQUE\u00d1OS DE QUESO (X8)",
+      "description": "Masa wantan rellena de queso acompa\u00f1ado con guacamole de la casa.",
       "price": 18,
       "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
       "isPopular": true,
       "prepTimeMinutes": 20,
       "allergens": [
-        "Lácteos",
+        "L\u00e1cteos",
         "Gluten"
       ],
       "tags": [
@@ -118,7 +118,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
       "name": "TIRADITO",
-      "description": "Tiras delgadas de pescado fresco marinadas en la crema de su preferencia: Tradicional, Ají Amarillo o Rocoto.",
+      "description": "Tiras delgadas de pescado fresco marinadas en la crema de su preferencia: Tradicional, Aj\u00ed Amarillo o Rocoto.",
       "price": 22,
       "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -137,7 +137,7 @@
       "id": "item-m-tequenos-mariscos",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
-      "name": "TEQUEÑOS DE MARISCOS (X8)",
+      "name": "TEQUE\u00d1OS DE MARISCOS (X8)",
       "description": "Masa wantan rellena de mixtura de mariscos, decorada con nuestra salsa agridulce.",
       "price": 22,
       "imageUrl": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80",
@@ -158,7 +158,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
       "name": "CHORITOS A LA CHALACA (X8)",
-      "description": "Mejillones bañados en aceite de oliva, jugo de limón y decorado con ají verde, choclo, cebolla picada y cilantro.",
+      "description": "Mejillones ba\u00f1ados en aceite de oliva, jugo de lim\u00f3n y decorado con aj\u00ed verde, choclo, cebolla picada y cilantro.",
       "price": 24,
       "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -168,7 +168,7 @@
         "Moluscos"
       ],
       "tags": [
-        "Tradición Chalaca",
+        "Tradici\u00f3n Chalaca",
         "Entrada"
       ],
       "targetMenuScope": "ALL"
@@ -177,8 +177,8 @@
       "id": "item-m-causa-acevichada",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-causitas",
-      "name": "CAUSA ACEVICHADA AL AJÍ AMARILLO",
-      "description": "Suave masa de papa amarilla prensada con pasta de ají amarillo y limón sutil, rellena de palta hass y cubierta con ceviche fresco bañado en salsa acevichada.",
+      "name": "CAUSA ACEVICHADA AL AJ\u00cd AMARILLO",
+      "description": "Suave masa de papa amarilla prensada con pasta de aj\u00ed amarillo y lim\u00f3n sutil, rellena de palta hass y cubierta con ceviche fresco ba\u00f1ado en salsa acevichada.",
       "price": 32,
       "imageUrl": "https://images.unsplash.com/photo-1579631542720-3a87824fff86?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -189,7 +189,7 @@
         "Huevo"
       ],
       "tags": [
-        "Fusión Marina",
+        "Fusi\u00f3n Marina",
         "Favorito"
       ],
       "targetMenuScope": "ALL"
@@ -199,7 +199,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-causitas",
       "name": "CAUSA DE PULPO AL OLIVO",
-      "description": "Papa amarilla sazonada rellena de palta cremosa y coronada con láminas de pulpo tierno marinadas en crema de aceitunas botija iqueñas.",
+      "description": "Papa amarilla sazonada rellena de palta cremosa y coronada con l\u00e1minas de pulpo tierno marinadas en crema de aceitunas botija ique\u00f1as.",
       "price": 34,
       "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -218,7 +218,7 @@
       "id": "item-m5",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-arroces",
-      "name": "ARROZ CON MARISCOS MELOSO AL WOK DE LEÑA",
+      "name": "ARROZ CON MARISCOS MELOSO AL WOK DE LE\u00d1A",
       "description": "Langostinos jumbo, anillas de calamar tierno, pulpo y conchas de abanico flameados al pisco. Montado sobre arroz meloso con arvejas y pimientos asados.",
       "price": 54,
       "imageUrl": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80",
@@ -239,8 +239,8 @@
       "id": "item-m7",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-arroces",
-      "name": "CHAUFA MARINO ESPECIAL AL CARBÓN",
-      "description": "Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazmín salteado al wok con cebollita china fresca.",
+      "name": "CHAUFA MARINO ESPECIAL AL CARB\u00d3N",
+      "description": "Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazm\u00edn salteado al wok con cebollita china fresca.",
       "price": 49,
       "imageUrl": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -261,7 +261,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-pulpos",
       "name": "PULPO A LA BRASA CON PAPAS COCHAYUYO",
-      "description": "Tentáculo entero de pulpo sellado a la brasa con salsa anticuchera de la casa y papas doradas.",
+      "description": "Tent\u00e1culo entero de pulpo sellado a la brasa con salsa anticuchera de la casa y papas doradas.",
       "price": 52,
       "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -280,7 +280,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-ceviches",
       "name": "CEVICHE MIXTO CEVICHITO PLIZ",
-      "description": "Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja.",
+      "description": "Corvina fresca de pesca del d\u00eda, calamar tierno y langostinos del norte. Acompa\u00f1ado de choclo tierno desgranado y camote glaseado a la naranja.",
       "price": 48,
       "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -293,15 +293,15 @@
       ],
       "tags": [
         "Especialidad de la Casa",
-        "Pesca del Día"
+        "Pesca del D\u00eda"
       ]
     },
     {
       "id": "item-m-ceviche-clasico",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-ceviches",
-      "name": "CEVICHE CLÁSICO DE PESCA DEL DÍA",
-      "description": "Corvina fresca marinada al momento con zumo de limón piurano recién exprimido, ají limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.",
+      "name": "CEVICHE CL\u00c1SICO DE PESCA DEL D\u00cdA",
+      "description": "Corvina fresca marinada al momento con zumo de lim\u00f3n piurano reci\u00e9n exprimido, aj\u00ed limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.",
       "price": 38,
       "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -311,8 +311,8 @@
         "Pescado"
       ],
       "tags": [
-        "Clásico",
-        "Pesca del Día"
+        "Cl\u00e1sico",
+        "Pesca del D\u00eda"
       ]
     },
     {
@@ -320,7 +320,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-ceviches",
       "name": "CEVICHE CARRETILLERO CON CALAMAR CROCANTE",
-      "description": "Pesca fresca marinada al ají limo y limón piurano servida con generosa porción de chicharrón de calamar crujiente al momento y crema de rocoto carretillero.",
+      "description": "Pesca fresca marinada al aj\u00ed limo y lim\u00f3n piurano servida con generosa porci\u00f3n de chicharr\u00f3n de calamar crujiente al momento y crema de rocoto carretillero.",
       "price": 44,
       "imageUrl": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -342,8 +342,8 @@
       "id": "item-m2",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-ceviches",
-      "name": "TIRADITO AHUMADO AL AJÍ AMARILLO & MARACUYÁ",
-      "description": "Láminas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte.",
+      "name": "TIRADITO AHUMADO AL AJ\u00cd AMARILLO & MARACUY\u00c1",
+      "description": "L\u00e1minas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte.",
       "price": 42,
       "imageUrl": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -354,15 +354,15 @@
       ],
       "tags": [
         "Tiradito",
-        "Toque Cítrico"
+        "Toque C\u00edtrico"
       ]
     },
     {
       "id": "item-m4",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-ceviches",
-      "name": "TIRADITO NIKKEI DE ATÚN ALETA AMARILLA",
-      "description": "Cortes seleccionados de atún rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjolí tostado.",
+      "name": "TIRADITO NIKKEI DE AT\u00daN ALETA AMARILLA",
+      "description": "Cortes seleccionados de at\u00fan rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjol\u00ed tostado.",
       "price": 45,
       "imageUrl": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -372,8 +372,8 @@
         "Soya"
       ],
       "tags": [
-        "Fusión Nikkei",
-        "Atún Fresco"
+        "Fusi\u00f3n Nikkei",
+        "At\u00fan Fresco"
       ]
     },
     {
@@ -381,7 +381,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m3",
       "name": "Pisco Sour Catedral Cevichito Pliz (Copa Doble)",
-      "description": "Destilado puro de uva Quebranta iqueña (4 oz) batido vigorosamente con clara de huevo fresca y zumo de limón piurano.",
+      "description": "Destilado puro de uva Quebranta ique\u00f1a (4 oz) batido vigorosamente con clara de huevo fresca y zumo de lim\u00f3n piurano.",
       "price": 32,
       "imageUrl": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -391,7 +391,7 @@
         "Huevo"
       ],
       "tags": [
-        "Cóctel Bandera",
+        "C\u00f3ctel Bandera",
         "4 oz Pisco Puro"
       ]
     },
@@ -399,8 +399,8 @@
       "id": "item-m9",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m3",
-      "name": "Chilcano Macerado de Maracuyá & Hierba Luisa",
-      "description": "Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuyá.",
+      "name": "Chilcano Macerado de Maracuy\u00e1 & Hierba Luisa",
+      "description": "Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuy\u00e1.",
       "price": 28,
       "imageUrl": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -416,7 +416,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m4",
       "name": "Limonada de Hierba Luisa & Jengibre (Jarra 1L)",
-      "description": "Zumo fresco de limones sutiles colado al momento con infusión helada de hierba luisa y jengibre fresco rallado.",
+      "description": "Zumo fresco de limones sutiles colado al momento con infusi\u00f3n helada de hierba luisa y jengibre fresco rallado.",
       "price": 24,
       "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -434,7 +434,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m4",
       "name": "Chicha Morada Tradicional de la Casa (Jarra 1L)",
-      "description": "Elaborada artesanalmente con maíz morado selecto, piña dulce madura, manzana israel, membrillo, canela en rama y clavo de olor, con toque de limón sutil al momento.",
+      "description": "Elaborada artesanalmente con ma\u00edz morado selecto, pi\u00f1a dulce madura, manzana israel, membrillo, canela en rama y clavo de olor, con toque de lim\u00f3n sutil al momento.",
       "price": 18,
       "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -451,8 +451,8 @@
       "id": "item-m-chicharron-mixto",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
-      "name": "Chicharrón Mixto de Pescado & Mariscos",
-      "description": "Generosa mixtura crocante de pescado blanco, langostinos y calamares con yucas doradas, zarza criolla al limón y crema tártara casera.",
+      "name": "Chicharr\u00f3n Mixto de Pescado & Mariscos",
+      "description": "Generosa mixtura crocante de pescado blanco, langostinos y calamares con yucas doradas, zarza criolla al lim\u00f3n y crema t\u00e1rtara casera.",
       "price": 44,
       "imageUrl": "https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -474,8 +474,8 @@
       "id": "item-m-choritos",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
-      "name": "Choritos a la Chalaca al Limón Piurano (x8)",
-      "description": "Choritos frescos al vapor aderezados con chalaquita criolla de cebolla morada, tomate concasse, ají limo picado, cilantro y choclo desgranado.",
+      "name": "Choritos a la Chalaca al Lim\u00f3n Piurano (x8)",
+      "description": "Choritos frescos al vapor aderezados con chalaquita criolla de cebolla morada, tomate concasse, aj\u00ed limo picado, cilantro y choclo desgranado.",
       "price": 28,
       "imageUrl": "https://images.unsplash.com/photo-1505253758473-96b3e55fdd4f?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -486,7 +486,7 @@
         "Moluscos"
       ],
       "tags": [
-        "Clásico Chalaco",
+        "Cl\u00e1sico Chalaco",
         "Mariscos Frescos"
       ],
       "targetMenuScope": "ALL"
@@ -496,7 +496,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-causitas",
       "name": "Pulpo al Olivo con Palta Fuerte",
-      "description": "Láminas tiernas de pulpo marinadas en suave crema de aceitunas botija peruanas, con cubos de palta fuerte, aceite de oliva virgen y galletas de soda.",
+      "description": "L\u00e1minas tiernas de pulpo marinadas en suave crema de aceitunas botija peruanas, con cubos de palta fuerte, aceite de oliva virgen y galletas de soda.",
       "price": 38,
       "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -516,7 +516,7 @@
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-pulpos",
       "name": "Pulpo a la Parrilla con Chimichurri Anticuchero",
-      "description": "Tentáculos enteros de pulpo sellados a las brasas con marinada anticuchera de ají panca, acompañados de papas nativas doradas y salsa chimichurri rústica.",
+      "description": "Tent\u00e1culos enteros de pulpo sellados a las brasas con marinada anticuchera de aj\u00ed panca, acompa\u00f1ados de papas nativas doradas y salsa chimichurri r\u00fastica.",
       "price": 56,
       "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -536,8 +536,8 @@
       "id": "item-m-tequenos",
       "restaurantId": "rest-costa",
       "categoryId": "cat-m-entradas",
-      "name": "Tequeños de Mariscos & Salsa Tártara (x8)",
-      "description": "Wantanes crocantes artesanales rellenos de mixtura de mariscos flameados al vino blanco con salsa agridulce especial y tártara casera.",
+      "name": "Teque\u00f1os de Mariscos & Salsa T\u00e1rtara (x8)",
+      "description": "Wantanes crocantes artesanales rellenos de mixtura de mariscos flameados al vino blanco con salsa agridulce especial y t\u00e1rtara casera.",
       "price": 26,
       "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
       "isAvailable": true,
@@ -552,6 +552,167 @@
         "Recomendado"
       ],
       "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-alitas",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-entradas",
+      "name": "ALITAS FUEGO VORAZ (X12)",
+      "description": "Alitas crocantes glaseadas en salsa BBQ picante con reducci\u00f3n de miel de abeja y aj\u00ed limo, con papas r\u00fasticas y dip blue cheese.",
+      "price": 36.0,
+      "imageUrl": "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "isChefSpecial": true,
+      "prepTimeMinutes": 15,
+      "allergens": [
+        "L\u00e1cteos",
+        "Gluten"
+      ],
+      "tags": [
+        "Para Picar",
+        "Picante",
+        "Fuego Voraz"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-tequenos",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-entradas",
+      "name": "TEQUE\u00d1OS DE ASADO MECHADO (X8)",
+      "description": "Wantanes artesanales rellenos de asado de tira braseado por 6 horas con mozzarella fundida y guacamole ahumado de la casa.",
+      "price": 28.0,
+      "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "prepTimeMinutes": 12,
+      "allergens": [
+        "L\u00e1cteos",
+        "Gluten"
+      ],
+      "tags": [
+        "Entrada",
+        "Carnes"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-burger-smash",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-hamburguesas",
+      "name": "BURGER VORAZ DOBLE SMASH",
+      "description": "Doble carne de res Angus (200g), doble cheddar madurado, tocino crujiente caramelizado, cebolla crispy y salsa secreta en pan brioche.",
+      "price": 42.0,
+      "imageUrl": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "isChefSpecial": true,
+      "prepTimeMinutes": 18,
+      "allergens": [
+        "L\u00e1cteos",
+        "Gluten"
+      ],
+      "tags": [
+        "Especialidad Voraz",
+        "Smash Burger"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-burger-ahumada",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-hamburguesas",
+      "name": "BURGER FUEGO AHUMADO AL CARB\u00d3N",
+      "description": "220g de jugosa carne a la parrilla de le\u00f1a con queso provolone fundido, chimichurri r\u00fastico, tomates asados y r\u00facula fresca.",
+      "price": 44.0,
+      "imageUrl": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "prepTimeMinutes": 20,
+      "allergens": [
+        "L\u00e1cteos",
+        "Gluten"
+      ],
+      "tags": [
+        "A la Brasa",
+        "Gourmet"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-bife",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-parrillas",
+      "name": "BIFE ANGOSTO A LAS BRASAS (350G)",
+      "description": "Corte premium Angus sellado a fuego alto con mantequilla de finas hierbas y sal de Maras, papas amarillas doradas y ensalada fresca.",
+      "price": 68.0,
+      "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "isChefSpecial": true,
+      "prepTimeMinutes": 22,
+      "allergens": [
+        "L\u00e1cteos"
+      ],
+      "tags": [
+        "Corte Premium",
+        "A la Parrilla"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-costillas",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-parrillas",
+      "name": "COSTILLAS BBQ AL RON DE CA\u00d1A",
+      "description": "Costillar tierno glaseado lentamente al horno de brasa con reducci\u00f3n de BBQ artesanal y ron a\u00f1ejo, acompa\u00f1ado de papas crocantes.",
+      "price": 58.0,
+      "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "prepTimeMinutes": 25,
+      "allergens": [],
+      "tags": [
+        "Costillas BBQ",
+        "Al Horno de Brasa"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-gin",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-bebidas",
+      "name": "GIN TONIC BOT\u00c1NICO DE FRUTOS ROJOS",
+      "description": "Gin premium con infusi\u00f3n de frutos del bosque, bayas de enebro, agua t\u00f3nica artesanal y un toque de romero fresco quemado.",
+      "price": 32.0,
+      "imageUrl": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "isPopular": true,
+      "prepTimeMinutes": 5,
+      "allergens": [],
+      "tags": [
+        "C\u00f3ctel de Autor",
+        "Gin Tonic"
+      ],
+      "targetMenuScope": "ALL"
+    },
+    {
+      "id": "item-v-limonada",
+      "restaurantId": "rest-1790204393895",
+      "categoryId": "cat-v-bebidas",
+      "name": "LIMONADA DE MARACUY\u00c1 & HIERBABUENA (JARRA 1L)",
+      "description": "Zumo fresco de lim\u00f3n reci\u00e9n exprimido, pulpa concentrada de maracuy\u00e1 y hojas de hierbabuena machacadas al momento.",
+      "price": 22.0,
+      "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
+      "isAvailable": true,
+      "prepTimeMinutes": 4,
+      "allergens": [],
+      "tags": [
+        "Refrescante",
+        "Sin Alcohol",
+        "Jarra Familiar"
+      ],
+      "targetMenuScope": "ALL"
     }
   ],
   "categories": [
@@ -559,7 +720,7 @@
       "id": "cat-m-entradas",
       "restaurantId": "rest-costa",
       "name": "Entradas & Piqueos",
-      "description": "Tequeños crocantes, tiraditos y piqueos marinos para compartir",
+      "description": "Teque\u00f1os crocantes, tiraditos y piqueos marinos para compartir",
       "sortOrder": 1,
       "iconName": "Utensils"
     },
@@ -567,7 +728,7 @@
       "id": "cat-m-causitas",
       "restaurantId": "rest-costa",
       "name": "Nuestras Causitas",
-      "description": "Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas",
+      "description": "Masa de papa amarilla prensada con aj\u00ed amarillo, palta Hass y coronaciones marinas",
       "sortOrder": 2,
       "iconName": "Sparkles"
     },
@@ -583,7 +744,7 @@
       "id": "cat-m-pulpos",
       "restaurantId": "rest-costa",
       "name": "Pulpos",
-      "description": "Tentáculos enteros de pulpo a la brasa y al olivo",
+      "description": "Tent\u00e1culos enteros de pulpo a la brasa y al olivo",
       "sortOrder": 4,
       "iconName": "Flame"
     },
@@ -598,8 +759,8 @@
     {
       "id": "cat-m3",
       "restaurantId": "rest-costa",
-      "name": "Cócteles de Autor",
-      "description": "Chilcanos de maracuyá y pisco sour premium",
+      "name": "C\u00f3cteles de Autor",
+      "description": "Chilcanos de maracuy\u00e1 y pisco sour premium",
       "sortOrder": 6,
       "iconName": "GlassWater"
     },
@@ -610,9 +771,57 @@
       "description": "Chicha morada tradicional, limonadas y bebidas refrescantes",
       "sortOrder": 7,
       "iconName": "GlassWater"
+    },
+    {
+      "id": "cat-v-entradas",
+      "restaurantId": "rest-1790204393895",
+      "name": "Entradas & Piqueos Urbanos",
+      "description": "Alitas crocantes con salsa secreta, teque\u00f1os rellenos y piqueos de brasa",
+      "sortOrder": 1,
+      "iconName": "Utensils"
+    },
+    {
+      "id": "cat-v-hamburguesas",
+      "restaurantId": "rest-1790204393895",
+      "name": "Hamburguesas al Carb\u00f3n",
+      "description": "Carne Angus seleccionada al carb\u00f3n, queso fundido y pan brioche artesanal",
+      "sortOrder": 2,
+      "iconName": "Flame"
+    },
+    {
+      "id": "cat-v-parrillas",
+      "restaurantId": "rest-1790204393895",
+      "name": "Cortes & Parrillas Fusi\u00f3n",
+      "description": "Bife angosto a las brasas, costillas BBQ al ron y cortes a fuego vivo",
+      "sortOrder": 3,
+      "iconName": "Sparkles"
+    },
+    {
+      "id": "cat-v-bebidas",
+      "restaurantId": "rest-1790204393895",
+      "name": "Bebidas & Cocteler\u00eda Urbana",
+      "description": "Gin tonic bot\u00e1nico de frutos rojos, limonadas artesanales y refrescos",
+      "sortOrder": 4,
+      "iconName": "GlassWater"
     }
   ],
   "users": [
+    {
+      "id": "u-owner-alonso",
+      "name": "Alonso Jaramillo",
+      "email": "alonso.jaramillo@cevichitopliz.pe",
+      "dni": "94639300",
+      "password": "password",
+      "role": "OWNER",
+      "phone": "+51 946 393 000",
+      "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80",
+      "restaurantIds": [
+        "rest-costa",
+        "rest-1790204393895"
+      ],
+      "status": "active",
+      "lastActive": "En l\u00ednea"
+    },
     {
       "id": "u-admin-herly",
       "name": "Herly Lizarazo",
@@ -626,7 +835,7 @@
         "all"
       ],
       "status": "active",
-      "lastActive": "En línea"
+      "lastActive": "En l\u00ednea"
     },
     {
       "id": "u-1",
@@ -657,11 +866,11 @@
         "rest-1790204393895"
       ],
       "status": "active",
-      "lastActive": "En línea"
+      "lastActive": "En l\u00ednea"
     },
     {
       "id": "u-5c",
-      "name": "Lucía Benítez",
+      "name": "Luc\u00eda Ben\u00edtez",
       "email": "lucia.mar@costamarina.pe",
       "dni": "40809010",
       "password": "12345678",
@@ -731,7 +940,7 @@
       "assignedShift": "MANANA",
       "pinCode": "7020",
       "createdByOwnerId": "u-3",
-      "kitchenStation": "Barra Marina & Cebichería",
+      "kitchenStation": "Barra Marina & Cebicher\u00eda",
       "kitchenPermissions": {
         "canMarkReady": true,
         "canRejectItems": true,
@@ -739,7 +948,7 @@
         "canReorderQueue": true,
         "autoPrintTickets": true,
         "soundAlerts": true,
-        "stationFilter": "Barra Marina & Cebichería"
+        "stationFilter": "Barra Marina & Cebicher\u00eda"
       }
     },
     {
@@ -777,7 +986,7 @@
         {
           "id": "oi-7",
           "menuItemId": "item-m1",
-          "name": "Ceviche Clásico Corvina",
+          "name": "Ceviche Cl\u00e1sico Corvina",
           "price": 24.5,
           "quantity": 2,
           "notes": "Picante moderado"
@@ -798,10 +1007,10 @@
       "createdAt": "Hace 11 min",
       "estimatedMinutes": 12,
       "waiterId": "u-5c",
-      "waiterName": "Lucía Benítez"
+      "waiterName": "Luc\u00eda Ben\u00edtez"
     }
   ],
-  "updatedAt": "2026-09-24T13:28:55.778Z",
+  "updatedAt": "2026-09-25T14:37:03.344Z",
   "publishedMenus": {
     "rest-costa": {
       "version": 4,
@@ -817,7 +1026,7 @@
           "id": "cat-m-entradas",
           "restaurantId": "rest-costa",
           "name": "Entradas & Piqueos",
-          "description": "Tequeños crocantes, tiraditos y piqueos marinos para compartir",
+          "description": "Teque\u00f1os crocantes, tiraditos y piqueos marinos para compartir",
           "sortOrder": 1,
           "iconName": "Utensils"
         },
@@ -825,7 +1034,7 @@
           "id": "cat-m-causitas",
           "restaurantId": "rest-costa",
           "name": "Nuestras Causitas",
-          "description": "Masa de papa amarilla prensada con ají amarillo, palta Hass y coronaciones marinas",
+          "description": "Masa de papa amarilla prensada con aj\u00ed amarillo, palta Hass y coronaciones marinas",
           "sortOrder": 2,
           "iconName": "Sparkles"
         },
@@ -841,7 +1050,7 @@
           "id": "cat-m-pulpos",
           "restaurantId": "rest-costa",
           "name": "Pulpos",
-          "description": "Tentáculos enteros de pulpo a la brasa y al olivo",
+          "description": "Tent\u00e1culos enteros de pulpo a la brasa y al olivo",
           "sortOrder": 4,
           "iconName": "Flame"
         },
@@ -856,8 +1065,8 @@
         {
           "id": "cat-m3",
           "restaurantId": "rest-costa",
-          "name": "Cócteles de Autor",
-          "description": "Chilcanos de maracuyá y pisco sour premium",
+          "name": "C\u00f3cteles de Autor",
+          "description": "Chilcanos de maracuy\u00e1 y pisco sour premium",
           "sortOrder": 6,
           "iconName": "GlassWater"
         },
@@ -875,15 +1084,15 @@
           "id": "item-m-tequenos-queso",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
-          "name": "TEQUEÑOS DE QUESO (X8)",
-          "description": "Masa wantan rellena de queso acompañado con guacamole de la casa.",
+          "name": "TEQUE\u00d1OS DE QUESO (X8)",
+          "description": "Masa wantan rellena de queso acompa\u00f1ado con guacamole de la casa.",
           "price": 18,
           "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
           "isPopular": true,
           "prepTimeMinutes": 20,
           "allergens": [
-            "Lácteos",
+            "L\u00e1cteos",
             "Gluten"
           ],
           "tags": [
@@ -897,7 +1106,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
           "name": "TIRADITO",
-          "description": "Tiras delgadas de pescado fresco marinadas en la crema de su preferencia: Tradicional, Ají Amarillo o Rocoto.",
+          "description": "Tiras delgadas de pescado fresco marinadas en la crema de su preferencia: Tradicional, Aj\u00ed Amarillo o Rocoto.",
           "price": 22,
           "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -916,7 +1125,7 @@
           "id": "item-m-tequenos-mariscos",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
-          "name": "TEQUEÑOS DE MARISCOS (X8)",
+          "name": "TEQUE\u00d1OS DE MARISCOS (X8)",
           "description": "Masa wantan rellena de mixtura de mariscos, decorada con nuestra salsa agridulce.",
           "price": 22,
           "imageUrl": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80",
@@ -937,7 +1146,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
           "name": "CHORITOS A LA CHALACA (X8)",
-          "description": "Mejillones bañados en aceite de oliva, jugo de limón y decorado con ají verde, choclo, cebolla picada y cilantro.",
+          "description": "Mejillones ba\u00f1ados en aceite de oliva, jugo de lim\u00f3n y decorado con aj\u00ed verde, choclo, cebolla picada y cilantro.",
           "price": 24,
           "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -947,7 +1156,7 @@
             "Moluscos"
           ],
           "tags": [
-            "Tradición Chalaca",
+            "Tradici\u00f3n Chalaca",
             "Entrada"
           ],
           "targetMenuScope": "ALL"
@@ -956,8 +1165,8 @@
           "id": "item-m-causa-acevichada",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-causitas",
-          "name": "CAUSA ACEVICHADA AL AJÍ AMARILLO",
-          "description": "Suave masa de papa amarilla prensada con pasta de ají amarillo y limón sutil, rellena de palta hass y cubierta con ceviche fresco bañado en salsa acevichada.",
+          "name": "CAUSA ACEVICHADA AL AJ\u00cd AMARILLO",
+          "description": "Suave masa de papa amarilla prensada con pasta de aj\u00ed amarillo y lim\u00f3n sutil, rellena de palta hass y cubierta con ceviche fresco ba\u00f1ado en salsa acevichada.",
           "price": 32,
           "imageUrl": "https://images.unsplash.com/photo-1579631542720-3a87824fff86?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -968,7 +1177,7 @@
             "Huevo"
           ],
           "tags": [
-            "Fusión Marina",
+            "Fusi\u00f3n Marina",
             "Favorito"
           ],
           "targetMenuScope": "ALL"
@@ -978,7 +1187,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-causitas",
           "name": "CAUSA DE PULPO AL OLIVO",
-          "description": "Papa amarilla sazonada rellena de palta cremosa y coronada con láminas de pulpo tierno marinadas en crema de aceitunas botija iqueñas.",
+          "description": "Papa amarilla sazonada rellena de palta cremosa y coronada con l\u00e1minas de pulpo tierno marinadas en crema de aceitunas botija ique\u00f1as.",
           "price": 34,
           "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -997,7 +1206,7 @@
           "id": "item-m5",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-arroces",
-          "name": "ARROZ CON MARISCOS MELOSO AL WOK DE LEÑA",
+          "name": "ARROZ CON MARISCOS MELOSO AL WOK DE LE\u00d1A",
           "description": "Langostinos jumbo, anillas de calamar tierno, pulpo y conchas de abanico flameados al pisco. Montado sobre arroz meloso con arvejas y pimientos asados.",
           "price": 54,
           "imageUrl": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80",
@@ -1018,8 +1227,8 @@
           "id": "item-m7",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-arroces",
-          "name": "CHAUFA MARINO ESPECIAL AL CARBÓN",
-          "description": "Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazmín salteado al wok con cebollita china fresca.",
+          "name": "CHAUFA MARINO ESPECIAL AL CARB\u00d3N",
+          "description": "Mixtura selecta de mariscos flameados a fuego candente con trozos de pescado crocante. Arroz jazm\u00edn salteado al wok con cebollita china fresca.",
           "price": 49,
           "imageUrl": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1040,7 +1249,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-pulpos",
           "name": "PULPO A LA BRASA CON PAPAS COCHAYUYO",
-          "description": "Tentáculo entero de pulpo sellado a la brasa con salsa anticuchera de la casa y papas doradas.",
+          "description": "Tent\u00e1culo entero de pulpo sellado a la brasa con salsa anticuchera de la casa y papas doradas.",
           "price": 52,
           "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1059,7 +1268,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-ceviches",
           "name": "CEVICHE MIXTO CEVICHITO PLIZ",
-          "description": "Corvina fresca de pesca del día, calamar tierno y langostinos del norte. Acompañado de choclo tierno desgranado y camote glaseado a la naranja.",
+          "description": "Corvina fresca de pesca del d\u00eda, calamar tierno y langostinos del norte. Acompa\u00f1ado de choclo tierno desgranado y camote glaseado a la naranja.",
           "price": 48,
           "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1072,15 +1281,15 @@
           ],
           "tags": [
             "Especialidad de la Casa",
-            "Pesca del Día"
+            "Pesca del D\u00eda"
           ]
         },
         {
           "id": "item-m-ceviche-clasico",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-ceviches",
-          "name": "CEVICHE CLÁSICO DE PESCA DEL DÍA",
-          "description": "Corvina fresca marinada al momento con zumo de limón piurano recién exprimido, ají limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.",
+          "name": "CEVICHE CL\u00c1SICO DE PESCA DEL D\u00cdA",
+          "description": "Corvina fresca marinada al momento con zumo de lim\u00f3n piurano reci\u00e9n exprimido, aj\u00ed limo, cebolla roja pluma, camote glaseado a la naranja y choclo tierno.",
           "price": 38,
           "imageUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1090,8 +1299,8 @@
             "Pescado"
           ],
           "tags": [
-            "Clásico",
-            "Pesca del Día"
+            "Cl\u00e1sico",
+            "Pesca del D\u00eda"
           ]
         },
         {
@@ -1099,7 +1308,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-ceviches",
           "name": "CEVICHE CARRETILLERO CON CALAMAR CROCANTE",
-          "description": "Pesca fresca marinada al ají limo y limón piurano servida con generosa porción de chicharrón de calamar crujiente al momento y crema de rocoto carretillero.",
+          "description": "Pesca fresca marinada al aj\u00ed limo y lim\u00f3n piurano servida con generosa porci\u00f3n de chicharr\u00f3n de calamar crujiente al momento y crema de rocoto carretillero.",
           "price": 44,
           "imageUrl": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1121,8 +1330,8 @@
           "id": "item-m2",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-ceviches",
-          "name": "TIRADITO AHUMADO AL AJÍ AMARILLO & MARACUYÁ",
-          "description": "Láminas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte.",
+          "name": "TIRADITO AHUMADO AL AJ\u00cd AMARILLO & MARACUY\u00c1",
+          "description": "L\u00e1minas finas de lenguado fresco curado con sal marina. Guarnecido con choclo crocante chulpe y cubos de palta fuerte.",
           "price": 42,
           "imageUrl": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1133,15 +1342,15 @@
           ],
           "tags": [
             "Tiradito",
-            "Toque Cítrico"
+            "Toque C\u00edtrico"
           ]
         },
         {
           "id": "item-m4",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-ceviches",
-          "name": "TIRADITO NIKKEI DE ATÚN ALETA AMARILLA",
-          "description": "Cortes seleccionados de atún rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjolí tostado.",
+          "name": "TIRADITO NIKKEI DE AT\u00daN ALETA AMARILLA",
+          "description": "Cortes seleccionados de at\u00fan rojo aleta amarilla fresco. Servido con hilos de nabo encurtido y ajonjol\u00ed tostado.",
           "price": 45,
           "imageUrl": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1151,8 +1360,8 @@
             "Soya"
           ],
           "tags": [
-            "Fusión Nikkei",
-            "Atún Fresco"
+            "Fusi\u00f3n Nikkei",
+            "At\u00fan Fresco"
           ]
         },
         {
@@ -1160,7 +1369,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m3",
           "name": "Pisco Sour Catedral Cevichito Pliz (Copa Doble)",
-          "description": "Destilado puro de uva Quebranta iqueña (4 oz) batido vigorosamente con clara de huevo fresca y zumo de limón piurano.",
+          "description": "Destilado puro de uva Quebranta ique\u00f1a (4 oz) batido vigorosamente con clara de huevo fresca y zumo de lim\u00f3n piurano.",
           "price": 32,
           "imageUrl": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1170,7 +1379,7 @@
             "Huevo"
           ],
           "tags": [
-            "Cóctel Bandera",
+            "C\u00f3ctel Bandera",
             "4 oz Pisco Puro"
           ]
         },
@@ -1178,8 +1387,8 @@
           "id": "item-m9",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m3",
-          "name": "Chilcano Macerado de Maracuyá & Hierba Luisa",
-          "description": "Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuyá.",
+          "name": "Chilcano Macerado de Maracuy\u00e1 & Hierba Luisa",
+          "description": "Pisco acholado premium macerado con hojas frescas de hierba luisa y pulpa de maracuy\u00e1.",
           "price": 28,
           "imageUrl": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1195,7 +1404,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m4",
           "name": "Limonada de Hierba Luisa & Jengibre (Jarra 1L)",
-          "description": "Zumo fresco de limones sutiles colado al momento con infusión helada de hierba luisa y jengibre fresco rallado.",
+          "description": "Zumo fresco de limones sutiles colado al momento con infusi\u00f3n helada de hierba luisa y jengibre fresco rallado.",
           "price": 24,
           "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1213,7 +1422,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m4",
           "name": "Chicha Morada Tradicional de la Casa (Jarra 1L)",
-          "description": "Elaborada artesanalmente con maíz morado selecto, piña dulce madura, manzana israel, membrillo, canela en rama y clavo de olor, con toque de limón sutil al momento.",
+          "description": "Elaborada artesanalmente con ma\u00edz morado selecto, pi\u00f1a dulce madura, manzana israel, membrillo, canela en rama y clavo de olor, con toque de lim\u00f3n sutil al momento.",
           "price": 18,
           "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1230,8 +1439,8 @@
           "id": "item-m-chicharron-mixto",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
-          "name": "Chicharrón Mixto de Pescado & Mariscos",
-          "description": "Generosa mixtura crocante de pescado blanco, langostinos y calamares con yucas doradas, zarza criolla al limón y crema tártara casera.",
+          "name": "Chicharr\u00f3n Mixto de Pescado & Mariscos",
+          "description": "Generosa mixtura crocante de pescado blanco, langostinos y calamares con yucas doradas, zarza criolla al lim\u00f3n y crema t\u00e1rtara casera.",
           "price": 44,
           "imageUrl": "https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1253,8 +1462,8 @@
           "id": "item-m-choritos",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
-          "name": "Choritos a la Chalaca al Limón Piurano (x8)",
-          "description": "Choritos frescos al vapor aderezados con chalaquita criolla de cebolla morada, tomate concasse, ají limo picado, cilantro y choclo desgranado.",
+          "name": "Choritos a la Chalaca al Lim\u00f3n Piurano (x8)",
+          "description": "Choritos frescos al vapor aderezados con chalaquita criolla de cebolla morada, tomate concasse, aj\u00ed limo picado, cilantro y choclo desgranado.",
           "price": 28,
           "imageUrl": "https://images.unsplash.com/photo-1505253758473-96b3e55fdd4f?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1265,7 +1474,7 @@
             "Moluscos"
           ],
           "tags": [
-            "Clásico Chalaco",
+            "Cl\u00e1sico Chalaco",
             "Mariscos Frescos"
           ],
           "targetMenuScope": "ALL"
@@ -1275,7 +1484,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-causitas",
           "name": "Pulpo al Olivo con Palta Fuerte",
-          "description": "Láminas tiernas de pulpo marinadas en suave crema de aceitunas botija peruanas, con cubos de palta fuerte, aceite de oliva virgen y galletas de soda.",
+          "description": "L\u00e1minas tiernas de pulpo marinadas en suave crema de aceitunas botija peruanas, con cubos de palta fuerte, aceite de oliva virgen y galletas de soda.",
           "price": 38,
           "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1295,7 +1504,7 @@
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-pulpos",
           "name": "Pulpo a la Parrilla con Chimichurri Anticuchero",
-          "description": "Tentáculos enteros de pulpo sellados a las brasas con marinada anticuchera de ají panca, acompañados de papas nativas doradas y salsa chimichurri rústica.",
+          "description": "Tent\u00e1culos enteros de pulpo sellados a las brasas con marinada anticuchera de aj\u00ed panca, acompa\u00f1ados de papas nativas doradas y salsa chimichurri r\u00fastica.",
           "price": 56,
           "imageUrl": "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1315,8 +1524,8 @@
           "id": "item-m-tequenos",
           "restaurantId": "rest-costa",
           "categoryId": "cat-m-entradas",
-          "name": "Tequeños de Mariscos & Salsa Tártara (x8)",
-          "description": "Wantanes crocantes artesanales rellenos de mixtura de mariscos flameados al vino blanco con salsa agridulce especial y tártara casera.",
+          "name": "Teque\u00f1os de Mariscos & Salsa T\u00e1rtara (x8)",
+          "description": "Wantanes crocantes artesanales rellenos de mixtura de mariscos flameados al vino blanco con salsa agridulce especial y t\u00e1rtara casera.",
           "price": 26,
           "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
           "isAvailable": true,
@@ -1335,14 +1544,14 @@
       ]
     },
     "rest-1790204393895": {
-      "version": 1,
-      "publishedAt": "2026-09-24T13:28:46.644Z",
-      "publishedBy": "System Bootstrap",
+      "version": 2,
+      "publishedAt": "2026-09-25T15:00:00.000Z",
+      "publishedBy": "Owner / Admin",
       "restaurant": {
         "id": "rest-1790204393895",
         "name": "Voraz",
-        "tagline": "Cocina Urbana & Fusión",
-        "cuisineType": "Fusión & Carnes",
+        "tagline": "Cocina Urbana & Fusi\u00f3n",
+        "cuisineType": "Fusi\u00f3n & Carnes",
         "slug": "voraz",
         "address": "Av. La Mar 850, Miraflores",
         "phone": "+51 987 654 321",
@@ -1385,14 +1594,201 @@
       },
       "categories": [
         {
-          "id": "cat-rest-1790223173257-general",
+          "id": "cat-v-entradas",
           "restaurantId": "rest-1790204393895",
-          "name": "De la Casa",
+          "name": "Entradas & Piqueos Urbanos",
+          "description": "Alitas crocantes con salsa secreta, teque\u00f1os rellenos y piqueos de brasa",
           "sortOrder": 1,
-          "isActive": true
+          "iconName": "Utensils"
+        },
+        {
+          "id": "cat-v-hamburguesas",
+          "restaurantId": "rest-1790204393895",
+          "name": "Hamburguesas al Carb\u00f3n",
+          "description": "Carne Angus seleccionada al carb\u00f3n, queso fundido y pan brioche artesanal",
+          "sortOrder": 2,
+          "iconName": "Flame"
+        },
+        {
+          "id": "cat-v-parrillas",
+          "restaurantId": "rest-1790204393895",
+          "name": "Cortes & Parrillas Fusi\u00f3n",
+          "description": "Bife angosto a las brasas, costillas BBQ al ron y cortes a fuego vivo",
+          "sortOrder": 3,
+          "iconName": "Sparkles"
+        },
+        {
+          "id": "cat-v-bebidas",
+          "restaurantId": "rest-1790204393895",
+          "name": "Bebidas & Cocteler\u00eda Urbana",
+          "description": "Gin tonic bot\u00e1nico de frutos rojos, limonadas artesanales y refrescos",
+          "sortOrder": 4,
+          "iconName": "GlassWater"
         }
       ],
-      "items": []
+      "items": [
+        {
+          "id": "item-v-alitas",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-entradas",
+          "name": "ALITAS FUEGO VORAZ (X12)",
+          "description": "Alitas crocantes glaseadas en salsa BBQ picante con reducci\u00f3n de miel de abeja y aj\u00ed limo, con papas r\u00fasticas y dip blue cheese.",
+          "price": 36.0,
+          "imageUrl": "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "isChefSpecial": true,
+          "prepTimeMinutes": 15,
+          "allergens": [
+            "L\u00e1cteos",
+            "Gluten"
+          ],
+          "tags": [
+            "Para Picar",
+            "Picante",
+            "Fuego Voraz"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-tequenos",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-entradas",
+          "name": "TEQUE\u00d1OS DE ASADO MECHADO (X8)",
+          "description": "Wantanes artesanales rellenos de asado de tira braseado por 6 horas con mozzarella fundida y guacamole ahumado de la casa.",
+          "price": 28.0,
+          "imageUrl": "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "prepTimeMinutes": 12,
+          "allergens": [
+            "L\u00e1cteos",
+            "Gluten"
+          ],
+          "tags": [
+            "Entrada",
+            "Carnes"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-burger-smash",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-hamburguesas",
+          "name": "BURGER VORAZ DOBLE SMASH",
+          "description": "Doble carne de res Angus (200g), doble cheddar madurado, tocino crujiente caramelizado, cebolla crispy y salsa secreta en pan brioche.",
+          "price": 42.0,
+          "imageUrl": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "isChefSpecial": true,
+          "prepTimeMinutes": 18,
+          "allergens": [
+            "L\u00e1cteos",
+            "Gluten"
+          ],
+          "tags": [
+            "Especialidad Voraz",
+            "Smash Burger"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-burger-ahumada",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-hamburguesas",
+          "name": "BURGER FUEGO AHUMADO AL CARB\u00d3N",
+          "description": "220g de jugosa carne a la parrilla de le\u00f1a con queso provolone fundido, chimichurri r\u00fastico, tomates asados y r\u00facula fresca.",
+          "price": 44.0,
+          "imageUrl": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "prepTimeMinutes": 20,
+          "allergens": [
+            "L\u00e1cteos",
+            "Gluten"
+          ],
+          "tags": [
+            "A la Brasa",
+            "Gourmet"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-bife",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-parrillas",
+          "name": "BIFE ANGOSTO A LAS BRASAS (350G)",
+          "description": "Corte premium Angus sellado a fuego alto con mantequilla de finas hierbas y sal de Maras, papas amarillas doradas y ensalada fresca.",
+          "price": 68.0,
+          "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "isChefSpecial": true,
+          "prepTimeMinutes": 22,
+          "allergens": [
+            "L\u00e1cteos"
+          ],
+          "tags": [
+            "Corte Premium",
+            "A la Parrilla"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-costillas",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-parrillas",
+          "name": "COSTILLAS BBQ AL RON DE CA\u00d1A",
+          "description": "Costillar tierno glaseado lentamente al horno de brasa con reducci\u00f3n de BBQ artesanal y ron a\u00f1ejo, acompa\u00f1ado de papas crocantes.",
+          "price": 58.0,
+          "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "prepTimeMinutes": 25,
+          "allergens": [],
+          "tags": [
+            "Costillas BBQ",
+            "Al Horno de Brasa"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-gin",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-bebidas",
+          "name": "GIN TONIC BOT\u00c1NICO DE FRUTOS ROJOS",
+          "description": "Gin premium con infusi\u00f3n de frutos del bosque, bayas de enebro, agua t\u00f3nica artesanal y un toque de romero fresco quemado.",
+          "price": 32.0,
+          "imageUrl": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "isPopular": true,
+          "prepTimeMinutes": 5,
+          "allergens": [],
+          "tags": [
+            "C\u00f3ctel de Autor",
+            "Gin Tonic"
+          ],
+          "targetMenuScope": "ALL"
+        },
+        {
+          "id": "item-v-limonada",
+          "restaurantId": "rest-1790204393895",
+          "categoryId": "cat-v-bebidas",
+          "name": "LIMONADA DE MARACUY\u00c1 & HIERBABUENA (JARRA 1L)",
+          "description": "Zumo fresco de lim\u00f3n reci\u00e9n exprimido, pulpa concentrada de maracuy\u00e1 y hojas de hierbabuena machacadas al momento.",
+          "price": 22.0,
+          "imageUrl": "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
+          "isAvailable": true,
+          "prepTimeMinutes": 4,
+          "allergens": [],
+          "tags": [
+            "Refrescante",
+            "Sin Alcohol",
+            "Jarra Familiar"
+          ],
+          "targetMenuScope": "ALL"
+        }
+      ]
     }
   }
 }
