@@ -183,27 +183,43 @@ function saveCloudDataToDisk(data: any) {
   }
 }
 
-// Initialize on startup: LOCAL DISK IS AUTHORITATIVE.
-// NEVER overwrite existing disk data with remote/stale KV data.
-loadCloudDataFromDisk();
-if (kvRestUrl && kvRestToken) {
-  // Only attempt hydration if local disk has no data at all
-  if (!cachedCloudData || (!cachedCloudData.restaurants?.length && !cachedCloudData.items?.length)) {
-    fetchFromVercelKV().then(remoteData => {
+async function ensureCloudDataHydrated() {
+  if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length)) {
+    return cachedCloudData;
+  }
+
+  // 1. Try Vercel KV / Upstash as primary source of truth
+  if (kvRestUrl && kvRestToken) {
+    try {
+      const remoteData = await fetchFromVercelKV();
       if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
         cachedCloudData = remoteData;
-        if (!cachedCloudData.publishedMenus) cachedCloudData.publishedMenus = {};
-        saveCloudDataToDisk(remoteData);
-        console.log('[Server] Hydrated empty local storage from Vercel KV / Upstash');
+        if (!cachedCloudData.publishedMenus) {
+          cachedCloudData.publishedMenus = {};
+        }
+        console.log('[Server] Successfully hydrated cachedCloudData from Vercel KV / Upstash');
+        return cachedCloudData;
       }
-    }).catch(() => {});
-  } else {
-    // If local disk already has real data, push it to Upstash as backup without overwriting disk
+    } catch (err) {
+      console.warn('[Server] Notice: Vercel KV hydration skipped or failed:', err);
+    }
+  }
+
+  // 2. Fallback to local disk file if remote KV is empty or unavailable
+  loadCloudDataFromDisk();
+
+  // If local disk has data but Vercel KV is empty/newly configured, seed the remote KV with local data
+  if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length) && kvRestUrl && kvRestToken) {
     saveToVercelKV(cachedCloudData).then(() => {
-      console.log('[Server] Synced existing local menu data snapshot to Upstash backup');
+      console.log('[Server] Initialized remote Vercel KV / Upstash with local seed data');
     }).catch(() => {});
   }
+
+  return cachedCloudData;
 }
+
+// Pre-warm the cache at startup asynchronously
+ensureCloudDataHydrated().catch(() => {});
 
 // Connected SSE clients for live menu updates
 const sseClients = new Set<express.Response>();
@@ -232,13 +248,11 @@ async function startServer() {
   });
 
   // GET: Retrieve latest cloud menu
-  app.get('/api/cloud-menu', (req, res) => {
+  app.get('/api/cloud-menu', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     res.json({
       success: true,
       data: cachedCloudData,
@@ -247,15 +261,13 @@ async function startServer() {
   });
 
   // GET: Retrieve atomic published menu for a restaurant (for anonymous visitors & public QR)
-  app.get('/api/public/menu/:slugOrId', (req, res) => {
+  app.get('/api/public/menu/:slugOrId', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('Surrogate-Control', 'no-store');
 
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
     const { slugOrId } = req.params;
     const target = normalizeSlug(slugOrId);
@@ -335,16 +347,14 @@ async function startServer() {
   });
 
   // POST: Publish a restaurant's menu atomically (guaranteeing exact single source of truth for public visitors)
-  app.post('/api/menu/publish', (req, res) => {
+  app.post('/api/menu/publish', async (req, res) => {
     const { restaurantId, restaurant, categories, items, publishedBy } = req.body;
     if (!restaurantId || !restaurant) {
       res.status(400).json({ success: false, message: 'Se requiere restaurantId y datos del restaurante para publicar' });
       return;
     }
 
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
     const publishedMenus = current.publishedMenus || {};
     const prevSnapshot = publishedMenus[restaurantId];
@@ -409,16 +419,14 @@ async function startServer() {
   });
 
   // POST: Full save or update of cloud menu (with robust anti-erasure protection)
-  app.post('/api/cloud-menu', (req, res) => {
+  app.post('/api/cloud-menu', async (req, res) => {
     const { restaurants, items, categories, users, orders } = req.body;
     if (!restaurants && !items && !categories) {
       res.status(400).json({ success: false, message: 'Faltan datos de la carta' });
       return;
     }
 
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
 
     // Intelligent additive merge: preserve existing entities unless explicitly deleted via DELETE endpoints
@@ -542,11 +550,9 @@ async function startServer() {
   });
 
   // DELETE: Delete restaurant
-  app.delete('/api/cloud-menu/restaurant/:id', (req, res) => {
+  app.delete('/api/cloud-menu/restaurant/:id', async (req, res) => {
     const { id } = req.params;
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const restaurants = (current.restaurants || []).filter((r: any) => r.id !== id);
     const categories = (current.categories || []).filter((c: any) => c.restaurantId !== id);
@@ -611,16 +617,14 @@ async function startServer() {
   });
 
   // POST: Update or create user (guarantees photo and restaurant assignment persistence)
-  app.post('/api/cloud-menu/user', (req, res) => {
+  app.post('/api/cloud-menu/user', async (req, res) => {
     const user = req.body;
     if (!user || (!user.id && !user.dni)) {
       res.status(400).json({ success: false, message: 'Usuario inválido' });
       return;
     }
 
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const users = [...(current.users || [])];
     const idx = users.findIndex((u: any) => u.id === user.id || (user.dni && u.dni === user.dni));
@@ -643,11 +647,9 @@ async function startServer() {
   });
 
   // DELETE: Delete user
-  app.delete('/api/cloud-menu/user/:id', (req, res) => {
+  app.delete('/api/cloud-menu/user/:id', async (req, res) => {
     const { id } = req.params;
-    if (!cachedCloudData) {
-      loadCloudDataFromDisk();
-    }
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const users = (current.users || []).filter((u: any) => u.id !== id);
 
