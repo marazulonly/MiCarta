@@ -252,31 +252,15 @@ const STORAGE_KEYS = {
 };
 
 function getInitialStorageState() {
-  let cachedRests = sanitizeRestaurants(INITIAL_RESTAURANTS);
-  let cachedCategories = INITIAL_CATEGORIES.filter(c => INITIAL_RESTAURANTS.some(r => r.id === c.restaurantId));
-  let cachedItems = sanitizeMenuItems(INITIAL_MENU_ITEMS).filter(i => INITIAL_RESTAURANTS.some(r => r.id === i.restaurantId));
-  let cachedUsers = deduplicateUsers(INITIAL_USERS);
-  let cachedOrders = INITIAL_ORDERS.filter(o => INITIAL_RESTAURANTS.some(r => r.id === o.restaurantId));
+  let cachedRests: Restaurant[] = [];
+  let cachedCategories: MenuCategory[] = [];
+  let cachedItems: MenuItem[] = [];
+  let cachedUsers: User[] = [];
+  let cachedOrders: Order[] = [];
   let cachedAuth: User | null = null;
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
-      if (storedRests) {
-        cachedRests = JSON.parse(storedRests);
-      }
-      const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (storedCategories) {
-        cachedCategories = JSON.parse(storedCategories);
-      }
-      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-      if (storedItems) {
-        cachedItems = JSON.parse(storedItems);
-      }
-      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-      if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers);
-      }
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (storedOrders) {
         cachedOrders = JSON.parse(storedOrders);
@@ -304,22 +288,20 @@ const initialState = getInitialStorageState();
 const initParams = getInitialUrlParams();
 
 const initialRequestedSlug = initParams.restSlug;
-const initialFoundRest = initialRequestedSlug 
-  ? findRestaurantBySlug(initialState.cachedRests, initialRequestedSlug)
-  : null;
+const initialFoundRest = null;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialState.cachedRests);
-  const [categories, setCategories] = useState<MenuCategory[]>(initialState.cachedCategories);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
-  const [users, setUsers] = useState<User[]>(initialState.cachedUsers);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
   
   // Selected restaurant filter context (or 'all')
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(initialState.cachedRests[0]?.id || 'rest-brasas');
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
   
   // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
@@ -332,9 +314,7 @@ export default function App() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [isTemplateSplitEditorOpen, setIsTemplateSplitEditorOpen] = useState<boolean>(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant | null>(
-    initialRequestedSlug ? initialFoundRest : (initialState.cachedRests[0] || null)
-  );
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant | null>(null);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(null);
@@ -361,34 +341,6 @@ export default function App() {
       }
     } catch {}
   }, [currentUser]);
-
-  // Keep restaurants synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(restaurants));
-    } catch {}
-  }, [restaurants]);
-
-  // Keep menuItems synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(menuItems));
-    } catch {}
-  }, [menuItems]);
-
-  // Keep categories synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-    } catch {}
-  }, [categories]);
-
-  // Keep users synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    } catch {}
-  }, [users]);
 
   // Keep orders synced to localStorage
   useEffect(() => {
@@ -466,96 +418,117 @@ export default function App() {
     // 1. Initial Cloud Fetch from authoritative backend
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
-      if (cloudData && (cloudData.restaurants?.length > 0 || cloudData.items?.length > 0 || cloudData.users?.length > 0)) {
-        // Keep all loaded restaurants, sanitize brandings without wiping custom restaurants
-        const cleanLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
-          ? sanitizeRestaurants(cloudData.restaurants)
-          : [];
 
-        const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
-          ? cloudData.users
-          : [];
+      // Extract existing local cache values for recovery (to prevent losing custom data created in old buggy container cycles)
+      let localRests: Restaurant[] = [];
+      let localCats: MenuCategory[] = [];
+      let localItems: MenuItem[] = [];
+      let localUsers: User[] = [];
+      try {
+        const r = localStorage.getItem('micarta_restaurants_v2');
+        if (r) localRests = JSON.parse(r);
+        const c = localStorage.getItem('micarta_categories_v2');
+        if (c) localCats = JSON.parse(c);
+        const i = localStorage.getItem('micarta_menu_items_v2');
+        if (i) localItems = JSON.parse(i);
+        const u = localStorage.getItem('micarta_users_v2');
+        if (u) localUsers = JSON.parse(u);
+      } catch {}
 
-        const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
-          ? cloudData.categories
-          : [];
+      const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
+        ? sanitizeRestaurants(cloudData.restaurants)
+        : [];
+      const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
+        ? cloudData.users
+        : [];
+      const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
+        ? cloudData.categories
+        : [];
+      const cleanLoadedItems = cloudData?.items && Array.isArray(cloudData.items)
+        ? sanitizeMenuItems(cloudData.items)
+        : [];
+      const cleanLoadedOrders = cloudData?.orders && Array.isArray(cloudData.orders)
+        ? cloudData.orders
+        : [];
 
-        const cleanLoadedItems = cloudData.items && Array.isArray(cloudData.items)
-          ? sanitizeMenuItems(cloudData.items)
-          : [];
+      // Check if the current browser's local cache has custom entities missing from the remote database
+      const hasMissingRests = localRests.some(lr => !cleanLoadedRests.some(cr => cr.id === lr.id));
+      const hasMissingCats = localCats.some(lc => !cleanLoadedCategories.some(cc => cc.id === lc.id));
+      const hasMissingItems = localItems.some(li => !cleanLoadedItems.some(ci => ci.id === li.id));
 
-        const cleanLoadedOrders = cloudData.orders && Array.isArray(cloudData.orders)
-          ? cloudData.orders
-          : [];
+      const restsMap = new Map<string, Restaurant>();
+      cleanLoadedRests.forEach(r => { if (r?.id) restsMap.set(r.id, r); });
+      localRests.forEach(r => { if (r?.id && !restsMap.has(r.id)) restsMap.set(r.id, r); });
+      const finalRests = Array.from(restsMap.values());
 
-        // Set authoritative states with merging so that locally created entities are never wiped
-        if (cleanLoadedRests.length > 0) {
-          setRestaurants(prev => {
-            const map = new Map<string, Restaurant>();
-            cleanLoadedRests.forEach(r => { if (r?.id) map.set(r.id, r); });
-            prev.forEach(r => { if (r?.id && !map.has(r.id)) map.set(r.id, r); });
-            const merged = Array.from(map.values());
-            try { localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(merged)); } catch {}
-            return merged;
-          });
-        }
-        
-        if (cleanLoadedUsers.length > 0) {
-          setUsers(prev => {
-            const map = new Map<string, User>();
-            cleanLoadedUsers.forEach(u => {
-              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-              if (key) map.set(key, u);
-            });
-            prev.forEach(u => {
-              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-              if (key && !map.has(key)) {
-                map.set(key, u);
-                autoSyncUser(u).catch(() => {});
-              }
-            });
-            const deduplicated = deduplicateUsers(Array.from(map.values()));
-            try { localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(deduplicated)); } catch {}
-            return deduplicated;
-          });
-        }
+      const catsMap = new Map<string, MenuCategory>();
+      cleanLoadedCategories.forEach(c => { if (c?.id) catsMap.set(c.id, c); });
+      localCats.forEach(c => { if (c?.id && !catsMap.has(c.id)) catsMap.set(c.id, c); });
+      const finalCats = Array.from(catsMap.values());
 
-        if (cleanLoadedCategories.length > 0) {
-          setCategories(prev => {
-            const map = new Map<string, MenuCategory>();
-            cleanLoadedCategories.forEach(c => { if (c?.id) map.set(c.id, c); });
-            prev.forEach(c => { if (c?.id && !map.has(c.id)) map.set(c.id, c); });
-            const merged = Array.from(map.values());
-            try { localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged)); } catch {}
-            return merged;
-          });
-        }
+      const itemsMap = new Map<string, MenuItem>();
+      cleanLoadedItems.forEach(i => { if (i?.id) itemsMap.set(i.id, i); });
+      localItems.forEach(i => { if (i?.id && !itemsMap.has(i.id)) itemsMap.set(i.id, i); });
+      const finalItems = Array.from(itemsMap.values());
 
-        if (cleanLoadedItems.length > 0) {
-          setMenuItems(prev => {
-            const map = new Map<string, MenuItem>();
-            cleanLoadedItems.forEach(i => { if (i?.id) map.set(i.id, i); });
-            prev.forEach(i => { if (i?.id && !map.has(i.id)) map.set(i.id, i); });
-            const merged = Array.from(map.values());
-            try { localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(merged)); } catch {}
-            return merged;
-          });
-        }
+      const usersMap = new Map<string, User>();
+      cleanLoadedUsers.forEach(u => {
+        const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+        if (key) usersMap.set(key, u);
+      });
+      localUsers.forEach(u => {
+        const key = u.id || (u.dni ? `dni-${u.dni}` : null);
+        if (key && !usersMap.has(key)) usersMap.set(key, u);
+      });
+      const finalUsers = deduplicateUsers(Array.from(usersMap.values()));
 
-        if (cleanLoadedOrders.length > 0) setOrders(cleanLoadedOrders);
-
-        // Update previewRestaurant immediately with the authoritative cloud branding & data
-        setPreviewRestaurant(prev => {
-          if (initialRequestedSlug) {
-            const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
-            if (match) return match;
-            return prev;
-          }
-          if (!prev) return null;
-          const match = cleanLoadedRests.find(r => r.id === prev.id || r.slug === prev.slug);
-          return match || prev;
-        });
+      // Set purely state-driven values
+      setRestaurants(finalRests);
+      setCategories(finalCats);
+      setMenuItems(finalItems);
+      setUsers(finalUsers);
+      if (cleanLoadedOrders.length > 0) {
+        setOrders(cleanLoadedOrders);
       }
+
+      // If we recovered local data that was missing on the server, upload and publish it right now!
+      if (hasMissingRests || hasMissingCats || hasMissingItems) {
+        console.log('[CloudSync] Autodetected custom restaurants/items missing from the cloud. Restoring...');
+        saveFullCloudMenu({
+          restaurants: finalRests,
+          categories: finalCats,
+          items: finalItems,
+          users: finalUsers,
+          orders: cleanLoadedOrders
+        }).then(() => {
+          // Instantly publish the restored data so anonymous direct links work perfectly
+          finalRests.forEach(r => {
+            const rCats = finalCats.filter(c => c.restaurantId === r.id);
+            const rItems = finalItems.filter(i => i.restaurantId === r.id);
+            publishRestaurantMenu(r.id, r, rCats, rItems, 'System Self-Healing').catch(() => {});
+          });
+        }).catch(() => {});
+      }
+
+      // Update previewRestaurant with the authoritative cloud data
+      setPreviewRestaurant(prev => {
+        if (initialRequestedSlug) {
+          const match = findRestaurantBySlug(finalRests, initialRequestedSlug);
+          if (match) return match;
+          return prev;
+        }
+        if (!prev) return null;
+        const match = finalRests.find(r => r.id === prev.id || r.slug === prev.slug);
+        return match || prev;
+      });
+
+      // Clear local storage cache keys so we never rely on them again
+      try {
+        localStorage.removeItem('micarta_restaurants_v2');
+        localStorage.removeItem('micarta_categories_v2');
+        localStorage.removeItem('micarta_menu_items_v2');
+        localStorage.removeItem('micarta_users_v2');
+      } catch {}
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
     }).finally(() => {
@@ -804,12 +777,6 @@ export default function App() {
       }
     }
 
-    try {
-      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-    } catch {}
-
     // Full atomic persistence to server disk and remote backup
     saveFullCloudMenu({
       restaurants: nextRestaurants,
@@ -883,11 +850,6 @@ export default function App() {
       setUsers(nextUsers);
     }
 
-    try {
-      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-    } catch {}
-
     autoSyncRestaurant(updated);
     publishRestaurantMenu(updated.id, updated, categories, menuItems).catch(() => {});
     saveFullCloudMenu({
@@ -939,13 +901,6 @@ export default function App() {
     const nextItems = menuItems.filter(i => i.restaurantId !== restaurantId);
     const nextCategories = categories.filter(c => c.restaurantId !== restaurantId);
 
-    try {
-      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(nextRestaurants));
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-    } catch {}
-
     // 4. Delete from Cloud
     autoDeleteRestaurant(restaurantId).catch(() => {});
     saveFullCloudMenu({
@@ -962,9 +917,6 @@ export default function App() {
   const handleUpdateMenuItem = (updated: MenuItem) => {
     const nextItems = menuItems.map(i => i.id === updated.id ? updated : i);
     setMenuItems(nextItems);
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
-    } catch {}
     autoSyncMenuItem(updated);
     saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
@@ -973,9 +925,6 @@ export default function App() {
   const handleAddMenuItem = (newItem: MenuItem) => {
     const nextItems = [newItem, ...menuItems.filter(i => i.id !== newItem.id)];
     setMenuItems(nextItems);
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(nextItems));
-    } catch {}
     autoSyncMenuItem(newItem);
     saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
@@ -984,9 +933,6 @@ export default function App() {
   const handleDeleteMenuItem = (itemId: string) => {
     const updatedItems = menuItems.filter(i => i.id !== itemId);
     setMenuItems(updatedItems);
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedItems));
-    } catch {}
     autoDeleteMenuItem(itemId);
     saveFullCloudMenu({ restaurants, categories, items: updatedItems, users, orders });
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
@@ -998,9 +944,6 @@ export default function App() {
     const otherCats = categories.filter(c => c.restaurantId !== restId);
     const updatedList = [...otherCats, ...reorderedCats];
     setCategories(updatedList);
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updatedList));
-    } catch {}
     saveFullCloudMenu({ categories: updatedList, restaurants, items: menuItems, users, orders });
     showToast(`✓ Orden de categorías guardado en la nube.`);
   };
@@ -1011,9 +954,6 @@ export default function App() {
     const otherItems = menuItems.filter(i => i.restaurantId !== restId);
     const updatedList = [...otherItems, ...reorderedItems];
     setMenuItems(updatedList);
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedList));
-    } catch {}
     saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
@@ -1021,9 +961,6 @@ export default function App() {
   const handleAddCategory = (newCategory: MenuCategory) => {
     const nextCategories = [...categories.filter(c => c.id !== newCategory.id), newCategory];
     setCategories(nextCategories);
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
-    } catch {}
     autoSyncCategory(newCategory);
     saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
@@ -1032,9 +969,6 @@ export default function App() {
   const handleUpdateCategory = (updatedCategory: MenuCategory) => {
     const nextCategories = categories.map(c => c.id === updatedCategory.id ? updatedCategory : c);
     setCategories(nextCategories);
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
-    } catch {}
     autoSyncCategory(updatedCategory);
     saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
@@ -1043,9 +977,6 @@ export default function App() {
   const handleDeleteCategory = (categoryId: string) => {
     const updatedCategories = categories.filter(c => c.id !== categoryId);
     setCategories(updatedCategories);
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updatedCategories));
-    } catch {}
     autoDeleteCategory(categoryId);
     saveFullCloudMenu({ restaurants, categories: updatedCategories, items: menuItems, users, orders });
     showToast(`✓ Categoría eliminada de la nube.`);
@@ -1054,9 +985,6 @@ export default function App() {
   const handleAddUser = (newUser: User) => {
     const nextUsers = deduplicateUsers([newUser, ...users]);
     setUsers(nextUsers);
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-    } catch {}
     autoSyncUser(newUser);
     saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
     showToast(`✓ Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado permanentemente.`);
@@ -1068,12 +996,11 @@ export default function App() {
     if (currentUser?.id === updated.id) {
       setCurrentUser(updated);
     }
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-      if (currentUser?.id === updated.id) {
+    if (currentUser?.id === updated.id) {
+      try {
         localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(updated));
-      }
-    } catch {}
+      } catch {}
+    }
     autoSyncUser(updated);
     saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
     showToast(`✓ Usuario "${updated.name}" actualizado y guardado permanentemente.`);
@@ -1086,12 +1013,11 @@ export default function App() {
     if (currentUser?.id === userId) {
       setCurrentUser(null);
     }
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(nextUsers));
-      if (currentUser?.id === userId) {
+    if (currentUser?.id === userId) {
+      try {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
-      }
-    } catch {}
+      } catch {}
+    }
     autoDeleteUser(userId);
     saveFullCloudMenu({
       restaurants,

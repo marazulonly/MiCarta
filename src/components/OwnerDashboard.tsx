@@ -900,6 +900,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <span className="text-[11px] font-mono mt-1 block font-bold" style={{ color: brandPrimaryColor }}>
                         /r/{rest.slug}
                       </span>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span>☁️ Guardado en Nube</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -983,6 +989,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   currentRestaurant.isOpen ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
                 }`}>
                   {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>☁️ Sincronizado en Nube</span>
                 </span>
               </div>
             </div>
