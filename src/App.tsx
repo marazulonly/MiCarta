@@ -1298,34 +1298,10 @@ export default function App() {
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
 
-  // Global loading screen while fetching initial cloud data database state (only for direct link access)
-  if (isDirectLinkAccess && !isInitialCloudFetchDone) {
+  // Global loading screen while fetching initial cloud data (only for direct link access, completely clean/silent)
+  if (isDirectLinkAccess && (!isInitialCloudFetchDone || (isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant))) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 selection:bg-amber-400 selection:text-black">
-        <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
-          <div className="w-10 h-10 rounded-full border-2 border-neutral-700 border-t-amber-400 animate-spin" />
-          <h2 className="text-base font-semibold text-white tracking-tight">Conectando...</h2>
-          <p className="text-xs text-neutral-400 font-mono">
-            Sincronizando base de datos segura en la nube...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // 1. Loading screen while fetching the published menu for the requested link
-  // NEVER show any fallback restaurant while loading a direct restaurant link
-  if (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant) {
-    return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 selection:bg-amber-400 selection:text-black">
-        <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
-          <div className="w-10 h-10 rounded-full border-2 border-neutral-700 border-t-amber-400 animate-spin" />
-          <h2 className="text-base font-semibold text-white tracking-tight">Cargando carta digital...</h2>
-          <p className="text-xs text-neutral-400 font-mono">
-            {initialRequestedSlug ? `/?r=${initialRequestedSlug}` : 'Conectando con el restaurante...'}
-          </p>
-        </div>
-      </div>
+      <div className="min-h-screen bg-neutral-950" />
     );
   }
 
