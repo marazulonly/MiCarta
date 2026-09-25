@@ -94,9 +94,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const buttonUnselectedBorder = bgIsLight 
     ? 'rgba(0, 0, 0, 0.22)' 
     : 'rgba(255, 255, 255, 0.30)';
-  const buttonUnselectedText = bgIsLight 
-    ? '#18181B' 
-    : '#FFFFFF';
+  const buttonUnselectedText = primaryText;
 
   const addonSelectedBg = bgIsLight
     ? `${accentColor}18`

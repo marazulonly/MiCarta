@@ -503,7 +503,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
                     {showTagline && (
                       <p 
-                        style={{ color: COLOR_TEXT, fontFamily: dishDescFont }}
+                        style={{ color: COLOR_REST_NAME, fontFamily: dishDescFont }}
                         className="text-xs font-semibold"
                       >
                         {restaurant.tagline || 'Cevichería Contemporánea & Pesca Artesanal del Día'}

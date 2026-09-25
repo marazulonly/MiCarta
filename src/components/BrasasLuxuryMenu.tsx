@@ -471,7 +471,10 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                       )}
 
                       {showTagline && restaurant.tagline && (
-                        <p className="text-[10px] sm:text-[11px] text-[#dfb86c]/90 uppercase tracking-widest font-serif max-w-sm mx-auto">
+                        <p 
+                          style={{ color: restaurant.branding?.restaurantNameColor || '#dfb86c' }}
+                          className="text-[10px] sm:text-[11px] uppercase tracking-widest font-serif max-w-sm mx-auto"
+                        >
                           {restaurant.tagline}
                         </p>
                       )}

@@ -353,7 +353,10 @@ export const EditorialGrandMenu: React.FC<EditorialGrandMenuProps> = ({
             )}
 
             {branding.showHeaderTagline !== false && restaurant.tagline && (
-              <p className="text-xs sm:text-sm font-serif italic text-neutral-600 mt-1 max-w-md mx-auto">
+              <p 
+                style={{ color: branding.restaurantNameColor || undefined }}
+                className="text-xs sm:text-sm font-serif italic mt-1 max-w-md mx-auto"
+              >
                 {restaurant.tagline}
               </p>
             )}

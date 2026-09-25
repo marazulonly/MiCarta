@@ -261,7 +261,10 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
                   </span>
                 </div>
                 {restaurant.tagline && (
-                  <p className="text-xs text-neutral-300 line-clamp-1 mt-0.5">
+                  <p 
+                    style={{ color: branding.restaurantNameColor || undefined }}
+                    className="text-xs line-clamp-1 mt-0.5"
+                  >
                     {restaurant.tagline}
                   </p>
                 )}

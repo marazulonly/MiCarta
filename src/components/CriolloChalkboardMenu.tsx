@@ -413,7 +413,10 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                     )}
 
                     {showTagline && (
-                      <p className="text-[11px] text-neutral-400 font-mono">
+                      <p 
+                        style={{ color: restaurant.branding?.restaurantNameColor || undefined }}
+                        className="text-[11px] font-mono"
+                      >
                         {restaurant.tagline || 'Sazón Criolla y Fuego a la Leña'} · Precios en Soles (S/.)
                       </p>
                     )}

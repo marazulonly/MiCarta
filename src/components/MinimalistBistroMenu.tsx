@@ -176,7 +176,10 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
               {restaurant.name}
             </h1>
             {restaurant.tagline && (
-              <p className="text-xs text-neutral-400 mt-1 font-serif italic">
+              <p 
+                style={{ color: branding.restaurantNameColor || undefined }}
+                className="text-xs mt-1 font-serif italic"
+              >
                 {restaurant.tagline}
               </p>
             )}

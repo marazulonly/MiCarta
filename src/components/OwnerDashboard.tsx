@@ -901,9 +901,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         /r/{rest.slug}
                       </span>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" title="Guardado en Nube">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                          <span>☁️ Guardado en Nube</span>
+                          <span>☁️</span>
                         </span>
                       </div>
                     </div>
@@ -990,9 +990,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 }`}>
                   {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300" title="Sincronizado en Nube">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>☁️ Sincronizado en Nube</span>
+                  <span>☁️</span>
                 </span>
               </div>
             </div>
