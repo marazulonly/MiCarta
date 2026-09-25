@@ -745,16 +745,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span>+ Nuevo Plato</span>
           </button>
-
-          <button
-            onClick={handlePublishClick}
-            disabled={isPublishing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition cursor-pointer shadow-md disabled:opacity-50"
-            title="Publicar esta versión oficial de la carta para visitantes públicos y códigos QR"
-          >
-            <UploadCloud className="w-4 h-4 stroke-[2.5]" />
-            <span>{isPublishing ? 'Publicando...' : 'Publicar Carta'}</span>
-          </button>
         </div>
       </div>
 
