@@ -17,7 +17,6 @@ import { UsersView } from './components/UsersView';
 import { OrdersView } from './components/OrdersView';
 import { ArchitectureView } from './components/ArchitectureView';
 import { CustomerMenuModal } from './components/CustomerMenuModal';
-import { LoginModal } from './components/LoginModal';
 import { WaiterView } from './components/WaiterView';
 import { DeliveryView } from './components/DeliveryView';
 import { CustomerPortalView } from './components/CustomerPortalView';
@@ -153,12 +152,16 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
         cleaned.cuisineType = 'Cevichería & Mariscos';
       }
       const existing = map.get(r.id);
+      
+      // If cleaned contains custom branding with actual keys, prioritize it completely
+      const finalBranding = cleaned.branding && Object.keys(cleaned.branding).length > 2
+        ? cleaned.branding
+        : (existing?.branding || cleaned.branding || {} as RestaurantBranding);
+
       map.set(r.id, {
         ...(existing || {}),
         ...cleaned,
-        // CRITICAL: We completely separate the branding relation! 
-        // If cleaned (from server/disk/import) has branding, use it directly without merging with fallback defaults!
-        branding: cleaned.branding || (existing?.branding as RestaurantBranding)
+        branding: finalBranding
       });
     }
   });
@@ -192,16 +195,29 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       headerLogoUrl: '',
     };
 
-    const userBrand = r.branding;
+    const userBrand: Partial<RestaurantBranding> = r.branding || {};
     const userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
 
-    // We completely separate manually assigned colors from system defaults.
-    // Native defaults of each restaurant are used as the baseline fallback, eliminating any mixing with yellow/black platform styles.
-    const mergedBranding: RestaurantBranding = {
-      ...(fallback?.branding || genericDefaultBranding),
-      ...(userBrand || {}),
-      headerLogoUrl: userLogo
-    };
+    // CRITICAL COLOR PROTECTION:
+    // Build a clean branding object. If userBrand has custom colors (keys exist),
+    // we strictly preserve them and do NOT merge with the hardcoded mockData template defaults.
+    const mergedBranding: RestaurantBranding = { ...genericDefaultBranding };
+    
+    // Only spread fallback branding from system template if the userBrand has no custom colors defined at all
+    const hasCustomColors = Boolean(userBrand.primaryColor || userBrand.darkBgColor || userBrand.textColor);
+    if (!hasCustomColors && fallback?.branding) {
+      Object.assign(mergedBranding, fallback.branding);
+    }
+    
+    // Assign all defined userBrand properties (never overwrite custom attributes with defaults)
+    Object.keys(userBrand).forEach(key => {
+      const val = (userBrand as any)[key];
+      if (val !== undefined && val !== null && val !== '') {
+        (mergedBranding as any)[key] = val;
+      }
+    });
+
+    mergedBranding.headerLogoUrl = userLogo;
 
     return {
       ...(fallback || {}),
@@ -341,7 +357,6 @@ export default function App() {
   
   // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   // Active Role Simulator (synced with currentUser)
@@ -1411,7 +1426,6 @@ export default function App() {
           currentUser={currentUser}
           restaurant={currentSelectedRest}
           onLogout={handleLogout}
-          onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onOpenCustomerPreview={() => handleOpenCustomerPreview()}
           onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
           onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
@@ -1445,8 +1459,8 @@ export default function App() {
               onOpenCustomerPreview={handleOpenCustomerPreview}
               onPublishMenu={handlePublishMenu}
               onSwitchToAdminView={() => {
-                showToast('Se requieren credenciales de Administrador (DNI: 00448157) para acceder a la vista global SaaS.');
-                setIsLoginModalOpen(true);
+                showToast('Cierra sesión e ingresa con DNI de Administrador (00448157) para acceder a la vista global SaaS.');
+                handleLogout();
               }}
               onImportBackupJSON={handleImportBackupJSON}
             />
@@ -1517,14 +1531,11 @@ export default function App() {
           isOwnerOrAdmin={currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'}
         />
 
-        {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-          users={users}
+        {/* Profile Settings Modal */}
+        <ProfileSettingsModal
+          isOpen={isProfileSettingsOpen}
+          onClose={() => setIsProfileSettingsOpen(false)}
           currentUser={currentUser}
-          onLogin={handleLogin}
-          onLogout={handleLogout}
           onUpdateUser={handleUpdateUser}
         />
 
@@ -1570,7 +1581,6 @@ export default function App() {
         onOpenCustomerPreview={() => handleOpenCustomerPreview()}
         onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
         currentUser={currentUser}
-        onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
         isSimulationActive={isSimulationActive}
         onToggleSimulation={(active) => {
@@ -1748,16 +1758,7 @@ export default function App() {
         onUpdateUser={handleUpdateUser}
       />
 
-      {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        users={users}
-        currentUser={currentUser}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-        onUpdateUser={handleUpdateUser}
-      />
+
 
       {/* Floating Toast Notification */}
       {toastMessage && (

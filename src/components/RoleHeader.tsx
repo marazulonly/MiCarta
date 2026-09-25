@@ -20,7 +20,6 @@ import { User, UserRole, Restaurant } from '../types';
 interface RoleHeaderProps {
   currentUser: User;
   onLogout: () => void;
-  onOpenLoginModal?: () => void;
   restaurant?: Restaurant;
   onOpenCustomerPreview?: () => void;
   onOpenTemplateSplitEditor?: () => void;
@@ -30,7 +29,6 @@ interface RoleHeaderProps {
 export const RoleHeader: React.FC<RoleHeaderProps> = ({
   currentUser,
   onLogout,
-  onOpenLoginModal,
   restaurant,
   onOpenCustomerPreview,
   onOpenTemplateSplitEditor,

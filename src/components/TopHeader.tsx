@@ -28,7 +28,6 @@ interface TopHeaderProps {
   onOpenCustomerPreview: () => void;
   onOpenTemplateSplitEditor?: () => void;
   currentUser?: User | null;
-  onOpenLoginModal?: () => void;
   onLogout?: () => void;
   isSimulationActive?: boolean;
   onToggleSimulation?: (active: boolean) => void;
@@ -56,7 +55,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenCustomerPreview,
   onOpenTemplateSplitEditor,
   currentUser,
-  onOpenLoginModal,
   onLogout,
   isSimulationActive = false,
   onToggleSimulation,
@@ -187,9 +185,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             {/* Login / Current User Profile Button */}
             <button
               id="header-btn-login-modal"
-              onClick={onOpenLoginModal}
+              onClick={onOpenProfileSettings}
               className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
-              title="Cambiar Usuario o Ver Credenciales"
+              title="Configuración de Perfil (Editar datos y foto)"
             >
               {currentUser ? (
                 <div className="flex items-center gap-2">
