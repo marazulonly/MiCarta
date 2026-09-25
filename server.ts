@@ -304,42 +304,6 @@ async function startServer() {
       return;
     }
 
-    // 3. Fallback: Find restaurant in draft data, create initial published snapshot v1, and return atomically
-    const rests = current.restaurants || [];
-    const matchedRest = rests.find((r: any) => 
-      normalizeSlug(r.id) === target || 
-      normalizeSlug(r.slug) === target || 
-      normalizeSlug(r.name) === target
-    );
-
-    if (matchedRest) {
-      const restCategories = (current.categories || []).filter((c: any) => c.restaurantId === matchedRest.id);
-      const restItems = (current.items || []).filter((i: any) => i.restaurantId === matchedRest.id);
-      const initialSnapshot = {
-        version: 1,
-        publishedAt: new Date().toISOString(),
-        publishedBy: 'System Bootstrap',
-        restaurant: matchedRest,
-        categories: restCategories,
-        items: restItems
-      };
-
-      current.publishedMenus = current.publishedMenus || {};
-      current.publishedMenus[matchedRest.id] = initialSnapshot;
-      saveCloudDataToDisk(current);
-
-      res.json({
-        success: true,
-        published: true,
-        version: 1,
-        publishedAt: initialSnapshot.publishedAt,
-        restaurant: matchedRest,
-        categories: restCategories,
-        items: restItems
-      });
-      return;
-    }
-
     res.status(404).json({
       success: false,
       message: `No se encontró la carta para el identificador "${slugOrId}"`
