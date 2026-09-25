@@ -56,7 +56,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
             <img 
               src="/huevofrito.png" 
               alt="Micarta" 
-              className="w-9 h-9 rounded-xl object-contain bg-white border border-neutral-200 shadow"
+              className="w-9 h-9 object-contain"
             />
             <div>
               <div className="flex items-center gap-2 flex-wrap">

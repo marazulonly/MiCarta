@@ -155,10 +155,9 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       map.set(r.id, {
         ...(existing || {}),
         ...cleaned,
-        branding: {
-          ...(existing?.branding || {}),
-          ...(cleaned.branding || {})
-        }
+        // CRITICAL: We completely separate the branding relation! 
+        // If cleaned (from server/disk/import) has branding, use it directly without merging with fallback defaults!
+        branding: cleaned.branding || (existing?.branding as RestaurantBranding)
       });
     }
   });
@@ -192,23 +191,20 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       headerLogoUrl: '',
     };
 
-    const fbBrand = fallback?.branding;
     const userBrand = r.branding;
-    const userLogo = userBrand?.headerLogoUrl || userBrand?.logoUrl || r.logoUrl || fbBrand?.headerLogoUrl || fbBrand?.logoUrl || '';
+    const userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
 
-    const mergedBranding: RestaurantBranding = {
+    // If the server/cloud branding exists, we do NOT force merge with fallback brand values if the user brand has them.
+    // This separates the relation completely so that each restaurant preserves its own distinct color palette and logo.
+    const mergedBranding: RestaurantBranding = userBrand && Object.keys(userBrand).length > 2 ? {
       ...genericDefaultBranding,
-      ...(fbBrand || {}),
+      ...userBrand,
+      headerLogoUrl: userLogo
+    } : {
+      ...genericDefaultBranding,
+      ...(fallback?.branding || {}),
       ...(userBrand || {}),
-      headerLogoUrl: userLogo,
-      darkBgColor: userBrand?.darkBgColor || userBrand?.backgroundColor || fbBrand?.darkBgColor || genericDefaultBranding.darkBgColor,
-      cardBgColor: userBrand?.dishCardBgColor || userBrand?.cardBgColor || fbBrand?.cardBgColor || fbBrand?.dishCardBgColor || genericDefaultBranding.cardBgColor,
-      dishCardBgColor: userBrand?.dishCardBgColor || userBrand?.cardBgColor || fbBrand?.dishCardBgColor || fbBrand?.cardBgColor || genericDefaultBranding.dishCardBgColor,
-      textColor: userBrand?.textColor || fbBrand?.textColor || genericDefaultBranding.textColor,
-      buttonColor: userBrand?.buttonColor || userBrand?.accentColor || userBrand?.primaryColor || fbBrand?.buttonColor || fbBrand?.primaryColor || genericDefaultBranding.buttonColor,
-      buttonTextColor: userBrand?.buttonTextColor || fbBrand?.buttonTextColor || genericDefaultBranding.buttonTextColor,
-      primaryColor: userBrand?.primaryColor || userBrand?.buttonColor || userBrand?.accentColor || fbBrand?.primaryColor || genericDefaultBranding.primaryColor,
-      accentColor: userBrand?.accentColor || userBrand?.buttonColor || userBrand?.primaryColor || fbBrand?.accentColor || genericDefaultBranding.accentColor,
+      headerLogoUrl: userLogo
     };
 
     return {
@@ -1075,9 +1071,9 @@ export default function App() {
           ...impRest,
           ownerId: existing?.ownerId || impRest.ownerId,
           branding: {
-            ...(existing?.branding || {}),
+            ...(existing ? existing.branding : {}),
             ...(impRest.branding || {})
-          }
+          } as RestaurantBranding
         };
         restMap.set(impRest.id, mergedRest);
       });
@@ -1285,44 +1281,40 @@ export default function App() {
       const btnColor = previewRestaurant?.branding?.buttonColor || '#D98262';
       const creamColor = previewRestaurant?.branding?.buttonTextColor || '#EAEBDC';
       const restLogo = previewRestaurant?.branding?.headerLogoUrl || previewRestaurant?.logoUrl;
+      const textColor = previewRestaurant?.branding?.textColor || '#FFFFFF';
 
       return (
         <div 
           className="min-h-screen flex flex-col items-center justify-center p-6 text-center select-none font-sans"
-          style={{ backgroundColor: restColor, color: '#FFFFFF' }}
+          style={{ backgroundColor: restColor, color: textColor }}
         >
           <div 
-            className="max-w-md w-full p-8 rounded-3xl border shadow-2xl backdrop-blur-md space-y-6 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)', borderColor: `${secColor}60` }}
+            className="max-w-md w-full p-8 space-y-6 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200"
           >
-            {/* Restaurant Logo */}
+            {/* Restaurant Logo - Clean, no borders/shadow/background/padding */}
             {restLogo ? (
               <img 
                 src={restLogo} 
                 alt={previewRestaurant?.name} 
-                className="max-h-28 max-w-[240px] rounded-2xl object-contain shadow-2xl border border-white/20 p-2 bg-black/40"
+                className="max-h-28 max-w-[240px] object-contain"
                 referrerPolicy="no-referrer"
               />
             ) : (
               <div 
-                className="w-16 h-16 rounded-2xl border flex items-center justify-center shadow-xl"
-                style={{ backgroundColor: `${secColor}30`, borderColor: secColor }}
+                className="w-16 h-16 flex items-center justify-center"
               >
                 <CheckCircle2 className="w-8 h-8" style={{ color: secColor }} />
               </div>
             )}
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: previewRestaurant?.branding?.restaurantNameFont || 'Fredoka, Outfit, sans-serif' }}>
-                ¡Gracias por tu visita!
+              <h2 className="text-2xl font-black tracking-tight" style={{ fontFamily: previewRestaurant?.branding?.restaurantNameFont || 'Fredoka, Outfit, sans-serif', color: textColor }}>
+                Vuelve siempre! Te esperamos
               </h2>
-              <p className="text-sm opacity-85 leading-relaxed">
-                Has cerrado la carta digital de <strong>{previewRestaurant?.name || 'nuestro restaurante'}</strong>. ¡Esperamos volver a atenderte muy pronto!
-              </p>
             </div>
 
             {(previewRestaurant?.address || previewRestaurant?.phone) && (
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1 w-full font-mono text-neutral-300">
+              <div className="p-3 text-xs space-y-1 w-full font-mono opacity-80" style={{ color: textColor }}>
                 {previewRestaurant.address && <div>📍 {previewRestaurant.address}</div>}
                 {previewRestaurant.phone && <div>📞 {previewRestaurant.phone}</div>}
               </div>
@@ -1336,7 +1328,7 @@ export default function App() {
               style={{ backgroundColor: btnColor, color: creamColor }}
               className="w-full py-3.5 px-6 rounded-2xl font-black text-sm tracking-wide transition shadow-lg cursor-pointer hover:brightness-110"
             >
-              Volver a abrir la Carta Digital
+              Regresar
             </button>
           </div>
         </div>

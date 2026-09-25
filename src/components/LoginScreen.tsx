@@ -197,7 +197,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <img 
               src="/huevofrito.png" 
               alt="Micarta" 
-              className="w-9 h-9 rounded-xl object-contain bg-white border border-neutral-200 shadow"
+              className="w-9 h-9 object-contain"
             />
           </div>
 

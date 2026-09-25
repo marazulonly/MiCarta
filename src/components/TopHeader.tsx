@@ -71,7 +71,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <img 
               src="/huevofrito.png" 
               alt="Micarta" 
-              className="w-8 h-8 rounded-lg object-contain bg-white border border-neutral-200 shadow-sm"
+              className="w-8 h-8 object-contain"
             />
             <div>
               <div className="flex items-center gap-2">
