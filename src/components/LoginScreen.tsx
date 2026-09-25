@@ -405,7 +405,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 level="H"
                 includeMargin={false}
                 imageSettings={{
-                  src: activeRest.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64&q=80",
+                  src: activeRest?.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64&q=80",
                   x: undefined,
                   y: undefined,
                   height: 36,
@@ -419,7 +419,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <div className="text-xs font-bold text-white flex items-center justify-center gap-1.5">
                 <Smartphone className="w-4 h-4 text-neutral-400" />
                 <span>
-                  {activeRest.name} • {selectedChannel === 'DINE_IN' ? `Mesa ${selectedTableNum}` : 'Delivery'}
+                  {(activeRest?.name || '')} • {selectedChannel === 'DINE_IN' ? `Mesa ${selectedTableNum}` : 'Delivery'}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400">
