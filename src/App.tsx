@@ -1298,8 +1298,8 @@ export default function App() {
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
 
-  // Global loading screen while fetching initial cloud data database state
-  if (!isInitialCloudFetchDone) {
+  // Global loading screen while fetching initial cloud data database state (only for direct link access)
+  if (isDirectLinkAccess && !isInitialCloudFetchDone) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 selection:bg-amber-400 selection:text-black">
         <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
