@@ -26,6 +26,7 @@ import { AdminSimulationView } from './components/AdminSimulationView';
 import { OwnerDashboard } from './components/OwnerDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
+import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { TemplateSplitEditor } from './components/TemplateSplitEditor';
 import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
@@ -341,6 +342,7 @@ export default function App() {
   // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   // Active Role Simulator (synced with currentUser)
   const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
@@ -1412,6 +1414,7 @@ export default function App() {
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onOpenCustomerPreview={() => handleOpenCustomerPreview()}
           onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
+          onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
         />
 
         {/* Role-Specific View Container */}
@@ -1581,6 +1584,7 @@ export default function App() {
             showToast('Modo Simulación desactivado');
           }
         }}
+        onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -1735,6 +1739,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal
+        isOpen={isProfileSettingsOpen}
+        onClose={() => setIsProfileSettingsOpen(false)}
+        currentUser={currentUser}
+        onUpdateUser={handleUpdateUser}
+      />
 
       {/* Authentication Modal with DNI (8 digits) and Universal Access Key ("12345678") */}
       <LoginModal

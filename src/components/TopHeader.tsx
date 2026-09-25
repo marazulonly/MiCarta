@@ -12,7 +12,8 @@ import {
   Check,
   SlidersHorizontal,
   Eye,
-  LayoutTemplate
+  LayoutTemplate,
+  Settings
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 
@@ -31,6 +32,7 @@ interface TopHeaderProps {
   onLogout?: () => void;
   isSimulationActive?: boolean;
   onToggleSimulation?: (active: boolean) => void;
+  onOpenProfileSettings?: () => void;
 }
 
 const ROLES_LIST: { role: UserRole; label: string }[] = [
@@ -58,6 +60,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onLogout,
   isSimulationActive = false,
   onToggleSimulation,
+  onOpenProfileSettings,
 }) => {
   const currentRestaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
@@ -211,6 +214,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 </div>
               )}
             </button>
+
+            {/* Profile Settings Gear Button */}
+            {currentUser && onOpenProfileSettings && (
+              <button
+                id="header-btn-profile-settings"
+                onClick={onOpenProfileSettings}
+                className="flex items-center justify-center p-2 rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
+                title="Configuración de Perfil (Editar datos y foto)"
+              >
+                <Settings className="w-4 h-4 text-neutral-700 animate-spin-slow" />
+              </button>
+            )}
 
             {/* Logout Button */}
             {currentUser && onLogout && (

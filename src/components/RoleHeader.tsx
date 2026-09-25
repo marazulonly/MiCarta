@@ -12,7 +12,8 @@ import {
   Clock,
   SlidersHorizontal,
   Eye,
-  LayoutTemplate
+  LayoutTemplate,
+  Settings
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
 
@@ -23,6 +24,7 @@ interface RoleHeaderProps {
   restaurant?: Restaurant;
   onOpenCustomerPreview?: () => void;
   onOpenTemplateSplitEditor?: () => void;
+  onOpenProfileSettings?: () => void;
 }
 
 export const RoleHeader: React.FC<RoleHeaderProps> = ({
@@ -32,6 +34,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
   restaurant,
   onOpenCustomerPreview,
   onOpenTemplateSplitEditor,
+  onOpenProfileSettings,
 }) => {
   const roleBadgeConfig: Record<UserRole, { label: string; icon: React.FC<{ className?: string }>; color: string }> = {
     ADMIN: { label: 'Administrador', icon: Shield, color: 'bg-black text-white font-bold' },
@@ -96,6 +99,18 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Profile Settings Gear Button */}
+            {onOpenProfileSettings && (
+              <button
+                id="role-header-btn-profile-settings"
+                onClick={onOpenProfileSettings}
+                className="flex items-center justify-center p-2 rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
+                title="Configuración de Perfil (Editar datos y foto)"
+              >
+                <Settings className="w-4 h-4 text-neutral-700 animate-spin-slow" />
+              </button>
+            )}
 
             {/* Logout Button */}
             <button
