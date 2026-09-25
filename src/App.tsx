@@ -349,6 +349,7 @@ export default function App() {
     items: MenuItem[];
   } | null>(null);
   const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(Boolean(initialRequestedSlug));
+  const [isInitialCloudFetchDone, setIsInitialCloudFetchDone] = useState<boolean>(false);
 
   // Keep user authentication session synced
   useEffect(() => {
@@ -557,6 +558,10 @@ export default function App() {
       }
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
+    }).finally(() => {
+      if (isMounted) {
+        setIsInitialCloudFetchDone(true);
+      }
     });
 
     // 2. Real-time Subscription: updates all sessions and incognito windows instantly when any change occurs
@@ -1369,7 +1374,7 @@ export default function App() {
 
   // 1. Loading screen while fetching the published menu for the requested link
   // NEVER show any fallback restaurant while loading a direct restaurant link
-  if (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant) {
+  if (isDirectLinkAccess && (isLoadingPublishedMenu || !isInitialCloudFetchDone) && !publishedMenuData && !previewRestaurant) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 selection:bg-amber-400 selection:text-black">
         <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
@@ -1384,7 +1389,7 @@ export default function App() {
   }
 
   // 2. If accessing via link but no matching restaurant exists anywhere (not in cloud, not in local)
-  if (isDirectLinkAccess && !isLoadingPublishedMenu && !previewRestaurant && !publishedMenuData) {
+  if (isDirectLinkAccess && !isLoadingPublishedMenu && isInitialCloudFetchDone && !previewRestaurant && !publishedMenuData) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-4 selection:bg-amber-400 selection:text-black">
         <div className="w-full max-w-md p-8 rounded-3xl bg-neutral-900 border border-amber-500/40 text-white shadow-2xl space-y-5 text-center">

@@ -124,8 +124,44 @@ function loadCloudDataFromDisk() {
   return null;
 }
 
+function syncAllPublishedMenus(data: any) {
+  if (!data) return;
+  data.publishedMenus = data.publishedMenus || {};
+  const rests = data.restaurants || [];
+  const categories = data.categories || [];
+  const items = data.items || [];
+
+  rests.forEach((r: any) => {
+    if (!r || !r.id) return;
+    const prevSnapshot = data.publishedMenus[r.id];
+    const restCategories = categories.filter((c: any) => c.restaurantId === r.id);
+    const restItems = items.filter((i: any) => i.restaurantId === r.id);
+
+    // Keep existing version or default to 1, update fields to ensure fresh draft updates are live
+    const nextVersion = prevSnapshot ? (prevSnapshot.version || 1) : 1;
+    
+    data.publishedMenus[r.id] = {
+      version: nextVersion,
+      publishedAt: prevSnapshot?.publishedAt || new Date().toISOString(),
+      publishedBy: prevSnapshot?.publishedBy || 'System Auto-Sync',
+      restaurant: r,
+      categories: restCategories,
+      items: restItems
+    };
+  });
+
+  // Clean up deleted restaurants from published snapshot list
+  const restIds = new Set(rests.map((r: any) => r.id));
+  Object.keys(data.publishedMenus).forEach(id => {
+    if (!restIds.has(id)) {
+      delete data.publishedMenus[id];
+    }
+  });
+}
+
 function saveCloudDataToDisk(data: any) {
   try {
+    syncAllPublishedMenus(data);
     cachedCloudData = {
       ...data,
       publishedMenus: data.publishedMenus || cachedCloudData?.publishedMenus || {},
