@@ -94,11 +94,21 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [isPreloading, setIsPreloading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
 
+  const lastRestaurantIdRef = React.useRef<string | null>(null);
+  const wasOpenRef = React.useRef<boolean>(false);
+
   // Preloader Progress Effect: Keeps preloader visible while background cloud menu loads
   React.useEffect(() => {
     if (isOpen) {
-      setIsPreloading(true);
-      setPreloadProgress(prev => (prev === 0 ? 15 : prev));
+      const isFreshOpen = !wasOpenRef.current;
+      const isNewRestaurant = lastRestaurantIdRef.current !== restaurant.id;
+
+      if (isFreshOpen || isNewRestaurant) {
+        setIsPreloading(true);
+        setPreloadProgress(15);
+        lastRestaurantIdRef.current = restaurant.id;
+        wasOpenRef.current = true;
+      }
       
       const interval = setInterval(() => {
         setPreloadProgress((prev) => {
@@ -121,6 +131,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       }, 70);
 
       return () => clearInterval(interval);
+    } else {
+      wasOpenRef.current = false;
     }
   }, [isOpen, restaurant.id, isLoading]);
 

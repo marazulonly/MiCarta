@@ -194,15 +194,10 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
     const userBrand = r.branding;
     const userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
 
-    // If the server/cloud branding exists, we do NOT force merge with fallback brand values if the user brand has them.
-    // This separates the relation completely so that each restaurant preserves its own distinct color palette and logo.
-    const mergedBranding: RestaurantBranding = userBrand && Object.keys(userBrand).length > 2 ? {
-      ...genericDefaultBranding,
-      ...userBrand,
-      headerLogoUrl: userLogo
-    } : {
-      ...genericDefaultBranding,
-      ...(fallback?.branding || {}),
+    // We completely separate manually assigned colors from system defaults.
+    // Native defaults of each restaurant are used as the baseline fallback, eliminating any mixing with yellow/black platform styles.
+    const mergedBranding: RestaurantBranding = {
+      ...(fallback?.branding || genericDefaultBranding),
       ...(userBrand || {}),
       headerLogoUrl: userLogo
     };
