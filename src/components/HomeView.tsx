@@ -87,10 +87,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   }, [activeRole]);
 
-  const totalRevenue = restaurants.reduce((acc, r) => acc + (r.metrics?.dailyRevenue || 0), 0);
-  const activeOrdersCount = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length;
-  const avgOccupancy = restaurants.length > 0
-    ? Math.round(restaurants.reduce((acc, r) => acc + (r.metrics?.occupancyRate || 0), 0) / restaurants.length)
+  const safeRests = (restaurants || []).filter(Boolean);
+  const safeOrds = (orders || []).filter(Boolean);
+  const totalRevenue = safeRests.reduce((acc, r) => acc + (r?.metrics?.dailyRevenue || 0), 0);
+  const activeOrdersCount = safeOrds.filter(o => o?.status !== 'DELIVERED' && o?.status !== 'CANCELLED').length;
+  const avgOccupancy = safeRests.length > 0
+    ? Math.round(safeRests.reduce((acc, r) => acc + (r?.metrics?.occupancyRate || 0), 0) / safeRests.length)
     : 0;
 
   return (

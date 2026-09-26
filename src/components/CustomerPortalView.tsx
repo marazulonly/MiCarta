@@ -42,8 +42,8 @@ export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
   const qrRef = useRef<HTMLDivElement>(null);
 
   // Orders made by this customer
-  const myOrders = orders.filter(o => 
-    o.customerId === currentUser.id || o.customerDni === currentUser.dni
+  const myOrders = (orders || []).filter(o => 
+    o && ((currentUser?.id && o.customerId === currentUser.id) || (currentUser?.dni && o.customerDni === currentUser.dni))
   );
 
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';

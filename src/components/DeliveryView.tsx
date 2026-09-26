@@ -27,14 +27,16 @@ export const DeliveryView: React.FC<DeliveryViewProps> = ({
   orders,
   onUpdateOrderStatus,
 }) => {
-  const courierRestaurants = currentUser.restaurantIds.includes('all')
-    ? restaurants
-    : restaurants.filter(r => currentUser.restaurantIds.includes(r.id));
+  const userRestIds = Array.isArray(currentUser?.restaurantIds) ? currentUser.restaurantIds : [];
+  const courierRestaurants = userRestIds.includes('all')
+    ? (restaurants || []).filter(Boolean)
+    : (restaurants || []).filter(r => r && userRestIds.includes(r.id));
 
-  const deliveryOrders = orders.filter(o => {
+  const deliveryOrders = (orders || []).filter(o => {
+    if (!o) return false;
     const isDelivery = o.type === 'DELIVERY';
-    const isAssignedToCourier = o.courierId === currentUser.id;
-    const isFromCourierRest = courierRestaurants.some(r => r.id === o.restaurantId);
+    const isAssignedToCourier = Boolean(o.courierId && currentUser?.id && o.courierId === currentUser.id);
+    const isFromCourierRest = courierRestaurants.some(r => r && r.id === o.restaurantId);
     return isDelivery && (isAssignedToCourier || isFromCourierRest);
   });
 

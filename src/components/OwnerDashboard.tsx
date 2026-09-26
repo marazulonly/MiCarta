@@ -54,7 +54,8 @@ import {
   DaySchedule,
   RestaurantTable,
   StaffShift,
-  TableZone
+  TableZone,
+  DEFAULT_FALLBACK_RESTAURANT
 } from '../types';
 import { OwnerMenuEditor } from './OwnerMenuEditor';
 import { TableQrModal } from './TableQrModal';
@@ -131,16 +132,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [restaurantToDelete, setRestaurantToDelete] = useState<Restaurant | null>(null);
 
   // Find available owners
-  const ownersList = users.filter(u => u.role === 'OWNER');
+  const ownersList = (users || []).filter(u => u && u.role === 'OWNER');
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>(
     currentUser?.role === 'OWNER' ? currentUser.id : (ownersList[0]?.id || 'u-2')
   );
 
-  const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o.id === selectedOwnerId) || ownersList[0]);
+  const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o && o.id === selectedOwnerId) || ownersList[0]);
 
   // Restaurants owned or assigned to this owner:
   // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
-  const ownedRestaurants = restaurants.filter(r => {
+  const ownedRestaurants = (restaurants || []).filter(r => {
+    if (!r) return false;
     if (isOwnerLogged && currentUser) {
       if (currentUser.role === 'ADMIN' || (currentUser.restaurantIds && currentUser.restaurantIds.includes('all'))) {
         return true;
@@ -166,10 +168,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   // Selected Restaurant being managed
   const [selectedRestId, setSelectedRestId] = useState<string>(
-    ownedRestaurants[0]?.id || ''
+    ownedRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
   );
 
-  const currentRestaurant = ownedRestaurants.find(r => r.id === selectedRestId) || ownedRestaurants[0];
+  const currentRestaurant = ownedRestaurants.find(r => r && r.id === selectedRestId) || ownedRestaurants[0] || (restaurants || [])[0] || DEFAULT_FALLBACK_RESTAURANT;
 
   // Filter owned orders for Sales Monitor
   const monitorOrders = (orders || []).filter(o => 

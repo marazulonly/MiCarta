@@ -22,7 +22,7 @@ import {
   Ban,
   ArrowRight
 } from 'lucide-react';
-import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus } from '../types';
+import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, DEFAULT_FALLBACK_RESTAURANT } from '../types';
 
 interface KitchenViewProps {
   currentUser: User;
@@ -48,15 +48,16 @@ export const KitchenView: React.FC<KitchenViewProps> = ({
   onOpenCustomerPreview,
 }) => {
   // Assigned restaurants
-  const kitchenRestaurants = currentUser.restaurantIds.includes('all')
-    ? restaurants
-    : restaurants.filter(r => currentUser.restaurantIds.includes(r.id));
+  const userRestIds = Array.isArray(currentUser?.restaurantIds) ? currentUser.restaurantIds : [];
+  const kitchenRestaurants = userRestIds.includes('all')
+    ? (restaurants || []).filter(Boolean)
+    : (restaurants || []).filter(r => r && userRestIds.includes(r.id));
 
   const [selectedRestId, setSelectedRestId] = useState<string>(
-    kitchenRestaurants[0]?.id || restaurants[0]?.id || 'rest-brasas'
+    kitchenRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
   );
 
-  const activeRest = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
+  const activeRest = (restaurants || []).find(r => r && r.id === selectedRestId) || kitchenRestaurants[0] || (restaurants || [])[0] || DEFAULT_FALLBACK_RESTAURANT;
 
   // Sound alert state
   const [soundEnabled, setSoundEnabled] = useState(true);

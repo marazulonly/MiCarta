@@ -313,3 +313,39 @@ export interface Order {
   courierName?: string;
   courierId?: string;
 }
+
+export const DEFAULT_FALLBACK_RESTAURANT: Restaurant = {
+  id: 'rest-fallback',
+  name: 'Mi Restaurante',
+  tagline: 'Sede Principal',
+  cuisineType: 'VARIADA',
+  slug: 'mi-restaurante',
+  address: 'Calle Principal 123',
+  phone: '900000000',
+  rating: 5.0,
+  reviewCount: 1,
+  logoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=300',
+  coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1000',
+  branding: {
+    primaryColor: '#1E1F24',
+    secondaryColor: '#3F3F46',
+    accentColor: '#000000',
+    darkBgColor: '#09090B',
+    cardBgColor: '#18181B',
+    textColor: '#FFFFFF',
+    fontDisplay: 'Inter'
+  },
+  metrics: {
+    dailyRevenue: 0,
+    activeOrders: 0,
+    avgTicket: 0,
+    customerRating: 5.0,
+    totalTables: 10,
+    occupancyRate: 0
+  },
+  isOpen: true,
+  ownerId: '',
+  tables: [],
+  shifts: [],
+  weeklySchedule: []
+};

@@ -20,7 +20,7 @@ import {
   Sparkles,
   Users
 } from 'lucide-react';
-import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, RestaurantTable, StaffShift } from '../types';
+import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, RestaurantTable, StaffShift, DEFAULT_FALLBACK_RESTAURANT } from '../types';
 import { WaiterQrScannerModal } from './WaiterQrScannerModal';
 import { WaiterTableOrderModal } from './WaiterTableOrderModal';
 import { TableQrModal } from './TableQrModal';
@@ -53,15 +53,16 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
   const [activeTab, setActiveTab] = useState<WaiterTab>('tables');
 
   // Waiter's assigned restaurants
-  const waiterRestaurants = currentUser.restaurantIds.includes('all')
-    ? restaurants
-    : restaurants.filter(r => currentUser.restaurantIds.includes(r.id));
+  const userRestIds = Array.isArray(currentUser?.restaurantIds) ? currentUser.restaurantIds : [];
+  const waiterRestaurants = userRestIds.includes('all')
+    ? (restaurants || []).filter(Boolean)
+    : (restaurants || []).filter(r => r && userRestIds.includes(r.id));
 
   const [selectedRestId, setSelectedRestId] = useState<string>(
-    waiterRestaurants[0]?.id || restaurants[0]?.id
+    waiterRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
   );
 
-  const activeRest = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
+  const activeRest = (restaurants || []).find(r => r && r.id === selectedRestId) || waiterRestaurants[0] || (restaurants || [])[0] || DEFAULT_FALLBACK_RESTAURANT;
 
   // Modals for Waiter QR Scan and Table Order
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);

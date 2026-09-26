@@ -106,7 +106,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       return;
     }
 
-    const matchedUser = users.find(u => u.dni === cleanDni);
+    const matchedUser = (users || []).find(u => u && String(u.dni).trim() === cleanDni);
     if (!matchedUser) {
       setErrorMessage(`No existe ningún usuario registrado con el DNI ${cleanDni}. Verifica los accesos de prueba abajo.`);
       return;

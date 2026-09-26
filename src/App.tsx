@@ -697,7 +697,22 @@ export default function App() {
   }, [users, currentUser]);
 
   // Login handler
-  const handleLogin = (user: User) => {
+  const handleLogin = (rawUser: User) => {
+    if (!rawUser) return;
+    const user: User = {
+      ...rawUser,
+      id: rawUser.id || `usr-${Date.now()}`,
+      name: rawUser.name || 'Usuario',
+      email: rawUser.email || 'usuario@micarta.pe',
+      dni: String(rawUser.dni || '00000000'),
+      role: rawUser.role || 'ADMIN',
+      phone: rawUser.phone || '900000000',
+      avatar: rawUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      restaurantIds: Array.isArray(rawUser.restaurantIds) ? rawUser.restaurantIds : ['all'],
+      status: rawUser.status || 'active',
+      lastActive: rawUser.lastActive || 'Ahora mismo'
+    };
+
     setCurrentUser(user);
     setActiveRole(user.role);
     if (user.role === 'WAITER' || user.role === 'DELIVERY' || user.role === 'CUSTOMER' || user.role === 'KITCHEN') {
@@ -706,12 +721,16 @@ export default function App() {
     // Auto select first restaurant accessible by this user:
     // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
     if (user.role === 'OWNER' || user.role === 'RESTAURANT_MANAGER') {
-      const allowed = (restaurants || []).filter(r => r && (r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all')));
+      const allowed = safeRestaurants.filter(r => r && (r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all')));
       if (allowed.length > 0) {
         setSelectedRestaurantId(allowed[0].id);
+      } else if (safeRestaurants.length > 0) {
+        setSelectedRestaurantId(safeRestaurants[0].id);
       }
     } else if (user.restaurantIds && user.restaurantIds.length > 0 && user.restaurantIds[0] !== 'all') {
       setSelectedRestaurantId(user.restaurantIds[0]);
+    } else if (safeRestaurants.length > 0) {
+      setSelectedRestaurantId(safeRestaurants[0].id);
     }
     showToast(`Sesión iniciada: ${user.name} (${user.role}) - DNI: ${user.dni}`);
   };
