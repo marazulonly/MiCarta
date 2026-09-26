@@ -23,6 +23,8 @@ import { Restaurant, MenuItem, MenuCategory } from '../types';
 import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
+import { EmptyRestaurantState } from './EmptyRestaurantState';
+import { getSafeActiveRestaurant, getSafeBranding } from '../utils/restaurantUtils';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -64,7 +66,18 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   
-  const currentRestaurant = (restaurants || []).find(r => r && r.id === selectedRestId) || (restaurants || [])[0];
+  const currentRestaurant = getSafeActiveRestaurant(restaurants, selectedRestId);
+
+  if (!currentRestaurant) {
+    return (
+      <EmptyRestaurantState
+        title="No hay restaurantes registrados"
+        description="Aún no existen restaurantes en la plataforma. Puedes registrar el primer restaurante usando el botón 'Nuevo Local'."
+      />
+    );
+  }
+
+  const safeBranding = getSafeBranding(currentRestaurant);
 
   const handlePublishCurrentRestaurant = async () => {
     if (isPublishing || !currentRestaurant) return;
@@ -83,31 +96,32 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   };
 
   // Slug editing
-  const [editableSlug, setEditableSlug] = useState<string>(currentRestaurant.slug);
+  const [editableSlug, setEditableSlug] = useState<string>(currentRestaurant.slug || '');
   const [slugSaved, setSlugSaved] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRestId, setCopiedRestId] = useState<string | null>(null);
 
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';
-  const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug}`;
+  const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug || ''}`;
 
   // Palette editing
-  const [primaryColor, setPrimaryColor] = useState(currentRestaurant.branding.primaryColor);
-  const [secondaryColor, setSecondaryColor] = useState(currentRestaurant.branding.secondaryColor);
-  const [accentColor, setAccentColor] = useState(currentRestaurant.branding.accentColor);
-  const [darkBgColor, setDarkBgColor] = useState(currentRestaurant.branding.darkBgColor);
+  const [primaryColor, setPrimaryColor] = useState(safeBranding.primaryColor);
+  const [secondaryColor, setSecondaryColor] = useState(safeBranding.secondaryColor);
+  const [accentColor, setAccentColor] = useState(safeBranding.accentColor);
+  const [darkBgColor, setDarkBgColor] = useState(safeBranding.darkBgColor);
   const [paletteSaved, setPaletteSaved] = useState(false);
 
   // Switch restaurant
   const handleSelectRestaurant = (id: string) => {
     setSelectedRestId(id);
-    const rest = restaurants.find(r => r.id === id);
+    const rest = (restaurants || []).find(r => r && r.id === id);
     if (rest) {
-      setEditableSlug(rest.slug);
-      setPrimaryColor(rest.branding.primaryColor);
-      setSecondaryColor(rest.branding.secondaryColor);
-      setAccentColor(rest.branding.accentColor);
-      setDarkBgColor(rest.branding.darkBgColor);
+      const restBranding = getSafeBranding(rest);
+      setEditableSlug(rest.slug || '');
+      setPrimaryColor(restBranding.primaryColor);
+      setSecondaryColor(restBranding.secondaryColor);
+      setAccentColor(restBranding.accentColor);
+      setDarkBgColor(restBranding.darkBgColor);
     }
   };
 

@@ -27,6 +27,10 @@ import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { TemplateSplitEditor } from './components/TemplateSplitEditor';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { EmptyRestaurantState } from './components/EmptyRestaurantState';
+import { LoadingRestaurantState } from './components/LoadingRestaurantState';
+import { getSafeActiveRestaurant, getSafeBranding } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   fetchLatestCloudMenu,
@@ -1340,7 +1344,7 @@ export default function App() {
     : safeRestaurants;
 
   // Current active restaurant branding for dynamic theme accent
-  const currentSelectedRest = userAccessibleRestaurants.find(r => r && r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || safeRestaurants[0];
+  const currentSelectedRest = getSafeActiveRestaurant(userAccessibleRestaurants, selectedRestaurantId) ?? getSafeActiveRestaurant(safeRestaurants, null);
   const pendingOrdersCount = safeOrders.filter(o => o && o.status === 'PENDING').length;
 
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
@@ -1522,7 +1526,8 @@ export default function App() {
   // "La vista actual, solo será vista when el que se loguee sea un administrador"
   if (currentUser && currentUser.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
+      <ErrorBoundary fallbackTitle="Ocurrió un problema en la vista operativa">
+        <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
         
         {/* Dedicated Role Header with User Profile, Restaurant and Logout */}
         <RoleHeader
@@ -1578,6 +1583,8 @@ export default function App() {
               orders={safeOrders}
               menuItems={safeMenuItems}
               onUpdateOrderStatus={handleUpdateOrderStatus}
+              onSimulateNewOrder={handleSimulateNewOrder}
+              onOpenCustomerPreview={handleOpenCustomerPreview}
             />
           )}
 
@@ -1632,7 +1639,7 @@ export default function App() {
           onDeleteMenuItem={handleDeleteMenuItem}
           onUpdateCategory={handleUpdateCategory}
           onAddCategory={handleAddCategory}
-          isOwnerOrAdmin={currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'}
+          isOwnerOrAdmin={(currentUser.role as string) === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER'}
         />
 
         {/* Profile Settings Modal */}
@@ -1654,12 +1661,14 @@ export default function App() {
         )}
 
       </div>
+      </ErrorBoundary>
     );
   }
 
   // 3. ADMIN ROLE VIEW: "La vista actual, solo será vista cuando el que se loguee sea un administrador"
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
+    <ErrorBoundary fallbackTitle="Ocurrió un problema en el panel de administración">
+      <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
       
       {/* Top Header with Profile / Login Trigger and Simulación Checkbox */}
       <TopHeader
@@ -1893,5 +1902,6 @@ export default function App() {
       )}
 
     </div>
+    </ErrorBoundary>
   );
 }

@@ -42,6 +42,7 @@ interface UnifiedCartDrawerProps {
   onOrderCreated?: (newOrder: Order) => void;
   onEditCartEntry?: (item: MenuItem) => void;
   initialOrderType?: OrderType;
+  initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   themeStyle?: 'luxury' | 'chalkboard' | 'marine' | 'modern';
 }

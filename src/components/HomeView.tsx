@@ -326,7 +326,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       <span className="font-bold text-white font-mono">S/ {(order.total || 0).toFixed(2)}</span>
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">
                         {order.status === 'PENDING' ? 'Pendiente' :
-                         order.status === 'IN_KITCHEN' || order.status === 'PREPARING' ? 'En Cocina' :
+                         order.status === 'IN_KITCHEN' || (order.status as string) === 'PREPARING' ? 'En Cocina' :
                          order.status === 'READY' ? 'Listo' : 'Entregado'}
                       </span>
                     </div>

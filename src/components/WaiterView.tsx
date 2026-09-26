@@ -20,10 +20,12 @@ import {
   Sparkles,
   Users
 } from 'lucide-react';
-import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, RestaurantTable, StaffShift, DEFAULT_FALLBACK_RESTAURANT } from '../types';
+import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, RestaurantTable, StaffShift } from '../types';
 import { WaiterQrScannerModal } from './WaiterQrScannerModal';
 import { WaiterTableOrderModal } from './WaiterTableOrderModal';
 import { TableQrModal } from './TableQrModal';
+import { EmptyRestaurantState } from './EmptyRestaurantState';
+import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
 
 interface WaiterViewProps {
   currentUser: User;
@@ -62,7 +64,17 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
     waiterRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
   );
 
-  const activeRest = (restaurants || []).find(r => r && r.id === selectedRestId) || waiterRestaurants[0] || (restaurants || [])[0] || DEFAULT_FALLBACK_RESTAURANT;
+  const activeRest = getSafeActiveRestaurant(waiterRestaurants, selectedRestId) ?? getSafeActiveRestaurant(restaurants, null);
+
+  if (!activeRest) {
+    return (
+      <EmptyRestaurantState
+        roleName="Mesero / Salón"
+        title="No hay un restaurante asignado"
+        description="No tienes ningún restaurante activo asignado en este momento. Consulta con el administrador o gerente para habilitar tu sede."
+      />
+    );
+  }
 
   // Modals for Waiter QR Scan and Table Order
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);

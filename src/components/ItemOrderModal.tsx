@@ -15,7 +15,11 @@ interface ItemOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: MenuItem | null;
-  onConfirm: (item: MenuItem, quantity: number, units: OrderItemUnit[]) => void;
+  onConfirm?: (item: MenuItem, quantity: number, units: OrderItemUnit[]) => void;
+  onConfirmUnits?: (quantity: number, units: OrderItemUnit[]) => void;
+  onConfirmOrder?: (item: MenuItem | null, quantity: number, units: OrderItemUnit[]) => void;
+  initialQuantity?: number;
+  branding?: any;
   themeAccentColor?: string;
   themeDarkBg?: string;
   dishCardBgColor?: string;

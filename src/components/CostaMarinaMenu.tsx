@@ -373,7 +373,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               <div className="flex items-center gap-1.5">
                 {onAddNewItem && (
                   <button
-                    onClick={onAddNewItem}
+                    onClick={() => onAddNewItem(activeCategory?.id)}
                     style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT }}
                     className="px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition shadow hover:brightness-110"
                   >

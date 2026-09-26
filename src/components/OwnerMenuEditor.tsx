@@ -43,6 +43,7 @@ import {
   MenuAccessSettings,
   MenuTemplate
 } from '../types';
+import { getSafeBranding, getSafeMenuAccessSettings } from '../utils/restaurantUtils';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
@@ -261,20 +262,20 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
   // Synchronize state when restaurant prop changes
   useEffect(() => {
-    setBrandName(restaurant.name);
+    if (!restaurant) return;
+    const branding = getSafeBranding(restaurant);
+    setBrandName(restaurant.name || '');
     setBrandTagline(restaurant.tagline || '');
     setBrandLogoUrl(restaurant.logoUrl || '');
     setBrandCoverUrl(restaurant.coverUrl || '');
-    setBrandPrimaryColor(restaurant.branding.primaryColor || '#D4AF37');
-    setBrandDarkBgColor(restaurant.branding.darkBgColor || '#071A14');
-    setBrandSecondaryColor(restaurant.branding.secondaryColor || '#FFFFFF');
-    setBrandButtonColor(restaurant.branding.buttonColor || restaurant.branding.accentColor || '#38bdf8');
-    setBrandDishNameFont(restaurant.branding.dishNameFont || 'inherit');
-    setBrandDishDescFont(restaurant.branding.dishDescFont || 'inherit');
-    setBrandDishPriceFont(restaurant.branding.dishPriceFont || 'monospace');
-    if (restaurant.menuAccessSettings) {
-      setMenuSettings(restaurant.menuAccessSettings);
-    }
+    setBrandPrimaryColor(branding.primaryColor || '#D4AF37');
+    setBrandDarkBgColor(branding.darkBgColor || '#071A14');
+    setBrandSecondaryColor(branding.secondaryColor || '#FFFFFF');
+    setBrandButtonColor(branding.buttonColor || branding.accentColor || '#38bdf8');
+    setBrandDishNameFont(branding.dishNameFont || 'inherit');
+    setBrandDishDescFont(branding.dishDescFont || 'inherit');
+    setBrandDishPriceFont(branding.dishPriceFont || 'monospace');
+    setMenuSettings(getSafeMenuAccessSettings(restaurant));
   }, [restaurant]);
 
   // Filter & sort categories and items for this restaurant

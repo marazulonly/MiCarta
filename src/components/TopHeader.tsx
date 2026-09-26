@@ -16,6 +16,7 @@ import {
   Settings
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
+import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
 
 interface TopHeaderProps {
   restaurants: Restaurant[];
@@ -62,7 +63,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenProfileSettings,
   onOpenLoginModal,
 }) => {
-  const currentRestaurant = (restaurants || []).find(r => r && r.id === selectedRestaurantId) || (restaurants || [])[0];
+  const currentRestaurant = getSafeActiveRestaurant(restaurants, selectedRestaurantId);
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-neutral-200/80 shadow-sm">

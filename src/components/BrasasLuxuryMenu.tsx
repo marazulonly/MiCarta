@@ -603,7 +603,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                   <div className="flex justify-end pb-1">
                     <button
                       type="button"
-                      onClick={onAddNewItem}
+                      onClick={() => onAddNewItem(activeCategoryObj?.id)}
                       className="px-3.5 py-2 rounded-xl border border-dashed border-[#dfb86c]/70 bg-[#dfb86c]/15 hover:bg-[#dfb86c]/25 text-[#f5df9e] font-sans font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                     >
                       <Plus className="w-4 h-4 text-amber-300" />

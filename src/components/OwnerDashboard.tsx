@@ -52,6 +52,7 @@ import {
   MenuItem, 
   MenuCategory,
   DaySchedule,
+  DayOfWeek,
   RestaurantTable,
   StaffShift,
   TableZone,
@@ -60,6 +61,8 @@ import {
 import { OwnerMenuEditor } from './OwnerMenuEditor';
 import { TableQrModal } from './TableQrModal';
 import { TemplateSplitEditor } from './TemplateSplitEditor';
+import { EmptyRestaurantState } from './EmptyRestaurantState';
+import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings } from '../utils/restaurantUtils';
 import { DEFAULT_WEEKLY_SCHEDULE, generateTablesForRestaurant, generateShiftsForRestaurant } from '../data/mockData';
 
 interface OwnerDashboardProps {
@@ -147,7 +150,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     ownedRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
   );
 
-  const currentRestaurant = ownedRestaurants.find(r => r && r.id === selectedRestId) || ownedRestaurants[0] || (restaurants || [])[0] || DEFAULT_FALLBACK_RESTAURANT;
+  const currentRestaurant = getSafeActiveRestaurant(ownedRestaurants, selectedRestId) ?? getSafeActiveRestaurant(restaurants, null);
 
   // Filter owned orders for Sales Monitor
   const monitorOrders = (orders || []).filter(o => 
@@ -441,7 +444,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       name: newShiftName.trim(),
       startTime: newShiftStart,
       endTime: newShiftEnd,
-      applicableDays: newShiftDays,
+      applicableDays: newShiftDays as DayOfWeek[],
       roleTarget: newShiftRole,
       assignedUserIds: newShiftUsers,
       colorBadge: newShiftRole === 'WAITER' ? '#38BDF8' : newShiftRole === 'DELIVERY' ? '#F59E0B' : '#10B981'
@@ -1485,7 +1488,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         <span className="text-[10px] text-neutral-500 font-bold block mb-1">Días de Cobertura:</span>
                         <div className="flex flex-wrap gap-1">
                           {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
-                            const isIncluded = shift.applicableDays.includes(d);
+                            const isIncluded = shift.applicableDays.includes(d as DayOfWeek);
                             return (
                               <span 
                                 key={d} 
@@ -3057,10 +3060,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <label className="text-xs font-semibold text-neutral-300 block mb-1">Turno de Trabajo</label>
                     <select
                       value={newUserShift}
-                      onChange={(e) => setNewUserShift(e.target.value as 'MAÑANA' | 'TARDE' | 'NOCHE')}
+                      onChange={(e) => setNewUserShift(e.target.value as 'MANANA' | 'TARDE' | 'NOCHE')}
                       className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs text-white"
                     >
-                      <option value="MAÑANA">Mañana (08:00 - 16:00)</option>
+                      <option value="MANANA">Mañana (08:00 - 16:00)</option>
                       <option value="TARDE">Tarde (12:00 - 20:00)</option>
                       <option value="NOCHE">Noche (16:00 - 00:00)</option>
                     </select>
@@ -3084,11 +3087,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <label className="text-xs font-semibold text-neutral-300 block mb-1">Tipo de Vehículo</label>
                     <select
                       value={newUserVehicle}
-                      onChange={(e) => setNewUserVehicle(e.target.value as 'MOTO' | 'BICICLETA' | 'AUTO')}
+                      onChange={(e) => setNewUserVehicle(e.target.value as 'MOTO' | 'BICI' | 'AUTO')}
                       className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs text-white"
                     >
                       <option value="MOTO">Moto Lineal</option>
-                      <option value="BICICLETA">Bicicleta / Eléctrica</option>
+                      <option value="BICI">Bicicleta / Eléctrica</option>
                       <option value="AUTO">Automóvil</option>
                     </select>
                   </div>
@@ -3213,8 +3216,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div>
                 <label className="text-xs font-semibold text-neutral-300 block mb-1">Reasignar a Sede / Restaurante</label>
                 <select
-                  value={editingUser.restaurantId || currentRestaurant.id}
-                  onChange={(e) => setEditingUser({ ...editingUser, restaurantId: e.target.value })}
+                  value={editingUser.restaurantIds?.[0] || currentRestaurant?.id || ''}
+                  onChange={(e) => setEditingUser({ ...editingUser, restaurantIds: [e.target.value] })}
                   className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-700 text-xs text-white focus:outline-none focus:border-white"
                 >
                   {ownedRestaurants.map(r => (
@@ -3229,10 +3232,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <label className="text-xs font-semibold text-neutral-300 block mb-1">Turno</label>
                     <select
                       value={editingUser.assignedShift || 'TARDE'}
-                      onChange={(e) => setEditingUser({ ...editingUser, assignedShift: e.target.value as 'MAÑANA' | 'TARDE' | 'NOCHE' })}
+                      onChange={(e) => setEditingUser({ ...editingUser, assignedShift: e.target.value as 'MANANA' | 'TARDE' | 'NOCHE' })}
                       className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs text-white"
                     >
-                      <option value="MAÑANA">Mañana</option>
+                      <option value="MANANA">Mañana</option>
                       <option value="TARDE">Tarde</option>
                       <option value="NOCHE">Noche</option>
                     </select>
@@ -3256,11 +3259,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <label className="text-xs font-semibold text-neutral-300 block mb-1">Vehículo</label>
                     <select
                       value={editingUser.vehicleType || 'MOTO'}
-                      onChange={(e) => setEditingUser({ ...editingUser, vehicleType: e.target.value as 'MOTO' | 'BICICLETA' | 'AUTO' })}
+                      onChange={(e) => setEditingUser({ ...editingUser, vehicleType: e.target.value as 'MOTO' | 'BICI' | 'AUTO' })}
                       className="w-full px-2.5 py-1.5 rounded bg-neutral-900 border border-neutral-700 text-xs text-white"
                     >
                       <option value="MOTO">Moto</option>
-                      <option value="BICICLETA">Bicicleta</option>
+                      <option value="BICI">Bicicleta</option>
                       <option value="AUTO">Auto</option>
                     </select>
                   </div>
@@ -3841,7 +3844,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <label className="text-xs font-semibold text-neutral-300 block mb-1">Días Aplicables</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => {
-                    const isSelected = editingShift.applicableDays.includes(day);
+                    const isSelected = editingShift.applicableDays.includes(day as DayOfWeek);
                     return (
                       <button
                         type="button"
@@ -3851,7 +3854,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           if (isSelected) {
                             setEditingShift({ ...editingShift, applicableDays: current.filter(d => d !== day) });
                           } else {
-                            setEditingShift({ ...editingShift, applicableDays: [...current, day] });
+                            setEditingShift({ ...editingShift, applicableDays: [...current, day as DayOfWeek] });
                           }
                         }}
                         className={`px-2 py-1.5 rounded text-[11px] font-medium transition cursor-pointer border ${

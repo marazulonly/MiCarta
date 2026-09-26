@@ -50,6 +50,7 @@ export interface RestaurantBranding {
   showHeaderBadge?: boolean;       // Mostrar distintivo de canal/subtítulo superior
   headerLogoFit?: 'contain' | 'cover' | 'auto'; // Ajuste de la imagen en la cabecera
   headerBannerHeight?: number;     // Altura máxima del logo/cabecera en px (default 100)
+  backgroundColor?: string;        // Color de fondo alternativo
 }
 
 export interface RestaurantMetrics {
@@ -145,6 +146,7 @@ export interface MenuItem {
   availableAddons?: DishAddon[];           // Lista de adicionales configurados por el dueño
   suggestedObservations?: string[];       // Observaciones sugeridas (ej: Término medio, Sin cebolla)
   targetMenuScope?: 'ALL' | 'DINE_IN' | 'DELIVERY'; // Visibilidad en Carta Salón / Carta Delivery
+  categoryName?: string;
 }
 
 export interface MenuCategory {
@@ -239,6 +241,8 @@ export interface Restaurant {
   shifts?: StaffShift[];
   tables?: RestaurantTable[];
   totalTablesCount?: number;
+  cuisine?: string;
+  coverImageUrl?: string;
 }
 
 export interface User {
@@ -283,6 +287,8 @@ export interface OrderItem {
   units?: OrderItemUnit[];                // Detalle por cada unidad pedida
   notes?: string;
   modifiers?: string[];
+  menuItem?: MenuItem;
+  unitDetails?: OrderItemUnit[];
 }
 
 export interface Order {
@@ -312,6 +318,7 @@ export interface Order {
   waiterId?: string;
   courierName?: string;
   courierId?: string;
+  notes?: string;
 }
 
 export const DEFAULT_FALLBACK_RESTAURANT: Restaurant = {
