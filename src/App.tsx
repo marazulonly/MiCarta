@@ -30,8 +30,9 @@ import { TemplateSplitEditor } from './components/TemplateSplitEditor';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
+import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
 import { getSafeActiveRestaurant, getSafeBranding } from './utils/restaurantUtils';
-import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import {
   fetchLatestCloudMenu,
   saveFullCloudMenu,
@@ -336,6 +337,15 @@ export default function App() {
   } | null>(null);
   const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(Boolean(initialRequestedSlug));
   const [isInitialCloudFetchDone, setIsInitialCloudFetchDone] = useState<boolean>(false);
+
+  // Active Customer Order Tracking (persists until served/cancelled for floating "Ver Pedido" button)
+  const [customerActiveOrderId, setCustomerActiveOrderId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem('micarta_active_order_id');
+    }
+    return null;
+  });
+  const [isCustomerActiveOrderModalOpen, setIsCustomerActiveOrderModalOpen] = useState<boolean>(false);
 
   // Keep user authentication session synced
   useEffect(() => {
@@ -1257,6 +1267,10 @@ export default function App() {
 
   const handleCreateOrder = (newOrder: Order) => {
     setOrders(prev => [newOrder, ...prev.filter(o => o.id !== newOrder.id)]);
+    setCustomerActiveOrderId(newOrder.id);
+    try {
+      localStorage.setItem('micarta_active_order_id', newOrder.id);
+    } catch {}
     playNotificationSound();
     const rest = (restaurants || []).find(r => r && r.id === newOrder.restaurantId);
     showToast(`🎉 ¡Pedido ${newOrder.orderNumber} enviado a ${rest?.name || 'cocina'}!`);
@@ -1576,6 +1590,7 @@ export default function App() {
               menuItems={safeMenuItems}
               categories={safeCategories}
               orders={safeOrders}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
               onUpdateRestaurant={handleUpdateRestaurant}
               onAddRestaurant={handleAddRestaurant}
               onDeleteRestaurant={handleDeleteRestaurant}
@@ -1895,7 +1910,59 @@ export default function App() {
         onUpdateUser={handleUpdateUser}
       />
 
+      {/* FLOATING TOP-LEFT "VER PEDIDO" BUTTON FOR ANONYMOUS CUSTOMER / QR DINER */}
+      {(() => {
+        const activeOrder = customerActiveOrderId 
+          ? (orders || []).find(o => o.id === customerActiveOrderId) 
+          : null;
+        const isOrderActive = Boolean(
+          activeOrder && 
+          activeOrder.status !== 'DELIVERED' && 
+          activeOrder.status !== 'CANCELLED'
+        );
 
+        if (!isOrderActive || !activeOrder) return null;
+
+        return (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsCustomerActiveOrderModalOpen(true)}
+              className="fixed top-4 left-4 z-50 px-3.5 py-2.5 bg-neutral-950/95 hover:bg-black text-white border border-amber-400/50 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.6)] backdrop-blur-md flex items-center gap-2.5 transition cursor-pointer active:scale-95 group animate-in fade-in"
+              title={`Ver comanda activa ${activeOrder.orderNumber}`}
+            >
+              <div className="w-6 h-6 rounded-full bg-amber-400 text-neutral-950 flex items-center justify-center font-bold shadow-sm">
+                <Eye className="w-3.5 h-3.5 stroke-[2.5]" />
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black tracking-tight text-white group-hover:text-amber-300 transition">
+                    Ver Pedido
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30">
+                    {activeOrder.orderNumber}
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono text-neutral-400 block -mt-0.5">
+                  {activeOrder.status === 'PENDING' ? '⏳ Recibido' : (activeOrder.status === 'IN_KITCHEN' ? '👨‍🍳 En cocina' : (activeOrder.status === 'READY' ? '🛎️ ¡Listo!' : (activeOrder.status === 'ON_THE_WAY' ? '🛵 En camino' : 'En curso')))}
+                </span>
+              </div>
+              <span className="flex h-2 w-2 relative ml-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+            </button>
+
+            {isCustomerActiveOrderModalOpen && (
+              <CustomerActiveOrderModal
+                order={activeOrder}
+                onClose={() => setIsCustomerActiveOrderModalOpen(false)}
+                restaurantName={(restaurants || []).find(r => r.id === activeOrder.restaurantId)?.name}
+              />
+            )}
+          </>
+        );
+      })()}
 
       {/* Floating Toast Notification */}
       {toastMessage && (

@@ -462,7 +462,7 @@ export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
  */
 export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void {
   let isClosed = false;
-  let lastSeenTimestamp: string | null = null;
+  let lastSeenSignature: string | null = null;
   let eventSource: EventSource | null = null;
 
   // 1. Live SSE Connection (Sub-10ms cross-tab & cross-device synchronization)
@@ -488,30 +488,29 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
     }
   }
 
-  // 2. Fallback polling every 4 seconds to the backend /api/cloud-menu
+  // 2. High-speed fallback polling every 2 seconds to the backend /api/cloud-menu
   const pollInterval = setInterval(async () => {
     if (isClosed) return;
     try {
-      // Do not overwrite user while they are actively making local saves (within 3.5s)
-      if (Date.now() - lastLocalWriteTime < 3500) {
+      // Do not overwrite user while they are actively making local saves (within 2s)
+      if (Date.now() - lastLocalWriteTime < 2000) {
         return;
       }
 
       const remoteData = await fetchLatestCloudMenu();
       if (remoteData) {
         const currentStamp = remoteData.updatedAt || 'initial';
-        if (lastSavedTimestamp && currentStamp === lastSavedTimestamp) {
-          lastSeenTimestamp = currentStamp;
-          return;
-        }
+        const currentOrderCount = remoteData.orders?.length || 0;
+        const currentItemsCount = remoteData.items?.length || 0;
+        const signature = `${currentStamp}_o${currentOrderCount}_i${currentItemsCount}`;
 
-        if (lastSeenTimestamp && currentStamp !== lastSeenTimestamp) {
+        if (lastSeenSignature !== null && signature !== lastSeenSignature) {
           listener({ type: 'FULL_SYNC', data: remoteData });
         }
-        lastSeenTimestamp = currentStamp;
+        lastSeenSignature = signature;
       }
     } catch {}
-  }, 4000);
+  }, 2000);
 
   return () => {
     isClosed = true;

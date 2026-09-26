@@ -62,8 +62,10 @@ import { OwnerMenuEditor } from './OwnerMenuEditor';
 import { TableQrModal } from './TableQrModal';
 import { TemplateSplitEditor } from './TemplateSplitEditor';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
+import { OwnerOrderDetailModal } from './OwnerOrderDetailModal';
 import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings } from '../utils/restaurantUtils';
 import { DEFAULT_WEEKLY_SCHEDULE, generateTablesForRestaurant, generateShiftsForRestaurant } from '../data/mockData';
+import { Order, OrderStatus } from '../types';
 
 interface OwnerDashboardProps {
   currentUser?: User;
@@ -73,6 +75,7 @@ interface OwnerDashboardProps {
   menuItems?: MenuItem[];
   categories?: MenuCategory[];
   orders?: any[];
+  onUpdateOrderStatus?: (orderId: string, nextStatus: OrderStatus) => void;
   onUpdateRestaurant: (updated: Restaurant) => void;
   onAddRestaurant?: (newRestaurant: Restaurant) => void;
   onDeleteRestaurant?: (restaurantId: string) => void;
@@ -111,6 +114,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   menuItems = [],
   categories = [],
   orders = [],
+  onUpdateOrderStatus,
   onUpdateRestaurant,
   onAddRestaurant,
   onDeleteRestaurant,
@@ -187,6 +191,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   });
 
   const activeOrders = monitorOrders.filter(o => o && o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
+
+  // Selected Order for Full Detail & Management Modal
+  const [selectedOrderForModal, setSelectedOrderForModal] = useState<Order | null>(null);
 
   // Active subtab inside restaurant management
   const [activeSubTab, setActiveSubTab] = useState<AccessSubTab>('waiters');
@@ -2494,7 +2501,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div className="space-y-1">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-orange-600">En Cocina</span>
                   <div className="text-xl font-black text-orange-600 flex items-center gap-1">
-                    <span>{monitorOrders.filter(o => o.status === 'PREPARING').length}</span>
+                    <span>{monitorOrders.filter(o => o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').length}</span>
                     <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                   </div>
                 </div>
@@ -2587,7 +2594,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         </div>
                         <div className="border-x border-neutral-200/50">
                           <span className="text-[9px] text-neutral-400 block uppercase">Cocina</span>
-                          <span className="text-xs font-bold text-blue-600">{active.filter(o => o.status === 'PREPARING').length}</span>
+                          <span className="text-xs font-bold text-blue-600">{active.filter(o => o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').length}</span>
                         </div>
                         <div>
                           <span className="text-[9px] text-neutral-400 block uppercase">Listos</span>
@@ -2597,13 +2604,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                       {/* Minimal orders list */}
                       <div className="space-y-1.5 pt-1">
-                        <h5 className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">Ordenes en Curso</h5>
+                        <h5 className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">Ordenes en Curso (Click para detalle)</h5>
                         {active.length === 0 ? (
                           <div className="text-center py-4 text-[11px] text-neutral-400 italic">No hay órdenes activas</div>
                         ) : (
                           <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                             {active.slice(0, 5).map(o => (
-                              <div key={o.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-neutral-50/60 hover:bg-neutral-50 transition border border-neutral-100/40">
+                              <div 
+                                key={o.id} 
+                                onClick={() => setSelectedOrderForModal(o)}
+                                className="flex items-center justify-between text-xs p-2 rounded-lg bg-neutral-50/60 hover:bg-amber-50/60 hover:border-amber-200 transition border border-neutral-100/40 cursor-pointer active:scale-[0.99]"
+                                title="Click para ver detalle del pedido y gestionar comanda"
+                              >
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-mono font-bold text-neutral-600">{o.orderNumber}</span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-200/50 font-bold text-neutral-700">
@@ -2613,7 +2625,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                 <div className="flex items-center gap-2">
                                   <span className="text-neutral-500 font-mono font-bold">S/ {o.total.toFixed(2)}</span>
                                   <span className={`w-2 h-2 rounded-full ${
-                                    o.status === 'PENDING' ? 'bg-amber-500' : o.status === 'PREPARING' ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500'
+                                    o.status === 'PENDING' ? 'bg-amber-500' : (o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING') ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500'
                                   }`} />
                                 </div>
                               </div>
@@ -2657,7 +2669,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             const tableOrders = dineInOrders.filter(o => o.tableNumber === tableNum);
                             const lastOrder = tableOrders[tableOrders.length - 1];
                             const isPending = tableOrders.some(o => o.status === 'PENDING');
-                            const isPreparing = tableOrders.some(o => o.status === 'PREPARING');
+                            const isPreparing = tableOrders.some(o => o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING');
                             const isReady = tableOrders.some(o => o.status === 'READY');
 
                             let borderCol = 'border-neutral-100';
@@ -2678,7 +2690,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             }
 
                             return (
-                              <div key={tableNum} className={`border rounded-2xl p-4 shadow-sm space-y-3 hover:shadow transition flex flex-col justify-between ${borderCol} ${bgCol}`}>
+                              <div 
+                                key={tableNum} 
+                                onClick={() => setSelectedOrderForModal(lastOrder)}
+                                className={`border rounded-2xl p-4 shadow-sm space-y-3 hover:shadow-md transition flex flex-col justify-between cursor-pointer active:scale-[0.98] ${borderCol} ${bgCol}`}
+                                title="Click para ver el listado y detalle de los pedidos de esta mesa"
+                              >
                                 <div className="flex items-center justify-between">
                                   <span className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-black">
                                     {tableNum}
@@ -2744,7 +2761,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                       <div className="space-y-1.5">
                         {waiterOrders.map(o => (
-                          <div key={o.id} className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-100/50 text-xs">
+                          <div 
+                            key={o.id} 
+                            onClick={() => setSelectedOrderForModal(o)}
+                            className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 hover:bg-amber-50/60 hover:border-amber-200 transition border border-neutral-100/50 text-xs cursor-pointer active:scale-[0.99]"
+                            title="Click para ver detalle del pedido"
+                          >
                             <div className="flex items-center gap-1.5">
                               <span className="font-mono font-bold text-neutral-500">#{o.orderNumber}</span>
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-200 text-neutral-700">
@@ -2752,7 +2774,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               </span>
                             </div>
                             <span className="font-mono font-bold text-neutral-700">
-                              {o.status === 'PENDING' ? '🟡' : o.status === 'PREPARING' ? '🔥' : '🟢'} S/ {o.total.toFixed(2)}
+                              {o.status === 'PENDING' ? '🟡' : (o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING') ? '🔥' : '🟢'} S/ {o.total.toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -2774,16 +2796,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <h4 className="text-xs font-black text-neutral-700 uppercase tracking-wider">Cola de Cocina</h4>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-bold">
-                      {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').length} órdenes
+                      {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').length} órdenes
                     </span>
                   </div>
 
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                    {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').length === 0 ? (
+                    {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').length === 0 ? (
                       <div className="text-center py-10 text-neutral-400 italic text-xs">No hay platos cocinándose</div>
                     ) : (
-                      activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').map(o => (
-                        <div key={o.id} className="bg-white border border-neutral-100 rounded-xl p-3.5 shadow-sm space-y-2">
+                      activeOrders.filter(o => o.status === 'PENDING' || o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').map(o => (
+                        <div 
+                          key={o.id} 
+                          onClick={() => setSelectedOrderForModal(o)}
+                          className="bg-white hover:bg-amber-50/50 transition border border-neutral-100 rounded-xl p-3.5 shadow-sm space-y-2 cursor-pointer"
+                          title="Click para ver detalle del pedido"
+                        >
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-mono font-bold text-neutral-400">Orden #{o.orderNumber}</span>
                             <span className={`px-2 py-0.5 rounded font-mono text-[9px] font-black ${
@@ -4044,6 +4071,24 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           }}
           onOpenCustomerPreview={onOpenCustomerPreview}
           onClose={() => setIsSplitEditorOpen(false)}
+        />
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL: ORDER DETAIL & REAL-TIME STATUS MANAGEMENT             */}
+      {/* ============================================================= */}
+      {selectedOrderForModal && (
+        <OwnerOrderDetailModal
+          order={selectedOrderForModal}
+          onClose={() => setSelectedOrderForModal(null)}
+          onUpdateStatus={(orderId, nextStatus) => {
+            if (onUpdateOrderStatus) {
+              onUpdateOrderStatus(orderId, nextStatus);
+            }
+            setSelectedOrderForModal(prev => prev && prev.id === orderId ? { ...prev, status: nextStatus } : prev);
+            showToast(`✓ Comanda actualizada a estado "${nextStatus}".`);
+          }}
+          restaurantName={ownedRestaurants.find(r => r.id === selectedOrderForModal.restaurantId)?.name || currentRestaurant?.name}
         />
       )}
     </div>
