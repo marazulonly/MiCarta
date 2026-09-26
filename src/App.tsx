@@ -413,6 +413,12 @@ export default function App() {
 
   // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
+    const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
+    if (!currentUser && !isDirectLinkAccess) {
+      setIsInitialCloudFetchDone(true);
+      return;
+    }
+
     let isMounted = true;
 
     // 1. Initial Cloud Fetch from authoritative backend
@@ -654,7 +660,7 @@ export default function App() {
       isMounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [currentUser]);
 
   // Keep previewRestaurant synchronized with restaurants array whenever restaurants update
   useEffect(() => {
