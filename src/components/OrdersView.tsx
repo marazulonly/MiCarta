@@ -238,17 +238,17 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         </div>
 
         <div className="pt-2 border-t border-neutral-900 space-y-1">
-          {order.items.map(i => (
+          {(order.items || []).filter(Boolean).map(i => (
             <div key={i.id} className="text-[11px] flex justify-between text-neutral-300">
               <span>{i.quantity}x {i.name}</span>
-              <span className="font-mono text-neutral-400">${(i.price * i.quantity).toFixed(2)}</span>
+              <span className="font-mono text-neutral-400">S/ {((i.price || 0) * (i.quantity || 1)).toFixed(2)}</span>
             </div>
           ))}
         </div>
 
         <div className="pt-2 border-t border-neutral-900 flex items-center justify-between">
           <span className="text-xs font-bold font-mono text-white">
-            ${order.total.toFixed(2)}
+            S/ {(order.total || 0).toFixed(2)}
           </span>
 
           {!isCompleted ? (

@@ -296,8 +296,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             <div className="divide-y divide-neutral-800/80">
-              {orders.slice(0, 4).map(order => {
-                const rest = restaurants.find(r => r.id === order.restaurantId);
+              {(orders || []).filter(Boolean).slice(0, 4).map(order => {
+                const rest = restaurants.find(r => r && r.id === order.restaurantId);
                 return (
                   <div 
                     key={order.id}
@@ -309,22 +309,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{order.customerName}</span>
+                          <span className="text-xs font-bold text-white">{order.customerName || 'Cliente'}</span>
                           <span className="text-[11px] text-neutral-400 font-mono">
-                            ({rest?.name})
+                            ({rest?.name || 'Local'})
                           </span>
                         </div>
                         <p className="text-[11px] text-neutral-400 mt-0.5">
-                          {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                          {(order.items || []).map(i => i ? `${i.quantity}x ${i.name}` : '').filter(Boolean).join(', ')}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3 text-xs">
-                      <span className="font-bold text-white font-mono">${order.total.toFixed(2)}</span>
+                      <span className="font-bold text-white font-mono">S/ {(order.total || 0).toFixed(2)}</span>
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">
                         {order.status === 'PENDING' ? 'Pendiente' :
-                         order.status === 'IN_KITCHEN' ? 'En Cocina' :
+                         order.status === 'IN_KITCHEN' || order.status === 'PREPARING' ? 'En Cocina' :
                          order.status === 'READY' ? 'Listo' : 'Entregado'}
                       </span>
                     </div>
