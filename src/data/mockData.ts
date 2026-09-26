@@ -106,7 +106,7 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 946 393 000',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-costa', 'rest-1790204393895'],
+    restaurantIds: ['all'],
     status: 'active',
     lastActive: 'En línea'
   },
@@ -119,7 +119,7 @@ export const INITIAL_USERS: User[] = [
     role: 'ADMIN',
     phone: '952341165',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['all'],
+    restaurantIds: [],
     status: 'active',
     lastActive: 'En línea'
   },
@@ -132,7 +132,7 @@ export const INITIAL_USERS: User[] = [
     role: 'ADMIN',
     phone: '+51 980 123 456',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['all'],
+    restaurantIds: [],
     status: 'active',
     lastActive: 'Hace 3 min'
   },
@@ -145,7 +145,7 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 989 309 927',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-costa', 'rest-1790204393895'],
+    restaurantIds: ['all'],
     status: 'active',
     lastActive: 'En línea'
   },

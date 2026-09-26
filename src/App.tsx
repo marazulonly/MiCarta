@@ -699,6 +699,9 @@ export default function App() {
   // Login handler
   const handleLogin = (rawUser: User) => {
     if (!rawUser) return;
+    const isOwnerRole = rawUser.role === 'OWNER' || rawUser.role === 'RESTAURANT_MANAGER';
+    const isAdminRole = rawUser.role === 'ADMIN';
+
     const user: User = {
       ...rawUser,
       id: rawUser.id || `usr-${Date.now()}`,
@@ -708,7 +711,7 @@ export default function App() {
       role: rawUser.role || 'ADMIN',
       phone: rawUser.phone || '900000000',
       avatar: rawUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      restaurantIds: Array.isArray(rawUser.restaurantIds) ? rawUser.restaurantIds : ['all'],
+      restaurantIds: isOwnerRole ? ['all'] : (isAdminRole ? [] : (Array.isArray(rawUser.restaurantIds) ? rawUser.restaurantIds.filter(Boolean) : ['all'])),
       status: rawUser.status || 'active',
       lastActive: rawUser.lastActive || 'Ahora mismo'
     };
@@ -718,16 +721,11 @@ export default function App() {
     if (user.role === 'WAITER' || user.role === 'DELIVERY' || user.role === 'CUSTOMER' || user.role === 'KITCHEN') {
       setActiveTab('home');
     }
-    // Auto select first restaurant accessible by this user:
-    // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
-    if (user.role === 'OWNER' || user.role === 'RESTAURANT_MANAGER') {
-      const allowed = safeRestaurants.filter(r => r && (r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all')));
-      if (allowed.length > 0) {
-        setSelectedRestaurantId(allowed[0].id);
-      } else if (safeRestaurants.length > 0) {
+    if (isOwnerRole) {
+      if (safeRestaurants.length > 0) {
         setSelectedRestaurantId(safeRestaurants[0].id);
       }
-    } else if (user.restaurantIds && user.restaurantIds.length > 0 && user.restaurantIds[0] !== 'all') {
+    } else if (!isAdminRole && user.restaurantIds && user.restaurantIds.length > 0 && user.restaurantIds[0] !== 'all') {
       setSelectedRestaurantId(user.restaurantIds[0]);
     } else if (safeRestaurants.length > 0) {
       setSelectedRestaurantId(safeRestaurants[0].id);
@@ -1336,10 +1334,10 @@ export default function App() {
 
   // Restaurants accessible by the current logged-in user
   const userAccessibleRestaurants = currentUser
-    ? (currentUser.role === 'ADMIN'
+    ? ((currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')
         ? safeRestaurants
-        : safeRestaurants.filter(r => r && (r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
-  : safeRestaurants;
+        : safeRestaurants.filter(r => r && (currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
+    : safeRestaurants;
 
   // Current active restaurant branding for dynamic theme accent
   const currentSelectedRest = userAccessibleRestaurants.find(r => r && r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || safeRestaurants[0];

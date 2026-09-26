@@ -139,32 +139,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o && o.id === selectedOwnerId) || ownersList[0]);
 
-  // Restaurants owned or assigned to this owner:
-  // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
-  const ownedRestaurants = (restaurants || []).filter(r => {
-    if (!r) return false;
-    if (isOwnerLogged && currentUser) {
-      if (currentUser.role === 'ADMIN' || (currentUser.restaurantIds && currentUser.restaurantIds.includes('all'))) {
-        return true;
-      }
-      const isAssigned = Array.isArray(currentUser.restaurantIds) && currentUser.restaurantIds.includes(r.id);
-      const isCreator = Boolean(
-        r.ownerId && (
-          r.ownerId === currentUser.id || 
-          r.ownerId === currentUser.email || 
-          (currentUser.id === 'u-owner-stephanie' && r.ownerId === 'u-owner-stephanie')
-        )
-      );
-      const isStephanieMatch = Boolean(
-        (currentUser.id === 'u-owner-stephanie' || currentUser.dni === '89309927') &&
-        (r.id === 'rest-costa' || r.id === 'rest-1790204393895')
-      );
-      return isAssigned || isCreator || isStephanieMatch;
-    }
-    const isAssigned = Array.isArray(currentOwner?.restaurantIds) && currentOwner.restaurantIds.includes(r.id);
-    const isCreator = Boolean(r.ownerId && currentOwner?.id && (r.ownerId === currentOwner.id || r.ownerId === currentOwner.email));
-    return isAssigned || isCreator;
-  });
+  // Restaurants owned or assigned to owners (all restaurants assigned to all owners):
+  const ownedRestaurants = (restaurants || []).filter(Boolean);
 
   // Selected Restaurant being managed
   const [selectedRestId, setSelectedRestId] = useState<string>(
