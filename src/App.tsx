@@ -1301,22 +1301,30 @@ export default function App() {
     }
   };
 
+  // Robust state sanitization to guarantee children components never receive null/undefined elements
+  const safeRestaurants = (restaurants || []).filter(Boolean);
+  const safeCategories = (categories || []).filter(Boolean);
+  const safeMenuItems = (menuItems || []).filter(Boolean);
+  const safeUsers = (users || []).filter(Boolean);
+  const safeOrders = (orders || []).filter(Boolean);
+  const safeTemplates = (templates || []).filter(Boolean);
+
   // Effective role user for specific role components
-  const effectiveWaiterUser = currentUser?.role === 'WAITER' ? currentUser : (users.find(u => u.role === 'WAITER') || users[0]);
-  const effectiveKitchenUser = currentUser?.role === 'KITCHEN' ? currentUser : (users.find(u => u.role === 'KITCHEN') || users[0]);
-  const effectiveDeliveryUser = currentUser?.role === 'DELIVERY' ? currentUser : (users.find(u => u.role === 'DELIVERY') || users[0]);
-  const effectiveCustomerUser = currentUser?.role === 'CUSTOMER' ? currentUser : (users.find(u => u.role === 'CUSTOMER') || users[0]);
+  const effectiveWaiterUser = currentUser?.role === 'WAITER' ? currentUser : (safeUsers.find(u => u && u.role === 'WAITER') || safeUsers[0]);
+  const effectiveKitchenUser = currentUser?.role === 'KITCHEN' ? currentUser : (safeUsers.find(u => u && u.role === 'KITCHEN') || safeUsers[0]);
+  const effectiveDeliveryUser = currentUser?.role === 'DELIVERY' ? currentUser : (safeUsers.find(u => u && u.role === 'DELIVERY') || safeUsers[0]);
+  const effectiveCustomerUser = currentUser?.role === 'CUSTOMER' ? currentUser : (safeUsers.find(u => u && u.role === 'CUSTOMER') || safeUsers[0]);
 
   // Restaurants accessible by the current logged-in user
   const userAccessibleRestaurants = currentUser
     ? (currentUser.role === 'ADMIN'
-        ? (restaurants || []).filter(Boolean)
-        : (restaurants || []).filter(r => r && (r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
-  : (restaurants || []).filter(Boolean);
+        ? safeRestaurants
+        : safeRestaurants.filter(r => r && (r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
+  : safeRestaurants;
 
   // Current active restaurant branding for dynamic theme accent
-  const currentSelectedRest = userAccessibleRestaurants.find(r => r && r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || (restaurants || [])[0];
-  const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
+  const currentSelectedRest = userAccessibleRestaurants.find(r => r && r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || safeRestaurants[0];
+  const pendingOrdersCount = safeOrders.filter(o => o && o.status === 'PENDING').length;
 
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
@@ -1483,9 +1491,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
         <LoginScreen
-          users={users}
+          users={safeUsers}
           onLogin={handleLogin}
-          restaurants={restaurants}
+          restaurants={safeRestaurants}
           onOpenCustomerPreview={handleOpenCustomerPreview}
           onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
         />
@@ -1494,7 +1502,7 @@ export default function App() {
   }
 
   // 2. Non-Admin Role Views: "Las vistas deberán corresponder al rol del usuario que se loguee"
-  // "La vista actual, solo será vista cuando el que se loguee sea un administrador"
+  // "La vista actual, solo será vista when el que se loguee sea un administrador"
   if (currentUser && currentUser.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
@@ -1516,12 +1524,12 @@ export default function App() {
           {(currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && (
             <OwnerDashboard
               currentUser={currentUser}
-              restaurants={restaurants}
-              users={users}
-              templates={templates}
-              menuItems={menuItems}
-              categories={categories}
-              orders={orders}
+              restaurants={safeRestaurants}
+              users={safeUsers}
+              templates={safeTemplates}
+              menuItems={safeMenuItems}
+              categories={safeCategories}
+              orders={safeOrders}
               onUpdateRestaurant={handleUpdateRestaurant}
               onAddRestaurant={handleAddRestaurant}
               onDeleteRestaurant={handleDeleteRestaurant}
@@ -1549,9 +1557,9 @@ export default function App() {
           {currentUser.role === 'KITCHEN' && (
             <KitchenView
               currentUser={currentUser}
-              restaurants={restaurants}
-              orders={orders}
-              menuItems={menuItems}
+              restaurants={safeRestaurants}
+              orders={safeOrders}
+              menuItems={safeMenuItems}
               onUpdateOrderStatus={handleUpdateOrderStatus}
             />
           )}
@@ -1560,9 +1568,9 @@ export default function App() {
           {currentUser.role === 'WAITER' && (
             <WaiterView
               currentUser={currentUser}
-              restaurants={restaurants}
-              orders={orders}
-              menuItems={menuItems}
+              restaurants={safeRestaurants}
+              orders={safeOrders}
+              menuItems={safeMenuItems}
               onUpdateOrderStatus={handleUpdateOrderStatus}
               onSimulateNewOrder={handleSimulateNewOrder}
               onOpenCustomerPreview={handleOpenCustomerPreview}
@@ -1573,8 +1581,8 @@ export default function App() {
           {currentUser.role === 'DELIVERY' && (
             <DeliveryView
               currentUser={currentUser}
-              restaurants={restaurants}
-              orders={orders}
+              restaurants={safeRestaurants}
+              orders={safeOrders}
               onUpdateOrderStatus={handleUpdateOrderStatus}
             />
           )}
@@ -1583,8 +1591,8 @@ export default function App() {
           {currentUser.role === 'CUSTOMER' && (
             <CustomerPortalView
               currentUser={currentUser}
-              restaurants={restaurants}
-              orders={orders}
+              restaurants={safeRestaurants}
+              orders={safeOrders}
               onOpenCustomerPreview={handleOpenCustomerPreview}
             />
           )}
@@ -1596,8 +1604,8 @@ export default function App() {
           isOpen={isCustomerModalOpen}
           onClose={() => setIsCustomerModalOpen(false)}
           restaurant={previewRestaurant || currentSelectedRest}
-          categories={categories}
-          items={menuItems}
+          categories={safeCategories}
+          items={safeMenuItems}
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
           initialTableNumber={previewTableNumber}
@@ -1638,14 +1646,14 @@ export default function App() {
       
       {/* Top Header with Profile / Login Trigger and Simulación Checkbox */}
       <TopHeader
-        restaurants={restaurants}
+        restaurants={safeRestaurants}
         selectedRestaurantId={selectedRestaurantId}
         onSelectRestaurant={setSelectedRestaurantId}
         activeRole={activeRole}
         onRoleChange={(role) => {
           setActiveRole(role);
           // When admin previews another role in the dropdown
-          const roleUser = users.find(u => u.role === role);
+          const roleUser = safeUsers.find(u => u && u.role === role);
           if (roleUser) {
             setCurrentUser(roleUser);
           }
@@ -1666,7 +1674,7 @@ export default function App() {
           setIsSimulationActive(active);
           if (active) {
             setActiveRole('ADMIN');
-            const adminUser = users.find(u => u.role === 'ADMIN') || users[0];
+            const adminUser = safeUsers.find(u => u && u.role === 'ADMIN') || safeUsers[0];
             if (adminUser) setCurrentUser(adminUser);
             showToast('🖥️ Modo Simulación Multi-Pantalla activado (Vista Administrador para PC)');
           } else {
@@ -1682,16 +1690,16 @@ export default function App() {
         {/* SIMULATION MODE (PC ONLY 3-COLUMN LIVE MOCKUPS) */}
         {isSimulationActive ? (
           <AdminSimulationView
-            restaurants={restaurants}
-            menuItems={menuItems}
-            categories={categories}
-            users={users}
+            restaurants={safeRestaurants}
+            menuItems={safeMenuItems}
+            categories={safeCategories}
+            users={safeUsers}
             onCloseSimulation={() => setIsSimulationActive(false)}
             onSyncGlobalOrder={(order) => {
               setOrders(prev => {
-                const existing = prev.find(o => o.id === order.id);
+                const existing = (prev || []).filter(Boolean).find(o => o && o.id === order.id);
                 if (existing) {
-                  return prev.map(o => o.id === order.id ? order : o);
+                  return prev.map(o => o && o.id === order.id ? order : o);
                 }
                 return [order, ...prev];
               });
@@ -1703,12 +1711,12 @@ export default function App() {
             {activeTab === 'home' && (
               <HomeView
                 currentUser={currentUser}
-                restaurants={restaurants}
-                orders={orders}
-                users={users}
-                templates={templates}
-                categories={categories}
-                menuItems={menuItems}
+                restaurants={safeRestaurants}
+                orders={safeOrders}
+                users={safeUsers}
+                templates={safeTemplates}
+                categories={safeCategories}
+                menuItems={safeMenuItems}
                 activeRole={activeRole}
                 onRoleChange={setActiveRole}
                 onNavigateToRestaurants={() => setActiveTab('restaurants')}
@@ -1733,9 +1741,9 @@ export default function App() {
 
             {activeTab === 'restaurants' && (
               <RestaurantsView
-                restaurants={restaurants}
-                categories={categories}
-                items={menuItems}
+                restaurants={safeRestaurants}
+                categories={safeCategories}
+                items={safeMenuItems}
                 onUpdateRestaurant={handleUpdateRestaurant}
                 onDeleteRestaurant={handleDeleteRestaurant}
                 onUpdateMenuItem={handleUpdateMenuItem}
@@ -1748,8 +1756,8 @@ export default function App() {
 
             {activeTab === 'users' && (
               <UsersView
-                users={users}
-                restaurants={restaurants}
+                users={safeUsers}
+                restaurants={safeRestaurants}
                 onAddUser={handleAddUser}
                 onUpdateUser={handleUpdateUser}
                 onDeleteUser={handleDeleteUser}
@@ -1759,8 +1767,8 @@ export default function App() {
 
             {activeTab === 'orders' && (
               <OrdersView
-                orders={orders}
-                restaurants={restaurants}
+                orders={safeOrders}
+                restaurants={safeRestaurants}
                 onUpdateOrderStatus={handleUpdateOrderStatus}
                 onSimulateNewOrder={handleSimulateNewOrder}
               />
@@ -1786,8 +1794,8 @@ export default function App() {
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
         restaurant={previewRestaurant || currentSelectedRest}
-        categories={categories}
-        items={menuItems}
+        categories={safeCategories}
+        items={safeMenuItems}
         onOrderCreated={handleCreateOrder}
         initialMode={previewMode}
         initialTableNumber={previewTableNumber}
