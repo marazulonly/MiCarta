@@ -46,6 +46,8 @@ import {
   publishRestaurantMenu,
   fetchPublicPublishedMenu,
   subscribeToCloudUpdates,
+  autoSyncOrder,
+  autoUpdateOrderStatus,
 } from './lib/cloudSync';
 
 // Helper function to normalize slugs for matching URLs, names, and IDs
@@ -669,6 +671,17 @@ export default function App() {
         }
       } else if (event.type === 'USER_DELETED' && event.userId) {
         setUsers(prev => prev.filter(u => u.id !== event.userId));
+      } else if (event.type === 'ORDER_CREATED' && event.order) {
+        setOrders(prev => {
+          const exists = prev.some(o => o.id === event.order!.id);
+          if (exists) return prev;
+          return [event.order!, ...prev];
+        });
+        playNotificationSound();
+        const rest = (restaurants || []).find(r => r && r.id === event.order!.restaurantId);
+        showToast(`🔔 ¡Nueva comanda recibida en tiempo real! ${event.order!.orderNumber} (${rest?.name || 'Restaurante'})`);
+      } else if (event.type === 'ORDER_UPDATED' && event.order) {
+        setOrders(prev => prev.map(o => o.id === event.order!.id ? event.order! : o));
       }
     });
 
@@ -1237,13 +1250,19 @@ export default function App() {
       return updatedList;
     });
     showToast(`Comanda actualizada a estado "${nextStatus}".`);
+    autoUpdateOrderStatus(orderId, nextStatus).catch(err => {
+      console.warn('[CloudSync] Error updating order status:', err);
+    });
   };
 
   const handleCreateOrder = (newOrder: Order) => {
-    setOrders(prev => [newOrder, ...prev]);
+    setOrders(prev => [newOrder, ...prev.filter(o => o.id !== newOrder.id)]);
     playNotificationSound();
     const rest = (restaurants || []).find(r => r && r.id === newOrder.restaurantId);
     showToast(`🎉 ¡Pedido ${newOrder.orderNumber} enviado a ${rest?.name || 'cocina'}!`);
+    autoSyncOrder(newOrder).catch(err => {
+      console.warn('[CloudSync] Error saving order to cloud:', err);
+    });
   };
 
   const handleSimulateNewOrder = () => {
@@ -1295,6 +1314,7 @@ export default function App() {
     setOrders(prev => [newOrder, ...prev]);
     playNotificationSound();
     showToast(`🔔 ¡Nueva comanda entrante! ${newOrder.orderNumber} en ${randomRest.name}`);
+    autoSyncOrder(newOrder).catch(() => {});
   };
 
   const handleCustomerMenuClose = () => {

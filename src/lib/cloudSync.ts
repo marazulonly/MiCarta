@@ -10,7 +10,7 @@ export interface CloudMenuPayload {
 }
 
 export type CloudSyncListener = (event: {
-  type: 'FULL_SYNC' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'RESTAURANT_UPDATED' | 'CATEGORY_UPDATED' | 'CATEGORY_DELETED' | 'USER_UPDATED' | 'USER_DELETED' | 'MENU_PUBLISHED' | 'CONNECTED';
+  type: 'FULL_SYNC' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'RESTAURANT_UPDATED' | 'CATEGORY_UPDATED' | 'CATEGORY_DELETED' | 'USER_UPDATED' | 'USER_DELETED' | 'MENU_PUBLISHED' | 'ORDER_CREATED' | 'ORDER_UPDATED' | 'CONNECTED';
   data?: any;
   item?: MenuItem;
   items?: MenuItem[];
@@ -23,6 +23,9 @@ export type CloudSyncListener = (event: {
   user?: User;
   users?: User[];
   userId?: string;
+  order?: Order;
+  orders?: Order[];
+  orderId?: string;
   restaurantId?: string;
   slug?: string;
   version?: number;
@@ -518,4 +521,71 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
     }
     clearInterval(pollInterval);
   };
+}
+
+/**
+ * Automatically saves a new order to backend cloud hosting and Upstash.
+ * Guarantees real-time broadcast to owner dashboard, kitchen, and waiters.
+ */
+export async function autoSyncOrder(order: Order): Promise<boolean> {
+  try {
+    const current = await fetchFromUpstashDirectly();
+    if (current) {
+      const orders = [...(current.orders || [])];
+      const idx = orders.findIndex(o => o.id === order.id);
+      if (idx >= 0) {
+        orders[idx] = order;
+      } else {
+        orders.unshift(order);
+      }
+      await saveToUpstashDirectly({
+        ...current,
+        orders
+      });
+    }
+  } catch (err) {
+    console.warn('[CloudSync] Upstash order save error:', err);
+  }
+
+  try {
+    const res = await fetch('/api/cloud-menu/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[CloudSync] Backend order save error:', err);
+    return false;
+  }
+}
+
+/**
+ * Automatically updates order status in cloud hosting.
+ */
+export async function autoUpdateOrderStatus(orderId: string, status: string): Promise<boolean> {
+  try {
+    const current = await fetchFromUpstashDirectly();
+    if (current) {
+      const orders = (current.orders || []).map(o => o.id === orderId ? { ...o, status: status as any } : o);
+      await saveToUpstashDirectly({
+        ...current,
+        orders
+      });
+    }
+  } catch (err) {
+    console.warn('[CloudSync] Upstash order status update error:', err);
+  }
+
+  try {
+    const res = await fetch('/api/cloud-menu/order/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, status })
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[CloudSync] Backend order status update error:', err);
+    return false;
+  }
 }

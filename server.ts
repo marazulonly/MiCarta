@@ -628,6 +628,76 @@ async function startServer() {
     res.json({ success: true, message: 'Usuario eliminado permanentemente de la nube' });
   });
 
+  // POST: Create or sync new order (instant cloud save and real-time SSE broadcast)
+  app.post('/api/cloud-menu/order', async (req, res) => {
+    const order = req.body;
+    if (!order || !order.id || !order.restaurantId) {
+      res.status(400).json({ success: false, message: 'Comanda o pedido inválido' });
+      return;
+    }
+
+    await ensureCloudDataHydrated();
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+    const orders = [...(current.orders || [])];
+    const idx = orders.findIndex((o: any) => o.id === order.id);
+
+    if (idx >= 0) {
+      orders[idx] = { ...orders[idx], ...order };
+    } else {
+      orders.unshift(order);
+    }
+
+    const updatedData = {
+      ...current,
+      orders,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveCloudDataToDisk(updatedData);
+    if (kvRestUrl && kvRestToken) {
+      saveToVercelKV(updatedData).catch(() => {});
+    }
+
+    broadcastMenuUpdate({ type: 'ORDER_CREATED', order, orders });
+    res.json({ success: true, message: `Comanda ${order.orderNumber || ''} guardada en tiempo real en la nube`, order });
+  });
+
+  // POST: Update order status
+  app.post('/api/cloud-menu/order/status', async (req, res) => {
+    const { orderId, status } = req.body;
+    if (!orderId || !status) {
+      res.status(400).json({ success: false, message: 'ID de comanda y estado requeridos' });
+      return;
+    }
+
+    await ensureCloudDataHydrated();
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+    const orders = [...(current.orders || [])];
+    const idx = orders.findIndex((o: any) => o.id === orderId);
+
+    let updatedOrder = null;
+    if (idx >= 0) {
+      orders[idx] = { ...orders[idx], status };
+      updatedOrder = orders[idx];
+    }
+
+    const updatedData = {
+      ...current,
+      orders,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveCloudDataToDisk(updatedData);
+    if (kvRestUrl && kvRestToken) {
+      saveToVercelKV(updatedData).catch(() => {});
+    }
+
+    if (updatedOrder) {
+      broadcastMenuUpdate({ type: 'ORDER_UPDATED', order: updatedOrder, orders });
+    }
+    res.json({ success: true, message: 'Estado de comanda actualizado en tiempo real', order: updatedOrder });
+  });
+
   // POST: Configure and verify Vercel KV / Upstash Redis directly
   app.post('/api/cloud-menu/setup-kv', async (req, res) => {
     const { url, token } = req.body;

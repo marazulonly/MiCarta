@@ -159,7 +159,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       r.ownerId && (r.ownerId === targetOwner.id || (targetOwner.email && r.ownerId === targetOwner.email))
     );
 
-    return isAssigned || isCreator;
+    const isOwnerRole = targetOwner.role === 'OWNER' || targetOwner.role === 'RESTAURANT_MANAGER';
+    const hasUnrestrictedAccess = !Array.isArray(targetOwner.restaurantIds) || targetOwner.restaurantIds.length === 0 || targetOwner.restaurantIds.includes('all');
+
+    return isAssigned || isCreator || (isOwnerRole && hasUnrestrictedAccess);
   });
 
   // Selected Restaurant being managed
@@ -169,10 +172,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   const currentRestaurant = getSafeActiveRestaurant(ownedRestaurants, selectedRestId) ?? getSafeActiveRestaurant(restaurants, null);
 
-  // Filter owned orders for Sales Monitor
-  const monitorOrders = (orders || []).filter(o => 
-    o && ownedRestaurants.some(r => r && r.id === o.restaurantId)
-  );
+  // Filter owned orders for Sales Monitor (resilient matching by ID, slug, or name)
+  const activeRestaurantsList = ownedRestaurants.length > 0 ? ownedRestaurants : (restaurants || []);
+  const monitorOrders = (orders || []).filter(o => {
+    if (!o) return false;
+    if (currentUser?.role === 'ADMIN') return true;
+    return activeRestaurantsList.some(r => 
+      r && (
+        r.id === o.restaurantId || 
+        (r.slug && r.slug === o.restaurantId) || 
+        (r.name && o.restaurantId && r.name.toLowerCase() === o.restaurantId.toLowerCase())
+      )
+    );
+  });
 
   const activeOrders = monitorOrders.filter(o => o && o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
 
