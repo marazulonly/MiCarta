@@ -677,7 +677,7 @@ export default function App() {
   // Keep previewRestaurant synchronized with restaurants array whenever restaurants update
   useEffect(() => {
     if (previewRestaurant) {
-      const match = restaurants.find(r => r.id === previewRestaurant.id);
+      const match = (restaurants || []).find(r => r && r.id === previewRestaurant.id);
       if (match && JSON.stringify(match) !== JSON.stringify(previewRestaurant)) {
         setPreviewRestaurant(match);
       }
@@ -706,7 +706,7 @@ export default function App() {
     // Auto select first restaurant accessible by this user:
     // "Los dueños, solo podrán ver los restaurantes creados por ellos o si les fueron asignados."
     if (user.role === 'OWNER' || user.role === 'RESTAURANT_MANAGER') {
-      const allowed = restaurants.filter(r => r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all'));
+      const allowed = (restaurants || []).filter(r => r && (r.ownerId === user.id || user.restaurantIds?.includes(r.id) || user.restaurantIds?.includes('all')));
       if (allowed.length > 0) {
         setSelectedRestaurantId(allowed[0].id);
       }
@@ -809,7 +809,7 @@ export default function App() {
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
-    const prevRest = restaurants.find(r => r.id === updated.id);
+    const prevRest = (restaurants || []).find(r => r && r.id === updated.id);
     const prevOwnerId = prevRest?.ownerId;
     const newOwnerId = updated.ownerId;
 
@@ -882,11 +882,11 @@ export default function App() {
   };
 
   const handleDeleteRestaurant = (restaurantId: string) => {
-    const targetRest = restaurants.find(r => r.id === restaurantId);
+    const targetRest = (restaurants || []).find(r => r && r.id === restaurantId);
     const restName = targetRest ? targetRest.name : 'Restaurante';
 
     // 1. Remove from restaurants state
-    const nextRestaurants = restaurants.filter(r => r.id !== restaurantId);
+    const nextRestaurants = (restaurants || []).filter(r => r && r.id !== restaurantId);
     setRestaurants(nextRestaurants);
 
     // 2. If previewing or selected, reset
@@ -1221,7 +1221,7 @@ export default function App() {
   const handleCreateOrder = (newOrder: Order) => {
     setOrders(prev => [newOrder, ...prev]);
     playNotificationSound();
-    const rest = restaurants.find(r => r.id === newOrder.restaurantId);
+    const rest = (restaurants || []).find(r => r && r.id === newOrder.restaurantId);
     showToast(`🎉 ¡Pedido ${newOrder.orderNumber} enviado a ${rest?.name || 'cocina'}!`);
   };
 
@@ -1286,7 +1286,7 @@ export default function App() {
   };
 
   const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => {
-    const target = restaurant || restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
+    const target = restaurant || (restaurants || []).find(r => r && r.id === selectedRestaurantId) || (restaurants || []).filter(Boolean)[0];
     setPreviewRestaurant(target);
     setPreviewMode(mode || 'DINE_IN');
     setPreviewTableNumber(tableNumber);

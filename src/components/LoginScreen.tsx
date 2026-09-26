@@ -293,6 +293,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </button>
             </form>
 
+            <div className="pt-4 border-t border-neutral-100 flex flex-col items-center gap-2">
+              <p className="text-[11px] text-neutral-400 text-center">
+                ¿Problemas con datos o sesiones antiguas guardadas en tu navegador?
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    localStorage.clear();
+                    window.location.reload();
+                  }
+                }}
+                className="text-[11px] text-red-500 hover:text-red-700 font-bold underline transition cursor-pointer"
+              >
+                Limpiar todo el Caché y Reiniciar Aplicación
+              </button>
+            </div>
+
           </div>
 
         </div>
