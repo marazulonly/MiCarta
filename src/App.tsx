@@ -1521,6 +1521,7 @@ export default function App() {
               templates={templates}
               menuItems={menuItems}
               categories={categories}
+              orders={orders}
               onUpdateRestaurant={handleUpdateRestaurant}
               onAddRestaurant={handleAddRestaurant}
               onDeleteRestaurant={handleDeleteRestaurant}

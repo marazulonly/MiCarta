@@ -68,6 +68,7 @@ interface OwnerDashboardProps {
   templates: MenuTemplate[];
   menuItems?: MenuItem[];
   categories?: MenuCategory[];
+  orders?: any[];
   onUpdateRestaurant: (updated: Restaurant) => void;
   onAddRestaurant?: (newRestaurant: Restaurant) => void;
   onDeleteRestaurant?: (restaurantId: string) => void;
@@ -96,7 +97,7 @@ interface OwnerDashboardProps {
   ) => void;
 }
 
-type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates';
+type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | 'waiters' | 'delivery' | 'customers' | 'templates' | 'sales_monitor';
 
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   currentUser,
@@ -105,6 +106,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   templates,
   menuItems = [],
   categories = [],
+  orders = [],
   onUpdateRestaurant,
   onAddRestaurant,
   onDeleteRestaurant,
@@ -169,8 +171,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   const currentRestaurant = ownedRestaurants.find(r => r.id === selectedRestId) || ownedRestaurants[0];
 
+  // Filter owned orders for Sales Monitor
+  const monitorOrders = (orders || []).filter(o => 
+    o && ownedRestaurants.some(r => r && r.id === o.restaurantId)
+  );
+
+  const activeOrders = monitorOrders.filter(o => o && o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
+
   // Active subtab inside restaurant management
   const [activeSubTab, setActiveSubTab] = useState<AccessSubTab>('waiters');
+
+  // Real-time sales and orders monitor mode
+  const [monitorMode, setMonitorMode] = useState<'restaurant' | 'table' | 'waiter' | 'kitchen'>('restaurant');
 
   // Split-Screen Template Editor State
   const [isSplitEditorOpen, setIsSplitEditorOpen] = useState(false);
@@ -1001,6 +1013,20 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               type="button"
+              onClick={() => setActiveSubTab('sales_monitor')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shadow-md shrink-0 ${
+                activeSubTab === 'sales_monitor'
+                  ? 'bg-amber-500 text-black'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+              }`}
+              title="Supervisar ventas en tiempo real"
+            >
+              <Eye className="w-4 h-4 stroke-[2.5]" />
+              <span>Supervisar Ventas</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsSplitEditorOpen(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md shrink-0"
               title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
@@ -1025,6 +1051,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* 8 Access Navigation SubTabs */}
         <div className="p-2 gap-1.5 flex flex-wrap bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs sm:text-xs">
           {[
+            { id: 'sales_monitor', label: 'Supervisar Ventas', icon: Eye },
             { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
             { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
             { id: 'schedules', label: 'Horarios', icon: Clock },
@@ -2419,6 +2446,406 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* ============================================================= */}
+        {/* SUBTAB 9: SUPERVISAR VENTAS Y PEDIDOS EN TIEMPO REAL          */}
+        {/* ============================================================= */}
+        {activeSubTab === 'sales_monitor' && (
+          <div className="p-4 sm:p-6 space-y-6 animate-in fade-in duration-200">
+            {/* Minimalist Top KPI Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">Pedidos Activos</span>
+                  <div className="text-xl font-black text-neutral-900">
+                    {monitorOrders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length}
+                  </div>
+                </div>
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Layers className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-emerald-600">Ventas Hoy</span>
+                  <div className="text-xl font-black text-neutral-900">
+                    S/ {monitorOrders.filter(o => o.status !== 'CANCELLED').reduce((sum, o) => sum + o.total, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-black font-mono">S/</span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-orange-600">En Cocina</span>
+                  <div className="text-xl font-black text-orange-600 flex items-center gap-1">
+                    <span>{monitorOrders.filter(o => o.status === 'PREPARING').length}</span>
+                    <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                  </div>
+                </div>
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                  <Flame className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">Listos p/ Servir</span>
+                  <div className="text-xl font-black text-emerald-600">
+                    {monitorOrders.filter(o => o.status === 'READY').length}
+                  </div>
+                </div>
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Check className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* REAL-TIME CONTROLS / PERSPECTIVE SWITCHERS */}
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-1.5 bg-neutral-100 p-1.5 rounded-xl w-full sm:w-auto">
+                {[
+                  { id: 'restaurant', label: 'Por Sede', icon: Store },
+                  { id: 'table', label: 'Por Mesa', icon: Layers },
+                  { id: 'waiter', label: 'Por Mozo', icon: ChefHat },
+                  { id: 'kitchen', label: 'En Cocina', icon: Flame },
+                ].map(mode => {
+                  const isActive = monitorMode === mode.id;
+                  const Icon = mode.icon;
+                  return (
+                    <button
+                      key={mode.id}
+                      onClick={() => setMonitorMode(mode.id as any)}
+                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 py-2 px-3 sm:px-4 rounded-lg font-bold text-[11px] sm:text-xs transition cursor-pointer ${
+                        isActive
+                          ? 'bg-neutral-900 text-white shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">{mode.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <div className="hidden md:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>Tiempo real activo</span>
+              </div>
+            </div>
+
+            {/* MONITOR VIEWS PANELS */}
+            {/* ======================= */}
+
+            {/* 1. BY RESTAURANT */}
+            {monitorMode === 'restaurant' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ownedRestaurants.map(rest => {
+                  const restOrders = monitorOrders.filter(o => o.restaurantId === rest.id);
+                  const active = restOrders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
+                  const salesTotal = restOrders.filter(o => o.status !== 'CANCELLED').reduce((sum, o) => sum + o.total, 0);
+
+                  return (
+                    <div key={rest.id} className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-sm space-y-4 hover:border-neutral-200 transition">
+                      <div className="flex items-center justify-between border-b border-neutral-50 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs text-neutral-800">
+                            {rest.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-neutral-800 truncate max-w-[120px] sm:max-w-none">{rest.name}</h4>
+                            <p className="text-[10px] text-neutral-400">{rest.cuisineType || 'Restaurante'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-neutral-400 font-mono block">Ventas</span>
+                          <span className="text-xs font-black text-neutral-900">S/ {salesTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Status Summary pill indicator */}
+                      <div className="grid grid-cols-3 gap-2 text-center bg-neutral-50 p-2.5 rounded-xl">
+                        <div>
+                          <span className="text-[9px] text-neutral-400 block uppercase">Pendientes</span>
+                          <span className="text-xs font-bold text-amber-600">{active.filter(o => o.status === 'PENDING').length}</span>
+                        </div>
+                        <div className="border-x border-neutral-200/50">
+                          <span className="text-[9px] text-neutral-400 block uppercase">Cocina</span>
+                          <span className="text-xs font-bold text-blue-600">{active.filter(o => o.status === 'PREPARING').length}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-neutral-400 block uppercase">Listos</span>
+                          <span className="text-xs font-bold text-emerald-600">{active.filter(o => o.status === 'READY').length}</span>
+                        </div>
+                      </div>
+
+                      {/* Minimal orders list */}
+                      <div className="space-y-1.5 pt-1">
+                        <h5 className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">Ordenes en Curso</h5>
+                        {active.length === 0 ? (
+                          <div className="text-center py-4 text-[11px] text-neutral-400 italic">No hay órdenes activas</div>
+                        ) : (
+                          <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                            {active.slice(0, 5).map(o => (
+                              <div key={o.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-neutral-50/60 hover:bg-neutral-50 transition border border-neutral-100/40">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono font-bold text-neutral-600">{o.orderNumber}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-200/50 font-bold text-neutral-700">
+                                    {o.tableNumber ? `Mesa ${o.tableNumber}` : 'Deliv'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-neutral-500 font-mono font-bold">S/ {o.total.toFixed(2)}</span>
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    o.status === 'PENDING' ? 'bg-amber-500' : o.status === 'PREPARING' ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500'
+                                  }`} />
+                                </div>
+                              </div>
+                            ))}
+                            {active.length > 5 && (
+                              <div className="text-[9px] text-center text-neutral-400 italic font-mono pt-1">
+                                + {active.length - 5} órdenes más activas
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 2. BY TABLE */}
+            {monitorMode === 'table' && (
+              <div className="space-y-6">
+                {ownedRestaurants.map(rest => {
+                  const restOrders = monitorOrders.filter(o => o.restaurantId === rest.id && o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
+                  // Get active table orders
+                  const dineInOrders = restOrders.filter(o => o.tableNumber);
+
+                  return (
+                    <div key={rest.id} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-extrabold text-neutral-700 uppercase tracking-wider">{rest.name}</h4>
+                        <span className="text-[10px] text-neutral-400 font-mono">{dineInOrders.length} Mesas Activas</span>
+                      </div>
+
+                      {dineInOrders.length === 0 ? (
+                        <div className="text-center py-6 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200 text-xs text-neutral-400">
+                          No hay mesas activas con pedidos en esta sede.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                          {Array.from(new Set(dineInOrders.map(o => o.tableNumber))).sort().map(tableNum => {
+                            const tableOrders = dineInOrders.filter(o => o.tableNumber === tableNum);
+                            const lastOrder = tableOrders[tableOrders.length - 1];
+                            const isPending = tableOrders.some(o => o.status === 'PENDING');
+                            const isPreparing = tableOrders.some(o => o.status === 'PREPARING');
+                            const isReady = tableOrders.some(o => o.status === 'READY');
+
+                            let borderCol = 'border-neutral-100';
+                            let bgCol = 'bg-white';
+                            let badgeDot = 'bg-neutral-300';
+                            if (isPending) {
+                              borderCol = 'border-amber-200/80';
+                              bgCol = 'bg-amber-50/20';
+                              badgeDot = 'bg-amber-500';
+                            } else if (isPreparing) {
+                              borderCol = 'border-orange-200/80';
+                              bgCol = 'bg-orange-50/20';
+                              badgeDot = 'bg-orange-500 animate-ping';
+                            } else if (isReady) {
+                              borderCol = 'border-emerald-200/80';
+                              bgCol = 'bg-emerald-50/20';
+                              badgeDot = 'bg-emerald-500';
+                            }
+
+                            return (
+                              <div key={tableNum} className={`border rounded-2xl p-4 shadow-sm space-y-3 hover:shadow transition flex flex-col justify-between ${borderCol} ${bgCol}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-black">
+                                    {tableNum}
+                                  </span>
+                                  <span className="relative flex h-2 w-2">
+                                    {isPreparing && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>}
+                                    <span className={`relative inline-flex rounded-full h-2 w-2 ${badgeDot}`}></span>
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <div className="text-[10px] text-neutral-400 truncate font-mono">
+                                    Mozo: {lastOrder.waiterName || 'Cliente (QR)'}
+                                  </div>
+                                  <div className="text-xs font-black text-neutral-800">
+                                    S/ {tableOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}
+                                  </div>
+                                </div>
+
+                                <div className="text-[9px] font-mono text-neutral-400 border-t border-neutral-100/80 pt-2 flex items-center justify-between">
+                                  <span>{tableOrders.length} {tableOrders.length === 1 ? 'Pedido' : 'Pedidos'}</span>
+                                  <span className="font-bold text-neutral-600">#{lastOrder.orderNumber}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 3. BY WAITER */}
+            {monitorMode === 'waiter' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from(new Set(
+                  monitorOrders
+                    .filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED')
+                    .map(o => o.waiterName || 'Pedido Cliente (Digital QR)')
+                )).map((waiterName) => {
+                  const waiterOrders = monitorOrders.filter(o => 
+                    (o.waiterName || 'Pedido Cliente (Digital QR)') === waiterName &&
+                    o.status !== 'DELIVERED' && o.status !== 'CANCELLED'
+                  );
+                  const salesTotal = waiterOrders.reduce((sum, o) => sum + o.total, 0);
+
+                  return (
+                    <div key={waiterName} className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm hover:border-neutral-200 transition space-y-3">
+                      <div className="flex items-center justify-between border-b border-neutral-50 pb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center">
+                            <UserIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-bold text-neutral-800 truncate max-w-[150px]">{waiterName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-neutral-400 font-mono block">En curso</span>
+                          <span className="text-xs font-black text-neutral-800">S/ {salesTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {waiterOrders.map(o => (
+                          <div key={o.id} className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-100/50 text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-bold text-neutral-500">#{o.orderNumber}</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-200 text-neutral-700">
+                                {o.tableNumber ? `Mesa ${o.tableNumber}` : 'Deliv'}
+                              </span>
+                            </div>
+                            <span className="font-mono font-bold text-neutral-700">
+                              {o.status === 'PENDING' ? '🟡' : o.status === 'PREPARING' ? '🔥' : '🟢'} S/ {o.total.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 4. IN KITCHEN (KITCHEN QUEUE AND READY TO DISPATCH) */}
+            {monitorMode === 'kitchen' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* 1. KITCHEN QUEUE */}
+                <div className="space-y-3 bg-neutral-50/50 p-4 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-orange-500 shrink-0" />
+                      <h4 className="text-xs font-black text-neutral-700 uppercase tracking-wider">Cola de Cocina</h4>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-bold">
+                      {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').length} órdenes
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').length === 0 ? (
+                      <div className="text-center py-10 text-neutral-400 italic text-xs">No hay platos cocinándose</div>
+                    ) : (
+                      activeOrders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING').map(o => (
+                        <div key={o.id} className="bg-white border border-neutral-100 rounded-xl p-3.5 shadow-sm space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-mono font-bold text-neutral-400">Orden #{o.orderNumber}</span>
+                            <span className={`px-2 py-0.5 rounded font-mono text-[9px] font-black ${
+                              o.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800 animate-pulse'
+                            }`}>
+                              {o.status === 'PENDING' ? 'PTE' : 'PREP'}
+                            </span>
+                          </div>
+
+                          <div className="divide-y divide-neutral-50">
+                            {o.items.map((it, idx) => (
+                              <div key={idx} className="py-1 text-xs text-neutral-800 flex items-center justify-between font-medium">
+                                <span className="font-bold text-neutral-900">{it.quantity}x {it.name}</span>
+                                {it.notes && <span className="text-[9px] text-neutral-400 italic">"{it.notes}"</span>}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="text-[9px] text-neutral-400 border-t border-neutral-50 pt-2 flex items-center justify-between">
+                            <span>Sede: {ownedRestaurants.find(r => r.id === o.restaurantId)?.name || 'Sede'}</span>
+                            <span className="font-mono">{o.tableNumber ? `Mesa ${o.tableNumber}` : 'Para Llevar'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. READY TO DISPATCH */}
+                <div className="space-y-3 bg-neutral-50/50 p-4 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <h4 className="text-xs font-black text-neutral-700 uppercase tracking-wider">Listos / Para Servir</h4>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      {activeOrders.filter(o => o.status === 'READY').length} listos
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {activeOrders.filter(o => o.status === 'READY').length === 0 ? (
+                      <div className="text-center py-10 text-neutral-400 italic text-xs">No hay órdenes listas esperando entrega</div>
+                    ) : (
+                      activeOrders.filter(o => o.status === 'READY').map(o => (
+                        <div key={o.id} className="bg-white border border-emerald-100/40 rounded-xl p-3.5 shadow-sm space-y-2 border-l-4 border-l-emerald-500">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-mono font-bold text-neutral-900">Orden #{o.orderNumber}</span>
+                            <span className="px-2 py-0.5 rounded font-mono text-[9px] font-black bg-emerald-100 text-emerald-800">
+                              LISTO
+                            </span>
+                          </div>
+
+                          <div className="divide-y divide-neutral-50">
+                            {o.items.map((it, idx) => (
+                              <div key={idx} className="py-1 text-xs text-neutral-800 flex items-center justify-between font-bold text-emerald-900">
+                                <span>{it.quantity}x {it.name}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="text-[9px] text-neutral-400 border-t border-neutral-50 pt-2 flex items-center justify-between">
+                            <span>Sede: {ownedRestaurants.find(r => r.id === o.restaurantId)?.name || 'Sede'}</span>
+                            <span className="font-black text-neutral-800">{o.tableNumber ? `MESA ${o.tableNumber}` : 'Llevar'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
