@@ -355,7 +355,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
           {/* Chalkboard Texture Canvas */}
           <div 
-            className="relative flex-1 overflow-y-auto p-4 sm:p-6 pb-28 space-y-6"
+            className="relative flex-1 overflow-y-auto p-4 sm:p-6 pb-44 space-y-6"
             style={chalkboardStyle}
           >
             {/* Header Chalk script: logo grows upwards to the top */}
@@ -594,25 +594,27 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
             ))}
           </div>
 
-          {/* Floating Cart Trigger */}
+          {/* Floating Cart Trigger (Flush to bottom screen edge) */}
           {cart.length > 0 && (
-            <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-[#1e130b]/95 border border-[#5c3e23] rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
-              <div>
-                <span className="text-[11px] text-[#e0cfbe] block font-medium">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
-                </span>
-                <span className="text-sm font-bold text-amber-300 font-mono">
-                  Total: S/ {cartTotal.toFixed(2)}
-                </span>
-              </div>
+            <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#1e130b]/95 border-t border-[#5c3e23] shadow-[0_-8px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
+              <div className="max-w-4xl mx-auto w-full flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-[11px] text-[#e0cfbe] block font-medium leading-tight">
+                    {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                  </span>
+                  <span className="text-sm font-bold text-amber-300 font-mono">
+                    Total: S/ {cartTotal.toFixed(2)}
+                  </span>
+                </div>
 
-              <button
-                onClick={() => setIsCartDrawerOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center gap-2 active:scale-95 shrink-0"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Revisar y Enviar</span>
-              </button>
+                <button
+                  onClick={() => setIsCartDrawerOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center gap-2 active:scale-95 shrink-0"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Revisar y Enviar</span>
+                </button>
+              </div>
             </div>
           )}
 

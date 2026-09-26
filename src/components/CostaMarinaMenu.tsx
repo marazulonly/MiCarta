@@ -419,7 +419,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
           {/* Marine Body */}
           <div 
-            className="relative flex-1 overflow-y-auto p-2 sm:p-2.5 pb-24 space-y-3"
+            className="relative flex-1 overflow-y-auto p-2 sm:p-2.5 pb-44 space-y-3"
             style={marineStyle}
           >
             {/* Header */}
@@ -725,29 +725,31 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
           </div>
 
-          {/* Floating Cart Trigger */}
+          {/* Floating Cart Trigger (Flush to the bottom edge of the screen) */}
           {cart.length > 0 && (
             <div 
               style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
-              className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5"
+              className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 border-t border-black/10"
             >
-              <div>
-                <span style={{ color: COLOR_BTN_TEXT }} className="text-[11px] block font-mono opacity-90">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
-                </span>
-                <span style={{ color: COLOR_BTN_TEXT }} className="text-sm font-black font-mono">
-                  Total: S/ {cartTotal.toFixed(2)}
-                </span>
-              </div>
+              <div className="max-w-4xl mx-auto w-full flex items-center justify-between gap-3">
+                <div>
+                  <span style={{ color: COLOR_BTN_TEXT }} className="text-[11px] block font-mono opacity-90 leading-tight">
+                    {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                  </span>
+                  <span style={{ color: COLOR_BTN_TEXT }} className="text-sm font-black font-mono">
+                    Total: S/ {cartTotal.toFixed(2)}
+                  </span>
+                </div>
 
-              <button
-                onClick={() => setIsCartDrawerOpen(true)}
-                style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
-                className="px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition border cursor-pointer flex items-center gap-2 hover:brightness-110 active:scale-95 shrink-0"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Ver Pedido</span>
-              </button>
+                <button
+                  onClick={() => setIsCartDrawerOpen(true)}
+                  style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition border cursor-pointer flex items-center gap-2 hover:brightness-110 active:scale-95 shrink-0"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Ver Pedido</span>
+                </button>
+              </div>
             </div>
           )}
 

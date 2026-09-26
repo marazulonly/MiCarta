@@ -821,32 +821,34 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                 })}
               </div>
 
-              <div className="mt-8 pt-4 border-t border-[#dfb86c]/30 text-center text-[10px] text-[#cbb17b]/70 font-serif tracking-widest uppercase">
+              <div className="mt-8 pt-4 pb-36 border-t border-[#dfb86c]/30 text-center text-[10px] text-[#cbb17b]/70 font-serif tracking-widest uppercase">
                 Micarta · {restaurant.name} · Carta Digital Gourmet
               </div>
 
             </div>
           </div>
 
-          {/* Floating Order Trigger Drawer */}
+          {/* Floating Order Trigger Drawer (Flush to bottom screen edge) */}
           {cart.length > 0 && (
-            <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-[#03110d]/95 border border-[#b88e3d]/50 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
-              <div>
-                <span className="text-[11px] text-[#cfdecb] block">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
-                </span>
-                <span className="text-sm font-bold text-[#f5df9e] font-serif tracking-wide">
-                  Total: S/ {cartTotal.toFixed(2)}
-                </span>
-              </div>
+            <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#03110d]/95 border-t border-[#b88e3d]/50 shadow-[0_-8px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
+              <div className="max-w-4xl mx-auto w-full flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-[11px] text-[#cfdecb] block leading-tight">
+                    {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                  </span>
+                  <span className="text-sm font-bold text-[#f5df9e] font-serif tracking-wide">
+                    Total: S/ {cartTotal.toFixed(2)}
+                  </span>
+                </div>
 
-              <button
-                onClick={() => setIsCartDrawerOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-serif font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-2 shrink-0"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Ver Pedido</span>
-              </button>
+                <button
+                  onClick={() => setIsCartDrawerOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-serif font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-2 shrink-0"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Ver Pedido</span>
+                </button>
+              </div>
             </div>
           )}
 

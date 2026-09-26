@@ -234,7 +234,7 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
         </div>
 
         {/* Menu Items List - Clean Rows */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-neutral-900 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-40 divide-y divide-neutral-900 space-y-4">
           {isLiveEditActive && onAddNewItem && (
             <button
               onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
@@ -285,20 +285,22 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
           })}
         </div>
 
-        {/* Footer Order Summary */}
+        {/* Footer Order Summary (Flush to bottom edge) */}
         {totalItemsCount > 0 && (
-          <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-neutral-950/95 border border-neutral-800 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-neutral-400 block">{totalItemsCount} selección(es)</span>
-              <span className="text-sm font-mono font-bold text-white">S/ {cartTotal.toFixed(2)}</span>
+          <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-neutral-950/95 border-t border-neutral-800 shadow-[0_-8px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
+            <div className="max-w-4xl mx-auto w-full flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-mono uppercase text-neutral-400 block">{totalItemsCount} selección(es)</span>
+                <span className="text-sm font-mono font-bold text-white">S/ {cartTotal.toFixed(2)}</span>
+              </div>
+              <button
+                onClick={() => setIsCartDrawerOpen(true)}
+                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+                className="px-5 py-2.5 font-mono uppercase text-xs font-bold transition hover:opacity-90 active:scale-95 cursor-pointer rounded-xl shrink-0"
+              >
+                Completar Pedido →
+              </button>
             </div>
-            <button
-              onClick={() => setIsCartDrawerOpen(true)}
-              style={{ backgroundColor: primaryColor, color: buttonTextColor }}
-              className="px-4 py-2.5 font-mono uppercase text-xs font-bold transition hover:opacity-90 cursor-pointer rounded-xl shrink-0"
-            >
-              Completar Pedido →
-            </button>
           </div>
         )}
 

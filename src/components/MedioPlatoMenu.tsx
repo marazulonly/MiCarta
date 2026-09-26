@@ -363,7 +363,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
         {/*     Even rows: Text Left (Right-aligned), Photo Right                      */}
         {/* - Full description visible without cuts                                    */}
         {/* ========================================================================= */}
-        <main className="flex-1 px-3 sm:px-6 py-4 space-y-6 sm:space-y-8 overflow-y-auto">
+        <main className="flex-1 px-3 sm:px-6 py-4 pb-44 space-y-6 sm:space-y-8 overflow-y-auto">
           {displayedItems.map((item, index) => {
             const isEven = index % 2 === 1;
 
@@ -547,21 +547,29 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
           })}
         </main>
 
-        {/* Floating Cart Button */}
+        {/* Floating Cart Button (Flush to bottom edge) */}
         {cartTotalItemsCount > 0 && (
-          <div className="fixed bottom-4 left-0 right-0 z-40 px-4 flex justify-center animate-in slide-in-from-bottom-5">
-            <button
-              onClick={() => setIsCartDrawerOpen(true)}
-              className="px-6 py-3 rounded-full bg-neutral-950 text-white font-sans font-bold text-sm shadow-2xl flex items-center gap-3 hover:bg-black transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer border border-neutral-800"
-            >
-              <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-xs font-black">
-                {cartTotalItemsCount}
+          <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-neutral-950/95 border-t border-neutral-800 shadow-[0_-8px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
+            <div className="max-w-4xl mx-auto w-full flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[11px] text-neutral-300 block font-sans">
+                  {cartTotalItemsCount} {cartTotalItemsCount === 1 ? 'plato listo' : 'platos listos'}
+                </span>
+                <span className="text-sm font-bold text-white font-mono">
+                  Total: {currencySymbol} {cartGrandTotal.toFixed(2)}
+                </span>
               </div>
-              <span>Ver Pedido</span>
-              <span className="font-mono text-neutral-300 text-xs border-l border-neutral-800 pl-3">
-                {currencySymbol} {cartGrandTotal.toFixed(2)}
-              </span>
-            </button>
+
+              <button
+                onClick={() => setIsCartDrawerOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-sans font-extrabold text-xs shadow-lg flex items-center gap-2 transition duration-200 active:scale-95 cursor-pointer shrink-0"
+              >
+                <div className="w-5 h-5 rounded-full bg-black text-amber-300 flex items-center justify-center text-[10px] font-black">
+                  {cartTotalItemsCount}
+                </div>
+                <span>Ver Pedido</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
