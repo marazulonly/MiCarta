@@ -432,26 +432,38 @@ export default function App() {
       let localUsers: User[] = [];
       try {
         const r = localStorage.getItem('micarta_restaurants_v2');
-        if (r) localRests = JSON.parse(r);
+        if (r) {
+          const parsedR = JSON.parse(r);
+          if (Array.isArray(parsedR)) localRests = parsedR.filter(Boolean);
+        }
         const c = localStorage.getItem('micarta_categories_v2');
-        if (c) localCats = JSON.parse(c);
+        if (c) {
+          const parsedC = JSON.parse(c);
+          if (Array.isArray(parsedC)) localCats = parsedC.filter(Boolean);
+        }
         const i = localStorage.getItem('micarta_menu_items_v2');
-        if (i) localItems = JSON.parse(i);
+        if (i) {
+          const parsedI = JSON.parse(i);
+          if (Array.isArray(parsedI)) localItems = parsedI.filter(Boolean);
+        }
         const u = localStorage.getItem('micarta_users_v2');
-        if (u) localUsers = JSON.parse(u);
+        if (u) {
+          const parsedU = JSON.parse(u);
+          if (Array.isArray(parsedU)) localUsers = parsedU.filter(Boolean);
+        }
       } catch {}
 
       const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
-        ? sanitizeRestaurants(cloudData.restaurants)
+        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
         : [];
       const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
-        ? cloudData.users
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
         : [];
       const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
-        ? cloudData.categories
+        ? cloudData.categories.filter((c: any) => c && c.id && c.name)
         : [];
       const cleanLoadedItems = cloudData?.items && Array.isArray(cloudData.items)
-        ? sanitizeMenuItems(cloudData.items)
+        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined))
         : [];
       const cleanLoadedOrders = cloudData?.orders && Array.isArray(cloudData.orders)
         ? cloudData.orders
