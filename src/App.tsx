@@ -293,10 +293,10 @@ const initialFoundRest = null;
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(INITIAL_RESTAURANTS);
+  const [categories, setCategories] = useState<MenuCategory[]>(INITIAL_CATEGORIES);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
+  const [users, setUsers] = useState<User[]>(deduplicateUsers(INITIAL_USERS));
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
   
@@ -482,11 +482,11 @@ export default function App() {
       });
       const finalUsers = deduplicateUsers(Array.from(usersMap.values()));
 
-      // Set purely state-driven values
-      setRestaurants(finalRests);
-      setCategories(finalCats);
-      setMenuItems(finalItems);
-      setUsers(finalUsers);
+      // Set purely state-driven values with robust local fallbacks if cloud fetch is empty
+      setRestaurants(finalRests.length > 0 ? finalRests : INITIAL_RESTAURANTS);
+      setCategories(finalCats.length > 0 ? finalCats : INITIAL_CATEGORIES);
+      setMenuItems(finalItems.length > 0 ? finalItems : INITIAL_MENU_ITEMS);
+      setUsers(finalUsers.length > 0 ? finalUsers : deduplicateUsers(INITIAL_USERS));
       if (cleanLoadedOrders.length > 0) {
         setOrders(cleanLoadedOrders);
       }
