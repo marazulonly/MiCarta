@@ -64,7 +64,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   
-  const currentRestaurant = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
+  const currentRestaurant = (restaurants || []).find(r => r && r.id === selectedRestId) || (restaurants || [])[0];
 
   const handlePublishCurrentRestaurant = async () => {
     if (isPublishing || !currentRestaurant) return;

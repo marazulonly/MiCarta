@@ -86,10 +86,11 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   publishedSnapshotInfo,
 }) => {
   // Scoped categories and items for this specific restaurant to prevent cross-contamination
-  const scopedCategories = categories.filter(c => c.restaurantId === restaurant.id);
-  const effectiveCategories = scopedCategories.length > 0 ? scopedCategories : categories;
-  const scopedItems = items.filter(i => i.restaurantId === restaurant.id);
-  const effectiveItems = scopedItems.length > 0 ? scopedItems : items;
+  const restId = restaurant?.id || '';
+  const scopedCategories = restId ? (categories || []).filter(c => c && c.restaurantId === restId) : (categories || []);
+  const effectiveCategories = scopedCategories.length > 0 ? scopedCategories : (categories || []);
+  const scopedItems = restId ? (items || []).filter(i => i && i.restaurantId === restId) : (items || []);
+  const effectiveItems = scopedItems.length > 0 ? scopedItems : (items || []);
 
   // Preloader State
   const [isPreloading, setIsPreloading] = useState(true);
@@ -100,7 +101,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   // Preloader Progress Effect: Keeps preloader visible while background cloud menu loads
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && restaurant) {
       const isFreshOpen = !wasOpenRef.current;
       const isNewRestaurant = lastRestaurantIdRef.current !== restaurant.id;
 
@@ -135,7 +136,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     } else {
       wasOpenRef.current = false;
     }
-  }, [isOpen, restaurant.id, isLoading]);
+  }, [isOpen, restaurant?.id, isLoading]);
 
   // Live Editing Mode (ONLY accessible to verified Owner or Admin, default false)
   const [isLiveEditActive, setIsLiveEditActive] = useState(false);
@@ -153,22 +154,22 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   
   // Local state for brand customizer modal
-  const [brandName, setBrandName] = useState(restaurant.name);
-  const [brandTagline, setBrandTagline] = useState(restaurant.tagline || '');
-  const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant.logoUrl || '');
-  const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant.coverUrl || '');
-  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding?.darkBgColor || '#071A14');
-  const [brandButtonColor, setBrandButtonColor] = useState(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
-  const [brandButtonTextColor, setBrandButtonTextColor] = useState(restaurant.branding?.buttonTextColor || '#000000');
-  const [brandTextColor, setBrandTextColor] = useState(restaurant.branding?.textColor || '#ffffff');
-  const [brandRestaurantNameFont, setBrandRestaurantNameFont] = useState(restaurant.branding?.restaurantNameFont || 'inherit');
-  const [brandRestaurantNameColor, setBrandRestaurantNameColor] = useState(restaurant.branding?.restaurantNameColor || '#ffffff');
-  const [brandDishCardBgColor, setBrandDishCardBgColor] = useState(restaurant.branding?.dishCardBgColor || '');
-  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant.branding?.dishNameFont || 'inherit');
-  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant.branding?.dishDescFont || 'inherit');
-  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant.branding?.dishPriceFont || 'monospace');
-  const [enableDineIn, setEnableDineIn] = useState(restaurant.menuAccessSettings?.enableDineIn !== false);
-  const [enableDelivery, setEnableDelivery] = useState(restaurant.menuAccessSettings?.enableDelivery !== false);
+  const [brandName, setBrandName] = useState(restaurant?.name || '');
+  const [brandTagline, setBrandTagline] = useState(restaurant?.tagline || '');
+  const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant?.logoUrl || '');
+  const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant?.coverUrl || '');
+  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant?.branding?.darkBgColor || '#071A14');
+  const [brandButtonColor, setBrandButtonColor] = useState(restaurant?.branding?.buttonColor || restaurant?.branding?.accentColor || '#38bdf8');
+  const [brandButtonTextColor, setBrandButtonTextColor] = useState(restaurant?.branding?.buttonTextColor || '#000000');
+  const [brandTextColor, setBrandTextColor] = useState(restaurant?.branding?.textColor || '#ffffff');
+  const [brandRestaurantNameFont, setBrandRestaurantNameFont] = useState(restaurant?.branding?.restaurantNameFont || 'inherit');
+  const [brandRestaurantNameColor, setBrandRestaurantNameColor] = useState(restaurant?.branding?.restaurantNameColor || '#ffffff');
+  const [brandDishCardBgColor, setBrandDishCardBgColor] = useState(restaurant?.branding?.dishCardBgColor || '');
+  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant?.branding?.dishNameFont || 'inherit');
+  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant?.branding?.dishDescFont || 'inherit');
+  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant?.branding?.dishPriceFont || 'monospace');
+  const [enableDineIn, setEnableDineIn] = useState(restaurant?.menuAccessSettings?.enableDineIn !== false);
+  const [enableDelivery, setEnableDelivery] = useState(restaurant?.menuAccessSettings?.enableDelivery !== false);
 
   const compressAndOptimizeImage = (file: File, maxDim: number, callback: (url: string) => void) => {
     const reader = new FileReader();
@@ -476,6 +477,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setIsBrandingModalOpen(false);
     showToast('✓ Personalización de marca, colores, logotipo y canales guardada en la nube.');
   };
+
+  if (!isOpen || !restaurant) return null;
 
   // Template resolution: strict templateId checking with intuitive fallbacks
   const tmplId = restaurant.templateId || 'tmpl-luxury';

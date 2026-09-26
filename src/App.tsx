@@ -1292,12 +1292,12 @@ export default function App() {
   // Restaurants accessible by the current logged-in user
   const userAccessibleRestaurants = currentUser
     ? (currentUser.role === 'ADMIN'
-        ? restaurants
-        : restaurants.filter(r => r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all')))
-  : restaurants;
+        ? (restaurants || []).filter(Boolean)
+        : (restaurants || []).filter(r => r && (r.ownerId === currentUser.id || currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
+  : (restaurants || []).filter(Boolean);
 
   // Current active restaurant branding for dynamic theme accent
-  const currentSelectedRest = userAccessibleRestaurants.find(r => r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || restaurants[0];
+  const currentSelectedRest = userAccessibleRestaurants.find(r => r && r.id === selectedRestaurantId) || userAccessibleRestaurants[0] || (restaurants || [])[0];
   const pendingOrdersCount = orders.filter(o => o.status === 'PENDING').length;
 
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?

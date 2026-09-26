@@ -68,8 +68,8 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
   onToggleAvailability,
   onAddNewItem,
 }) => {
-  const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
-  const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;
+  const isDineInEnabled = restaurant?.menuAccessSettings?.enableDineIn !== false;
+  const isDeliveryEnabled = restaurant?.menuAccessSettings?.enableDelivery !== false;
   
   const defaultChannel: 'DINE_IN' | 'DELIVERY' = 
     (!isDineInEnabled && isDeliveryEnabled) ? 'DELIVERY' :
@@ -83,17 +83,18 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  const rawCategories = categories
-    .filter(c => c.restaurantId === restaurant.id)
+  const restId = restaurant?.id || '';
+  const rawCategories = (categories || [])
+    .filter(c => c && c.restaurantId === restId)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   const currentCategories = rawCategories.length > 0
     ? rawCategories
-    : [{ id: `cat-${restaurant.id}-bistro`, restaurantId: restaurant.id, name: 'Platos del Día', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restId}-bistro`, restaurantId: restId, name: 'Platos del Día', sortOrder: 1, isActive: true }];
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  if (!isOpen) return null;
+  if (!isOpen || !restaurant) return null;
 
   const branding = restaurant.branding || {
     primaryColor: '#FFFFFF',

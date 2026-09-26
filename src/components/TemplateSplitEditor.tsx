@@ -138,7 +138,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     currentRestaurantId || restaurants[0]?.id || ''
   );
 
-  const selectedRestaurant = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
+  const selectedRestaurant = (restaurants || []).find(r => r && r.id === selectedRestId) || (restaurants || [])[0];
 
   // Active Template & Branding working state
   const [activeTemplateId, setActiveTemplateId] = useState<string>(
@@ -589,53 +589,78 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   return (
                     <div
                       key={item.id}
-                      style={{
-                        backgroundColor: workingBranding.cardBgColor || '#FAF8F5',
-                        color: workingBranding.textColor || '#1A1A1A'
-                      }}
-                      className="p-3 border border-neutral-900/10 rounded-xl transition flex items-center gap-3 shadow-md"
+                      className="p-3 bg-white border border-neutral-100 rounded-xl transition shadow-sm"
                     >
-                      <div className={`flex items-center gap-3 w-full ${isEven ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
-                        {item.imageUrl && (
-                          <div className={`shrink-0 flex items-center ${isEven ? 'pl-2 border-l-2 border-neutral-900' : 'pr-2 border-r-2 border-neutral-900'}`}>
-                            <div className={`w-16 h-16 overflow-hidden bg-neutral-900/10 shadow border border-neutral-900/20 ${isEven ? 'rounded-l-full' : 'rounded-r-full'}`}>
-                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                            </div>
+                      <div className={`grid grid-cols-2 items-center gap-2 w-full`}>
+                        {!isEven ? (
+                          <div className="relative flex justify-end items-center overflow-hidden h-20 pr-0">
+                            {item.imageUrl ? (
+                              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 translate-x-1/2">
+                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 translate-x-1/2" />
+                            )}
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[1.5px] h-[calc(100%+10px)] bg-black" />
                           </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <h3 
-                            className="text-xs sm:text-sm font-bold font-serif line-clamp-1 text-neutral-900"
-                            style={{
-                              fontFamily: workingBranding.dishNameFont || workingBranding.fontDisplay || 'serif'
-                            }}
-                          >
-                            {item.name}
-                          </h3>
-                          <p 
-                            className="text-[11px] opacity-80 mt-0.5 line-clamp-1 italic font-serif"
-                            style={{
-                              fontFamily: workingBranding.dishDescFont || 'serif'
-                            }}
-                          >
-                            {item.description}
-                          </p>
-                          <div className={`flex items-center gap-2 mt-1.5 ${isEven ? 'justify-end' : 'justify-start'}`}>
+                        ) : (
+                          <div className="flex flex-col justify-center items-end text-right pr-2">
+                            <h3 
+                              className="text-xs font-bold font-serif text-neutral-900 leading-tight"
+                              style={{ fontFamily: workingBranding.dishNameFont || 'serif' }}
+                            >
+                              {item.name}
+                            </h3>
+                            <p 
+                              className="text-[10px] text-neutral-600 font-sans mt-0.5 whitespace-normal break-words"
+                              style={{ fontFamily: workingBranding.dishDescFont || 'sans-serif' }}
+                            >
+                              {item.description}
+                            </p>
+                            <span className="text-[10px] text-neutral-800 tracking-widest mt-0.5">★★★★★</span>
                             <span 
-                              className="text-xs font-bold font-serif"
-                              style={{
-                                color: workingBranding.priceColor || '#111827',
-                                fontFamily: workingBranding.dishPriceFont || 'serif'
-                              }}
+                              className="text-xs font-bold font-serif text-neutral-900 mt-1"
+                              style={{ fontFamily: workingBranding.dishPriceFont || 'serif' }}
                             >
                               S/ {item.price.toFixed(2)}
                             </span>
-                            <span className="text-[10px] bg-neutral-900 text-amber-300 px-2 py-0.5 rounded font-sans font-bold">
-                              + Pedir
+                          </div>
+                        )}
+
+                        {!isEven ? (
+                          <div className="flex flex-col justify-center items-start text-left pl-2">
+                            <h3 
+                              className="text-xs font-bold font-serif text-neutral-900 leading-tight"
+                              style={{ fontFamily: workingBranding.dishNameFont || 'serif' }}
+                            >
+                              {item.name}
+                            </h3>
+                            <p 
+                              className="text-[10px] text-neutral-600 font-sans mt-0.5 whitespace-normal break-words"
+                              style={{ fontFamily: workingBranding.dishDescFont || 'sans-serif' }}
+                            >
+                              {item.description}
+                            </p>
+                            <span className="text-[10px] text-neutral-800 tracking-widest mt-0.5">★★★★★</span>
+                            <span 
+                              className="text-xs font-bold font-serif text-neutral-900 mt-1"
+                              style={{ fontFamily: workingBranding.dishPriceFont || 'serif' }}
+                            >
+                              S/ {item.price.toFixed(2)}
                             </span>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="relative flex justify-start items-center overflow-hidden h-20 pl-0">
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1.5px] h-[calc(100%+10px)] bg-black" />
+                            {item.imageUrl ? (
+                              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 -translate-x-1/2">
+                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 -translate-x-1/2" />
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

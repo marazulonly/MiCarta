@@ -76,8 +76,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
-  const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
-  const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;
+  const isDineInEnabled = restaurant?.menuAccessSettings?.enableDineIn !== false;
+  const isDeliveryEnabled = restaurant?.menuAccessSettings?.enableDelivery !== false;
   
   const defaultChannel: 'DINE_IN' | 'DELIVERY' = 
     (!isDineInEnabled && isDeliveryEnabled) ? 'DELIVERY' :
@@ -92,16 +92,17 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  const rawCategories = categories
-    .filter(c => c.restaurantId === restaurant.id)
+  const restId = restaurant?.id || '';
+  const rawCategories = (categories || [])
+    .filter(c => c && c.restaurantId === restId)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   const currentCategories = rawCategories.length > 0
     ? rawCategories
-    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'De la Casa', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restId}-general`, restaurantId: restId, name: 'De la Casa', sortOrder: 1, isActive: true }];
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    currentCategories[0]?.id || `cat-${restaurant.id}-general`
+    currentCategories[0]?.id || `cat-${restId}-general`
   );
 
   useEffect(() => {

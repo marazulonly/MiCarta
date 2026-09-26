@@ -75,8 +75,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
-  const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
-  const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;
+  const isDineInEnabled = restaurant?.menuAccessSettings?.enableDineIn !== false;
+  const isDeliveryEnabled = restaurant?.menuAccessSettings?.enableDelivery !== false;
   
   const defaultChannel: 'DINE_IN' | 'DELIVERY' = 
     (!isDineInEnabled && isDeliveryEnabled) ? 'DELIVERY' :
@@ -91,7 +91,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  if (!isOpen) return null;
+  if (!isOpen || !restaurant) return null;
 
   // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;

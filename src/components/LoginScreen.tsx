@@ -49,7 +49,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   // Real QR anonymous testing modal state
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [selectedRestForQr, setSelectedRestForQr] = useState<Restaurant>(restaurants[0]);
+  const [selectedRestForQr, setSelectedRestForQr] = useState<Restaurant | undefined>(restaurants[0]);
   const [selectedTableNum, setSelectedTableNum] = useState<string>('01');
   const [selectedChannel, setSelectedChannel] = useState<'DINE_IN' | 'DELIVERY'>('DINE_IN');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -59,7 +59,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
   const qrUrl = activeRest 
     ? `${origin}/?r=${activeRest.slug}&mesa=${selectedTableNum}&mode=${selectedChannel}`
-    : `${origin}/?r=brasas-y-fuegos&mesa=01&mode=DINE_IN`;
+    : `${origin}/?r=cevichito-pliz&mesa=01&mode=DINE_IN`;
 
   const handleCopyQrLink = () => {
     navigator.clipboard?.writeText(qrUrl);
@@ -338,7 +338,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       type="button"
                       onClick={() => setSelectedRestForQr(r)}
                       className={`p-2 rounded-xl text-left border text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
-                        activeRest.id === r.id
+                        activeRest?.id === r.id
                           ? 'bg-neutral-800 border-neutral-600 text-neutral-100'
                           : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800'
                       }`}

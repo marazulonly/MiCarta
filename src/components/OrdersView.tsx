@@ -90,7 +90,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
             className="px-2.5 py-1.5 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-white cursor-pointer"
           >
             <option value="all">Todos los Restaurantes</option>
-            {restaurants.map(r => (
+            {(restaurants || []).filter(Boolean).map(r => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
           </select>

@@ -165,20 +165,20 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   };
 
   // Find linked system template (reference only - never mutated)
-  const baseSystemTemplate = templates.find(t => t.id === restaurant.templateId) || templates[0];
+  const baseSystemTemplate = templates.find(t => t.id === restaurant?.templateId) || templates[0];
 
   // Restaurant Brand and Visual Customization State (Isolated per restaurant)
-  const [brandName, setBrandName] = useState(restaurant.name);
-  const [brandTagline, setBrandTagline] = useState(restaurant.tagline || '');
-  const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant.logoUrl || '');
-  const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant.coverUrl || '');
-  const [brandPrimaryColor, setBrandPrimaryColor] = useState(restaurant.branding.primaryColor || '#D4AF37');
-  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant.branding.darkBgColor || '#071A14');
-  const [brandSecondaryColor, setBrandSecondaryColor] = useState(restaurant.branding.secondaryColor || '#FFFFFF');
-  const [brandButtonColor, setBrandButtonColor] = useState(restaurant.branding.buttonColor || restaurant.branding.accentColor || '#38bdf8');
-  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant.branding.dishNameFont || 'inherit');
-  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant.branding.dishDescFont || 'inherit');
-  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant.branding.dishPriceFont || 'monospace');
+  const [brandName, setBrandName] = useState(restaurant?.name || '');
+  const [brandTagline, setBrandTagline] = useState(restaurant?.tagline || '');
+  const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant?.logoUrl || '');
+  const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant?.coverUrl || '');
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState(restaurant?.branding?.primaryColor || '#D4AF37');
+  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant?.branding?.darkBgColor || '#071A14');
+  const [brandSecondaryColor, setBrandSecondaryColor] = useState(restaurant?.branding?.secondaryColor || '#FFFFFF');
+  const [brandButtonColor, setBrandButtonColor] = useState(restaurant?.branding?.buttonColor || restaurant?.branding?.accentColor || '#38bdf8');
+  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant?.branding?.dishNameFont || 'inherit');
+  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant?.branding?.dishDescFont || 'inherit');
+  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant?.branding?.dishPriceFont || 'monospace');
 
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

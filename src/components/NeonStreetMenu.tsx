@@ -75,8 +75,8 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
   onEditBranding,
   onEditHeader,
 }) => {
-  const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
-  const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;
+  const isDineInEnabled = restaurant?.menuAccessSettings?.enableDineIn !== false;
+  const isDeliveryEnabled = restaurant?.menuAccessSettings?.enableDelivery !== false;
   
   const defaultChannel: 'DINE_IN' | 'DELIVERY' = 
     (!isDineInEnabled && isDeliveryEnabled) ? 'DELIVERY' :
@@ -91,13 +91,14 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
 
-  const rawCategories = categories
-    .filter(c => c.restaurantId === restaurant.id)
+  const restId = restaurant?.id || '';
+  const rawCategories = (categories || [])
+    .filter(c => c && c.restaurantId === restId)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   const currentCategories = rawCategories.length > 0
     ? rawCategories
-    : [{ id: `cat-${restaurant.id}-street`, restaurantId: restaurant.id, name: 'Favoritos Street', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restId}-street`, restaurantId: restId, name: 'Favoritos Street', sortOrder: 1, isActive: true }];
 
   const [activeCategory, setActiveCategory] = useState<string>(currentCategories[0]?.id || 'all');
 
@@ -107,7 +108,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
     }
   }, [currentCategories, activeCategory]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !restaurant) return null;
 
   const branding = restaurant.branding || {
     primaryColor: '#EF4444',

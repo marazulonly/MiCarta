@@ -80,21 +80,22 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
   onSaveToFirebase,
   isSavingFirebase = false,
 }) => {
-  const isDineInEnabled = restaurant.menuAccessSettings?.enableDineIn !== false;
-  const isDeliveryEnabled = restaurant.menuAccessSettings?.enableDelivery !== false;
+  const isDineInEnabled = restaurant?.menuAccessSettings?.enableDineIn !== false;
+  const isDeliveryEnabled = restaurant?.menuAccessSettings?.enableDelivery !== false;
   
   const defaultChannel: 'DINE_IN' | 'DELIVERY' = 
     (!isDineInEnabled && isDeliveryEnabled) ? 'DELIVERY' :
     (!isDeliveryEnabled && isDineInEnabled) ? 'DINE_IN' :
     (initialMode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
 
+  const restId = restaurant?.id || '';
   // Filter categories for this restaurant with robust fallback
-  const rawCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const rawCategories = (categories || []).filter(c => c && c.restaurantId === restId);
   const currentCategories = rawCategories.length > 0
     ? rawCategories
-    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Especialidades', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restId}-general`, restaurantId: restId, name: 'Especialidades', sortOrder: 1, isActive: true }];
 
-  const [activeCategory, setActiveCategory] = useState<string>(currentCategories[0]?.id || `cat-${restaurant.id}-general`);
+  const [activeCategory, setActiveCategory] = useState<string>(currentCategories[0]?.id || `cat-${restId}-general`);
   const [activeChannel, setActiveChannel] = useState<'DINE_IN' | 'DELIVERY'>(defaultChannel);
 
   useEffect(() => {
