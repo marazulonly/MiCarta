@@ -596,7 +596,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
           {/* Floating Cart Trigger */}
           {cart.length > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 z-30 p-3 bg-[#1e130b]/95 border-t border-[#5c3e23] shadow-2xl backdrop-blur-md flex items-center justify-between">
+            <div className="sticky sm:absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 bg-[#1e130b]/95 border-t border-[#5c3e23] shadow-2xl backdrop-blur-md flex items-center justify-between">
               <div>
                 <span className="text-[11px] text-[#e0cfbe] block">
                   {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})

@@ -142,8 +142,25 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o && o.id === selectedOwnerId) || ownersList[0]);
 
-  // Restaurants owned or assigned to owners (all restaurants assigned to all owners):
-  const ownedRestaurants = (restaurants || []).filter(Boolean);
+  // Restaurants owned or manually assigned to this owner:
+  const targetOwner = isOwnerLogged ? currentUser! : currentOwner;
+  const ownedRestaurants = (restaurants || []).filter(r => {
+    if (!r) return false;
+    // Admin has global access
+    if (currentUser?.role === 'ADMIN') return true;
+    if (!targetOwner) return false;
+
+    // Explicitly assigned via restaurantIds
+    const isAssigned = Array.isArray(targetOwner.restaurantIds) && (
+      targetOwner.restaurantIds.includes(r.id) || targetOwner.restaurantIds.includes('all')
+    );
+    // Explicit creator match
+    const isCreator = Boolean(
+      r.ownerId && (r.ownerId === targetOwner.id || (targetOwner.email && r.ownerId === targetOwner.email))
+    );
+
+    return isAssigned || isCreator;
+  });
 
   // Selected Restaurant being managed
   const [selectedRestId, setSelectedRestId] = useState<string>(

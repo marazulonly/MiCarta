@@ -549,7 +549,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
         {/* Floating Cart Button */}
         {cartTotalItemsCount > 0 && (
-          <div className="sticky bottom-4 z-40 px-4 flex justify-center pb-2">
+          <div className="sticky bottom-4 z-40 px-4 flex justify-center pb-6 sm:pb-2">
             <button
               onClick={() => setIsCartDrawerOpen(true)}
               className="px-6 py-3 rounded-full bg-neutral-950 text-white font-sans font-bold text-sm shadow-2xl flex items-center gap-3 hover:bg-black transition-transform duration-200 hover:scale-105 cursor-pointer border border-neutral-800"

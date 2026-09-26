@@ -729,7 +729,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {cart.length > 0 && (
             <div 
               style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
-              className="absolute bottom-0 left-0 right-0 z-30 p-3 border-t shadow-2xl backdrop-blur-md flex items-center justify-between"
+              className="sticky sm:absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 border-t shadow-2xl backdrop-blur-md flex items-center justify-between"
             >
               <div>
                 <span style={{ color: COLOR_BTN_TEXT }} className="text-[11px] block font-mono opacity-90">

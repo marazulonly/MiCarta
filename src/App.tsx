@@ -715,7 +715,7 @@ export default function App() {
       role: rawUser.role || 'ADMIN',
       phone: rawUser.phone || '900000000',
       avatar: rawUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      restaurantIds: isOwnerRole ? ['all'] : (isAdminRole ? [] : (Array.isArray(rawUser.restaurantIds) ? rawUser.restaurantIds.filter(Boolean) : ['all'])),
+      restaurantIds: Array.isArray(rawUser.restaurantIds) ? rawUser.restaurantIds.filter(Boolean) : [],
       status: rawUser.status || 'active',
       lastActive: rawUser.lastActive || 'Ahora mismo'
     };
@@ -1338,9 +1338,13 @@ export default function App() {
 
   // Restaurants accessible by the current logged-in user
   const userAccessibleRestaurants = currentUser
-    ? ((currentUser.role === 'ADMIN' || currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')
+    ? (currentUser.role === 'ADMIN'
         ? safeRestaurants
-        : safeRestaurants.filter(r => r && (currentUser.restaurantIds?.includes(r.id) || currentUser.restaurantIds?.includes('all'))))
+        : safeRestaurants.filter(r => r && (
+            (r.ownerId && (r.ownerId === currentUser.id || (currentUser.email && r.ownerId === currentUser.email))) ||
+            currentUser.restaurantIds?.includes(r.id) ||
+            currentUser.restaurantIds?.includes('all')
+          )))
     : safeRestaurants;
 
   // Current active restaurant branding for dynamic theme accent

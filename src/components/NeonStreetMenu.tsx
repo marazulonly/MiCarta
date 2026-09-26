@@ -399,7 +399,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
 
         {/* Floating Cart Button */}
         {totalItemsCount > 0 && (
-          <div className="p-3 bg-neutral-950/95 border-t border-neutral-800 flex items-center justify-between shrink-0">
+          <div className="sticky bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 bg-neutral-950/95 border-t border-neutral-800 flex items-center justify-between shrink-0 backdrop-blur-md">
             <div>
               <span className="text-[11px] text-neutral-400 block">{totalItemsCount} platos en orden</span>
               <span className="text-base font-black text-white font-mono">S/ {cartTotal.toFixed(2)}</span>

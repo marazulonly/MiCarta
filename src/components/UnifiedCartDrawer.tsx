@@ -88,20 +88,20 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   // View Confirmed Order Receipt Modal Screen
   if (confirmedOrder) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
-        <div className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-emerald-500/50 text-white shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
+        <div className="relative w-full max-w-none sm:max-w-xl h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-emerald-500/50 text-white shadow-2xl">
           
           {/* Receipt Header */}
-          <div className="px-5 py-4 bg-emerald-950/70 border-b border-emerald-800/80 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-emerald-950/70 border-b border-emerald-800/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold shrink-0">
-                <Check className="w-5 h-5 stroke-[3]" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold shrink-0">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-emerald-300">
+                <h3 className="text-xs sm:text-sm font-black text-emerald-300">
                   ¡Pedido Confirmado con Éxito!
                 </h3>
-                <p className="text-[11px] text-neutral-300 font-mono">
+                <p className="text-[10px] sm:text-[11px] text-neutral-300 font-mono">
                   Orden {confirmedOrder.orderNumber} • {restaurant.name}
                 </p>
               </div>
@@ -202,14 +202,14 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end">
+          <div className="p-3.5 sm:p-4 pb-6 sm:pb-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end shrink-0 z-10">
             <button
               onClick={() => {
                 setConfirmedOrder(null);
                 setOrderSent(false);
                 onClose();
               }}
-              className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-extrabold transition shadow-lg cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-extrabold transition shadow-lg cursor-pointer text-center"
             >
               Entendido / Volver al Menú
             </button>
@@ -337,11 +337,11 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
-      <div className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-neutral-800 text-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
+      <div className="relative w-full max-w-none sm:max-w-xl h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-neutral-800 text-white shadow-2xl">
         
         {/* Header */}
-        <div className="px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-amber-400" />
             <div>
@@ -703,7 +703,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           </div>
 
           {/* ACTION BUTTON */}
-          <div className="pt-2">
+          <div className="sticky bottom-0 bg-neutral-950/95 backdrop-blur-md pt-3 pb-6 sm:pb-2 border-t border-neutral-800 -mx-4 -mb-4 px-4 sm:static sm:bg-transparent sm:border-0 sm:mx-0 sm:mb-0 sm:px-0 z-10 shrink-0">
             <button
               type="submit"
               disabled={orderSent || cart.length === 0}

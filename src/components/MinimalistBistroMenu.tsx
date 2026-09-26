@@ -287,7 +287,7 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
 
         {/* Footer Order Summary */}
         {totalItemsCount > 0 && (
-          <div className="p-4 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between">
+          <div className="sticky bottom-0 left-0 right-0 z-30 p-3.5 pb-6 sm:pb-3 bg-neutral-950/95 border-t border-neutral-800 flex items-center justify-between backdrop-blur-md">
             <div>
               <span className="text-[10px] font-mono uppercase text-neutral-400 block">{totalItemsCount} selección(es)</span>
               <span className="text-sm font-mono font-bold text-white">S/ {cartTotal.toFixed(2)}</span>

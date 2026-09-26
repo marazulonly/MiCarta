@@ -189,9 +189,9 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const currentUnit = units[activeUnitTab] || units[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
       <div 
-        className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl border-0 sm:border transition-all duration-300"
+        className="relative w-full max-w-none sm:max-w-xl h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl border-0 sm:border transition-all duration-300"
         style={{ 
           backgroundColor: modalBg,
           borderColor: cardBorder,
@@ -200,7 +200,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
       >
         
         {/* Header with Dish Image preview & Close */}
-        <div className="relative h-44 sm:h-52 w-full shrink-0 overflow-hidden bg-neutral-900">
+        <div className="relative h-36 sm:h-52 w-full shrink-0 overflow-hidden bg-neutral-900">
           <img 
             src={item.imageUrl} 
             alt={item.name} 
@@ -232,20 +232,20 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             </span>
             <h2 
               style={{ fontFamily: dishNameFont }}
-              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-md"
+              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-md line-clamp-1"
             >
               {item.name}
             </h2>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-0.5 sm:mt-1">
               <span 
                 style={{ fontFamily: dishPriceFont, color: '#FFFFFF' }}
-                className="text-sm font-black font-mono bg-black/60 px-2.5 py-0.5 rounded-md border border-white/30 backdrop-blur-sm"
+                className="text-xs sm:text-sm font-black font-mono bg-black/60 px-2.5 py-0.5 rounded-md border border-white/30 backdrop-blur-sm"
               >
                 S/ {item.price.toFixed(2)} c/u
               </span>
               {item.prepTimeMinutes && (
-                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1 drop-shadow-sm">
-                  ⏱ {item.prepTimeMinutes} min de preparación
+                <span className="text-[10px] sm:text-[11px] font-bold text-white/90 flex items-center gap-1 drop-shadow-sm">
+                  ⏱ {item.prepTimeMinutes} min
                 </span>
               )}
             </div>
@@ -479,22 +479,22 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             backgroundColor: footerBg,
             borderColor: cardBorder
           }}
-          className="p-4 border-t flex flex-wrap items-center justify-between gap-3"
+          className="p-3.5 sm:p-4 pb-6 sm:pb-4 border-t flex items-center justify-between gap-2 shrink-0 z-10"
         >
           <div>
             <span style={{ color: subText }} className="text-[10px] uppercase tracking-wider font-mono font-bold block">
               Subtotal ({quantity} {quantity === 1 ? 'plato' : 'platos'})
             </span>
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-1">
               <span 
                 style={{ color: accentColor, fontFamily: dishPriceFont }}
-                className="text-xl font-black font-mono"
+                className="text-lg sm:text-xl font-black font-mono"
               >
                 S/ {grandTotal.toFixed(2)}
               </span>
               {addonsTotal > 0 && (
-                <span style={{ color: subText }} className="text-[11px] font-mono font-bold">
-                  (incluye +S/ {addonsTotal.toFixed(2)} extras)
+                <span style={{ color: subText }} className="text-[10px] font-mono font-bold hidden sm:inline">
+                  (+S/ {addonsTotal.toFixed(2)})
                 </span>
               )}
             </div>
@@ -508,7 +508,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 color: primaryText,
                 borderColor: cardBorder 
               }}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold transition border cursor-pointer hover:brightness-90"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition border cursor-pointer hover:brightness-90"
             >
               Cancelar
             </button>
@@ -521,7 +521,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 backgroundColor: accentColor, 
                 color: btnTextColor 
               }}
-              className="px-5 py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95"
+              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 whitespace-nowrap"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Agregar al Pedido</span>
