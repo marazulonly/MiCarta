@@ -24,6 +24,7 @@ import { NeonStreetMenu } from './NeonStreetMenu';
 import { MinimalistBistroMenu } from './MinimalistBistroMenu';
 import { EditorialGrandMenu } from './EditorialGrandMenu';
 import { StartersEditorialMenu } from './StartersEditorialMenu';
+import { MedioPlatoMenu } from './MedioPlatoMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
 
 interface CustomerMenuModalProps {
@@ -478,6 +479,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   // Template resolution: strict templateId checking with intuitive fallbacks
   const tmplId = restaurant.templateId || 'tmpl-luxury';
+  const isMedioPlatoTemplate = tmplId === 'tmpl-medio-plato' || tmplId.includes('medio-plato') || tmplId.includes('medio');
   const isStartersEditorialTemplate = tmplId === 'tmpl-starters-editorial' || tmplId === 'tmpl-editorial' || tmplId.includes('editorial') || tmplId.includes('zigzag') || tmplId.includes('grand') || tmplId.includes('starters');
   const isNeonTemplate = tmplId === 'tmpl-neon' || tmplId.includes('neon') || tmplId.includes('street');
   const isMinimalTemplate = tmplId === 'tmpl-minimalist' || tmplId.includes('minimal') || tmplId.includes('bistro');
@@ -558,7 +560,20 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       )}
 
       {/* Render Appropriate Specialized Menu Template */}
-      {isStartersEditorialTemplate ? (
+      {isMedioPlatoTemplate ? (
+        <MedioPlatoMenu
+          isOpen={isOpen}
+          onClose={onClose}
+          restaurant={restaurant}
+          categories={effectiveCategories}
+          items={effectiveItems}
+          onOrderCreated={onOrderCreated}
+          initialMode={initialMode}
+          initialTableNumber={initialTableNumber}
+          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+          {...liveEditProps}
+        />
+      ) : isStartersEditorialTemplate ? (
         <StartersEditorialMenu
           isOpen={isOpen}
           onClose={onClose}

@@ -582,7 +582,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             {/* Dishes list */}
             <div className="flex-1 p-4 space-y-3 overflow-y-auto">
               {previewFilteredItems.map((item, idx) => {
-                const isEditorial = activeTemplateId === 'tmpl-editorial';
+                const isEditorial = activeTemplateId === 'tmpl-editorial' || activeTemplateId === 'tmpl-medio-plato' || activeTemplateId === 'tmpl-starters-editorial';
                 const isEven = idx % 2 === 1;
 
                 if (isEditorial) {
