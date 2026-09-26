@@ -151,22 +151,22 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+    <div 
+      style={{ backgroundColor: darkBgColor, color: textColor }}
+      className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-white selection:text-black"
+    >
       <div 
-        className={`relative w-full ${
-          isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-        } rounded-none border border-neutral-800 flex flex-col shadow-2xl transition-all duration-300`}
-        style={{ backgroundColor: darkBgColor, color: textColor }}
+        className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen border-0 shadow-none bg-transparent flex flex-col transition-all duration-300"
       >
-        {/* Editorial Top Bar */}
-        <div className="p-4 sm:p-6 border-b border-neutral-800 flex items-start justify-between">
-          <div>
+        {/* Editorial Top Bar: logo grows upwards to the top */}
+        <div className="p-3 sm:p-5 border-b border-neutral-800 flex items-start justify-between">
+          <div className="pt-0">
             {(branding.headerLogoUrl || restaurant.logoUrl) && (
-              <div className="mb-2">
+              <div className="mb-3 pt-0">
                 <img
                   src={branding.headerLogoUrl || restaurant.logoUrl}
                   alt={restaurant.name}
-                  className="max-h-16 max-w-full object-contain"
+                  className="max-h-36 sm:max-h-48 md:max-h-56 max-w-full w-auto h-auto object-contain"
                 />
               </div>
             )}
@@ -194,10 +194,11 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
             >
               {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
             </button>
-            {isOwnerOrAdmin && (
+            {onClose && (
               <button 
                 onClick={onClose} 
                 className="p-2 text-neutral-400 hover:text-white transition cursor-pointer"
+                title="Cerrar"
               >
                 <X className="w-5 h-5" />
               </button>

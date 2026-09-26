@@ -1420,7 +1420,10 @@ export default function App() {
       : menuItems.filter(i => i.restaurantId === targetRest.id);
 
     return (
-      <div className="min-h-screen bg-black text-neutral-100 flex flex-col selection:bg-white selection:text-black">
+      <div 
+        style={{ backgroundColor: targetRest.branding?.darkBgColor || targetRest.branding?.backgroundColor || '#0F172A' }}
+        className="min-h-screen w-full flex flex-col selection:bg-white selection:text-black overflow-x-hidden"
+      >
         <CustomerMenuModal
           isOpen={true}
           onClose={handleCustomerMenuClose}

@@ -165,12 +165,12 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+    <div 
+      style={{ backgroundColor: darkBgColor, color: textColor }}
+      className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-white selection:text-black"
+    >
       <div 
-        className={`relative w-full ${
-          isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-        } rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 border border-neutral-800`}
-        style={{ backgroundColor: darkBgColor, color: textColor }}
+        className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen border-0 shadow-none bg-transparent flex flex-col transition-all duration-300"
       >
         {/* Owner/Admin Bar */}
         {isOwnerOrAdmin && (
@@ -201,7 +201,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
 
         {/* Hero Header */}
         <div className="relative overflow-hidden shrink-0 border-b border-neutral-800/80">
-          <div className="relative h-44 sm:h-48 w-full bg-neutral-950">
+          <div className="relative h-52 sm:h-64 w-full bg-neutral-950">
             {restaurant.coverUrl ? (
               <img src={restaurant.coverUrl} alt={restaurant.name} className="w-full h-full object-cover brightness-75" />
             ) : (
@@ -224,31 +224,32 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
-              {isOwnerOrAdmin && (
+              {onClose && (
                 <button 
                   onClick={onClose} 
                   className="p-2 rounded-xl bg-black/60 backdrop-blur-md text-white border border-white/10 hover:bg-red-600 transition cursor-pointer"
+                  title="Cerrar"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Brand overlay */}
+            {/* Brand overlay: logo grows upwards to the top */}
             <div className="absolute bottom-3 left-4 right-4 flex items-end gap-3.5">
               {(branding.headerLogoUrl || restaurant.logoUrl) ? (
                 <img 
                   src={branding.headerLogoUrl || restaurant.logoUrl} 
                   alt={restaurant.name} 
-                  className="w-14 h-14 rounded-2xl object-cover border-2 shadow-xl bg-black shrink-0"
+                  className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl object-contain border-2 shadow-2xl bg-black/80 shrink-0"
                   style={{ borderColor: primaryColor }}
                 />
               ) : (
                 <div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-xl shrink-0"
+                  className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center font-black text-xl shadow-2xl shrink-0"
                   style={{ backgroundColor: primaryColor, color: buttonTextColor }}
                 >
-                  <Zap className="w-7 h-7" />
+                  <Zap className="w-9 h-9" />
                 </div>
               )}
               <div className="min-w-0 flex-1">

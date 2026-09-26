@@ -195,14 +195,14 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+      <div 
+        style={chalkboardStyle}
+        className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-black selection:text-white"
+      >
         
-        {/* Outer Blackboard Wood Frame */}
+        {/* Outer Blackboard Content: 100% full screen background, without outer borders */}
         <div 
-          style={chalkboardStyle}
-          className={`relative w-full ${
-            isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border-4 border-[#5c3e23] text-[#e8ebe9] transition-all duration-300`}
+          className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen flex flex-col transition-all duration-300 border-0 shadow-none bg-transparent text-[#e8ebe9]"
         >
           {/* Top Bar */}
           <div className="relative z-30 px-4 py-2.5 bg-[#21160e] border-b border-[#5c3e23] flex items-center justify-between text-xs">
@@ -358,8 +358,20 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
             className="relative flex-1 overflow-y-auto p-4 sm:p-6 pb-28 space-y-6"
             style={chalkboardStyle}
           >
-            {/* Header Chalk script */}
-            <div className="text-center space-y-1.5 border-b-2 border-dashed border-[#ffffff]/20 pb-4">
+            {/* Header Chalk script: logo grows upwards to the top */}
+            <div className="relative text-center space-y-1 border-b-2 border-dashed border-[#ffffff]/20 pt-0 pb-4">
+              {/* Discrete close button for anonymous clients */}
+              {!isOwnerOrAdmin && onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Cerrar carta"
+                  className="absolute top-1 right-1 p-2 rounded-full bg-black/30 hover:bg-black/50 text-[#e8ebe9] transition cursor-pointer z-30"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
               {(() => {
                 const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
                 const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
@@ -367,13 +379,14 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                 const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
                 const showBadge = !isImageOnly && (restaurant.branding?.showHeaderBadge !== false);
                 const logoFit = restaurant.branding?.headerLogoFit || 'contain';
-                const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
+                const configuredHeight = restaurant.branding?.headerBannerHeight;
+                const bannerHeight = configuredHeight && configuredHeight > 100 ? configuredHeight : 180;
 
                 return (
                   <>
                     {headerLogo && (
                       <div 
-                        className="flex justify-center items-center mb-1 cursor-pointer group relative"
+                        className="flex justify-center items-center mb-1 cursor-pointer group relative pt-0"
                         onClick={onEditHeader || onEditBranding}
                         title={isOwnerOrAdmin ? "Clic para editar cabecera" : undefined}
                       >
@@ -384,7 +397,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                           className={`transition-all duration-300 ${
                             logoFit === 'cover' 
                               ? 'w-full object-cover rounded-2xl shadow-lg border border-amber-400/40' 
-                              : 'max-w-full object-contain rounded-2xl border-2 border-amber-400/40 shadow-lg'
+                              : 'max-w-full w-auto h-auto max-h-44 sm:max-h-56 md:max-h-64 object-contain rounded-2xl border-2 border-amber-400/40 shadow-lg'
                           }`}
                           referrerPolicy="no-referrer"
                         />

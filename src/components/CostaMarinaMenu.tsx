@@ -234,15 +234,13 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
         onClick={(e) => {
           if (e.target === e.currentTarget && onClose) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto"
+        style={marineStyle}
+        className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-black selection:text-white"
       >
         
-        {/* Outer Shell Marine Theme */}
+        {/* Outer Shell Marine Theme: 100% full screen background, without outer borders */}
         <div 
-          style={{ ...marineStyle, borderColor: COLOR_BTN }}
-          className={`relative w-full ${
-            isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-          } rounded-2xl overflow-hidden flex flex-col shadow-2xl border transition-all duration-300`}
+          className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen flex flex-col transition-all duration-300 border-0 shadow-none bg-transparent"
         >
           {/* Top Bar - Únicamente visible para administradores y dueños, oculto para comensales y clientes anónimos */}
           {isOwnerOrAdmin && (
@@ -425,21 +423,21 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
             style={marineStyle}
           >
             {/* Header */}
-            <div className={`relative text-center space-y-1.5 ${!isOwnerOrAdmin ? 'pt-4 sm:pt-6' : ''}`}>
+            <div className="relative text-center space-y-1 pt-0 sm:pt-1">
               {/* Discrete close button for anonymous clients */}
               {!isOwnerOrAdmin && onClose && (
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Cerrar carta"
-                  style={{ backgroundColor: `${COLOR_BTN}18`, color: COLOR_TEXT }}
-                  className="absolute top-0 right-0 p-2 rounded-full hover:bg-black/10 transition cursor-pointer z-20"
+                  style={{ backgroundColor: `${COLOR_BTN}25`, color: COLOR_TEXT }}
+                  className="absolute top-1 right-1 p-2 rounded-full hover:bg-black/15 transition cursor-pointer z-30"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
 
-              {/* Header Logo / Banner Container (Autoajuste Magenta Area) */}
+              {/* Header Logo / Banner Container: grows upwards to the top */}
               {(() => {
                 const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
                 const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
@@ -447,13 +445,14 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                 const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
                 const showBadge = !isImageOnly && (restaurant.branding?.showHeaderBadge !== false);
                 const logoFit = restaurant.branding?.headerLogoFit || 'contain';
-                const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
+                const configuredHeight = restaurant.branding?.headerBannerHeight;
+                const bannerHeight = configuredHeight && configuredHeight > 100 ? configuredHeight : 180;
 
                 return (
-                  <div className="space-y-1">
+                  <div className="space-y-1 pt-0">
                     {headerLogo && (
                       <div 
-                        className="w-full flex items-center justify-center px-2 py-1 relative group cursor-pointer"
+                        className="w-full flex items-center justify-center px-2 pt-0 pb-1 relative group cursor-pointer"
                         onClick={onEditHeader || onEditBranding}
                         title={isOwnerOrAdmin ? "Clic para editar la cabecera" : undefined}
                       >
@@ -467,9 +466,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                           className={`transition-all duration-300 ${
                             logoFit === 'cover' 
                               ? 'w-full object-cover rounded-2xl shadow-md' 
-                              : logoFit === 'auto'
-                              ? 'max-w-full object-contain'
-                              : 'max-w-full object-contain'
+                              : 'max-w-full w-auto h-auto max-h-44 sm:max-h-56 md:max-h-64 object-contain'
                           }`}
                           referrerPolicy="no-referrer"
                         />

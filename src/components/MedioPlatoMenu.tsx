@@ -229,67 +229,79 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto bg-black/75 backdrop-blur-sm"
+      style={{ backgroundColor: cartaBg }}
+      className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-black selection:text-white"
     >
-      {/* Main Menu Page Canvas: Matches medioplato2.jpg with background equal to cartaBg */}
+      {/* Main Menu Page Canvas: Matches medioplato2.jpg with 100% screen background and no outer borders */}
       <div 
-        className={`relative w-full ${
-          isFullscreen ? 'max-w-4xl min-h-screen' : 'max-w-md sm:max-w-xl md:max-w-2xl min-h-[96vh]'
-        } shadow-2xl transition-all duration-300 flex flex-col my-auto overflow-hidden sm:rounded-3xl border border-neutral-300/40`}
-        style={{ backgroundColor: cartaBg }}
+        className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen flex flex-col border-0 shadow-none bg-transparent"
       >
         {/* Top Control Bar (Admin & Navigation) */}
-        <div className="relative z-30 px-4 py-2.5 bg-neutral-950 text-white flex items-center justify-between text-xs select-none">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-serif font-bold tracking-wider text-neutral-200 uppercase text-[11px]">
-              {restaurant.name} · Medio Plato
-            </span>
-          </div>
+        {isOwnerOrAdmin && (
+          <div className="relative z-30 px-4 py-2.5 bg-neutral-950 text-white flex items-center justify-between text-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-serif font-bold tracking-wider text-neutral-200 uppercase text-[11px]">
+                {restaurant.name} · Medio Plato
+              </span>
+            </div>
 
-          <div className="flex items-center gap-1.5">
-            {isOwnerOrAdmin && onToggleLiveEdit && (
-              <button
-                onClick={onToggleLiveEdit}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  isLiveEditActive
-                    ? 'bg-amber-400 text-black shadow-md'
-                    : 'bg-neutral-800 text-neutral-300 hover:text-white'
-                }`}
+            <div className="flex items-center gap-1.5">
+              {onToggleLiveEdit && (
+                <button
+                  onClick={onToggleLiveEdit}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    isLiveEditActive
+                      ? 'bg-amber-400 text-black shadow-md'
+                      : 'bg-neutral-800 text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>{isLiveEditActive ? 'Edición Activa' : 'Editar'}</span>
+                </button>
+              )}
+
+              <button 
+                onClick={copyUrl}
+                className="p-1.5 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer"
+                title="Copiar enlace"
               >
-                <Edit3 className="w-3 h-3" />
-                <span>{isLiveEditActive ? 'Edición Activa' : 'Editar'}</span>
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
               </button>
-            )}
 
-            <button 
-              onClick={copyUrl}
-              className="p-1.5 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer"
-              title="Copiar enlace"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            </button>
+              <button 
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-1.5 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer hidden sm:block"
+                title="Pantalla completa"
+              >
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
 
-            <button 
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer hidden sm:block"
-              title="Pantalla completa"
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-
-            <button 
-              onClick={onClose}
-              className="p-1.5 rounded-md bg-neutral-800 hover:bg-red-600 text-neutral-300 hover:text-white transition cursor-pointer"
-              title="Cerrar"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+              <button 
+                onClick={onClose}
+                className="p-1.5 rounded-md bg-neutral-800 hover:bg-red-600 text-neutral-300 hover:text-white transition cursor-pointer"
+                title="Cerrar"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Header Hero Banner with Logo matching medioplato2.jpg */}
-        <header className="relative w-full h-32 sm:h-40 overflow-hidden bg-neutral-900 flex items-center justify-center select-none shrink-0 shadow-md">
+        {/* Header Hero Banner with Logo growing upwards to the top */}
+        <header className="relative w-full h-44 sm:h-56 md:h-64 overflow-hidden bg-neutral-900 flex items-center justify-center select-none shrink-0 shadow-md">
+          {/* Discrete close button for anonymous clients */}
+          {!isOwnerOrAdmin && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar carta"
+              className="absolute top-2 right-2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white transition cursor-pointer z-30"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Banner background photo */}
           <img 
             src={restaurant.branding?.headerLogoUrl || restaurant.coverImageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80'}
@@ -298,17 +310,17 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-          {/* Logo Badge matching the "VICHI PLIZ" emblem in medioplato2.jpg */}
-          <div className="relative z-10 flex flex-col items-center justify-center p-2">
+          {/* Logo Badge growing upwards to the top */}
+          <div className="relative z-10 flex flex-col items-center justify-center p-2 w-full h-full">
             {restaurant.logoUrl ? (
               <img 
                 src={restaurant.logoUrl} 
                 alt={restaurant.name} 
-                className="max-h-20 sm:max-h-24 max-w-[200px] object-contain drop-shadow-xl"
+                className="max-h-36 sm:max-h-48 md:max-h-56 max-w-[320px] w-auto h-auto object-contain drop-shadow-2xl"
               />
             ) : (
-              <div className="px-5 py-2.5 rounded-2xl border-2 border-cyan-500/80 bg-black/75 shadow-2xl backdrop-blur-sm text-center">
-                <span className="font-serif font-black tracking-widest text-cyan-400 text-lg sm:text-2xl uppercase drop-shadow">
+              <div className="px-6 py-3 rounded-2xl border-2 border-cyan-500/80 bg-black/75 shadow-2xl backdrop-blur-sm text-center">
+                <span className="font-serif font-black tracking-widest text-cyan-400 text-xl sm:text-3xl uppercase drop-shadow">
                   {restaurant.name}
                 </span>
               </div>

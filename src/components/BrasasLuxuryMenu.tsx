@@ -230,14 +230,14 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+      <div 
+        style={customBgStyle}
+        className="fixed inset-0 z-50 flex flex-col w-full h-full min-h-screen overflow-y-auto selection:bg-black selection:text-white"
+      >
         
-        {/* Outer Shell */}
+        {/* Outer Shell: 100% full screen background, without outer borders */}
         <div 
-          className={`relative w-full ${
-            isFullscreen ? 'max-w-4xl h-[96vh]' : 'max-w-xl h-[92vh] max-h-[860px]'
-          } rounded-2xl overflow-hidden flex flex-col shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-[#b88e3d]/40 transition-all duration-300`}
-          style={customBgStyle}
+          className="relative w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto min-h-screen flex flex-col transition-all duration-300 border-0 shadow-none bg-transparent"
         >
           
           {/* Top Operational Bar */}
@@ -419,21 +419,22 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
               <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 border-b-2 border-l-2 border-[#dfb86c]" />
               <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 border-b-2 border-r-2 border-[#dfb86c]" />
 
-              {/* HEADER SECTION */}
-              <div className="text-center pt-2 pb-5 space-y-1">
+              {/* HEADER SECTION: logo grows upwards to the top */}
+              <div className="text-center pt-0 pb-5 space-y-1">
                 {(() => {
                   const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
                   const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
                   const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
                   const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
                   const logoFit = restaurant.branding?.headerLogoFit || 'contain';
-                  const bannerHeight = restaurant.branding?.headerBannerHeight || 100;
+                  const configuredHeight = restaurant.branding?.headerBannerHeight;
+                  const bannerHeight = configuredHeight && configuredHeight > 100 ? configuredHeight : 180;
 
                   return (
                     <>
                       {headerLogo && (
                         <div 
-                          className="flex justify-center items-center mb-1 cursor-pointer group relative"
+                          className="flex justify-center items-center mb-1 cursor-pointer group relative pt-0"
                           onClick={onEditHeader || onEditBranding}
                           title={isOwnerOrAdmin ? "Clic para editar cabecera" : undefined}
                         >
@@ -445,7 +446,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                               className={`transition-all duration-300 ${
                                 logoFit === 'cover' 
                                   ? 'w-full object-cover rounded-2xl' 
-                                  : 'max-w-full object-contain rounded-2xl border border-[#dfb86c]/60'
+                                  : 'max-w-full w-auto h-auto max-h-44 sm:max-h-56 md:max-h-64 object-contain rounded-2xl border border-[#dfb86c]/60'
                               }`}
                               referrerPolicy="no-referrer"
                             />
