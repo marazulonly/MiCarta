@@ -830,10 +830,10 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
           {/* Floating Order Trigger Drawer */}
           {cart.length > 0 && (
-            <div className="sticky sm:absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 bg-[#03110d]/95 border-t border-[#b88e3d]/40 shadow-2xl backdrop-blur-lg flex items-center justify-between">
+            <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-[#03110d]/95 border border-[#b88e3d]/50 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
               <div>
                 <span className="text-[11px] text-[#cfdecb] block">
-                  {totalItemsCount} {totalItemsCount === 1 ? 'plato configurado' : 'platos configurados'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
+                  {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
                 </span>
                 <span className="text-sm font-bold text-[#f5df9e] font-serif tracking-wide">
                   Total: S/ {cartTotal.toFixed(2)}
@@ -842,10 +842,10 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
               <button
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-serif font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#e7cb82] to-[#b88e3d] text-[#071d17] font-serif font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center gap-2 shrink-0"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Revisar y Enviar Pedido</span>
+                <span>Ver Pedido</span>
               </button>
             </div>
           )}

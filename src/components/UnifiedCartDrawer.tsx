@@ -202,7 +202,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-3.5 sm:p-4 pb-6 sm:pb-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end shrink-0 z-10">
+          <div className="p-3.5 sm:p-4 pb-8 sm:pb-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end shrink-0 z-10">
             <button
               onClick={() => {
                 setConfirmedOrder(null);
@@ -703,7 +703,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           </div>
 
           {/* ACTION BUTTON */}
-          <div className="sticky bottom-0 bg-neutral-950/95 backdrop-blur-md pt-3 pb-6 sm:pb-2 border-t border-neutral-800 -mx-4 -mb-4 px-4 sm:static sm:bg-transparent sm:border-0 sm:mx-0 sm:mb-0 sm:px-0 z-10 shrink-0">
+          <div className="sticky bottom-0 bg-neutral-950/95 backdrop-blur-md pt-3 pb-8 sm:pb-2 border-t border-neutral-800 -mx-4 -mb-4 px-4 sm:static sm:bg-transparent sm:border-0 sm:mx-0 sm:mb-0 sm:px-0 z-10 shrink-0">
             <button
               type="submit"
               disabled={orderSent || cart.length === 0}

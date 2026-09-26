@@ -287,7 +287,7 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
 
         {/* Footer Order Summary */}
         {totalItemsCount > 0 && (
-          <div className="sticky bottom-0 left-0 right-0 z-30 p-3.5 pb-6 sm:pb-3 bg-neutral-950/95 border-t border-neutral-800 flex items-center justify-between backdrop-blur-md">
+          <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-neutral-950/95 border border-neutral-800 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
             <div>
               <span className="text-[10px] font-mono uppercase text-neutral-400 block">{totalItemsCount} selección(es)</span>
               <span className="text-sm font-mono font-bold text-white">S/ {cartTotal.toFixed(2)}</span>
@@ -295,7 +295,7 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
             <button
               onClick={() => setIsCartDrawerOpen(true)}
               style={{ backgroundColor: primaryColor, color: buttonTextColor }}
-              className="px-4 py-2 font-mono uppercase text-xs font-bold transition hover:opacity-90 cursor-pointer"
+              className="px-4 py-2.5 font-mono uppercase text-xs font-bold transition hover:opacity-90 cursor-pointer rounded-xl shrink-0"
             >
               Completar Pedido →
             </button>

@@ -479,7 +479,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             backgroundColor: footerBg,
             borderColor: cardBorder
           }}
-          className="p-3.5 sm:p-4 pb-6 sm:pb-4 border-t flex items-center justify-between gap-2 shrink-0 z-10"
+          className="p-3.5 sm:p-4 pb-8 sm:pb-4 border-t flex items-center justify-between gap-2 shrink-0 z-10"
         >
           <div>
             <span style={{ color: subText }} className="text-[10px] uppercase tracking-wider font-mono font-bold block">

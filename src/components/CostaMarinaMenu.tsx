@@ -729,7 +729,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
           {cart.length > 0 && (
             <div 
               style={{ backgroundColor: COLOR_BTN, color: COLOR_BTN_TEXT }}
-              className="sticky sm:absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 border-t shadow-2xl backdrop-blur-md flex items-center justify-between"
+              className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5"
             >
               <div>
                 <span style={{ color: COLOR_BTN_TEXT }} className="text-[11px] block font-mono opacity-90">
@@ -743,10 +743,10 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
               <button
                 onClick={() => setIsCartDrawerOpen(true)}
                 style={{ backgroundColor: COLOR_CARD, color: COLOR_TEXT, borderColor: COLOR_SUBTEXT }}
-                className="px-4 py-2 rounded-xl font-bold text-xs shadow-lg transition border cursor-pointer flex items-center gap-2 hover:brightness-110"
+                className="px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition border cursor-pointer flex items-center gap-2 hover:brightness-110 active:scale-95 shrink-0"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Revisar y Enviar Pedido</span>
+                <span>Ver Pedido</span>
               </button>
             </div>
           )}

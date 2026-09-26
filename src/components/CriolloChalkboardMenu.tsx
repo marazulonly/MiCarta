@@ -596,9 +596,9 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
           {/* Floating Cart Trigger */}
           {cart.length > 0 && (
-            <div className="sticky sm:absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 bg-[#1e130b]/95 border-t border-[#5c3e23] shadow-2xl backdrop-blur-md flex items-center justify-between">
+            <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-[#1e130b]/95 border border-[#5c3e23] rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
               <div>
-                <span className="text-[11px] text-[#e0cfbe] block">
+                <span className="text-[11px] text-[#e0cfbe] block font-medium">
                   {totalItemsCount} {totalItemsCount === 1 ? 'plato listo' : 'platos listos'} ({activeChannel === 'DELIVERY' ? 'Delivery' : 'Salón'})
                 </span>
                 <span className="text-sm font-bold text-amber-300 font-mono">
@@ -608,10 +608,10 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
               <button
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs shadow-lg transition cursor-pointer flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center gap-2 active:scale-95 shrink-0"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Revisar y Enviar Pedido</span>
+                <span>Revisar y Enviar</span>
               </button>
             </div>
           )}

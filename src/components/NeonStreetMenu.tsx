@@ -399,7 +399,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
 
         {/* Floating Cart Button */}
         {totalItemsCount > 0 && (
-          <div className="sticky bottom-0 left-0 right-0 z-30 p-3 pb-6 sm:pb-3 bg-neutral-950/95 border-t border-neutral-800 flex items-center justify-between shrink-0 backdrop-blur-md">
+          <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 p-3.5 bg-neutral-950/95 border border-neutral-800 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
             <div>
               <span className="text-[11px] text-neutral-400 block">{totalItemsCount} platos en orden</span>
               <span className="text-base font-black text-white font-mono">S/ {cartTotal.toFixed(2)}</span>
@@ -407,7 +407,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
             <button
               onClick={() => setIsCartDrawerOpen(true)}
               style={{ backgroundColor: primaryColor, color: buttonTextColor }}
-              className="px-5 py-2.5 rounded-2xl font-black text-xs transition flex items-center gap-2 shadow-xl hover:brightness-110 cursor-pointer"
+              className="px-5 py-2.5 rounded-2xl font-black text-xs transition flex items-center gap-2 shadow-xl hover:brightness-110 cursor-pointer shrink-0 active:scale-95"
             >
               <ShoppingBag className="w-4 h-4" />
               <span>Ver Comanda</span>
