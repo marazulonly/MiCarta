@@ -87,8 +87,8 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   // View Confirmed Order Receipt Modal Screen
   if (confirmedOrder) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-        <div className="relative w-full max-w-xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border border-emerald-500/50 text-white shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
+        <div className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-emerald-500/50 text-white shadow-2xl">
           
           {/* Receipt Header */}
           <div className="px-5 py-4 bg-emerald-950/70 border-b border-emerald-800/80 flex items-center justify-between">
@@ -336,8 +336,8 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border border-neutral-800 text-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
+      <div className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-neutral-800 text-white shadow-2xl">
         
         {/* Header */}
         <div className="px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between">

@@ -185,9 +185,9 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const currentUnit = units[activeUnitTab] || units[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
       <div 
-        className="relative w-full max-w-xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl border transition-all duration-300"
+        className="relative w-full h-full sm:h-auto max-w-none sm:max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl border-0 sm:border transition-all duration-300"
         style={{ 
           backgroundColor: modalBg,
           borderColor: cardBorder,
