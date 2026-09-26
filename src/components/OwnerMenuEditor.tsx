@@ -32,7 +32,8 @@ import {
   ArrowRight,
   Download,
   FileJson,
-  Sliders
+  Sliders,
+  Copy
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -336,6 +337,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
   // Item Reorder Handlers
   const handleMoveItem = (itemId: string, direction: 'up' | 'down') => {
+    const allRestItems = items.filter(i => i.restaurantId === restaurant.id);
     const currentList = [...restaurantItems];
     const idx = currentList.findIndex(i => i.id === itemId);
     if (idx < 0) return;
@@ -345,16 +347,20 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     const [moved] = currentList.splice(idx, 1);
     currentList.splice(targetIdx, 0, moved);
 
+    const otherCategoryItems = allRestItems.filter(i => !currentList.some(c => c.id === i.id));
+    const fullList = [...currentList, ...otherCategoryItems];
+
     if (onReorderMenuItems) {
-      onReorderMenuItems(currentList);
+      onReorderMenuItems(fullList);
     } else {
-      currentList.forEach(i => onUpdateMenuItem(i));
+      fullList.forEach(i => onUpdateMenuItem(i));
     }
     showToast(`✓ Plato "${moved.name}" movido.`);
   };
 
   const handleItemDrop = (targetItemId: string) => {
     if (!draggedItemId || draggedItemId === targetItemId) return;
+    const allRestItems = items.filter(i => i.restaurantId === restaurant.id);
     const currentList = [...restaurantItems];
     const fromIdx = currentList.findIndex(i => i.id === draggedItemId);
     const toIdx = currentList.findIndex(i => i.id === targetItemId);
@@ -363,14 +369,41 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     const [moved] = currentList.splice(fromIdx, 1);
     currentList.splice(toIdx, 0, moved);
 
+    const otherCategoryItems = allRestItems.filter(i => !currentList.some(c => c.id === i.id));
+    const fullList = [...currentList, ...otherCategoryItems];
+
     if (onReorderMenuItems) {
-      onReorderMenuItems(currentList);
+      onReorderMenuItems(fullList);
     } else {
-      currentList.forEach(i => onUpdateMenuItem(i));
+      fullList.forEach(i => onUpdateMenuItem(i));
     }
     setDraggedItemId(null);
     setDragOverItemId(null);
     showToast(`✓ Plato "${moved.name}" reordenado.`);
+  };
+
+  // Duplicate Dish Handler (inherits addons, observations, allergens, tags, etc. with non-repeating name)
+  const handleDuplicateItem = (itemToCopy: MenuItem) => {
+    const allDishNames = items.map(i => i.name.toLowerCase().trim());
+    let copyIndex = 1;
+    let newName = `${itemToCopy.name.trim()} (Copia)`;
+    while (allDishNames.includes(newName.toLowerCase().trim())) {
+      copyIndex++;
+      newName = `${itemToCopy.name.trim()} (Copia ${copyIndex})`;
+    }
+
+    const duplicatedItem: MenuItem = {
+      ...itemToCopy,
+      id: `item-${restaurant.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: newName,
+      availableAddons: itemToCopy.availableAddons ? JSON.parse(JSON.stringify(itemToCopy.availableAddons)) : [],
+      suggestedObservations: itemToCopy.suggestedObservations ? [...itemToCopy.suggestedObservations] : [],
+      allergens: itemToCopy.allergens ? [...itemToCopy.allergens] : [],
+      tags: itemToCopy.tags ? [...itemToCopy.tags] : [],
+    };
+
+    onAddMenuItem(duplicatedItem);
+    showToast(`✓ Plato duplicado como "${duplicatedItem.name}" heredando adicionales y observaciones.`);
   };
 
   // --- Modal: Crear / Editar Plato ---
@@ -1077,6 +1110,15 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     >
                       <Edit3 className="w-3.5 h-3.5 text-amber-400" />
                       <span>Editar Todo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDuplicateItem(item)}
+                      className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer flex items-center justify-center gap-1"
+                      title="Duplicar plato (hereda adicionales y observaciones)"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
                     </button>
 
                     <button

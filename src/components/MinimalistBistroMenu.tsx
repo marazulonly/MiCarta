@@ -193,12 +193,14 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
             >
               {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={onClose} 
-              className="p-2 text-neutral-400 hover:text-white transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {isOwnerOrAdmin && (
+              <button 
+                onClick={onClose} 
+                className="p-2 text-neutral-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -325,29 +327,12 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
           isOpen={isCartDrawerOpen}
           onClose={() => setIsCartDrawerOpen(false)}
           cart={cart}
-          onUpdateQuantity={(itemId, delta) => {
-            setCart(prev => {
-              return prev.map(c => {
-                if (c.item.id === itemId) {
-                  const newQ = c.quantity + delta;
-                  return newQ > 0 ? { ...c, quantity: newQ } : null;
-                }
-                return c;
-              }).filter(Boolean) as CartEntry[];
-            });
-          }}
-          onRemoveItem={(itemId) => {
-            setCart(prev => prev.filter(c => c.item.id !== itemId));
-          }}
-          onClearCart={() => setCart([])}
+          onUpdateCart={setCart}
+          onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
           restaurant={restaurant}
           initialMode={activeChannel}
           initialTableNumber={initialTableNumber}
-          onOrderCreated={(order) => {
-            if (onOrderCreated) onOrderCreated(order);
-            setCart([]);
-            setIsCartDrawerOpen(false);
-          }}
+          onOrderCreated={onOrderCreated}
         />
       </div>
     </div>

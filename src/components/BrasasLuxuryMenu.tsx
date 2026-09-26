@@ -327,13 +327,15 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline text-[10px] font-medium">{copiedLink ? 'Copiado' : 'Compartir'}</span>
               </button>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
-                title="Cerrar"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              {isOwnerOrAdmin && (
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg bg-[#07241c] hover:bg-[#0c392c] text-[#dfb86c] border border-[#b88e3d]/30 transition cursor-pointer"
+                  title="Cerrar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -874,6 +876,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
         cart={cart}
         onUpdateCart={setCart}
         onOrderCreated={onOrderCreated}
+        onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
         initialOrderType={activeChannel}
         initialTableNumber={initialTableNumber}
         themeStyle="luxury"

@@ -223,12 +223,14 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
-              <button 
-                onClick={onClose} 
-                className="p-2 rounded-xl bg-black/60 backdrop-blur-md text-white border border-white/10 hover:bg-red-600 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {isOwnerOrAdmin && (
+                <button 
+                  onClick={onClose} 
+                  className="p-2 rounded-xl bg-black/60 backdrop-blur-md text-white border border-white/10 hover:bg-red-600 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* Brand overlay */}
@@ -438,29 +440,12 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
           isOpen={isCartDrawerOpen}
           onClose={() => setIsCartDrawerOpen(false)}
           cart={cart}
-          onUpdateQuantity={(itemId, delta) => {
-            setCart(prev => {
-              return prev.map(c => {
-                if (c.item.id === itemId) {
-                  const newQ = c.quantity + delta;
-                  return newQ > 0 ? { ...c, quantity: newQ } : null;
-                }
-                return c;
-              }).filter(Boolean) as CartEntry[];
-            });
-          }}
-          onRemoveItem={(itemId) => {
-            setCart(prev => prev.filter(c => c.item.id !== itemId));
-          }}
-          onClearCart={() => setCart([])}
+          onUpdateCart={setCart}
+          onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
           restaurant={restaurant}
           initialMode={activeChannel}
           initialTableNumber={initialTableNumber}
-          onOrderCreated={(order) => {
-            if (onOrderCreated) onOrderCreated(order);
-            setCart([]);
-            setIsCartDrawerOpen(false);
-          }}
+          onOrderCreated={onOrderCreated}
         />
       </div>
     </div>

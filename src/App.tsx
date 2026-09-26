@@ -951,8 +951,13 @@ export default function App() {
   const handleReorderMenuItems = (reorderedItems: MenuItem[]) => {
     const restId = reorderedItems[0]?.restaurantId;
     if (!restId) return;
+    const reorderedMap = new Map<string, MenuItem>();
+    reorderedItems.forEach(item => reorderedMap.set(item.id, item));
+
     const otherItems = menuItems.filter(i => i.restaurantId !== restId);
-    const updatedList = [...otherItems, ...reorderedItems];
+    const existingRestItemsNotInReordered = menuItems.filter(i => i.restaurantId === restId && !reorderedMap.has(i.id));
+
+    const updatedList = [...otherItems, ...reorderedItems, ...existingRestItemsNotInReordered];
     setMenuItems(updatedList);
     saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
     showToast(`✓ Orden de platos guardado en la nube.`);

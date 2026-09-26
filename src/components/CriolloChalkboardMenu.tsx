@@ -289,12 +289,14 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline text-[10px]">{copiedLink ? 'Copiado' : 'Compartir'}</span>
               </button>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              {isOwnerOrAdmin && (
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded bg-[#332014] text-[#f5d0a9] hover:bg-[#4a2e1d] transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -629,6 +631,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
         cart={cart}
         onUpdateCart={setCart}
         onOrderCreated={onOrderCreated}
+        onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
         initialOrderType={activeChannel}
         initialTableNumber={initialTableNumber}
         themeStyle="chalkboard"

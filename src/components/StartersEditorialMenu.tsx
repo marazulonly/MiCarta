@@ -631,21 +631,12 @@ export const StartersEditorialMenu: React.FC<StartersEditorialMenuProps> = ({
         isOpen={isCartDrawerOpen}
         onClose={() => setIsCartDrawerOpen(false)}
         cart={cart}
-        onUpdateQuantity={(itemId, qty) => {
-          setCart(prev => {
-            if (qty <= 0) return prev.filter(c => c.item.id !== itemId);
-            return prev.map(c => c.item.id === itemId ? { ...c, quantity: qty } : c);
-          });
-        }}
-        onClearCart={() => setCart([])}
+        onUpdateCart={setCart}
+        onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
         restaurant={restaurant}
-        activeChannel={activeChannel}
+        initialOrderType={activeChannel}
         initialTableNumber={initialTableNumber}
-        onOrderCreated={(newOrd) => {
-          setCart([]);
-          setIsCartDrawerOpen(false);
-          if (onOrderCreated) onOrderCreated(newOrd);
-        }}
+        onOrderCreated={onOrderCreated}
       />
 
       {/* SCHEDULE & INFO MODAL */}

@@ -647,20 +647,11 @@ export const EditorialGrandMenu: React.FC<EditorialGrandMenuProps> = ({
         isOpen={isCartDrawerOpen}
         onClose={() => setIsCartDrawerOpen(false)}
         restaurant={restaurant}
-        cartItems={cart}
-        onUpdateQuantity={(itemId, qty) => {
-          setCart(prev => {
-            if (qty <= 0) return prev.filter(c => c.item.id !== itemId);
-            return prev.map(c => c.item.id === itemId ? { ...c, quantity: qty } : c);
-          });
-        }}
-        onClearCart={() => setCart([])}
-        onOrderCreated={(newOrder) => {
-          onOrderCreated && onOrderCreated(newOrder);
-          setCart([]);
-          setIsCartDrawerOpen(false);
-        }}
-        initialMode={activeChannel}
+        cart={cart}
+        onUpdateCart={setCart}
+        onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
+        onOrderCreated={onOrderCreated}
+        initialOrderType={activeChannel}
         initialTableNumber={initialTableNumber}
       />
 

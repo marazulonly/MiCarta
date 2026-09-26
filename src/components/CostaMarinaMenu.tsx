@@ -783,6 +783,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
         cart={cart}
         onUpdateCart={setCart}
         onOrderCreated={onOrderCreated}
+        onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
         initialOrderType={activeChannel}
         initialTableNumber={initialTableNumber}
         themeStyle="marine"

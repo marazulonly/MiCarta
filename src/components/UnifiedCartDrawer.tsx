@@ -4,6 +4,7 @@ import {
   ShoppingBag, 
   Check, 
   Trash2, 
+  Pencil,
   Plus, 
   Minus, 
   MapPin, 
@@ -39,6 +40,7 @@ interface UnifiedCartDrawerProps {
   cart: CartItemEntry[];
   onUpdateCart: (newCart: CartItemEntry[]) => void;
   onOrderCreated?: (newOrder: Order) => void;
+  onEditCartEntry?: (item: MenuItem) => void;
   initialOrderType?: OrderType;
   initialTableNumber?: string;
   themeStyle?: 'luxury' | 'chalkboard' | 'marine' | 'modern';
@@ -51,6 +53,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   cart,
   onUpdateCart,
   onOrderCreated,
+  onEditCartEntry,
   initialOrderType = 'DINE_IN',
   initialTableNumber,
   themeStyle = 'modern',
@@ -77,8 +80,144 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [orderSent, setOrderSent] = useState(false);
   const [createdOrderNumber, setCreatedOrderNumber] = useState<string | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
 
   if (!isOpen) return null;
+
+  // View Confirmed Order Receipt Modal Screen
+  if (confirmedOrder) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+        <div className="relative w-full max-w-xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border border-emerald-500/50 text-white shadow-2xl">
+          
+          {/* Receipt Header */}
+          <div className="px-5 py-4 bg-emerald-950/70 border-b border-emerald-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold shrink-0">
+                <Check className="w-5 h-5 stroke-[3]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-emerald-300">
+                  ¡Pedido Confirmado con Éxito!
+                </h3>
+                <p className="text-[11px] text-neutral-300 font-mono">
+                  Orden {confirmedOrder.orderNumber} • {restaurant.name}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setConfirmedOrder(null);
+                setOrderSent(false);
+                onClose();
+              }}
+              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Receipt Body */}
+          <div className="p-5 space-y-4 overflow-y-auto">
+            {/* Status Badge */}
+            <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono block">Estado del Pedido</span>
+                <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>Enviado a Cocina / En Preparación</span>
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono block">Tiempo Estimado</span>
+                <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                  ⏱ ~{confirmedOrder.estimatedMinutes || 20} minutos
+                </span>
+              </div>
+            </div>
+
+            {/* Service & Customer Details */}
+            <div className="p-3.5 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-2 text-xs">
+              <div className="flex justify-between text-neutral-300">
+                <span className="text-neutral-400">Tipo de Servicio:</span>
+                <span className="font-bold text-white">
+                  {confirmedOrder.type === 'DINE_IN' ? `Atención Presencial (${confirmedOrder.tableNumber || 'Mesa'})` : 'Delivery a Domicilio'}
+                </span>
+              </div>
+              <div className="flex justify-between text-neutral-300">
+                <span className="text-neutral-400">Comensal:</span>
+                <span className="font-bold text-white">{confirmedOrder.customerName}</span>
+              </div>
+              {confirmedOrder.customerWhatsapp && (
+                <div className="flex justify-between text-neutral-300">
+                  <span className="text-neutral-400">WhatsApp:</span>
+                  <span className="font-mono text-emerald-400 font-bold">{confirmedOrder.customerWhatsapp}</span>
+                </div>
+              )}
+              {confirmedOrder.deliveryAddress && (
+                <div className="flex justify-between text-neutral-300">
+                  <span className="text-neutral-400">Dirección:</span>
+                  <span className="font-medium text-white">{confirmedOrder.deliveryAddress}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Items Breakdown */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                Detalle de Platos Confirmados ({confirmedOrder.items.length})
+              </span>
+              <div className="space-y-2">
+                {confirmedOrder.items.map(item => (
+                  <div key={item.id} className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-white">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span className="font-mono text-amber-400 font-bold">S/ {(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                    {item.units && item.units.map(u => (
+                      <div key={u.unitNumber} className="text-[11px] text-neutral-300 pl-2.5 border-l-2 border-amber-400/50">
+                        <span className="font-mono font-bold text-amber-300">Plato #{u.unitNumber}:</span>{' '}
+                        {u.selectedAddons && u.selectedAddons.length > 0 && (
+                          <span className="text-neutral-200">Extras: {u.selectedAddons.map(a => a.name).join(', ')}. </span>
+                        )}
+                        {u.observation && <span className="italic text-neutral-400">"{u.observation}"</span>}
+                        {!u.observation && (!u.selectedAddons || u.selectedAddons.length === 0) && (
+                          <span className="italic text-neutral-500">Preparación estándar</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="p-4 rounded-xl bg-black border border-neutral-800 flex items-center justify-between">
+              <span className="font-bold text-white text-sm">Total del Pedido:</span>
+              <span className="font-black text-amber-400 font-mono text-lg">
+                S/ {confirmedOrder.total.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-4 bg-neutral-900 border-t border-neutral-800 flex items-center justify-end">
+            <button
+              onClick={() => {
+                setConfirmedOrder(null);
+                setOrderSent(false);
+                onClose();
+              }}
+              className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-extrabold transition shadow-lg cursor-pointer"
+            >
+              Entendido / Volver al Menú
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   // Calculate items subtotal and addon prices across all units
   const subtotal = cart.reduce((total, entry) => {
@@ -192,11 +331,8 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
     }
 
     setOrderSent(true);
-    setTimeout(() => {
-      onUpdateCart([]);
-      setOrderSent(false);
-      onClose();
-    }, 3000);
+    setConfirmedOrder(newOrder);
+    onUpdateCart([]);
   };
 
   return (
@@ -461,14 +597,29 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEntry(entry.item.id)}
-                        className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
-                        title="Quitar plato"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex flex-col gap-1.5 items-center">
+                        {onEditCartEntry && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onEditCartEntry(entry.item);
+                              onClose();
+                            }}
+                            className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-950/40 transition cursor-pointer"
+                            title="Editar opciones de este plato"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEntry(entry.item.id)}
+                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Quitar plato"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Unit breakdown */}
@@ -574,7 +725,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                   <span>
                     {orderType === 'DELIVERY'
                       ? `Confirmar Pedido Delivery · S/ ${grandTotal.toFixed(2)}`
-                      : `Enviar Comanda a Cocina · S/ ${grandTotal.toFixed(2)}`}
+                      : `Confirmar Pedido · S/ ${grandTotal.toFixed(2)}`}
                   </span>
                 </>
               )}
