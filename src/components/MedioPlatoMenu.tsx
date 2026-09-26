@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  ShoppingBag, 
   Check, 
   Plus, 
-  Minus, 
   Maximize2, 
   Minimize2, 
   Share2,
-  Star,
   ChefHat,
   Bike,
-  Sparkles,
   Clock,
   MapPin,
   Edit3,
-  Camera,
-  Sliders,
   Image as ImageIcon,
   Utensils
 } from 'lucide-react';
@@ -72,12 +66,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   onDeleteItem,
   onQuickPriceItem,
   onQuickPhotoItem,
-  onToggleAvailability,
   onAddNewItem,
-  onEditBranding,
-  onEditHeader,
-  onSaveToFirebase,
-  isSavingFirebase
 }) => {
   // Navigation & Channels
   const [activeChannel, setActiveChannel] = useState<'DINE_IN' | 'DELIVERY'>(initialMode);
@@ -97,7 +86,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   // Categories
   const currentCategories = categories && categories.length > 0 
     ? categories 
-    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Starters', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Platos', sortOrder: 1, isActive: true }];
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
@@ -108,29 +97,6 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-
-  // Styling Variables
-  const branding = restaurant.branding || {
-    primaryColor: '#000000',
-    secondaryColor: '#D4AF37',
-    accentColor: '#D4AF37',
-    darkBgColor: '#0B1E19',
-    cardBgColor: '#FFFFFF',
-    textColor: '#1A1A1A',
-    fontDisplay: "'Playfair Display', serif",
-    buttonColor: '#000000',
-    buttonTextColor: '#FFFFFF',
-    dishNameFont: "'Playfair Display', serif",
-    dishDescFont: "'Plus Jakarta Sans', sans-serif",
-    dishPriceFont: "'Playfair Display', serif"
-  };
-
-  const outerBg = branding.darkBgColor || '#0B1E19';
-  const paperBg = branding.cardBgColor || '#FFFFFF';
-  const textColor = branding.textColor || '#1A1A1A';
-  const dishNameFont = branding.dishNameFont || "'Playfair Display', 'Cinzel', serif";
-  const dishDescFont = branding.dishDescFont || "'Plus Jakarta Sans', sans-serif";
-  const dishPriceFont = branding.dishPriceFont || "'Playfair Display', serif";
 
   // Filter Items by channel and category
   const filteredItems = items.filter(item => {
@@ -176,251 +142,192 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 overflow-y-auto"
-      style={{ backgroundColor: outerBg }}
-    >
-      {/* Background Luxury Texture Overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-30 bg-cover bg-center"
-        style={{ 
-          backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.15), transparent 70%), linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8))'
-        }}
-      />
-
-      {/* Main Menu Page Canvas */}
-      <div 
-        className={`relative w-full ${
-          isFullscreen ? 'max-w-5xl min-h-screen' : 'max-w-2xl min-h-[96vh]'
-        } shadow-2xl transition-all duration-300 flex flex-col my-auto border-y sm:border-x sm:border-y border-amber-500/60 overflow-hidden`}
-        style={{ 
-          backgroundColor: paperBg,
-          color: textColor,
-          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.9), 0 0 35px rgba(212, 175, 55, 0.2)'
-        }}
-      >
-        {/* Top Control Bar (Admin & Sharing) */}
-        <div className="relative z-30 px-4 py-2.5 bg-neutral-900 text-white flex items-center justify-between border-b border-neutral-800 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-serif font-bold tracking-wider text-amber-300 uppercase text-[11px]">
-              {restaurant.name} · Carta Medio Plato
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {isOwnerOrAdmin && onToggleLiveEdit && (
-              <button
-                onClick={onToggleLiveEdit}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  isLiveEditActive
-                    ? 'bg-amber-400 text-black shadow-md'
-                    : 'bg-neutral-800 text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Edit3 className="w-3 h-3" />
-                <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
-              </button>
-            )}
-
-            <button 
-              onClick={copyUrl}
-              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer"
-              title="Copiar enlace"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            </button>
-
-            <button 
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer hidden sm:block"
-              title="Pantalla completa"
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-
-            {isOwnerOrAdmin && (
-              <button 
-                onClick={onClose}
-                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-600 text-neutral-300 hover:text-white transition cursor-pointer"
-                title="Cerrar"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+    <div className="fixed inset-0 z-50 flex flex-col bg-white text-neutral-900 overflow-y-auto">
+      {/* Top Floating Control Bar (Minimal & Unobtrusive) */}
+      <div className="sticky top-0 z-40 px-4 py-2.5 bg-white/95 backdrop-blur-md border-b border-neutral-100 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="font-serif font-semibold text-neutral-800 text-[12px] tracking-wide">
+            {restaurant.name}
+          </span>
         </div>
 
-        {/* Outer Golden Border Frame (Matching Reference Elegance) */}
-        <div className="absolute inset-2 sm:inset-3 border border-amber-500/40 pointer-events-none z-20" />
-        <div className="absolute inset-3 sm:inset-4 border border-amber-600/20 pointer-events-none z-20" />
+        <div className="flex items-center gap-2">
+          {isOwnerOrAdmin && onToggleLiveEdit && (
+            <button
+              onClick={onToggleLiveEdit}
+              className={`px-2.5 py-1 rounded text-[10px] font-sans font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                isLiveEditActive
+                  ? 'bg-neutral-900 text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+            >
+              <Edit3 className="w-3 h-3" />
+              <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
+            </button>
+          )}
 
-        {/* Header Area: The Menu Starters */}
-        <header className="relative z-10 pt-8 sm:pt-10 pb-4 px-6 text-center">
-          {/* Channel Selector if both enabled */}
-          {isDineInEnabled && isDeliveryEnabled && (
-            <div className="flex justify-center mb-5">
-              <div className="bg-neutral-100 p-1 rounded-full border border-neutral-300 flex gap-1 shadow-inner">
+          <button 
+            onClick={copyUrl}
+            className="p-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer"
+            title="Copiar enlace"
+          >
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+          </button>
+
+          <button 
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="p-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer hidden sm:block"
+            title="Pantalla completa"
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+
+          {isOwnerOrAdmin && (
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded bg-neutral-100 hover:bg-red-50 text-neutral-700 hover:text-red-600 transition cursor-pointer"
+              title="Cerrar"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Container - Pure White Canvas identical to medioplato2.jpg */}
+      <div className={`w-full mx-auto ${isFullscreen ? 'max-w-4xl' : 'max-w-2xl'} px-3 sm:px-6 py-6 sm:py-10 flex-1 flex flex-col`}>
+        
+        {/* Optional Secondary Channels Switcher & Category Filter (Minimal) */}
+        {(isDineInEnabled && isDeliveryEnabled) || currentCategories.length > 1 ? (
+          <div className="mb-8 flex flex-col items-center gap-3">
+            {isDineInEnabled && isDeliveryEnabled && (
+              <div className="bg-neutral-100 p-1 rounded-full flex gap-1 text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveChannel('DINE_IN')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-sans font-bold transition cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 rounded-full font-sans font-semibold transition cursor-pointer ${
                     activeChannel === 'DINE_IN'
-                      ? 'bg-neutral-900 text-amber-300 shadow-md'
-                      : 'text-neutral-700 hover:text-neutral-900'
+                      ? 'bg-neutral-900 text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
-                  <ChefHat className="w-3.5 h-3.5 text-amber-400" />
+                  <ChefHat className="w-3 h-3" />
                   <span>En Salón</span>
                   {initialTableNumber && (
-                    <span className="text-[10px] bg-amber-400 text-black px-1.5 py-0.2 rounded font-mono">
+                    <span className="text-[10px] bg-neutral-700 text-white px-1 rounded">
                       Mesa {initialTableNumber}
                     </span>
                   )}
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setActiveChannel('DELIVERY')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-sans font-bold transition cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 rounded-full font-sans font-semibold transition cursor-pointer ${
                     activeChannel === 'DELIVERY'
-                      ? 'bg-neutral-900 text-amber-300 shadow-md'
-                      : 'text-neutral-700 hover:text-neutral-900'
+                      ? 'bg-neutral-900 text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
-                  <Bike className="w-3.5 h-3.5 text-amber-400" />
+                  <Bike className="w-3 h-3" />
                   <span>Delivery</span>
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Cursive "the" */}
-          <p 
-            className="text-3xl sm:text-4xl text-neutral-900 font-normal tracking-wide -mb-3"
-            style={{ fontFamily: "'Alex Brush', 'Dancing Script', cursive" }}
-          >
-            the
-          </p>
-
-          {/* Huge Serif "MENU" */}
-          <h1 
-            className="text-5xl sm:text-7xl font-serif font-black tracking-[0.25em] text-neutral-900 uppercase my-0"
-            style={{ fontFamily: "'Playfair Display', 'Cinzel', serif" }}
-          >
-            MENU
-          </h1>
-
-          {/* Active Category Title (e.g. Starters) */}
-          <h2 
-            className="text-3xl sm:text-4xl font-black text-black tracking-tight mt-1 uppercase"
-            style={{ fontFamily: "'Montserrat', 'Plus Jakarta Sans', sans-serif", fontWeight: 900 }}
-          >
-            {activeCategory === 'all' ? (currentCategories[0]?.name || 'Starters') : (currentCategories.find(c => c.id === activeCategory)?.name || 'Starters')}
-          </h2>
-
-          {/* Flourish Divider */}
-          <div className="flex items-center justify-center gap-3 my-4">
-            <div className="h-[1px] w-20 sm:w-32 bg-neutral-400" />
-            <svg className="w-5 h-5 text-neutral-700 fill-current" viewBox="0 0 24 24">
-              <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
-            </svg>
-            <div className="h-[1px] w-20 sm:w-32 bg-neutral-400" />
-          </div>
-
-          {/* Location & Info */}
-          <div className="flex items-center justify-center gap-4 text-[11px] font-sans font-semibold text-neutral-600 uppercase tracking-wider">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-amber-600" />
-              {restaurant.address}
-            </span>
-            <button 
-              onClick={() => setIsScheduleModalOpen(true)}
-              className="flex items-center gap-1 hover:text-amber-800 transition underline cursor-pointer"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-              <span>Horarios & Info</span>
-            </button>
-          </div>
-
-          {/* Category Pills Navigation */}
-          {currentCategories.length > 1 && (
-            <nav className="mt-5 pb-2 flex items-center justify-center gap-2 overflow-x-auto scrollbar-none">
-              <button
-                onClick={() => setActiveCategory('all')}
-                className={`px-3.5 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider transition cursor-pointer whitespace-nowrap ${
-                  activeCategory === 'all'
-                    ? 'bg-neutral-900 text-amber-300 shadow'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                }`}
-              >
-                Todas
-              </button>
-              {currentCategories.map(cat => (
+            {currentCategories.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 overflow-x-auto max-w-full pb-1">
                 <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-3.5 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider transition cursor-pointer whitespace-nowrap ${
-                    activeCategory === cat.id
-                      ? 'bg-neutral-900 text-amber-300 shadow'
-                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  onClick={() => setActiveCategory('all')}
+                  className={`px-3 py-1 rounded-full text-[11px] font-sans font-medium transition cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'all'
+                      ? 'bg-neutral-900 text-white'
+                      : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100'
                   }`}
                 >
-                  {cat.name}
+                  Todos
                 </button>
-              ))}
-            </nav>
-          )}
+                {currentCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-3 py-1 rounded-full text-[11px] font-sans font-medium transition cursor-pointer whitespace-nowrap ${
+                      activeCategory === cat.id
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-neutral-50 text-neutral-600 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
 
-          {/* Owner Quick Action: Add Item */}
-          {isOwnerOrAdmin && isLiveEditActive && onAddNewItem && (
-            <div className="mt-4">
-              <button
-                onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
-                className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-sans font-bold text-xs shadow transition cursor-pointer inline-flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>+ Agregar Plato a esta Sección</span>
-              </button>
-            </div>
-          )}
-        </header>
+        {/* Owner Quick Action: Add Item */}
+        {isOwnerOrAdmin && isLiveEditActive && onAddNewItem && (
+          <div className="mb-6 flex justify-center">
+            <button
+              onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
+              className="px-4 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white font-sans font-medium text-xs shadow-sm transition cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>+ Agregar Plato</span>
+            </button>
+          </div>
+        )}
 
         {/* ========================================================================= */}
-        {/* "MEDIO PLATO" DISHES SECTION — FAITHFUL VISUAL REPLICATION               */}
-        {/* Alternating rows, clean photos with half-cut at center line, serif info  */}
+        {/* "MEDIO PLATO" DISHES SECTION — FAITHFUL REPLICA OF medioplato2.jpg        */}
         {/* ========================================================================= */}
-        <main className="relative z-10 flex-1 px-3 sm:px-8 py-6 space-y-10 sm:space-y-14">
+        <div className="space-y-12 sm:space-y-16">
           {filteredItems.length === 0 ? (
-            <div className="text-center py-16 px-4 border border-dashed border-neutral-300 rounded-2xl">
-              <Utensils className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
-              <p className="text-sm font-sans font-medium text-neutral-600">
+            <div className="text-center py-20 px-4 border border-dashed border-neutral-200 rounded-xl">
+              <Utensils className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
+              <p className="text-xs font-sans text-neutral-500">
                 No hay platos registrados en esta sección.
               </p>
             </div>
           ) : (
             filteredItems.map((item, index) => {
               const isEven = index % 2 === 1; // Alternation flag
-              const isNonVeg = item.tags?.includes('non-veg') || item.allergens?.includes('carne') || item.name.toLowerCase().includes('mutton') || item.name.toLowerCase().includes('chingrir') || item.name.toLowerCase().includes('lomo') || item.name.toLowerCase().includes('pollo') || item.name.toLowerCase().includes('carne') || item.name.toLowerCase().includes('pescado') || item.name.toLowerCase().includes('ceviche');
-              const isVeg = item.tags?.includes('veg') || item.tags?.includes('vegetariano') || item.name.toLowerCase().includes('veg') || item.name.toLowerCase().includes('soya') || item.name.toLowerCase().includes('tarua') || item.name.toLowerCase().includes('ensalada');
+              
+              // Dietary Tag Detection (Veg / Non-Veg)
+              const isExplicitNonVeg = item.tags?.includes('non-veg') || item.allergens?.includes('carne') || item.name.toLowerCase().includes('mutton') || item.name.toLowerCase().includes('chingrir') || item.name.toLowerCase().includes('lomo') || item.name.toLowerCase().includes('pollo') || item.name.toLowerCase().includes('carne') || item.name.toLowerCase().includes('prawn') || item.name.toLowerCase().includes('pescado');
+              const isExplicitVeg = item.tags?.includes('veg') || item.tags?.includes('vegetariano') || item.name.toLowerCase().includes('soya') || item.name.toLowerCase().includes('tarua') || item.name.toLowerCase().includes('ensalada');
+              const isVeg = isExplicitVeg && !isExplicitNonVeg;
+              const isNonVeg = isExplicitNonVeg;
 
-              const categoryObj = categories.find(c => c.id === item.categoryId);
-              const originOrCategory = item.tags?.find(t => t.startsWith('origin:') || t.startsWith('región:'))?.replace(/^(origin|región):/i, '') || categoryObj?.name;
+              // Parse name and origin if present e.g. "Mutton Goli Chaat (Bihari)" or "Chingrir Chop (West Bengal)"
+              let displayName = item.name;
+              let subtitle = '';
+
+              const matchParens = item.name.match(/^(.*?)\s*(\(.*?\))\s*$/);
+              if (matchParens) {
+                displayName = matchParens[1].trim();
+                subtitle = matchParens[2].trim();
+              } else {
+                const categoryObj = categories.find(c => c.id === item.categoryId);
+                const tagOrigin = item.tags?.find(t => t.startsWith('origin:') || t.startsWith('región:'))?.replace(/^(origin|región):/i, '');
+                if (tagOrigin) {
+                  subtitle = `(${tagOrigin})`;
+                } else if (categoryObj && categoryObj.name !== 'Platos' && categoryObj.name !== 'General') {
+                  subtitle = `(${categoryObj.name})`;
+                }
+              }
 
               return (
-                <div 
-                  key={item.id}
-                  className="relative group transition-colors duration-200 rounded-xl hover:bg-neutral-50/70 p-2 sm:p-3"
-                >
+                <div key={item.id} className="relative group">
                   {/* Live Edit Controls Header (if active) */}
                   {isOwnerOrAdmin && isLiveEditActive && (
-                    <div className="mb-3 p-2 rounded-lg bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-md">
-                      <span className="font-mono font-bold text-amber-300 line-clamp-1">{item.name}</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="mb-2 p-1.5 rounded bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-sm">
+                      <span className="font-mono font-bold text-amber-300 text-[11px] line-clamp-1">{item.name}</span>
+                      <div className="flex items-center gap-1 shrink-0">
                         {onQuickPriceItem && (
                           <button
                             onClick={() => onQuickPriceItem(item)}
-                            className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-mono font-bold"
+                            className="px-1.5 py-0.5 rounded bg-neutral-800 text-amber-300 font-mono text-[10px]"
                             title="Editar Precio"
                           >
                             S/ {item.price.toFixed(2)}
@@ -429,28 +336,28 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                         {onQuickPhotoItem && (
                           <button
                             onClick={() => onQuickPhotoItem(item)}
-                            className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
+                            className="p-1 rounded bg-neutral-800 text-neutral-200"
                             title="Cambiar Foto"
                           >
-                            <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                            <ImageIcon className="w-3 h-3 text-amber-400" />
                           </button>
                         )}
                         {onEditItem && (
                           <button
                             onClick={() => onEditItem(item)}
-                            className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
-                            title="Editar Plato Completo"
+                            className="p-1 rounded bg-neutral-800 text-neutral-200"
+                            title="Editar Plato"
                           >
-                            <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                            <Edit3 className="w-3 h-3 text-blue-400" />
                           </button>
                         )}
                         {onDeleteItem && (
                           <button
                             onClick={() => onDeleteItem(item.id)}
-                            className="p-1 rounded bg-neutral-800 hover:bg-red-950 text-red-400"
+                            className="p-1 rounded bg-neutral-800 text-red-400"
                             title="Eliminar Plato"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
                         )}
                       </div>
@@ -458,154 +365,192 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                   )}
 
                   {/* 
-                    "MEDIO PLATO" ROW COMPOSITION:
-                    - 50% left, 50% right.
-                    - Sliced half plate touching the central dividing vertical line.
-                    - Odd: [Image on Left (right-half cut)] | [Info on Right]
-                    - Even: [Info on Left] | [Image on Right (left-half cut)]
+                    GRID OF 2 COLUMNS:
+                    - Odd: [Image on Left | Cut at Center line with individual vertical line] | [Left-aligned text on Right]
+                    - Even: [Right-aligned text on Left] | [Image on Right | Cut at Center line with individual vertical line]
                   */}
-                  <div className="grid grid-cols-2 items-center min-h-[160px] sm:min-h-[210px]">
-                    {/* LEFT COLUMN */}
+                  <div className="grid grid-cols-2 items-center">
+                    
+                    {/* ============================================================== */}
+                    {/* LEFT COLUMN                                                    */}
+                    {/* ============================================================== */}
                     {!isEven ? (
                       /* ODD ROW: PHOTO ON LEFT (Semi-circle touching center line) */
                       <div 
                         onClick={() => setSelectedItemForCustomization(item)}
-                        className="relative w-full h-36 sm:h-52 md:h-60 flex justify-end items-center overflow-hidden border-r-[1.5px] border-neutral-900 cursor-pointer pr-0 select-none group/img"
+                        className="relative w-full flex justify-end items-center cursor-pointer select-none group/img"
                       >
-                        {item.imageUrl ? (
-                          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden shrink-0 translate-x-1/2 transition-transform duration-300 group-hover/img:scale-105">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover select-none pointer-events-none"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 translate-x-1/2">
-                            <Utensils className="w-8 h-8 text-neutral-400 -translate-x-4" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      /* EVEN ROW: INFORMATION ON LEFT */
-                      <div 
-                        onClick={() => setSelectedItemForCustomization(item)}
-                        className="flex flex-col justify-center items-center text-center px-3 sm:px-8 py-2 border-r-[1.5px] border-neutral-900 cursor-pointer transition-transform duration-200 hover:scale-[1.01]"
-                      >
-                        {/* Dish Name + Dietary Badge */}
-                        <div className="flex flex-wrap items-center justify-center gap-1.5">
-                          <h3 
-                            className="text-base sm:text-xl md:text-2xl font-serif font-bold text-neutral-900 leading-snug tracking-tight"
-                            style={{ fontFamily: dishNameFont }}
-                          >
-                            {item.name}
-                          </h3>
-
-                          {/* Origin in parenthesis if exists */}
-                          {originOrCategory && (
-                            <span 
-                              className="text-xs sm:text-sm font-serif font-medium text-red-700"
-                              style={{ fontFamily: dishNameFont }}
-                            >
-                              ({originOrCategory})
-                            </span>
+                        {/* Semi-circle dish container (Right-half hidden at center edge) */}
+                        <div className="relative flex justify-end items-center overflow-hidden h-36 sm:h-52 md:h-60 w-full pr-0">
+                          {item.imageUrl ? (
+                            <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden shrink-0 translate-x-1/2 transition-transform duration-300 group-hover/img:scale-105">
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name} 
+                                className="w-full h-full object-cover select-none pointer-events-none"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 translate-x-1/2">
+                              <Utensils className="w-6 h-6 text-neutral-400 -translate-x-3" />
+                            </div>
                           )}
-
-                          {/* Veg / Non-Veg Standard Dietary Badge */}
-                          {isVeg ? (
-                            <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
-                              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
-                            </span>
-                          ) : isNonVeg ? (
-                            <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
-                              <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
-                            </span>
-                          ) : null}
                         </div>
 
-                        {/* Dish Description */}
+                        {/* Distinct vertical black cut line extending slightly above and below the diameter */}
+                        <div 
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-[1.5px] bg-black z-10 pointer-events-none"
+                          style={{ height: 'calc(100% + 20px)' }}
+                        />
+                      </div>
+                    ) : (
+                      /* EVEN ROW: TEXT ON LEFT (Right-aligned facing center) */
+                      <div 
+                        onClick={() => setSelectedItemForCustomization(item)}
+                        className="flex flex-col justify-center items-end text-right pr-4 sm:pr-8 cursor-pointer select-none"
+                      >
+                        {/* Title with dietary badge */}
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <h3 
+                              className="text-base sm:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-medium"
+                              style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+                            >
+                              {displayName}
+                            </h3>
+
+                            {/* Dietary Badge if no subtitle */}
+                            {!subtitle && isVeg && (
+                              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
+                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
+                              </span>
+                            )}
+                            {!subtitle && isNonVeg && (
+                              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
+                                <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Subtitle / Origin on second line with badge */}
+                          {subtitle && (
+                            <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                              <span 
+                                className="text-sm sm:text-xl font-serif text-neutral-900 font-medium"
+                                style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+                              >
+                                {subtitle}
+                              </span>
+
+                              {isVeg && (
+                                <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
+                                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
+                                </span>
+                              )}
+                              {isNonVeg && (
+                                <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
+                                  <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Full Description without clipping/truncation */}
                         {item.description && (
-                          <p 
-                            className="text-[11px] sm:text-xs text-neutral-600 font-sans mt-1.5 line-clamp-2 max-w-xs"
-                            style={{ fontFamily: dishDescFont }}
-                          >
+                          <p className="text-[11px] sm:text-xs text-neutral-600 font-sans mt-2 leading-relaxed break-words whitespace-normal text-right max-w-sm">
                             {item.description}
                           </p>
                         )}
 
                         {/* 5-Star Rating (★★★★★) */}
-                        <div className="flex items-center gap-0.5 text-neutral-900 text-[10px] sm:text-xs mt-2 tracking-widest">
+                        <div className="flex items-center justify-end gap-0.5 text-neutral-800 text-[10px] sm:text-[11px] mt-2 tracking-widest">
                           ★ ★ ★ ★ ★
                         </div>
 
                         {/* Price Display */}
                         <div 
-                          className="mt-2.5 text-sm sm:text-lg md:text-xl font-bold text-neutral-900 font-serif"
-                          style={{ fontFamily: dishPriceFont }}
+                          className="mt-3 text-base sm:text-xl font-serif font-bold text-neutral-900"
+                          style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
                         >
                           S/ {item.price.toFixed(2)}
                         </div>
                       </div>
                     )}
 
-                    {/* RIGHT COLUMN */}
+                    {/* ============================================================== */}
+                    {/* RIGHT COLUMN                                                   */}
+                    {/* ============================================================== */}
                     {!isEven ? (
-                      /* ODD ROW: INFORMATION ON RIGHT */
+                      /* ODD ROW: TEXT ON RIGHT (Left-aligned facing center) */
                       <div 
                         onClick={() => setSelectedItemForCustomization(item)}
-                        className="flex flex-col justify-center items-center text-center px-3 sm:px-8 py-2 cursor-pointer transition-transform duration-200 hover:scale-[1.01]"
+                        className="flex flex-col justify-center items-start text-left pl-4 sm:pl-8 cursor-pointer select-none"
                       >
-                        {/* Dish Name + Dietary Badge */}
-                        <div className="flex flex-wrap items-center justify-center gap-1.5">
-                          <h3 
-                            className="text-base sm:text-xl md:text-2xl font-serif font-bold text-neutral-900 leading-snug tracking-tight"
-                            style={{ fontFamily: dishNameFont }}
-                          >
-                            {item.name}
-                          </h3>
-
-                          {/* Origin in parenthesis if exists */}
-                          {originOrCategory && (
-                            <span 
-                              className="text-xs sm:text-sm font-serif font-medium text-red-700"
-                              style={{ fontFamily: dishNameFont }}
+                        {/* Title with dietary badge */}
+                        <div className="flex flex-col items-start">
+                          <div className="flex items-center justify-start gap-1.5">
+                            <h3 
+                              className="text-base sm:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-medium"
+                              style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
                             >
-                              ({originOrCategory})
-                            </span>
-                          )}
+                              {displayName}
+                            </h3>
 
-                          {/* Veg / Non-Veg Standard Dietary Badge */}
-                          {isVeg ? (
-                            <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
-                              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
-                            </span>
-                          ) : isNonVeg ? (
-                            <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
-                              <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
-                            </span>
-                          ) : null}
+                            {/* Dietary Badge if no subtitle */}
+                            {!subtitle && isVeg && (
+                              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
+                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
+                              </span>
+                            )}
+                            {!subtitle && isNonVeg && (
+                              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
+                                <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Subtitle / Origin on second line with badge */}
+                          {subtitle && (
+                            <div className="flex items-center justify-start gap-1.5 mt-0.5">
+                              <span 
+                                className="text-sm sm:text-xl font-serif text-neutral-900 font-medium"
+                                style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+                              >
+                                {subtitle}
+                              </span>
+
+                              {isVeg && (
+                                <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-emerald-600 flex items-center justify-center p-[2px] shrink-0" title="Vegetariano">
+                                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600" />
+                                </span>
+                              )}
+                              {isNonVeg && (
+                                <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[2px] border border-red-600 flex items-center justify-center p-[2px] shrink-0" title="No Vegetariano">
+                                  <span className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-red-600" />
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Dish Description */}
+                        {/* Full Description without clipping/truncation */}
                         {item.description && (
-                          <p 
-                            className="text-[11px] sm:text-xs text-neutral-600 font-sans mt-1.5 line-clamp-2 max-w-xs"
-                            style={{ fontFamily: dishDescFont }}
-                          >
+                          <p className="text-[11px] sm:text-xs text-neutral-600 font-sans mt-2 leading-relaxed break-words whitespace-normal text-left max-w-sm">
                             {item.description}
                           </p>
                         )}
 
                         {/* 5-Star Rating (★★★★★) */}
-                        <div className="flex items-center gap-0.5 text-neutral-900 text-[10px] sm:text-xs mt-2 tracking-widest">
+                        <div className="flex items-center justify-start gap-0.5 text-neutral-800 text-[10px] sm:text-[11px] mt-2 tracking-widest">
                           ★ ★ ★ ★ ★
                         </div>
 
                         {/* Price Display */}
                         <div 
-                          className="mt-2.5 text-sm sm:text-lg md:text-xl font-bold text-neutral-900 font-serif"
-                          style={{ fontFamily: dishPriceFont }}
+                          className="mt-3 text-base sm:text-xl font-serif font-bold text-neutral-900"
+                          style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
                         >
                           S/ {item.price.toFixed(2)}
                         </div>
@@ -614,43 +559,53 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                       /* EVEN ROW: PHOTO ON RIGHT (Semi-circle touching center line) */
                       <div 
                         onClick={() => setSelectedItemForCustomization(item)}
-                        className="relative w-full h-36 sm:h-52 md:h-60 flex justify-start items-center overflow-hidden cursor-pointer pl-0 select-none group/img"
+                        className="relative w-full flex justify-start items-center cursor-pointer select-none group/img"
                       >
-                        {item.imageUrl ? (
-                          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden shrink-0 -translate-x-1/2 transition-transform duration-300 group-hover/img:scale-105">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover select-none pointer-events-none"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 -translate-x-1/2">
-                            <Utensils className="w-8 h-8 text-neutral-400 translate-x-4" />
-                          </div>
-                        )}
+                        {/* Distinct vertical black cut line extending slightly above and below the diameter */}
+                        <div 
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-[1.5px] bg-black z-10 pointer-events-none"
+                          style={{ height: 'calc(100% + 20px)' }}
+                        />
+
+                        {/* Semi-circle dish container (Left-half hidden at center edge) */}
+                        <div className="relative flex justify-start items-center overflow-hidden h-36 sm:h-52 md:h-60 w-full pl-0">
+                          {item.imageUrl ? (
+                            <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden shrink-0 -translate-x-1/2 transition-transform duration-300 group-hover/img:scale-105">
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name} 
+                                className="w-full h-full object-cover select-none pointer-events-none"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 -translate-x-1/2">
+                              <Utensils className="w-6 h-6 text-neutral-400 translate-x-3" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
+
                   </div>
                 </div>
               );
             })
           )}
-        </main>
+        </div>
 
         {/* Floating Cart Button */}
         {cartTotalItemsCount > 0 && (
-          <div className="sticky bottom-4 z-40 px-4 flex justify-center pb-4">
+          <div className="sticky bottom-6 z-40 px-4 flex justify-center pb-2 mt-8">
             <button
               onClick={() => setIsCartDrawerOpen(true)}
-              className="px-6 py-3 rounded-full bg-neutral-900 text-amber-300 font-sans font-bold text-sm shadow-2xl flex items-center gap-3 hover:bg-black transition-transform duration-200 hover:scale-105 cursor-pointer border border-amber-400/40"
+              className="px-6 py-3 rounded-full bg-neutral-900 text-white font-sans font-semibold text-xs shadow-xl flex items-center gap-3 hover:bg-black transition-transform duration-200 hover:scale-105 cursor-pointer"
             >
-              <div className="w-7 h-7 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-black">
+              <div className="w-6 h-6 rounded-full bg-white text-neutral-900 flex items-center justify-center text-[11px] font-bold">
                 {cartTotalItemsCount}
               </div>
               <span>Ver Pedido</span>
-              <span className="font-mono text-white text-xs border-l border-neutral-700 pl-3">
+              <span className="font-mono text-neutral-300 text-xs border-l border-neutral-700 pl-3">
                 S/ {cartGrandTotal.toFixed(2)}
               </span>
             </button>
