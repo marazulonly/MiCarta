@@ -51,84 +51,59 @@ interface CartItemEntry {
   units: OrderItemUnit[];
 }
 
-// Dietary indicator matching the standard square format in medioplato2.jpg
-const DietaryBadge: React.FC<{ isVeg?: boolean; isNonVeg?: boolean; className?: string }> = ({ isVeg, isNonVeg, className = '' }) => {
-  if (isVeg) {
-    return (
-      <span 
-        className={`inline-flex items-center justify-center w-3.5 h-3.5 border border-emerald-600 rounded-[1.5px] p-[1.5px] bg-white shrink-0 align-middle ${className}`}
-        title="Vegetariano"
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-      </span>
-    );
-  }
-  if (isNonVeg) {
-    return (
-      <span 
-        className={`inline-flex items-center justify-center w-3.5 h-3.5 border border-red-600 rounded-[1.5px] p-[1.5px] bg-white shrink-0 align-middle ${className}`}
-        title="No Vegetariano"
-      >
-        <span className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[6px] border-b-red-600" />
-      </span>
-    );
-  }
-  return null;
-};
-
-// Default high-fidelity sample items matching medioplato2.jpg if no items exist
+// Sample items matching medioplato2.jpg if no restaurant items exist
 const SAMPLE_MEDIO_PLATO_ITEMS: MenuItem[] = [
   {
-    id: 'sample-mutton-goli',
+    id: 'sample-causa-acevichada',
     restaurantId: 'sample',
     categoryId: 'sample-cat',
-    name: 'Mutton Goli Chaat (Bihari)',
-    description: 'Mutton balls in sweet & spicy chaat',
-    price: 340,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 20,
-    allergens: ['carne'],
-    tags: ['non-veg', 'origin:Bihari']
-  },
-  {
-    id: 'sample-soya-goli',
-    restaurantId: 'sample',
-    categoryId: 'sample-cat',
-    name: 'Soya Goli Chaat',
-    description: 'Veg chaat with soy balls',
-    price: 260,
-    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+    name: 'CAUSA ACEVICHADA',
+    description: 'Papa amarilla rellena de atún acevichado, acompañada de palta y tomate.',
+    price: 26.00,
+    imageUrl: '',
     isAvailable: true,
     prepTimeMinutes: 15,
-    allergens: [],
-    tags: ['veg']
+    allergens: ['pescado'],
+    tags: ['pescado']
   },
   {
-    id: 'sample-tarua',
+    id: 'sample-causa-macho',
     restaurantId: 'sample',
     categoryId: 'sample-cat',
-    name: 'Tarua (Bihari)',
-    description: 'Mixed vegetable fritters',
-    price: 260,
-    imageUrl: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80',
+    name: 'CAUSA A LO MACHO',
+    description: 'Bolas de papa amarilla aderezadas, acompañadas de mariscos y nuestra deliciosa salsa picante.',
+    price: 28.00,
+    imageUrl: '',
+    isAvailable: true,
+    prepTimeMinutes: 20,
+    allergens: ['mariscos'],
+    tags: ['mariscos']
+  },
+  {
+    id: 'sample-pulpo-parrilla',
+    restaurantId: 'sample',
+    categoryId: 'sample-cat',
+    name: 'PULPO A LA PARRILLA',
+    description: 'Tentáculos de pulpo fresco cocinados sobre las brasas de nuestra parrilla; acompañados de papa doradita, choclo y vegetales.',
+    price: 38.00,
+    imageUrl: '',
+    isAvailable: true,
+    prepTimeMinutes: 25,
+    allergens: ['mariscos'],
+    tags: ['parrilla']
+  },
+  {
+    id: 'sample-pulpo-aceituna',
+    restaurantId: 'sample',
+    categoryId: 'sample-cat',
+    name: 'PULPO EN CREMA DE ACEITUNA',
+    description: 'Láminas de pulpo aderezado en limón y sal, bañadas con nuestra suculenta crema moradita de aceitunas.',
+    price: 35.00,
+    imageUrl: '',
     isAvailable: true,
     prepTimeMinutes: 18,
-    allergens: [],
-    tags: ['veg', 'origin:Bihari']
-  },
-  {
-    id: 'sample-chingrir-chop',
-    restaurantId: 'sample',
-    categoryId: 'sample-cat',
-    name: 'Chingrir Chop (West Bengal)',
-    description: 'Crispy mashed prawn cutlet',
-    price: 350,
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
-    isAvailable: true,
-    prepTimeMinutes: 22,
     allergens: ['mariscos'],
-    tags: ['non-veg', 'origin:West Bengal']
+    tags: ['frios']
   }
 ];
 
@@ -168,9 +143,13 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   }, [initialMode, isDineInEnabled, isDeliveryEnabled]);
 
   // Categories
-  const currentCategories = categories && categories.length > 0 
-    ? categories 
-    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'Starters', sortOrder: 1, isActive: true }];
+  const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const currentCategories = restaurantCategories.length > 0 
+    ? restaurantCategories 
+    : [
+        { id: 'cat-1', restaurantId: restaurant.id, name: 'Entradas & Piqueos', sortOrder: 1, isActive: true },
+        { id: 'cat-2', restaurantId: restaurant.id, name: 'Nuestras Causitas', sortOrder: 2, isActive: true }
+      ];
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
@@ -182,25 +161,27 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Styling Variables
+  // Palette & Branding matching medioplato2.jpg
   const branding = restaurant.branding || {
     primaryColor: '#000000',
-    secondaryColor: '#171717',
-    accentColor: '#171717',
-    darkBgColor: '#FFFFFF',
-    cardBgColor: '#FFFFFF',
-    textColor: '#111827',
+    secondaryColor: '#D97757',
+    accentColor: '#D97757',
+    darkBgColor: '#E6E8DF',
+    cardBgColor: '#E6E8DF',
+    textColor: '#1A1A1A',
     fontDisplay: "'Playfair Display', serif",
-    buttonColor: '#000000',
+    buttonColor: '#D97757',
     buttonTextColor: '#FFFFFF',
     dishNameFont: "'Playfair Display', serif",
     dishDescFont: "'Plus Jakarta Sans', sans-serif",
     dishPriceFont: "'Playfair Display', serif"
   };
 
-  const dishNameFont = branding.dishNameFont || "'Playfair Display', 'Cormorant Garamond', Georgia, serif";
+  // The menu background color (fondo de la carta)
+  const cartaBg = branding.darkBgColor || branding.cardBgColor || '#E6E8DF';
+  const accentColor = branding.accentColor || '#D97757';
+  const dishNameFont = branding.dishNameFont || "'Playfair Display', Georgia, serif";
   const dishDescFont = branding.dishDescFont || "'Plus Jakarta Sans', sans-serif";
-  const dishPriceFont = branding.dishPriceFont || "'Playfair Display', 'Cormorant Garamond', Georgia, serif";
 
   // Filter Items by channel and category
   const restaurantItems = items.filter(item => item.restaurantId === restaurant.id);
@@ -211,12 +192,10 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
     return item.categoryId === activeCategory;
   });
 
-  // If no items found, use sample items matching medioplato2.jpg for faithful presentation
+  // Use real items if present, or fallback to sample items matching medioplato2.jpg
   const displayedItems = channelItems.length > 0 ? channelItems : SAMPLE_MEDIO_PLATO_ITEMS;
 
-  const isIndianMenu = displayedItems.some(i => /chaat|tarua|chingrir|bihari|mutton|soya goli/i.test(i.name)) || 
-                       restaurant.name?.toLowerCase().includes('india');
-  const currencySymbol = (restaurant as any).currencySymbol || (restaurant as any).currency || (isIndianMenu ? '₹' : 'S/');
+  const currencySymbol = (restaurant as any).currencySymbol || (restaurant as any).currency || 'S/';
 
   const cartTotalItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
   const cartGrandTotal = cart.reduce((sum, c) => {
@@ -250,15 +229,16 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto bg-black/75 backdrop-blur-sm"
     >
-      {/* Main Menu Page Canvas: Pure clean white aesthetic matching medioplato2.jpg */}
+      {/* Main Menu Page Canvas: Matches medioplato2.jpg with background equal to cartaBg */}
       <div 
         className={`relative w-full ${
-          isFullscreen ? 'max-w-4xl min-h-screen' : 'max-w-xl md:max-w-2xl min-h-[96vh]'
-        } shadow-2xl transition-all duration-300 flex flex-col my-auto bg-white text-neutral-900 overflow-hidden sm:rounded-2xl`}
+          isFullscreen ? 'max-w-4xl min-h-screen' : 'max-w-md sm:max-w-xl md:max-w-2xl min-h-[96vh]'
+        } shadow-2xl transition-all duration-300 flex flex-col my-auto overflow-hidden sm:rounded-3xl border border-neutral-300/40`}
+        style={{ backgroundColor: cartaBg }}
       >
-        {/* Subtle Top Control Bar */}
+        {/* Top Control Bar (Admin & Navigation) */}
         <div className="relative z-30 px-4 py-2.5 bg-neutral-950 text-white flex items-center justify-between text-xs select-none">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -278,7 +258,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                 }`}
               >
                 <Edit3 className="w-3 h-3" />
-                <span>{isLiveEditActive ? 'Edición Activa' : 'Editar Carta'}</span>
+                <span>{isLiveEditActive ? 'Edición Activa' : 'Editar'}</span>
               </button>
             )}
 
@@ -308,128 +288,81 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
           </div>
         </div>
 
-        {/* Minimal Channel & Category Bar (Subtle & clean) */}
-        {(isDineInEnabled && isDeliveryEnabled || currentCategories.length > 1) && (
-          <div className="px-4 pt-3 pb-1 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-2 bg-neutral-50/50">
-            {/* Channel toggle */}
-            {isDineInEnabled && isDeliveryEnabled && (
-              <div className="flex items-center gap-1 bg-neutral-200/70 p-0.5 rounded-lg text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setActiveChannel('DINE_IN')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-sans transition cursor-pointer ${
-                    activeChannel === 'DINE_IN'
-                      ? 'bg-white text-black shadow-sm font-bold'
-                      : 'text-neutral-600 hover:text-black'
-                  }`}
-                >
-                  <ChefHat className="w-3 h-3 text-neutral-800" />
-                  <span>Salón</span>
-                  {initialTableNumber && (
-                    <span className="text-[9px] bg-neutral-900 text-white px-1 py-0.2 rounded font-mono">
-                      M.{initialTableNumber}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveChannel('DELIVERY')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-sans transition cursor-pointer ${
-                    activeChannel === 'DELIVERY'
-                      ? 'bg-white text-black shadow-sm font-bold'
-                      : 'text-neutral-600 hover:text-black'
-                  }`}
-                >
-                  <Bike className="w-3 h-3 text-neutral-800" />
-                  <span>Delivery</span>
-                </button>
+        {/* Header Hero Banner with Logo matching medioplato2.jpg */}
+        <header className="relative w-full h-32 sm:h-40 overflow-hidden bg-neutral-900 flex items-center justify-center select-none shrink-0 shadow-md">
+          {/* Banner background photo */}
+          <img 
+            src={restaurant.branding?.headerLogoUrl || restaurant.coverImageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80'}
+            alt={restaurant.name}
+            className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+          {/* Logo Badge matching the "VICHI PLIZ" emblem in medioplato2.jpg */}
+          <div className="relative z-10 flex flex-col items-center justify-center p-2">
+            {restaurant.logoUrl ? (
+              <img 
+                src={restaurant.logoUrl} 
+                alt={restaurant.name} 
+                className="max-h-20 sm:max-h-24 max-w-[200px] object-contain drop-shadow-xl"
+              />
+            ) : (
+              <div className="px-5 py-2.5 rounded-2xl border-2 border-cyan-500/80 bg-black/75 shadow-2xl backdrop-blur-sm text-center">
+                <span className="font-serif font-black tracking-widest text-cyan-400 text-lg sm:text-2xl uppercase drop-shadow">
+                  {restaurant.name}
+                </span>
               </div>
             )}
-
-            {/* Category tabs */}
-            {currentCategories.length > 1 && (
-              <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
-                <button
-                  onClick={() => setActiveCategory('all')}
-                  className={`px-2.5 py-1 text-xs rounded-md font-sans transition cursor-pointer whitespace-nowrap ${
-                    activeCategory === 'all'
-                      ? 'bg-neutral-900 text-white font-semibold'
-                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'
-                  }`}
-                >
-                  Todas
-                </button>
-                {currentCategories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`px-2.5 py-1 text-xs rounded-md font-sans transition cursor-pointer whitespace-nowrap ${
-                      activeCategory === cat.id
-                        ? 'bg-neutral-900 text-white font-semibold'
-                        : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </nav>
-            )}
-
-            {/* Quick add item for owner */}
-            {isOwnerOrAdmin && isLiveEditActive && onAddNewItem && (
-              <button
-                onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
-                className="px-2.5 py-1 rounded-md bg-neutral-900 hover:bg-black text-white font-sans text-xs transition cursor-pointer inline-flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Agregar plato</span>
-              </button>
-            )}
           </div>
-        )}
+        </header>
+
+        {/* Category Pills Navigation matching medioplato2.jpg */}
+        <nav className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-none select-none shrink-0">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`px-4 py-2 rounded-full text-xs font-bold font-sans transition-all whitespace-nowrap cursor-pointer shadow-sm ${
+              activeCategory === 'all'
+                ? 'bg-[#D97757] text-white shadow-md'
+                : 'bg-[#D6DAD1] text-neutral-800 hover:bg-[#CAD0C4]'
+            }`}
+          >
+            Todas las Secciones
+          </button>
+          {currentCategories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-4 py-2 rounded-full text-xs font-bold font-sans transition-all whitespace-nowrap cursor-pointer shadow-sm ${
+                activeCategory === cat.id
+                  ? 'bg-[#D97757] text-white shadow-md'
+                  : 'bg-[#D6DAD1] text-neutral-800 hover:bg-[#CAD0C4]'
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </nav>
 
         {/* ========================================================================= */}
-        {/* MEDIO PLATO CANVAS — IDENTICAL TO medioplato2.jpg                         */}
-        {/* Alternating rows, clean photos cut at vertical axis, full descriptions    */}
+        {/* DISHES LIST: EXACT REPLICA OF medioplato2.jpg                             */}
+        {/* - Card background = carta background (NO white card, NO border, NO shadow) */}
+        {/* - Alternating enlarged photos:                                             */}
+        {/*     Odd rows: Photo Left, Text Right (Left-aligned)                        */}
+        {/*     Even rows: Text Left (Right-aligned), Photo Right                      */}
+        {/* - Full description visible without cuts                                    */}
         {/* ========================================================================= */}
-        <main className="flex-1 px-4 sm:px-8 py-8 sm:py-12 space-y-12 sm:space-y-16 bg-white">
+        <main className="flex-1 px-3 sm:px-6 py-4 space-y-6 sm:space-y-8 overflow-y-auto">
           {displayedItems.map((item, index) => {
-            // Even rows (index 0, 2): Plate on Left, Info on Right
-            // Odd rows (index 1, 3): Info on Left, Plate on Right
-            const isLeftPlate = index % 2 === 0;
-
-            const isNonVeg = item.tags?.some(t => /non-?veg|carne|pollo|res|cerdo|pescado|mariscos|prawn|mutton|meat/i.test(t)) ||
-                             item.allergens?.some(a => /carne|pescado|mariscos/i.test(a)) ||
-                             /mutton|chicken|carne|pollo|prawn|chingrir|lomo|pescado|beef|pork|fish/i.test(item.name);
-            const isVeg = item.tags?.some(t => /veg|vegetariano|plant/i.test(t)) ||
-                          /veg|soya|tarua|fritter|ensalada|tofu/i.test(item.name) ||
-                          (!isNonVeg);
-
-            // Title and Region parsing
-            const originTag = item.tags?.find(t => t.startsWith('origin:') || t.startsWith('región:'))?.replace(/^(origin|región):/i, '')?.trim();
-            const nameMatch = item.name.match(/^(.*?)\s*\((.*?)\)\s*$/);
-            
-            let mainName = item.name;
-            let originText: string | null = null;
-
-            if (nameMatch) {
-              mainName = nameMatch[1].trim();
-              originText = `(${nameMatch[2].trim()})`;
-            } else if (originTag) {
-              originText = `(${originTag})`;
-            }
-
-            // Decide whether origin is on a second line (like item 1 & item 4 in medioplato2.jpg)
-            const isOriginOnSecondLine = Boolean(originText && mainName.length > 12);
+            const isEven = index % 2 === 1;
 
             return (
               <div 
-                key={item.id} 
-                className="relative group transition-colors duration-150 rounded-xl hover:bg-neutral-50/50 p-1 sm:p-2"
+                key={item.id}
+                className="relative group transition-opacity duration-200"
               >
-                {/* Live Edit Header Bar for Owners */}
+                {/* Live Edit Controls Header for Owner */}
                 {isOwnerOrAdmin && isLiveEditActive && (
-                  <div className="mb-3 p-2 rounded-lg bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-sm z-20">
+                  <div className="mb-2 p-2 rounded-lg bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-sm z-20">
                     <span className="font-mono font-bold text-amber-300 line-clamp-1">{item.name}</span>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {onQuickPriceItem && (
@@ -438,7 +371,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                           className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-mono font-bold"
                           title="Editar Precio"
                         >
-                          {currencySymbol}{item.price.toFixed(0) === item.price.toString() ? item.price : item.price.toFixed(2)}
+                          S/ {item.price.toFixed(2)}
                         </button>
                       )}
                       {onQuickPhotoItem && (
@@ -473,207 +406,128 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                 )}
 
                 {/* 
-                  MEDIO PLATO ROW:
-                  - 2-column grid split down the center (50% / 50%).
-                  - Plate sits as a clean semicircle flush against the center vertical line.
-                  - Vertical dividing line extends slightly above and below the half-plate.
-                  - Row alternates:
-                    Left: Plate | Center Line | Right: Text (Left-aligned)
-                    Left: Text (Right-aligned) | Center Line | Right: Plate
+                  THE DISH CARD:
+                  - Background matches the carta background (bg-transparent, no white box)
+                  - NO border (border-0 border-transparent)
+                  - NO shadow (shadow-none)
                 */}
-                <div className="grid grid-cols-2 items-center">
-                  {isLeftPlate ? (
+                <div 
+                  onClick={() => setSelectedItemForCustomization(item)}
+                  style={{ backgroundColor: 'transparent' }}
+                  className="w-full border-0 border-transparent shadow-none rounded-none p-1 sm:p-2 cursor-pointer select-none"
+                >
+                  {!isEven ? (
                     /* ------------------------------------------------------------- */
-                    /* ODD ROW: PLATE ON LEFT, INFO ON RIGHT                         */
+                    /* ODD ROW: PHOTO ON LEFT, INFO ON RIGHT                         */
                     /* ------------------------------------------------------------- */
-                    <>
-                      {/* Left: Half-Plate Touching Center Line */}
-                      <div 
-                        onClick={() => setSelectedItemForCustomization(item)}
-                        className="relative flex items-center justify-end pr-0 cursor-pointer select-none group/plate"
-                      >
-                        {/* Half-Plate Semicircle Container */}
-                        <div className="relative h-36 w-18 sm:h-52 sm:w-26 md:h-64 md:w-32 overflow-hidden rounded-l-full shadow-[0_4px_20px_rgba(0,0,0,0.12)] bg-neutral-50 shrink-0 transition-transform duration-300 group-hover/plate:scale-[1.02]">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                      {/* Photo on Left: Enlarged circular dish plate */}
+                      <div className="shrink-0 flex items-center justify-center">
+                        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-full overflow-hidden bg-[#A30D0D] flex items-center justify-center transition-transform duration-200 hover:scale-105">
                           {item.imageUrl ? (
                             <img 
                               src={item.imageUrl} 
                               alt={item.name} 
-                              className="absolute right-0 top-0 h-full w-[200%] max-w-none object-cover pointer-events-none"
+                              className="w-full h-full object-cover pointer-events-none"
                               loading="lazy"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-neutral-100">
-                              <Utensils className="w-6 h-6 text-neutral-400" />
-                            </div>
+                            <div className="w-full h-full bg-[#A30D0D]" />
                           )}
                         </div>
-
-                        {/* Crisp Vertical Dividing Line extending above and below */}
-                        <div className="w-[1.5px] bg-neutral-900 shrink-0 h-44 sm:h-64 md:h-76 -mr-[0.75px] z-10" />
                       </div>
 
-                      {/* Right: Text Block (Left-Aligned) */}
-                      <div 
-                        onClick={() => setSelectedItemForCustomization(item)}
-                        className="flex flex-col justify-center items-start text-left pl-5 sm:pl-8 md:pl-10 pr-2 sm:pr-4 cursor-pointer"
-                      >
-                        {/* Dish Name & Dietary Badge */}
-                        {isOriginOnSecondLine ? (
-                          <>
-                            <h3 
-                              className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                              style={{ fontFamily: dishNameFont }}
-                            >
-                              {mainName}
-                            </h3>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span 
-                                className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                                style={{ fontFamily: dishNameFont }}
-                              >
-                                {originText}
-                              </span>
-                              <DietaryBadge isVeg={isVeg} isNonVeg={isNonVeg} />
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 
-                              className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                              style={{ fontFamily: dishNameFont }}
-                            >
-                              {mainName}
-                              {originText ? ` ${originText}` : ''}
-                            </h3>
-                            <DietaryBadge isVeg={isVeg} isNonVeg={isNonVeg} />
-                          </div>
-                        )}
+                      {/* Info on Right: Left-aligned, full description without cuts */}
+                      <div className="flex-1 min-w-0 text-left">
+                        {/* Title: Uppercase Serif Bold */}
+                        <h3 
+                          className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
+                          style={{ fontFamily: dishNameFont }}
+                        >
+                          {item.name}
+                        </h3>
 
-                        {/* Dish Description: COMPLETELY VISIBLE, NO TRUNCATION */}
+                        {/* Description: 100% visible, no truncation or line-clamp */}
                         {item.description && (
                           <p 
-                            className="text-xs sm:text-[13px] md:text-sm text-neutral-600 font-sans font-normal leading-relaxed mt-1 sm:mt-1.5"
+                            className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
                             style={{ fontFamily: dishDescFont }}
                           >
                             {item.description}
                           </p>
                         )}
 
-                        {/* 5-Star Rating (★★★★☆) */}
-                        <div className="flex items-center gap-0.5 text-[10px] sm:text-xs mt-3 sm:mt-4 tracking-wider">
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-300">★</span>
+                        {/* 5-Star Rating (★★★★★) */}
+                        <div className="flex items-center gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider">
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
                         </div>
 
                         {/* Price */}
-                        <div 
-                          className="mt-3 sm:mt-4 md:mt-5 text-xl sm:text-2xl md:text-3xl font-serif text-neutral-900 font-normal tracking-tight"
-                          style={{ fontFamily: dishPriceFont }}
-                        >
-                          {currencySymbol}{item.price % 1 === 0 ? item.price : item.price.toFixed(2)}
+                        <div className="mt-1 text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900">
+                          S/ {item.price.toFixed(2)}
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     /* ------------------------------------------------------------- */
-                    /* EVEN ROW: INFO ON LEFT, PLATE ON RIGHT                        */
+                    /* EVEN ROW: INFO ON LEFT (RIGHT-ALIGNED), PHOTO ON RIGHT         */
                     /* ------------------------------------------------------------- */
-                    <>
-                      {/* Left: Text Block (Right-Aligned) */}
-                      <div 
-                        onClick={() => setSelectedItemForCustomization(item)}
-                        className="flex flex-col justify-center items-end text-right pr-5 sm:pr-8 md:pr-10 pl-2 sm:pl-4 cursor-pointer"
-                      >
-                        {/* Dish Name & Dietary Badge */}
-                        {isOriginOnSecondLine ? (
-                          <>
-                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                              <h3 
-                                className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                                style={{ fontFamily: dishNameFont }}
-                              >
-                                {mainName}
-                              </h3>
-                              <DietaryBadge isVeg={isVeg} isNonVeg={isNonVeg} />
-                            </div>
-                            <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                              <span 
-                                className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                                style={{ fontFamily: dishNameFont }}
-                              >
-                                {originText}
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            <h3 
-                              className="text-base sm:text-xl md:text-2xl font-serif text-neutral-900 leading-snug tracking-tight font-normal"
-                              style={{ fontFamily: dishNameFont }}
-                            >
-                              {mainName}
-                              {originText ? ` ${originText}` : ''}
-                            </h3>
-                            <DietaryBadge isVeg={isVeg} isNonVeg={isNonVeg} />
-                          </div>
-                        )}
+                    <div className="flex items-center gap-4 sm:gap-6 flex-row-reverse">
+                      {/* Photo on Right: Enlarged circular dish plate */}
+                      <div className="shrink-0 flex items-center justify-center">
+                        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-full overflow-hidden bg-[#A30D0D] flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                          {item.imageUrl ? (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover pointer-events-none"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-[#A30D0D]" />
+                          )}
+                        </div>
+                      </div>
 
-                        {/* Dish Description: COMPLETELY VISIBLE, NO TRUNCATION */}
+                      {/* Info on Left: Right-aligned, full description without cuts */}
+                      <div className="flex-1 min-w-0 text-right">
+                        {/* Title: Uppercase Serif Bold */}
+                        <h3 
+                          className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
+                          style={{ fontFamily: dishNameFont }}
+                        >
+                          {item.name}
+                        </h3>
+
+                        {/* Description: 100% visible, no truncation or line-clamp */}
                         {item.description && (
                           <p 
-                            className="text-xs sm:text-[13px] md:text-sm text-neutral-600 font-sans font-normal leading-relaxed mt-1 sm:mt-1.5"
+                            className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
                             style={{ fontFamily: dishDescFont }}
                           >
                             {item.description}
                           </p>
                         )}
 
-                        {/* 5-Star Rating (★★★★☆, Right-aligned) */}
-                        <div className="flex items-center justify-end gap-0.5 text-[10px] sm:text-xs mt-3 sm:mt-4 tracking-wider">
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-900">★</span>
-                          <span className="text-neutral-300">★</span>
+                        {/* 5-Star Rating (★★★★★, Right-aligned) */}
+                        <div className="flex items-center justify-end gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider">
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
+                          <span>★</span>
                         </div>
 
                         {/* Price */}
-                        <div 
-                          className="mt-3 sm:mt-4 md:mt-5 text-xl sm:text-2xl md:text-3xl font-serif text-neutral-900 font-normal tracking-tight"
-                          style={{ fontFamily: dishPriceFont }}
-                        >
-                          {currencySymbol}{item.price % 1 === 0 ? item.price : item.price.toFixed(2)}
+                        <div className="mt-1 text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900">
+                          S/ {item.price.toFixed(2)}
                         </div>
                       </div>
-
-                      {/* Right: Half-Plate Touching Center Line */}
-                      <div 
-                        onClick={() => setSelectedItemForCustomization(item)}
-                        className="relative flex items-center justify-start pl-0 cursor-pointer select-none group/plate"
-                      >
-                        {/* Crisp Vertical Dividing Line extending above and below */}
-                        <div className="w-[1.5px] bg-neutral-900 shrink-0 h-44 sm:h-64 md:h-76 -ml-[0.75px] z-10" />
-
-                        {/* Half-Plate Semicircle Container */}
-                        <div className="relative h-36 w-18 sm:h-52 sm:w-26 md:h-64 md:w-32 overflow-hidden rounded-r-full shadow-[0_4px_20px_rgba(0,0,0,0.12)] bg-neutral-50 shrink-0 transition-transform duration-300 group-hover/plate:scale-[1.02]">
-                          {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              className="absolute left-0 top-0 h-full w-[200%] max-w-none object-cover pointer-events-none"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-neutral-100">
-                              <Utensils className="w-6 h-6 text-neutral-400" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
