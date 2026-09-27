@@ -65,10 +65,10 @@ export function deduplicateUsers(users: User[]): User[] {
       }
     });
 
-    if (allRestIds.has('all')) {
-      winner.restaurantIds = ['all'];
+    if (winner.role === 'ADMIN') {
+      winner.restaurantIds = allRestIds.has('all') ? ['all'] : Array.from(allRestIds);
     } else {
-      winner.restaurantIds = Array.from(allRestIds);
+      winner.restaurantIds = Array.from(allRestIds).filter(id => id !== 'all');
     }
 
     deduplicatedList.push(winner);

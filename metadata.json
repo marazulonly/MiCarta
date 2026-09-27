@@ -1,6 +1,6 @@
 {
   "name": "Micarta - Sistema Multi-Restaurante y Cartas Digitales",
-  "description": "Plataforma de cartas digitales y gestión gastronómica para restaurantes, mozos, repartidores y comensales.",
+  "description": "Carta digital",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

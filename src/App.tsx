@@ -275,6 +275,11 @@ function getInitialStorageState() {
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
+        if (cachedAuth && (cachedAuth.id === 'u-owner-alonso' || cachedAuth.dni === '94639300')) {
+          cachedAuth.restaurantIds = Array.isArray(cachedAuth.restaurantIds)
+            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
+            : [];
+        }
       }
     } catch (e) {
       console.warn('[Storage] Error reading initial cache:', e);
@@ -507,10 +512,20 @@ export default function App() {
 
       const usersMap = new Map<string, User>();
       cleanLoadedUsers.forEach(u => {
+        if (u && (u.id === 'u-owner-alonso' || u.dni === '94639300')) {
+          u.restaurantIds = Array.isArray(u.restaurantIds)
+            ? u.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
+            : [];
+        }
         const key = u.id || (u.dni ? `dni-${u.dni}` : null);
         if (key) usersMap.set(key, u);
       });
       localUsers.forEach(u => {
+        if (u && (u.id === 'u-owner-alonso' || u.dni === '94639300')) {
+          u.restaurantIds = Array.isArray(u.restaurantIds)
+            ? u.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
+            : [];
+        }
         const key = u.id || (u.dni ? `dni-${u.dni}` : null);
         if (key && !usersMap.has(key)) usersMap.set(key, u);
       });
@@ -749,8 +764,14 @@ export default function App() {
       setActiveTab('home');
     }
     if (isOwnerRole) {
-      if (safeRestaurants.length > 0) {
-        setSelectedRestaurantId(safeRestaurants[0].id);
+      const userAccessible = safeRestaurants.filter(r => r && (
+        (r.ownerId && (r.ownerId === user.id || (user.email && r.ownerId === user.email))) ||
+        (Array.isArray(user.restaurantIds) && user.restaurantIds.includes(r.id))
+      ));
+      if (userAccessible.length > 0) {
+        setSelectedRestaurantId(userAccessible[0].id);
+      } else {
+        setSelectedRestaurantId('');
       }
     } else if (!isAdminRole && user.restaurantIds && user.restaurantIds.length > 0 && user.restaurantIds[0] !== 'all') {
       setSelectedRestaurantId(user.restaurantIds[0]);
@@ -1376,13 +1397,14 @@ export default function App() {
         ? safeRestaurants
         : safeRestaurants.filter(r => r && (
             (r.ownerId && (r.ownerId === currentUser.id || (currentUser.email && r.ownerId === currentUser.email))) ||
-            currentUser.restaurantIds?.includes(r.id) ||
-            currentUser.restaurantIds?.includes('all')
+            (Array.isArray(currentUser.restaurantIds) && currentUser.restaurantIds.includes(r.id)) ||
+            (currentUser.role === 'ADMIN' && currentUser.restaurantIds?.includes('all'))
           )))
     : safeRestaurants;
 
   // Current active restaurant branding for dynamic theme accent
-  const currentSelectedRest = getSafeActiveRestaurant(userAccessibleRestaurants, selectedRestaurantId) ?? getSafeActiveRestaurant(safeRestaurants, null);
+  const currentSelectedRest = getSafeActiveRestaurant(userAccessibleRestaurants, selectedRestaurantId) ?? 
+    (userAccessibleRestaurants[0] || (currentUser?.role === 'ADMIN' ? getSafeActiveRestaurant(safeRestaurants, null) : null));
   const pendingOrdersCount = safeOrders.filter(o => o && o.status === 'PENDING').length;
 
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?

@@ -154,30 +154,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     if (currentUser?.role === 'ADMIN') return true;
     if (!targetOwner) return false;
 
-    // Explicitly assigned via restaurantIds
+    // Explicitly assigned via restaurantIds (only ADMIN can use 'all')
     const isAssigned = Array.isArray(targetOwner.restaurantIds) && (
-      targetOwner.restaurantIds.includes(r.id) || targetOwner.restaurantIds.includes('all')
+      targetOwner.restaurantIds.includes(r.id) || (targetOwner.role === 'ADMIN' && targetOwner.restaurantIds.includes('all'))
     );
     // Explicit creator match
     const isCreator = Boolean(
       r.ownerId && (r.ownerId === targetOwner.id || (targetOwner.email && r.ownerId === targetOwner.email))
     );
 
-    const isOwnerRole = targetOwner.role === 'OWNER' || targetOwner.role === 'RESTAURANT_MANAGER';
-    const hasUnrestrictedAccess = !Array.isArray(targetOwner.restaurantIds) || targetOwner.restaurantIds.length === 0 || targetOwner.restaurantIds.includes('all');
-
-    return isAssigned || isCreator || (isOwnerRole && hasUnrestrictedAccess);
+    return isAssigned || isCreator;
   });
 
   // Selected Restaurant being managed
   const [selectedRestId, setSelectedRestId] = useState<string>(
-    ownedRestaurants[0]?.id || (restaurants || [])[0]?.id || ''
+    ownedRestaurants[0]?.id || ''
   );
 
-  const currentRestaurant = getSafeActiveRestaurant(ownedRestaurants, selectedRestId) ?? getSafeActiveRestaurant(restaurants, null);
+  const currentRestaurant = getSafeActiveRestaurant(ownedRestaurants, selectedRestId) ?? (ownedRestaurants[0] || null);
 
   // Filter owned orders for Sales Monitor (resilient matching by ID, slug, or name)
-  const activeRestaurantsList = ownedRestaurants.length > 0 ? ownedRestaurants : (restaurants || []);
+  const activeRestaurantsList = currentUser?.role === 'ADMIN' ? (restaurants || []) : ownedRestaurants;
   const monitorOrders = (orders || []).filter(o => {
     if (!o) return false;
     if (currentUser?.role === 'ADMIN') return true;
