@@ -1464,12 +1464,15 @@ export default function App() {
       <ErrorBoundary fallbackTitle="Ocurrió un problema en la vista operativa">
         <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col selection:bg-neutral-800 selection:text-white">
         
-        {/* Dedicated Role Header with User Profile, Restaurant and Logout */}
+        {/* Dedicated Role Header with User Profile, Restaurant Selector and Logout */}
         <RoleHeader
           currentUser={currentUser}
           restaurant={currentSelectedRest}
+          restaurants={safeRestaurants}
+          selectedRestaurantId={selectedRestaurantId}
+          onSelectRestaurant={setSelectedRestaurantId}
           onLogout={handleLogout}
-          onOpenCustomerPreview={() => handleOpenCustomerPreview()}
+          onOpenCustomerPreview={(targetRest) => handleOpenCustomerPreview(targetRest)}
           onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
           onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
         />
@@ -1482,6 +1485,8 @@ export default function App() {
             <OwnerDashboard
               currentUser={currentUser}
               restaurants={safeRestaurants}
+              selectedRestaurantId={selectedRestaurantId}
+              onSelectRestaurant={setSelectedRestaurantId}
               users={safeUsers}
               templates={safeTemplates}
               menuItems={safeMenuItems}

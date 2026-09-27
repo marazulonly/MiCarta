@@ -70,6 +70,8 @@ import { Order, OrderStatus } from '../types';
 interface OwnerDashboardProps {
   currentUser?: User;
   restaurants: Restaurant[];
+  selectedRestaurantId?: string;
+  onSelectRestaurant?: (id: string) => void;
   users: User[];
   templates: MenuTemplate[];
   menuItems?: MenuItem[];
@@ -109,6 +111,8 @@ type AccessSubTab = 'dishes' | 'tables' | 'schedules' | 'shifts' | 'kitchen' | '
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   currentUser,
   restaurants,
+  selectedRestaurantId,
+  onSelectRestaurant,
   users,
   templates,
   menuItems = [],
@@ -223,6 +227,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       setTablesState(target.tables || generateTablesForRestaurant(target.id));
     }
   };
+
+  // Sync selectedRestId if selectedRestaurantId prop changes from parent / RoleHeader
+  useEffect(() => {
+    if (selectedRestaurantId && selectedRestaurantId !== selectedRestId) {
+      handleSelectRestaurant(selectedRestaurantId);
+    }
+  }, [selectedRestaurantId]);
 
   // Sync selectedRestId if ownedRestaurants changes
   useEffect(() => {
@@ -834,6 +845,40 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
       )}
 
+      {/* BARRA DE NAVEGACIÓN DE BOTONES (JUSTO DEBAJO DEL ENCABEZADO DE LA PÁGINA) */}
+      <div className="bg-white border border-neutral-200/80 rounded-2xl p-2 shadow-sm flex items-center justify-start gap-1.5 overflow-x-auto">
+        {[
+          { id: 'sales_monitor', label: 'Supervisar Ventas', icon: Eye },
+          { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
+          { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
+          { id: 'schedules', label: 'Horarios', icon: Clock },
+          { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar },
+          { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame },
+          { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat },
+          { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike },
+          { id: 'customers', label: 'Clientes & QR', icon: UserCheck },
+          { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
+        ].map(tab => {
+          const isActive = activeSubTab === tab.id;
+          const IconComp = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
+              title={tab.label}
+              className={`p-2.5 lg:px-3.5 lg:py-2 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer text-xs shrink-0 ${
+                isActive
+                  ? 'bg-neutral-900 text-white shadow-md'
+                  : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
+              }`}
+            >
+              <IconComp className="w-4 h-4 shrink-0" />
+              <span className="hidden lg:inline whitespace-nowrap">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ------------------------------------------------------------- */}
       {/* 1. LISTA DE RESTAURANTES DEL DUEÑO                            */}
       {/* ------------------------------------------------------------- */}
@@ -1024,40 +1069,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Access Navigation SubTabs Bar */}
-        <div className="p-2 gap-1.5 flex flex-wrap items-center bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs">
-          {[
-            { id: 'sales_monitor', label: 'Supervisar Ventas', icon: Eye },
-            { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
-            { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
-            { id: 'schedules', label: 'Horarios', icon: Clock },
-            { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar },
-            { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame },
-            { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat },
-            { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike },
-            { id: 'customers', label: 'Clientes & QR', icon: UserCheck },
-            { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
-          ].map(tab => {
-            const isActive = activeSubTab === tab.id;
-            const IconComp = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
-                title={tab.label}
-                className={`p-2.5 lg:px-3.5 lg:py-2 rounded-full font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
-                  isActive
-                    ? 'bg-[#1E1F24] text-white shadow-md transform scale-102'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                }`}
-              >
-                <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : 'text-neutral-600'} shrink-0`} />
-                <span className="hidden lg:inline truncate">{tab.label}</span>
-              </button>
-            );
-          })}
         </div>
 
         {/* ============================================================= */}
