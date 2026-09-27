@@ -410,32 +410,16 @@ export default function App() {
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
           } else {
-            const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
-            if (foundRest) {
-              setPreviewRestaurant(foundRest);
-              setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
-              if (table) setPreviewTableNumber(table);
-              setIsCustomerModalOpen(true);
-              setNotFoundSlugError(null);
-            } else {
-              setPreviewRestaurant(null);
-              setPublishedMenuData(null);
-              setIsCustomerModalOpen(false);
-              setNotFoundSlugError(restaurantSlug);
-            }
-          }
-        }).catch(() => {
-          const foundRest = findRestaurantBySlug(restaurants, restaurantSlug);
-          if (foundRest) {
-            setPreviewRestaurant(foundRest);
-            setIsCustomerModalOpen(true);
-            setNotFoundSlugError(null);
-          } else {
             setPreviewRestaurant(null);
             setPublishedMenuData(null);
             setIsCustomerModalOpen(false);
             setNotFoundSlugError(restaurantSlug);
           }
+        }).catch(() => {
+          setPreviewRestaurant(null);
+          setPublishedMenuData(null);
+          setIsCustomerModalOpen(false);
+          setNotFoundSlugError(restaurantSlug);
         }).finally(() => {
           setIsLoadingPublishedMenu(false);
         });
