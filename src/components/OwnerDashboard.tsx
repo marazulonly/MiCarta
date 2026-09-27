@@ -63,7 +63,7 @@ import { TableQrModal } from './TableQrModal';
 import { TemplateSplitEditor } from './TemplateSplitEditor';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
 import { OwnerOrderDetailModal } from './OwnerOrderDetailModal';
-import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings } from '../utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings, generateSlug } from '../utils/restaurantUtils';
 import { DEFAULT_WEEKLY_SCHEDULE, generateTablesForRestaurant, generateShiftsForRestaurant } from '../data/mockData';
 import { Order, OrderStatus } from '../types';
 
@@ -611,6 +611,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   };
 
   // Create Restaurant for Owner
+  const handleSaveGeneralInfo = (updatedRestaurant: Restaurant) => {
+    const newSlug = generateSlug(updatedRestaurant.name);
+    onUpdateRestaurant({
+      ...updatedRestaurant,
+      slug: newSlug
+    });
+  };
+
   const handleCreateRestaurant = (e: React.FormEvent) => {
     e.preventDefault();
     setRestError(null);
@@ -626,11 +634,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       return;
     }
 
-    const cleanSlug = (newRestSlug || newRestName)
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+    const cleanSlug = generateSlug(newRestSlug || newRestName);
 
     if (restaurants.some(r => r.slug === cleanSlug)) {
       setRestError(`Ya existe un restaurante con el slug /${cleanSlug}. Por favor elige otro.`);

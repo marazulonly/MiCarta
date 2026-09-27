@@ -24,7 +24,7 @@ import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } fro
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
-import { getSafeActiveRestaurant, getSafeBranding } from '../utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, generateSlug } from '../utils/restaurantUtils';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -126,7 +126,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   };
 
   const handleSaveSlug = () => {
-    const clean = editableSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-');
+    const clean = generateSlug(editableSlug);
     setEditableSlug(clean);
     onUpdateRestaurant({
       ...currentRestaurant,

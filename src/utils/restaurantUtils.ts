@@ -60,6 +60,17 @@ export const DEFAULT_FALLBACK_RESTAURANT: Restaurant = {
 };
 
 /**
+ * Generates a URL-friendly slug from a restaurant name
+ */
+export const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+};
+
+/**
  * Safely resolves the active restaurant from an array, returning null if empty or not found.
  */
 export function getSafeActiveRestaurant(
