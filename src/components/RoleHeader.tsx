@@ -297,7 +297,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
       {isOwnerOrManager && onSelectOwnerSubTab && (
         <div className="border-t border-neutral-200/80 bg-white w-full">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1.5">
-            <div className="w-full grid grid-cols-5 md:grid-cols-10 gap-1 sm:gap-1.5 items-center justify-between">
+            <div className="w-full grid grid-cols-10 gap-1 sm:gap-1.5 items-center justify-between">
               {[
                 { id: 'sales_monitor', label: 'Ventas', icon: Eye },
                 { id: 'dishes', label: 'Carta', icon: Utensils },
@@ -317,14 +317,15 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
                     key={tab.id}
                     onClick={() => onSelectOwnerSubTab(tab.id)}
                     title={tab.label}
-                    className={`w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl font-bold transition flex flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-[11px] sm:text-xs text-center ${
+                    aria-label={tab.label}
+                    className={`w-full py-2 px-1 sm:px-1.5 lg:px-2 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs text-center ${
                       isActive
                         ? 'bg-neutral-900 text-white shadow-sm ring-1 ring-neutral-900'
                         : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
                     }`}
                   >
-                    <IconComp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                    <span className="truncate whitespace-nowrap">{tab.label}</span>
+                    <IconComp className="w-4 h-4 shrink-0" />
+                    <span className="hidden xl:inline truncate whitespace-nowrap">{tab.label}</span>
                   </button>
                 );
               })}
