@@ -807,11 +807,17 @@ export default function App() {
     const restaurant = restaurants.find(r => r.id === restaurantId);
     if (!restaurant) return;
 
+    // Ensure slug is normalized before sending to cloud
+    const normalizedRest = {
+      ...restaurant,
+      slug: normalizeSlug(restaurant.slug)
+    };
+
     const filterCats = categories.filter(c => c.restaurantId === restaurantId);
     const filterItems = menuItems.filter(i => i.restaurantId === restaurantId);
 
     try {
-      await publishRestaurantMenu(restaurantId, restaurant, filterCats, filterItems, currentUser?.name || 'Administrador');
+      await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador');
     } catch (e) {
       console.error('Error triggering cloud update:', e);
     }
