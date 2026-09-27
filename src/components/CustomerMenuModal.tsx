@@ -109,12 +109,12 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   React.useEffect(() => {
     if (isOpen && restaurant) {
       const isFreshOpen = !wasOpenRef.current;
-      const isNewRestaurant = lastRestaurantIdRef.current !== restaurant.id;
+      const isNewRestaurant = lastRestaurantIdRef.current !== restaurant?.id;
 
       if (isFreshOpen || isNewRestaurant) {
         setIsPreloading(true);
         setPreloadProgress(15);
-        lastRestaurantIdRef.current = restaurant.id;
+        lastRestaurantIdRef.current = restaurant?.id || null;
         wasOpenRef.current = true;
       }
       
@@ -242,15 +242,15 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   };
 
   // New item form state
-  const availableCats = categories.filter(c => c.restaurantId === restaurant.id);
+  const availableCats = categories.filter(c => c.restaurantId === restaurant?.id);
   const restaurantCategories = availableCats.length > 0 
     ? availableCats 
-    : [{ id: `cat-${restaurant.id}-general`, restaurantId: restaurant.id, name: 'De la Casa', sortOrder: 1, isActive: true }];
+    : [{ id: `cat-${restaurant?.id || 'gen'}-general`, restaurantId: restaurant?.id || 'gen', name: 'De la Casa', sortOrder: 1, isActive: true }];
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('35.00');
-  const [newItemCategory, setNewItemCategory] = useState(restaurantCategories[0]?.id || `cat-${restaurant.id}-general`);
+  const [newItemCategory, setNewItemCategory] = useState(restaurantCategories[0]?.id || `cat-${restaurant?.id || 'gen'}-general`);
   const [newItemImgUrl, setNewItemImgUrl] = useState(PRESET_DISH_PHOTOS[0].url);
   const [newItemPrepTime, setNewItemPrepTime] = useState(25);
 
@@ -379,7 +379,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setNewItemName('');
     setNewItemDesc('');
     setNewItemPrice('35.00');
-    setNewItemCategory(preselectedCatId || restaurantCategories[0]?.id || `cat-${restaurant.id}-general`);
+    setNewItemCategory(preselectedCatId || restaurantCategories[0]?.id || `cat-${restaurant?.id || 'gen'}-general`);
     setNewItemImgUrl(PRESET_DISH_PHOTOS[0].url);
     setNewItemPrepTime(25);
     setIsAddItemModalOpen(true);
@@ -389,13 +389,13 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     e.preventDefault();
     if (!newItemName.trim() || !onAddMenuItem) return;
 
-    const targetCatId = newItemCategory || restaurantCategories[0]?.id || `cat-${restaurant.id}-general`;
+    const targetCatId = newItemCategory || restaurantCategories[0]?.id || `cat-${restaurant?.id || 'gen'}-general`;
 
     // Ensure category exists in categories state
-    if (onAddCategory && !categories.some(c => c.id === targetCatId && c.restaurantId === restaurant.id)) {
+    if (onAddCategory && !categories.some(c => c.id === targetCatId && c.restaurantId === restaurant?.id)) {
       const newCat: MenuCategory = {
         id: targetCatId,
-        restaurantId: restaurant.id,
+        restaurantId: restaurant?.id || 'gen',
         name: 'De la Casa',
         sortOrder: 1,
         isActive: true,
@@ -404,8 +404,8 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     }
 
     const newItem: MenuItem = {
-      id: `item-${restaurant.id}-${Date.now()}`,
-      restaurantId: restaurant.id,
+      id: `item-${restaurant?.id || 'gen'}-${Date.now()}`,
+      restaurantId: restaurant?.id || 'gen',
       categoryId: targetCatId,
       name: newItemName.trim(),
       description: newItemDesc.trim(),

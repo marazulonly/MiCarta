@@ -160,11 +160,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 className="bg-transparent text-xs text-neutral-800 font-medium focus:outline-none cursor-pointer pr-3"
               >
                 <option value="all" className="bg-white text-neutral-800">Todos los Locales</option>
-                {restaurants.map(r => (
+                {(restaurants || []).map(r => r && r.id ? (
                   <option key={r.id} value={r.id} className="bg-white text-neutral-800">
                     {r.name}
                   </option>
-                ))}
+                ) : null)}
               </select>
             </div>
 

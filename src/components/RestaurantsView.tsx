@@ -166,12 +166,12 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [newDishDesc, setNewDishDesc] = useState('');
   const [newDishCategory, setNewDishCategory] = useState('');
 
-  const currentCategories = categories.filter(c => c.restaurantId === currentRestaurant.id);
-  const currentItems = items.filter(i => i.restaurantId === currentRestaurant.id);
+  const currentCategories = categories.filter(c => c.restaurantId === currentRestaurant?.id);
+  const currentItems = items.filter(i => i.restaurantId === currentRestaurant?.id);
 
   const handleCreateDish = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDishName) return;
+    if (!newDishName || !currentRestaurant) return;
 
     const newItem: MenuItem = {
       id: `item-custom-${Date.now()}`,
@@ -299,7 +299,7 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
       {/* 4 Restaurant Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {restaurants.map(rest => {
-          const isSelected = rest.id === currentRestaurant.id;
+          const isSelected = rest.id === currentRestaurant?.id;
           return (
             <button
               key={rest.id}

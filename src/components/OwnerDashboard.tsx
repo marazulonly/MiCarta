@@ -467,6 +467,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   };
 
   const handleCreateNewShift = () => {
+    if (!currentRestaurant) return;
     if (!newShiftName.trim()) {
       showToast('Ingresa un nombre para el turno.');
       return;
