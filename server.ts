@@ -185,6 +185,7 @@ function saveCloudDataToDisk(data: any) {
 
 async function ensureCloudDataHydrated() {
   if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length)) {
+    syncAllPublishedMenus(cachedCloudData);
     return cachedCloudData;
   }
 
@@ -194,9 +195,7 @@ async function ensureCloudDataHydrated() {
       const remoteData = await fetchFromVercelKV();
       if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
         cachedCloudData = remoteData;
-        if (!cachedCloudData.publishedMenus) {
-          cachedCloudData.publishedMenus = {};
-        }
+        syncAllPublishedMenus(cachedCloudData);
         console.log('[Server] Successfully hydrated cachedCloudData from Vercel KV / Upstash');
         return cachedCloudData;
       }
@@ -207,6 +206,10 @@ async function ensureCloudDataHydrated() {
 
   // 2. Fallback to local disk file if remote KV is empty or unavailable
   loadCloudDataFromDisk();
+
+  if (cachedCloudData) {
+    syncAllPublishedMenus(cachedCloudData);
+  }
 
   // If local disk has data but Vercel KV is empty/newly configured, seed the remote KV with local data
   if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length) && kvRestUrl && kvRestToken) {
@@ -315,6 +318,45 @@ async function startServer() {
         items: matchedSnapshot.items || []
       });
       return;
+    }
+
+    // 2b. Fallback: Search in current.restaurants and auto-generate published snapshot
+    if (current.restaurants && Array.isArray(current.restaurants)) {
+      const foundRest = current.restaurants.find((r: any) => {
+        if (!r) return false;
+        return (
+          normalizeSlug(r.id) === targetSlug ||
+          normalizeSlug(r.slug) === targetSlug ||
+          normalizeSlug(r.name) === targetSlug
+        );
+      });
+
+      if (foundRest) {
+        const restCategories = (current.categories || []).filter((c: any) => c && c.restaurantId === foundRest.id);
+        const restItems = (current.items || []).filter((i: any) => i && i.restaurantId === foundRest.id);
+        const newSnapshot = {
+          version: 1,
+          publishedAt: current.updatedAt || new Date().toISOString(),
+          publishedBy: 'System Auto-Sync',
+          restaurant: foundRest,
+          categories: restCategories,
+          items: restItems
+        };
+        if (!current.publishedMenus) current.publishedMenus = {};
+        current.publishedMenus[foundRest.id] = newSnapshot;
+        saveCloudDataToDisk(current);
+
+        res.json({
+          success: true,
+          published: true,
+          version: 1,
+          publishedAt: newSnapshot.publishedAt,
+          restaurant: foundRest,
+          categories: restCategories,
+          items: restItems
+        });
+        return;
+      }
     }
 
     res.status(404).json({

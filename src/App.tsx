@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  INITIAL_RESTAURANTS, 
-  INITIAL_CATEGORIES, 
-  INITIAL_MENU_ITEMS, 
-  INITIAL_USERS, 
-  INITIAL_ORDERS,
   CEVICHITO_PLIZ_LOGO_SVG,
   VORAZ_LOGO_SVG,
   RIENDAS_DE_PLATA_LOGO_SVG
@@ -34,7 +29,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
-import { getSafeActiveRestaurant, getSafeBranding } from './utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import {
   fetchLatestCloudMenu,
@@ -111,39 +106,13 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Sanitization function that preserves 100% of user modifications (names, logos, colors, tables, prices) from cloud storage
+// Sanitization function that preserves 100% of user modifications from cloud storage without mock data injection
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
-  // Pre-seed map with INITIAL_RESTAURANTS so no initial restaurant is lost if missing from cache/cloud
+  if (!Array.isArray(rests)) return [];
   const map = new Map<string, Restaurant>();
-  INITIAL_RESTAURANTS.forEach(initR => {
-    map.set(initR.id, initR);
-  });
-  (rests || []).forEach(r => {
-    if (r && r.id) {
-      let cleaned = { ...r };
-      // Force correct slug mapping to prevent link breakage
-      if (r.id === 'rest-costa') cleaned.slug = 'cevichito-pliz';
-      if (r.id === 'rest-1790204393895') cleaned.slug = 'voraz';
-      if (r.id === 'rest-1790352289887') cleaned.slug = 'riendas-de-plata';
-      const existing = map.get(r.id);
-      
-      // If cleaned contains custom branding with actual keys, prioritize it completely
-      const finalBranding = cleaned.branding && Object.keys(cleaned.branding).length > 2
-        ? cleaned.branding
-        : (existing?.branding || cleaned.branding || {} as RestaurantBranding);
-
-      map.set(r.id, {
-        ...(existing || {}),
-        ...cleaned,
-        branding: finalBranding
-      });
-    }
-  });
-
-  const mergedRests = Array.from(map.values());
-
-  return mergedRests.map(r => {
-    const fallback = INITIAL_RESTAURANTS.find(initR => initR.id === r.id || initR.slug === r.slug);
+  rests.forEach(r => {
+    if (!r || !r.id) return;
+    const cleanSlug = r.slug ? normalizeSlug(r.slug) : normalizeSlug(r.name);
     const safeMetrics: RestaurantMetrics = {
       dailyRevenue: 0,
       activeOrders: 0,
@@ -151,66 +120,29 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       customerRating: 5.0,
       totalTables: r.totalTablesCount || (r.tables?.length) || 10,
       occupancyRate: 0,
-      ...(fallback?.metrics || {}),
       ...(r.metrics || {})
     };
-
-    const genericDefaultBranding: RestaurantBranding = {
-      primaryColor: '#F59E0B',
-      secondaryColor: '#F59E0B',
-      accentColor: '#F59E0B',
-      darkBgColor: '#0A0A0A',
-      cardBgColor: '#171717',
-      textColor: '#FFFFFF',
-      buttonColor: '#F59E0B',
-      buttonTextColor: '#000000',
-      dishCardBgColor: '#171717',
-      fontDisplay: 'Playfair Display, serif',
-      headerLogoUrl: '',
+    const safeBranding: RestaurantBranding = {
+      ...DEFAULT_BRANDING,
+      ...(r.branding || {})
     };
-
-    const userBrand: Partial<RestaurantBranding> = r.branding || {};
-    let userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
-
-    if (!userLogo) {
-      if (r.id === 'rest-costa' || r.slug === 'cevichito-pliz' || r.name.toLowerCase().includes('cevichito')) {
-        userLogo = CEVICHITO_PLIZ_LOGO_SVG;
-      } else if (r.id === 'rest-1790204393895' || r.slug === 'voraz' || r.name.toLowerCase().includes('voraz')) {
-        userLogo = VORAZ_LOGO_SVG;
-      } else if (r.id === 'rest-1790352289887' || r.slug === 'riendas-de-plata' || r.name.toLowerCase().includes('riendas')) {
-        userLogo = RIENDAS_DE_PLATA_LOGO_SVG;
-      }
+    if (r.logoUrl && !safeBranding.headerLogoUrl) {
+      safeBranding.headerLogoUrl = r.logoUrl;
     }
-
-    // CRITICAL COLOR PROTECTION:
-    // Build a clean branding object. If userBrand has custom colors (keys exist),
-    // we strictly preserve them and do NOT merge with the hardcoded mockData template defaults.
-    const mergedBranding: RestaurantBranding = { ...genericDefaultBranding };
-    
-    // Only spread fallback branding from system template if the userBrand has no custom colors defined at all
-    const hasCustomColors = Boolean(userBrand.primaryColor || userBrand.darkBgColor || userBrand.textColor);
-    if (!hasCustomColors && fallback?.branding) {
-      Object.assign(mergedBranding, fallback.branding);
-    }
-    
-    // Assign all defined userBrand properties (never overwrite custom attributes with defaults)
-    Object.keys(userBrand).forEach(key => {
-      const val = (userBrand as any)[key];
-      if (val !== undefined && val !== null && val !== '') {
-        (mergedBranding as any)[key] = val;
-      }
-    });
-
-    mergedBranding.headerLogoUrl = userLogo;
-
-    return {
-      ...(fallback || {}),
+    const safeRest: Restaurant = {
       ...r,
-      branding: mergedBranding,
+      slug: cleanSlug,
+      branding: safeBranding,
       metrics: safeMetrics,
-      logoUrl: userLogo,
+      logoUrl: r.logoUrl || safeBranding.headerLogoUrl || '',
+      menuAccessSettings: r.menuAccessSettings || DEFAULT_MENU_ACCESS_SETTINGS,
+      tables: Array.isArray(r.tables) ? r.tables : [],
+      weeklySchedule: Array.isArray(r.weeklySchedule) ? r.weeklySchedule : [],
+      shifts: Array.isArray(r.shifts) ? r.shifts : []
     };
+    map.set(r.id, safeRest);
   });
+  return Array.from(map.values());
 }
 
 function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
@@ -315,10 +247,10 @@ const initialFoundRest = null;
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(INITIAL_RESTAURANTS);
-  const [categories, setCategories] = useState<MenuCategory[]>(INITIAL_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
-  const [users, setUsers] = useState<User[]>(deduplicateUsers(INITIAL_USERS));
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
   
@@ -428,45 +360,11 @@ export default function App() {
 
   // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
-    const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
-    if (!currentUser && !isDirectLinkAccess) {
-      setIsInitialCloudFetchDone(true);
-      return;
-    }
-
     let isMounted = true;
 
     // 1. Initial Cloud Fetch from authoritative backend
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
-
-      // Extract existing local cache values for recovery (to prevent losing custom data created in old buggy container cycles)
-      let localRests: Restaurant[] = [];
-      let localCats: MenuCategory[] = [];
-      let localItems: MenuItem[] = [];
-      let localUsers: User[] = [];
-      try {
-        const r = localStorage.getItem('micarta_restaurants_v2');
-        if (r) {
-          const parsedR = JSON.parse(r);
-          if (Array.isArray(parsedR)) localRests = parsedR.filter(Boolean);
-        }
-        const c = localStorage.getItem('micarta_categories_v2');
-        if (c) {
-          const parsedC = JSON.parse(c);
-          if (Array.isArray(parsedC)) localCats = parsedC.filter(Boolean);
-        }
-        const i = localStorage.getItem('micarta_menu_items_v2');
-        if (i) {
-          const parsedI = JSON.parse(i);
-          if (Array.isArray(parsedI)) localItems = parsedI.filter(Boolean);
-        }
-        const u = localStorage.getItem('micarta_users_v2');
-        if (u) {
-          const parsedU = JSON.parse(u);
-          if (Array.isArray(parsedU)) localUsers = parsedU.filter(Boolean);
-        }
-      } catch {}
 
       const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
         ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
@@ -484,94 +382,42 @@ export default function App() {
         ? cloudData.orders
         : [];
 
-      // Check if the current browser's local cache has custom entities missing from the remote database
-      const hasMissingRests = localRests.some(lr => !cleanLoadedRests.some(cr => cr.id === lr.id));
-      const hasMissingCats = localCats.some(lc => !cleanLoadedCategories.some(cc => cc.id === lc.id));
-      const hasMissingItems = localItems.some(li => !cleanLoadedItems.some(ci => ci.id === li.id));
+      setRestaurants(cleanLoadedRests);
+      setCategories(cleanLoadedCategories);
+      setMenuItems(cleanLoadedItems);
+      setUsers(deduplicateUsers(cleanLoadedUsers));
+      setOrders(cleanLoadedOrders);
 
-      const restsMap = new Map<string, Restaurant>();
-      cleanLoadedRests.forEach(r => { if (r?.id) restsMap.set(r.id, r); });
-      localRests.forEach(r => { if (r?.id && !restsMap.has(r.id)) restsMap.set(r.id, r); });
-      const finalRests = Array.from(restsMap.values());
-
-      const catsMap = new Map<string, MenuCategory>();
-      cleanLoadedCategories.forEach(c => { if (c?.id) catsMap.set(c.id, c); });
-      localCats.forEach(c => { if (c?.id && !catsMap.has(c.id)) catsMap.set(c.id, c); });
-      const finalCats = Array.from(catsMap.values());
-
-      const itemsMap = new Map<string, MenuItem>();
-      cleanLoadedItems.forEach(i => { if (i?.id) itemsMap.set(i.id, i); });
-      localItems.forEach(i => { if (i?.id && !itemsMap.has(i.id)) itemsMap.set(i.id, i); });
-      const finalItems = Array.from(itemsMap.values());
-
-      const usersMap = new Map<string, User>();
-      cleanLoadedUsers.forEach(u => {
-        if (u && (u.id === 'u-owner-alonso' || u.dni === '94639300')) {
-          u.restaurantIds = Array.isArray(u.restaurantIds)
-            ? u.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
-            : [];
+      // Verify and synchronize currentUser with verified cloud users
+      if (currentUser) {
+        const fresh = cleanLoadedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
+        if (fresh) {
+          setCurrentUser(fresh);
+        } else {
+          setCurrentUser(null);
         }
-        const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-        if (key) usersMap.set(key, u);
-      });
-      localUsers.forEach(u => {
-        if (u && (u.id === 'u-owner-alonso' || u.dni === '94639300')) {
-          u.restaurantIds = Array.isArray(u.restaurantIds)
-            ? u.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
-            : [];
-        }
-        const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-        if (key && !usersMap.has(key)) usersMap.set(key, u);
-      });
-      const finalUsers = deduplicateUsers(Array.from(usersMap.values()));
-
-      // Set purely state-driven values with robust local fallbacks if cloud fetch is empty
-      setRestaurants(finalRests.length > 0 ? finalRests : INITIAL_RESTAURANTS);
-      setCategories(finalCats.length > 0 ? finalCats : INITIAL_CATEGORIES);
-      setMenuItems(finalItems.length > 0 ? finalItems : INITIAL_MENU_ITEMS);
-      setUsers(finalUsers.length > 0 ? finalUsers : deduplicateUsers(INITIAL_USERS));
-      if (cleanLoadedOrders.length > 0) {
-        setOrders(cleanLoadedOrders);
       }
 
-      // If we recovered local data that was missing on the server, upload and publish it right now!
-      if (hasMissingRests || hasMissingCats || hasMissingItems) {
-        console.log('[CloudSync] Autodetected custom restaurants/items missing from the cloud. Restoring...');
-        saveFullCloudMenu({
-          restaurants: finalRests,
-          categories: finalCats,
-          items: finalItems,
-          users: finalUsers,
-          orders: cleanLoadedOrders
-        }).then(() => {
-          // Instantly publish the restored data so anonymous direct links work perfectly
-          finalRests.forEach(r => {
-            const rCats = finalCats.filter(c => c.restaurantId === r.id);
-            const rItems = finalItems.filter(i => i.restaurantId === r.id);
-            publishRestaurantMenu(r.id, r, rCats, rItems, 'System Self-Healing').catch(() => {});
+      // If accessing via link/slug, locate the restaurant in verified cloud data
+      if (initialRequestedSlug && cleanLoadedRests.length > 0) {
+        const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
+        if (match) {
+          setPreviewRestaurant(match);
+          const restCats = cleanLoadedCategories.filter(c => c && c.restaurantId === match.id);
+          const restItems = cleanLoadedItems.filter(i => i && i.restaurantId === match.id);
+          setPublishedMenuData({
+            published: true,
+            version: 1,
+            publishedAt: new Date().toISOString(),
+            restaurant: match,
+            categories: restCats,
+            items: restItems
           });
-        }).catch(() => {});
-      }
-
-      // Update previewRestaurant with the authoritative cloud data
-      setPreviewRestaurant(prev => {
-        if (initialRequestedSlug) {
-          const match = findRestaurantBySlug(finalRests, initialRequestedSlug);
-          if (match) return match;
-          return prev;
+          setNotFoundSlugError(null);
         }
-        if (!prev) return null;
-        const match = finalRests.find(r => r.id === prev.id || r.slug === prev.slug);
-        return match || prev;
-      });
-
-      // Clear local storage cache keys so we never rely on them again
-      try {
-        localStorage.removeItem('micarta_restaurants_v2');
-        localStorage.removeItem('micarta_categories_v2');
-        localStorage.removeItem('micarta_menu_items_v2');
-        localStorage.removeItem('micarta_users_v2');
-      } catch {}
+      }
+      
+      setIsInitialCloudFetchDone(true);
     }).catch(err => {
       console.warn('[CloudSync] Notice during initial remote fetch:', err);
     }).finally(() => {
@@ -1431,10 +1277,15 @@ export default function App() {
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
 
-  // Global loading screen while fetching initial cloud data (only for direct link access, completely clean/silent)
-  if (isDirectLinkAccess && (!isInitialCloudFetchDone || (isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant))) {
+  // Global loading screen while fetching initial cloud data from authoritative backend
+  if (!isInitialCloudFetchDone || (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant)) {
+    if (isDirectLinkAccess) {
+      return <div className="min-h-screen bg-neutral-950" />;
+    }
     return (
-      <div className="min-h-screen bg-neutral-950" />
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+      </div>
     );
   }
 

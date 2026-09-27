@@ -246,6 +246,36 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   } catch (err) {
     console.warn('[CloudSync] Error fetching public published menu:', err);
   }
+
+  // Robust fallback: fetch latest cloud menu and match by normalized slug
+  try {
+    const cloud = await fetchLatestCloudMenu();
+    if (cloud && cloud.restaurants && Array.isArray(cloud.restaurants)) {
+      const target = (slugOrId || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+      const matched = cloud.restaurants.find(r => {
+        if (!r) return false;
+        const sSlug = (r.slug || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        const sId = (r.id || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        const sName = (r.name || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        return sSlug === target || sId === target || sName === target;
+      });
+
+      if (matched) {
+        const restCats = (cloud.categories || []).filter(c => c && c.restaurantId === matched.id);
+        const restItems = (cloud.items || []).filter(i => i && i.restaurantId === matched.id);
+        return {
+          success: true,
+          published: true,
+          version: 1,
+          publishedAt: cloud.updatedAt || new Date().toISOString(),
+          restaurant: matched,
+          categories: restCats,
+          items: restItems
+        };
+      }
+    }
+  } catch {}
+
   return null;
 }
 
