@@ -278,7 +278,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     setBrandDishDescFont(branding.dishDescFont || 'inherit');
     setBrandDishPriceFont(branding.dishPriceFont || 'monospace');
     setMenuSettings(getSafeMenuAccessSettings(restaurant));
-  }, [restaurant]);
+  }, [restaurant?.id]);
 
   // Filter & sort categories and items for this restaurant
   const restaurantCategories = [...categories.filter(c => c.restaurantId === restaurant.id)]
@@ -713,17 +713,17 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     <div className="space-y-6">
       
       {/* Top Header */}
-      <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-neutral-900">
               Gestión de Carta y Platos: {restaurant.name}
             </h2>
-            <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold">
+            <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-neutral-100 text-neutral-700 border border-neutral-300 font-bold">
               Plantilla: {restaurant.templateId || 'Bespoke'} (Intacta)
             </span>
           </div>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-neutral-500 mt-1">
             Crea y edita categorías, platos, adicionales, observaciones y fondos independientes. Descarga copia JSON al disco local.
           </p>
         </div>
@@ -731,15 +731,15 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => downloadRestaurantJSON(restaurant, categories, items)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer"
             title="Descargar copia de seguridad en archivo JSON al disco duro"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-neutral-600" />
             <span>Descargar JSON</span>
           </button>
 
-          <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 text-xs font-bold transition cursor-pointer">
-            <FileJson className="w-3.5 h-3.5 text-amber-400" />
+          <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer">
+            <FileJson className="w-3.5 h-3.5 text-neutral-600" />
             <span>Cargar JSON</span>
             <input
               type="file"
@@ -751,7 +751,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
           <button
             onClick={handleOpenNewItemModal}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-md"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition cursor-pointer shadow-md"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>+ Nuevo Plato</span>
@@ -759,30 +759,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         </div>
       </div>
 
-      {/* Publication Status Banner */}
-      {lastPublishedVersion !== null && (
-        <div className="px-4 py-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>
-              <strong>Carta Oficial Publicada:</strong> Versión {lastPublishedVersion}
-              {lastPublishedAt && ` — ${new Date(lastPublishedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-            </span>
-          </div>
-          <span className="text-[11px] text-emerald-400/80 font-mono bg-emerald-900/40 px-2 py-0.5 rounded">
-            Única fuente de verdad activa para comensales y QR
-          </span>
-        </div>
-      )}
-
       {/* Subtabs Selector */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-2 flex-wrap">
+      <div className="flex items-center gap-2 border-b border-neutral-200 pb-2 flex-wrap">
         <button
           onClick={() => setSubTab('items')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             subTab === 'items'
-              ? 'bg-white text-black shadow-sm'
-              : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
+              ? 'bg-neutral-900 text-white shadow-sm'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
           }`}
         >
           <Utensils className="w-3.5 h-3.5" />
@@ -793,8 +777,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           onClick={() => setSubTab('categories')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             subTab === 'categories'
-              ? 'bg-white text-black shadow-sm'
-              : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
+              ? 'bg-neutral-900 text-white shadow-sm'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -805,8 +789,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           onClick={() => setSubTab('backgrounds')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             subTab === 'backgrounds'
-              ? 'bg-amber-400 text-black shadow-sm font-bold'
-              : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
+              ? 'bg-neutral-900 text-white shadow-sm'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
           }`}
         >
           <Palette className="w-3.5 h-3.5" />
@@ -815,10 +799,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
         <button
           onClick={() => setIsHeaderModalOpen(true)}
-          className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-fuchsia-500/15 text-fuchsia-300 hover:bg-fuchsia-500/25 border border-fuchsia-500/30"
+          className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-white text-neutral-800 hover:bg-neutral-100 border border-neutral-200"
           title="Editar cabecera de la carta (Subir logo JPG/PNG/SVG, autoajuste y mostrar/ocultar nombre o slogan)"
         >
-          <Sliders className="w-3.5 h-3.5 text-fuchsia-400" />
+          <Sliders className="w-3.5 h-3.5 text-neutral-600" />
           <span>Cabecera de la Carta (Logo JPG/PNG/SVG)</span>
         </button>
       </div>
@@ -834,8 +818,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 onClick={() => setSelectedCategoryFilter('all')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   selectedCategoryFilter === 'all'
-                    ? 'bg-white text-black'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
+                    ? 'bg-neutral-900 text-white shadow-sm'
+                    : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
                 }`}
               >
                 Todos los Platos ({items.filter(i => i.restaurantId === restaurant.id).length})
@@ -868,14 +852,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     }}
                     className={`flex items-center gap-0.5 rounded-lg transition shrink-0 ${
                       isDragging ? 'opacity-40 scale-95' : ''
-                    } ${isOver ? 'ring-2 ring-amber-400 bg-amber-400/20' : ''}`}
+                    } ${isOver ? 'ring-2 ring-neutral-400 bg-neutral-100' : ''}`}
                   >
                     <button
                       onClick={() => setSelectedCategoryFilter(cat.id)}
                       className={`px-3 py-1.5 rounded-l-lg text-xs font-bold transition whitespace-nowrap cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
                         selectedCategoryFilter === cat.id
-                          ? 'bg-amber-400 text-black shadow font-black'
-                          : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800'
+                          ? 'bg-neutral-900 text-white shadow font-bold'
+                          : 'bg-white text-neutral-800 hover:bg-neutral-100 border border-neutral-200'
                       }`}
                       title="Arrastra para cambiar el orden de esta categoría"
                     >
@@ -883,12 +867,12 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       <span>{cat.name} ({count})</span>
                     </button>
 
-                    <div className="flex items-center bg-neutral-950 border border-neutral-800 rounded-r-lg p-0.5">
+                    <div className="flex items-center bg-neutral-100 border border-neutral-200 border-l-0 rounded-r-lg p-0.5">
                       <button
                         type="button"
                         onClick={() => handleMoveCategory(cat.id, 'up')}
                         disabled={catIdx === 0}
-                        className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                        className="p-1 hover:bg-neutral-200 text-neutral-600 disabled:opacity-20 cursor-pointer"
                         title="Mover categoría a la izquierda"
                       >
                         <ArrowLeft className="w-2.5 h-2.5" />
@@ -897,7 +881,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                         type="button"
                         onClick={() => handleMoveCategory(cat.id, 'down')}
                         disabled={catIdx === restaurantCategories.length - 1}
-                        className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                        className="p-1 hover:bg-neutral-200 text-neutral-600 disabled:opacity-20 cursor-pointer"
                         title="Mover categoría a la derecha"
                       >
                         <ArrowRight className="w-2.5 h-2.5" />
@@ -909,19 +893,19 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white text-xs font-bold cursor-pointer select-none">
+              <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-neutral-200 text-neutral-800 hover:bg-neutral-50 text-xs font-bold cursor-pointer select-none shadow-sm">
                 <input
                   type="checkbox"
                   checked={isListView}
                   onChange={(e) => setIsListView(e.target.checked)}
-                  className="rounded accent-amber-400 w-3.5 h-3.5 cursor-pointer"
+                  className="rounded accent-neutral-900 w-3.5 h-3.5 cursor-pointer"
                 />
                 <span>Vista Lista (2 líneas)</span>
               </label>
 
               <button
                 onClick={handleOpenNewCategoryModal}
-                className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                className="text-xs text-neutral-900 hover:underline flex items-center gap-1 font-bold cursor-pointer"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 <span>+ Nueva Categoría</span>
@@ -943,25 +927,25 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     onClick={() => setHoveredOrClickedItemId(hoveredOrClickedItemId === item.id ? null : item.id)}
                     onMouseEnter={() => setHoveredOrClickedItemId(item.id)}
                     onMouseLeave={() => setHoveredOrClickedItemId(null)}
-                    className={`group p-3 sm:p-3.5 rounded-xl bg-neutral-900/95 border transition-all cursor-pointer relative flex flex-col justify-center gap-1.5 ${
+                    className={`group p-3 sm:p-3.5 rounded-xl bg-white border transition-all cursor-pointer relative flex flex-col justify-center gap-1.5 shadow-sm ${
                       isInteracted 
-                        ? 'border-amber-400/70 bg-neutral-850 shadow-md ring-1 ring-amber-400/30' 
-                        : 'border-neutral-800 hover:border-neutral-700'
+                        ? 'border-neutral-400 bg-neutral-50 shadow-md' 
+                        : 'border-neutral-200 hover:border-neutral-300'
                     }`}
                   >
                     {/* Línea 1: Columnas de Nombre, Categoría, Precio y Botones de acción */}
                     <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-[10px] text-neutral-500 font-mono shrink-0">#{itemIdx + 1}</span>
+                        <span className="text-[10px] text-neutral-400 font-mono shrink-0">#{itemIdx + 1}</span>
                         {item.imageUrl && (
                           <img 
                             src={item.imageUrl} 
                             alt={item.name} 
-                            className="w-7 h-7 rounded-lg object-cover border border-neutral-700 shrink-0" 
+                            className="w-7 h-7 rounded-lg object-cover border border-neutral-200 shrink-0" 
                             referrerPolicy="no-referrer"
                           />
                         )}
-                        <h4 className="text-sm font-bold text-white truncate group-hover:text-amber-300 transition">
+                        <h4 className="text-sm font-bold text-neutral-900 truncate group-hover:text-black transition">
                           {item.name}
                         </h4>
                         <button
@@ -972,8 +956,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                           }}
                           className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 transition ${
                             item.isAvailable 
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                              ? 'bg-neutral-100 text-neutral-800 border border-neutral-300' 
+                              : 'bg-neutral-200 text-neutral-500 border border-neutral-300'
                           }`}
                         >
                           {item.isAvailable ? 'Disponible' : 'Agotado'}
@@ -982,12 +966,12 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
                       <div className="flex items-center gap-3 shrink-0">
                         {/* Categoría */}
-                        <span className="text-xs px-2.5 py-0.5 rounded-md font-mono font-semibold bg-neutral-800 text-amber-300 border border-neutral-700/80">
+                        <span className="text-xs px-2.5 py-0.5 rounded-md font-mono font-semibold bg-neutral-100 text-neutral-800 border border-neutral-200">
                           {catObj?.name || 'Categoría'}
                         </span>
 
                         {/* Precio */}
-                        <span className="font-mono font-black text-amber-400 text-sm whitespace-nowrap">
+                        <span className="font-mono font-bold text-neutral-900 text-sm whitespace-nowrap">
                           S/ {item.price.toFixed(2)}
                         </span>
 
@@ -1001,10 +985,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                               e.stopPropagation();
                               handleOpenEditItemModal(item);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold flex items-center gap-1 border border-neutral-700 transition cursor-pointer shadow-sm"
+                            className="px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold flex items-center gap-1 border border-neutral-200 transition cursor-pointer shadow-sm"
                             title="Editar plato"
                           >
-                            <Edit3 className="w-3 h-3 text-amber-400" />
+                            <Edit3 className="w-3 h-3 text-neutral-600" />
                             <span>Editar</span>
                           </button>
 
@@ -1017,7 +1001,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                                 showToast(`Plato "${item.name}" eliminado`);
                               }
                             }}
-                            className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-800/50 transition cursor-pointer"
+                            className="p-1.5 rounded-lg bg-neutral-100 hover:bg-red-50 hover:text-red-700 text-neutral-700 border border-neutral-200 transition cursor-pointer"
                             title="Eliminar plato"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1028,7 +1012,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
                     {/* Línea 2: Debajo del nombre del plato, la descripción */}
                     <div className="pl-6 sm:pl-7 pr-2">
-                      <p className="text-xs text-neutral-400 line-clamp-1 leading-relaxed">
+                      <p className="text-xs text-neutral-600 line-clamp-1 leading-relaxed">
                         {item.description || 'Sin descripción detallada'}
                       </p>
                     </div>
@@ -1066,26 +1050,26 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     e.preventDefault();
                     handleItemDrop(item.id);
                   }}
-                  className={`rounded-2xl bg-neutral-900/90 border transition overflow-hidden flex flex-col justify-between ${
-                    isDragging ? 'opacity-30 scale-95 border-amber-400 border-dashed' : ''
+                  className={`rounded-2xl bg-white border transition overflow-hidden flex flex-col justify-between shadow-sm ${
+                    isDragging ? 'opacity-30 scale-95 border-neutral-400 border-dashed' : ''
                   } ${
-                    isOver ? 'border-amber-400 ring-2 ring-amber-400/50 scale-[1.01]' : 'border-neutral-800 hover:border-neutral-700'
+                    isOver ? 'border-neutral-400 ring-2 ring-neutral-300 scale-[1.01]' : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   <div>
                     {/* Reorder Bar & Drag Grip */}
-                    <div className="px-3 py-1.5 bg-neutral-950 border-b border-neutral-800/80 flex items-center justify-between text-[10px] text-neutral-400 font-mono">
-                      <div className="flex items-center gap-1 cursor-grab active:cursor-grabbing font-bold text-amber-400/90 hover:text-amber-300">
+                    <div className="px-3 py-1.5 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between text-[10px] text-neutral-600 font-mono">
+                      <div className="flex items-center gap-1 cursor-grab active:cursor-grabbing font-bold text-neutral-700 hover:text-black">
                         <GripVertical className="w-3.5 h-3.5" />
                         <span>Arrastrar</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-neutral-500 mr-1">#{itemIdx + 1}</span>
+                        <span className="text-[9px] text-neutral-400 mr-1">#{itemIdx + 1}</span>
                         <button
                           type="button"
                           onClick={() => handleMoveItem(item.id, 'up')}
                           disabled={itemIdx === 0}
-                          className="px-1.5 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer transition"
+                          className="px-1.5 py-0.5 rounded bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 disabled:opacity-20 cursor-pointer transition"
                           title="Mover plato hacia arriba / antes"
                         >
                           <ArrowUp className="w-3 h-3" />
@@ -1094,7 +1078,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                           type="button"
                           onClick={() => handleMoveItem(item.id, 'down')}
                           disabled={itemIdx === restaurantItems.length - 1}
-                          className="px-1.5 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white disabled:opacity-20 cursor-pointer transition"
+                          className="px-1.5 py-0.5 rounded bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 disabled:opacity-20 cursor-pointer transition"
                           title="Mover plato hacia abajo / después"
                         >
                           <ArrowDown className="w-3 h-3" />
@@ -1103,26 +1087,26 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     </div>
 
                     {/* Image Header */}
-                    <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-black">
+                    <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-neutral-100">
                       <img 
                         src={item.imageUrl} 
                         alt={item.name} 
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       
                       <div className="absolute top-2 left-2 flex items-center gap-1 flex-wrap max-w-[70%]">
-                        <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-mono font-bold bg-black/80 text-amber-300 border border-neutral-700 backdrop-blur-md truncate">
+                        <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-mono font-bold bg-white/90 text-neutral-900 border border-neutral-200 backdrop-blur-md truncate shadow-sm">
                           {catObj?.name || 'Categoría'}
                         </span>
                         {item.targetMenuScope === 'DINE_IN' && (
-                          <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">
+                          <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded bg-white/90 text-neutral-800 border border-neutral-200 shadow-sm">
                             Salón
                           </span>
                         )}
                         {item.targetMenuScope === 'DELIVERY' && (
-                          <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                          <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded bg-white/90 text-neutral-800 border border-neutral-200 shadow-sm">
                             Delivery
                           </span>
                         )}
@@ -1132,10 +1116,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleItemAvailability(item)}
-                          className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-bold font-mono transition cursor-pointer hover:scale-105 ${
+                          className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-bold font-mono transition cursor-pointer hover:scale-105 shadow-sm ${
                             item.isAvailable 
-                              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/40' 
-                              : 'bg-rose-500/25 text-rose-300 border border-rose-500/50 hover:bg-rose-500/40'
+                              ? 'bg-white/90 text-neutral-900 border border-neutral-200' 
+                              : 'bg-neutral-200/90 text-neutral-500 border border-neutral-300'
                           }`}
                           title="Clic para cambiar disponibilidad (Disponible / Agotado)"
                         >
@@ -1150,10 +1134,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                           setQuickPhotoItem(item);
                           setQuickPhotoUrl(item.imageUrl);
                         }}
-                        className="absolute bottom-2 right-2 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/80 hover:bg-black text-white text-[9px] sm:text-[10px] font-bold flex items-center gap-1 border border-neutral-700 backdrop-blur-md cursor-pointer transition shadow"
+                        className="absolute bottom-2 right-2 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-white/90 hover:bg-white text-neutral-900 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 border border-neutral-200 backdrop-blur-md cursor-pointer transition shadow-sm"
                         title="Cambiar foto de este plato"
                       >
-                        <ImageIcon className="w-3 h-3 text-amber-400" />
+                        <ImageIcon className="w-3 h-3 text-neutral-700" />
                         <span className="hidden sm:inline">Foto</span>
                       </button>
 
@@ -1164,14 +1148,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                             setQuickPriceItem(item);
                             setQuickPriceValue(item.price);
                           }}
-                          className="text-sm sm:text-base font-black text-amber-400 font-mono hover:text-amber-300 flex items-center gap-1 cursor-pointer transition group"
+                          className="text-sm sm:text-base font-black text-neutral-900 font-mono bg-white/90 px-2 py-0.5 rounded-lg border border-neutral-200 shadow-sm flex items-center gap-1 cursor-pointer transition group"
                           title="Clic para editar precio rápidamente"
                         >
                           <span>S/ {item.price.toFixed(2)}</span>
-                          <Edit3 className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-amber-400/50 group-hover:text-amber-300" />
+                          <Edit3 className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-neutral-500 group-hover:text-black" />
                         </button>
                         {item.prepTimeMinutes && (
-                          <span className="text-[9px] sm:text-[10px] text-neutral-400 flex items-center gap-0.5 sm:gap-1">
+                          <span className="text-[9px] sm:text-[10px] text-white font-semibold drop-shadow flex items-center gap-0.5 sm:gap-1">
                             <Clock className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
                             <span>{item.prepTimeMinutes}m</span>
                           </span>
@@ -1181,19 +1165,19 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
                     {/* Body */}
                     <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
+                      <h3 className="text-xs sm:text-sm font-bold text-neutral-900 line-clamp-1">
                         {item.name}
                       </h3>
-                      <p className="text-[11px] sm:text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] sm:text-xs text-neutral-600 line-clamp-2 leading-relaxed">
                         {item.description}
                       </p>
 
                       {/* Addons & Observations metadata badge */}
-                      <div className="pt-1.5 sm:pt-2 border-t border-neutral-800/80 flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] sm:text-[11px] text-neutral-300">
-                        <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700">
+                      <div className="pt-1.5 sm:pt-2 border-t border-neutral-100 flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] sm:text-[11px] text-neutral-600">
+                        <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200">
                           {addonsCount} adic.
                         </span>
-                        <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700">
+                        <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200">
                           {obsCount} obs.
                         </span>
                       </div>
@@ -1201,22 +1185,22 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="p-2 sm:p-3 bg-black/60 border-t border-neutral-800 flex items-center justify-between gap-1.5 sm:gap-2">
+                  <div className="p-2 sm:p-3 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handleOpenEditItemModal(item)}
-                      className="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[11px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                      className="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-neutral-900 hover:bg-black text-[11px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer shadow-sm"
                     >
-                      <Edit3 className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-amber-400" />
+                      <Edit3 className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-neutral-300" />
                       <span>Editar</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleDuplicateItem(item)}
-                      className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer flex items-center justify-center gap-1"
+                      className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer flex items-center justify-center gap-1 shadow-sm"
                       title="Duplicar plato (hereda adicionales y observaciones)"
                     >
-                      <Copy className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                      <Copy className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-neutral-600" />
                     </button>
 
                     <button
@@ -1226,7 +1210,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                           showToast(`Plato "${item.name}" eliminado`);
                         }
                       }}
-                      className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 transition cursor-pointer"
+                      className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-white hover:bg-red-50 text-neutral-700 hover:text-red-700 border border-neutral-200 transition cursor-pointer shadow-sm"
                       title="Eliminar plato"
                     >
                       <Trash2 className="w-3 sm:w-3.5 h-3 sm:h-3.5" />

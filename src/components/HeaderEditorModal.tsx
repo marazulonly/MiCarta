@@ -70,7 +70,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       setRestaurantName(restaurant.name);
       setRestaurantTagline(restaurant.tagline || '');
     }
-  }, [restaurant.id, restaurant.name, restaurant.tagline, isOpen]);
+  }, [restaurant.id, isOpen]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

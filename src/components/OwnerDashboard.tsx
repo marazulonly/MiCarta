@@ -1024,36 +1024,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('sales_monitor')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shadow-md shrink-0 ${
-                activeSubTab === 'sales_monitor'
-                  ? 'bg-amber-500 text-black'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-              }`}
-              title="Supervisar ventas en tiempo real"
-            >
-              <Eye className="w-4 h-4 stroke-[2.5]" />
-              <span>Supervisar Ventas</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsSplitEditorOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md shrink-0"
-              title="Abrir Diseñador de Plantillas en Pantalla Dividida (Split-Screen)"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>Editor Pantalla Dividida</span>
-            </button>
-          </div>
         </div>
 
-        {/* 8 Access Navigation SubTabs */}
-        <div className="p-2 gap-1.5 flex flex-wrap bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs sm:text-xs">
+        {/* Access Navigation SubTabs Bar */}
+        <div className="p-2 gap-1.5 flex flex-wrap items-center bg-white border-b border-neutral-200/60 rounded-t-2xl text-xs">
           {[
             { id: 'sales_monitor', label: 'Supervisar Ventas', icon: Eye },
             { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
@@ -1072,14 +1046,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
-                className={`py-2 px-3.5 rounded-full font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
+                title={tab.label}
+                className={`p-2.5 lg:px-3.5 lg:py-2 rounded-full font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
                   isActive
                     ? 'bg-[#1E1F24] text-white shadow-md transform scale-102'
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                 }`}
               >
-                <IconComp className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-neutral-500'} shrink-0`} />
-                <span className="truncate">{tab.label}</span>
+                <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : 'text-neutral-600'} shrink-0`} />
+                <span className="hidden lg:inline truncate">{tab.label}</span>
               </button>
             );
           })}
