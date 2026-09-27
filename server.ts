@@ -382,6 +382,44 @@ async function startServer() {
     });
   });
 
+  // POST: Reparación forzada de todos los slugs y republicación de todos los menús
+  app.post('/api/menu/republish-all', async (req, res) => {
+    await ensureCloudDataHydrated();
+    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
+    const publishedMenus = current.publishedMenus || {};
+    const nowIso = new Date().toISOString();
+
+    (current.restaurants || []).forEach((r: any) => {
+      const restaurantId = r.id;
+      const normalizedSlug = normalizeSlug(r.name);
+      r.slug = normalizedSlug;
+      
+      const prevSnapshot = publishedMenus[restaurantId];
+      const nextVersion = (prevSnapshot?.version || 0) + 1;
+      
+      const restCategories = (current.categories || []).filter((c: any) => c.restaurantId === restaurantId);
+      const restItems = (current.items || []).filter((i: any) => i.restaurantId === restaurantId);
+
+      publishedMenus[restaurantId] = {
+        version: nextVersion,
+        publishedAt: nowIso,
+        publishedBy: 'System Auto-Repair',
+        restaurant: r,
+        categories: restCategories,
+        items: restItems
+      };
+    });
+
+    const updatedData = {
+      ...current,
+      publishedMenus,
+      updatedAt: nowIso
+    };
+
+    saveCloudDataToDisk(updatedData);
+    res.json({ success: true, message: '¡Todos los slugs normalizados y cartas republicadas exitosamente!' });
+  });
+
   // POST: Full save or update of cloud menu (with robust anti-erasure protection)
   app.post('/api/cloud-menu', async (req, res) => {
     const { restaurants, items, categories, users, orders } = req.body;
