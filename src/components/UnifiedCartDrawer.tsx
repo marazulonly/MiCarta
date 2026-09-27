@@ -340,374 +340,375 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-hidden">
       <div className="relative w-full max-w-none sm:max-w-xl h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[92vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col bg-neutral-950 border-0 sm:border border-neutral-800 text-white shadow-2xl">
         
-        {/* Header */}
-        <div className="px-4 sm:px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-amber-400" />
-            <div>
-              <span className="text-sm font-bold text-white block">
-                Tu Pedido en {restaurant.name}
-              </span>
-              <span className="text-xs text-neutral-400 block font-mono">
-                {cart.length} {cart.length === 1 ? 'producto' : 'productos'} · {cart.reduce((s, c) => s + c.quantity, 0)} platos en total
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSendOrder} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
+        {/* Wrap everything in form to place Confirm button strictly at the bottom footer */}
+        <form onSubmit={handleSendOrder} className="flex-1 flex flex-col h-full overflow-hidden">
           
-          {/* Channel Selector: Salón vs Delivery */}
-          <div className="p-1 rounded-xl bg-neutral-900 border border-neutral-800 grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setOrderType('DINE_IN');
-                setErrorMsg(null);
-              }}
-              className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                orderType === 'DINE_IN'
-                  ? 'bg-amber-400 text-black shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <ChefHat className="w-3.5 h-3.5" />
-              <span>Presencial (En Salón)</span>
-            </button>
+          {/* Header */}
+          <div className="px-4 sm:px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              <div>
+                <span className="text-sm font-bold text-white block">
+                  Tu Pedido en {restaurant.name}
+                </span>
+                <span className="text-xs text-neutral-400 block font-mono">
+                  {cart.length} {cart.length === 1 ? 'producto' : 'productos'}
+                </span>
+              </div>
+            </div>
 
             <button
               type="button"
-              onClick={() => {
-                setOrderType('DELIVERY');
-                setErrorMsg(null);
-              }}
-              className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
-                orderType === 'DELIVERY'
-                  ? 'bg-purple-400 text-black shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
+              onClick={onClose}
+              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition cursor-pointer"
             >
-              <Bike className="w-3.5 h-3.5" />
-              <span>Delivery (A Domicilio)</span>
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* CHANNEL DETAILS BANNER */}
-          {orderType === 'DINE_IN' ? (
-            <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-900/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-sky-300 flex items-center gap-1.5">
-                  <ChefHat className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Atención Presencial por Mozos</span>
-                </span>
-                <span className="text-xs text-sky-400 font-mono">
-                  Comanda directa a Cocina
-                </span>
-              </div>
+          {/* Form Scrollable Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+            
+            {/* Channel Selector: Salón vs Delivery */}
+            <div className="p-1 rounded-xl bg-neutral-900 border border-neutral-800 grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderType('DINE_IN');
+                  setErrorMsg(null);
+                }}
+                className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  orderType === 'DINE_IN'
+                    ? 'bg-amber-400 text-black shadow-md'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <ChefHat className="w-3.5 h-3.5" />
+                <span>Presencial</span>
+              </button>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-neutral-300">
-                      Número de Mesa *
-                    </label>
-                    {initialTableNumber && (
-                      <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800">
-                        ⚡ QR Mesa
-                      </span>
-                    )}
-                  </div>
-                  <select
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition font-mono font-bold"
-                  >
-                    {restaurant.tables && restaurant.tables.length > 0 ? (
-                      restaurant.tables.map((tbl) => (
-                        <option key={tbl.id} value={String(tbl.number).padStart(2, '0')}>
-                          {tbl.name} ({tbl.zone})
-                        </option>
-                      ))
-                    ) : (
-                      Array.from({ length: restaurant.totalTablesCount || 24 }).map((_, idx) => (
-                        <option key={idx} value={String(idx + 1).padStart(2, '0')}>
-                          Mesa {String(idx + 1).padStart(2, '0')}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-bold text-neutral-300 block mb-1">
-                    Nombre del Comensal
-                  </label>
-                  <input
-                    type="text"
-                    value={dinerName}
-                    onChange={(e) => setDinerName(e.target.value)}
-                    placeholder="Ej: Carlos M."
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderType('DELIVERY');
+                  setErrorMsg(null);
+                }}
+                className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  orderType === 'DELIVERY'
+                    ? 'bg-purple-400 text-black shadow-md'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Bike className="w-3.5 h-3.5" />
+                <span>Delivery</span>
+              </button>
             </div>
-          ) : (
-            <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-900/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-purple-300 flex items-center gap-1.5">
-                  <Bike className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Despacho Delivery Gestionado por Repartidores</span>
-                </span>
-                <span className="text-xs text-purple-300 font-mono">
-                  Obligatorio WhatsApp y Dirección
-                </span>
-              </div>
 
-              {/* Mandatory Field 1: WhatsApp */}
-              <div>
-                <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Número de WhatsApp * (OBLIGATORIO)</span>
+            {/* CHANNEL DETAILS BANNER */}
+            {orderType === 'DINE_IN' ? (
+              <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-900/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-sky-300 flex items-center gap-1.5">
+                    <ChefHat className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Atención Presencial</span>
                   </span>
-                  <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
-                    Requerido
-                  </span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={customerWhatsapp}
-                  onChange={(e) => setCustomerWhatsapp(e.target.value)}
-                  placeholder="Ej: +51 987 654 321 (para coordinar entrega)"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white font-mono placeholder:text-neutral-500 focus:border-purple-400 transition"
-                />
-              </div>
+                </div>
 
-              {/* Mandatory Field 2: Delivery Address */}
-              <div>
-                <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Dirección de Entrega * (OBLIGATORIO)</span>
-                  </span>
-                  <span className="text-xs text-purple-400 font-mono font-bold bg-purple-950 px-1.5 py-0.5 rounded border border-purple-800">
-                    Requerido
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Ej: Av. Benavides 1420, Dpto 402, Miraflores"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white placeholder:text-neutral-500 focus:border-purple-400 transition"
-                />
-              </div>
-
-              {/* Optional Field 3: GPS & Reference */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-medium text-neutral-300">
-                      Ubicación GPS (Opcional)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleGetGps}
-                      className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-neutral-300">
+                        Número de Mesa *
+                      </label>
+                      {initialTableNumber && (
+                        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800">
+                          ⚡ QR Mesa
+                        </span>
+                      )}
+                    </div>
+                    <select
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition font-mono font-bold"
                     >
-                      <Navigation className="w-2.5 h-2.5" />
-                      <span>{gpsDetected ? 'GPS Listo' : '📍 Detectar GPS'}</span>
-                    </button>
+                      {restaurant.tables && restaurant.tables.length > 0 ? (
+                        restaurant.tables.map((tbl) => (
+                          <option key={tbl.id} value={String(tbl.number).padStart(2, '0')}>
+                            {tbl.name} ({tbl.zone})
+                          </option>
+                        ))
+                      ) : (
+                        Array.from({ length: restaurant.totalTablesCount || 24 }).map((_, idx) => (
+                          <option key={idx} value={String(idx + 1).padStart(2, '0')}>
+                            Mesa {String(idx + 1).padStart(2, '0')}
+                          </option>
+                        ))
+                      )}
+                    </select>
                   </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-neutral-300 block mb-1">
+                      Nombre del Comensal
+                    </label>
+                    <input
+                      type="text"
+                      value={dinerName}
+                      onChange={(e) => setDinerName(e.target.value)}
+                      placeholder="Ej: Carlos M."
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-900/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-purple-300 flex items-center gap-1.5">
+                    <Bike className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Despacho Delivery Gestionado por Repartidores</span>
+                  </span>
+                  <span className="text-xs text-purple-300 font-mono">
+                    Obligatorio WhatsApp y Dirección
+                  </span>
+                </div>
+
+                {/* Mandatory Field 1: WhatsApp */}
+                <div>
+                  <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Número de WhatsApp * (OBLIGATORIO)</span>
+                    </span>
+                    <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
+                      Requerido
+                    </span>
+                  </label>
                   <input
-                    type="text"
-                    value={deliveryGpsLocation}
-                    onChange={(e) => setDeliveryGpsLocation(e.target.value)}
-                    placeholder="Coordenadas o link Google Maps"
-                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-neutral-300 focus:border-purple-400 transition"
+                    type="tel"
+                    required
+                    value={customerWhatsapp}
+                    onChange={(e) => setCustomerWhatsapp(e.target.value)}
+                    placeholder="Ej: +51 987 654 321 (para coordinar entrega)"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white font-mono placeholder:text-neutral-500 focus:border-purple-400 transition"
                   />
                 </div>
 
+                {/* Mandatory Field 2: Delivery Address */}
                 <div>
-                  <label className="text-xs font-medium text-neutral-300 block mb-1">
-                    Referencia de domicilio (Opcional)
+                  <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Dirección de Entrega * (OBLIGATORIO)</span>
+                    </span>
+                    <span className="text-xs text-purple-400 font-mono font-bold bg-purple-950 px-1.5 py-0.5 rounded border border-purple-800">
+                      Requerido
+                    </span>
                   </label>
                   <input
                     type="text"
-                    value={deliveryReference}
-                    onChange={(e) => setDeliveryReference(e.target.value)}
-                    placeholder="Ej: Frente al parque, reja negra"
-                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs text-neutral-300 focus:border-purple-400 transition"
+                    required
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    placeholder="Ej: Av. Benavides 1420, Dpto 402, Miraflores"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white placeholder:text-neutral-500 focus:border-purple-400 transition"
                   />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* DETAILED PER-UNIT DISHES BREAKDOWN */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-white uppercase tracking-wider">
-                Detalle de Platos y Observaciones ({cart.length})
-              </span>
-              <span className="text-xs text-neutral-400">
-                Desglose individual por plato
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {cart.map(entry => {
-                const itemBase = entry.item.price * entry.quantity;
-                const entryAddonsSum = entry.units.reduce((s, u) => {
-                  return s + (u.selectedAddons || []).reduce((as, a) => as + a.price, 0);
-                }, 0);
-                const entryTotal = itemBase + entryAddonsSum;
-
-                return (
-                  <div 
-                    key={entry.item.id}
-                    className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5"
-                  >
-                    {/* Item Header */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <img 
-                          src={entry.item.imageUrl} 
-                          alt={entry.item.name} 
-                          className="w-10 h-10 rounded-lg object-cover border border-neutral-700 shrink-0"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div>
-                          <h4 className="text-sm font-bold text-white">
-                            {entry.quantity}x {entry.item.name}
-                          </h4>
-                          <span className="text-sm text-amber-400 font-mono font-bold">
-                            S/ {entryTotal.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5 items-center">
-                        {onEditCartEntry && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onEditCartEntry(entry.item);
-                              onClose();
-                            }}
-                            className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-950/40 transition cursor-pointer"
-                            title="Editar opciones de este plato"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveEntry(entry.item.id)}
-                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
-                          title="Quitar plato"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                {/* Optional Field 3: GPS & Reference */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-neutral-300">
+                        Ubicación GPS (Opcional)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleGetGps}
+                        className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                      >
+                        <Navigation className="w-2.5 h-2.5" />
+                        <span>{gpsDetected ? 'GPS Listo' : '📍 Detectar GPS'}</span>
+                      </button>
                     </div>
-
-                    {/* Unit breakdown */}
-                    <div className="pl-2 border-l-2 border-amber-400/40 space-y-1 text-xs">
-                      {entry.units.map(u => {
-                        const unitAddons = u.selectedAddons || [];
-                        const hasObs = !!u.observation?.trim();
-                        return (
-                          <div key={u.unitNumber} className="text-neutral-300 flex items-start gap-1.5">
-                            <span className="font-bold text-amber-400 font-mono">
-                              Plato #{u.unitNumber}:
-                            </span>
-                            <div className="flex-1">
-                              {unitAddons.length > 0 && (
-                                <span className="text-neutral-200">
-                                  Extras: {unitAddons.map(a => `${a.name} (+S/${a.price})`).join(', ')}.
-                                </span>
-                              )}
-                              {hasObs && (
-                                <span className="text-neutral-400 italic ml-1">
-                                  "{u.observation}"
-                                </span>
-                              )}
-                              {unitAddons.length === 0 && !hasObs && (
-                                <span className="text-neutral-500 italic">
-                                  Preparación clásica estándar
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
+                    <input
+                      type="text"
+                      value={deliveryGpsLocation}
+                      onChange={(e) => setDeliveryGpsLocation(e.target.value)}
+                      placeholder="Coordenadas o link Google Maps"
+                      className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-neutral-300 focus:border-purple-400 transition"
+                    />
                   </div>
-                );
-              })}
 
-              {cart.length === 0 && (
-                <div className="p-8 text-center rounded-xl bg-neutral-900/40 border border-neutral-800 text-neutral-400 text-sm">
-                  Aún no has agregado platos a tu pedido.
+                  <div>
+                    <label className="text-xs font-medium text-neutral-300 block mb-1">
+                      Referencia de domicilio (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={deliveryReference}
+                      onChange={(e) => setDeliveryReference(e.target.value)}
+                      placeholder="Ej: Frente al parque, reja negra"
+                      className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs text-neutral-300 focus:border-purple-400 transition"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* ERROR ALERT IF VALIDATION FAILS */}
-          {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {/* SUMMARY TOTALS */}
-          <div className="p-4 rounded-xl bg-black border border-neutral-800 space-y-1.5 text-sm">
-            <div className="flex justify-between text-neutral-400">
-              <span>Subtotal Platos y Extras</span>
-              <span className="font-mono text-white">S/ {subtotal.toFixed(2)}</span>
-            </div>
-
-            {orderType === 'DELIVERY' && (
-              <div className="flex justify-between text-purple-300">
-                <span>Costo de Envío / Reparto</span>
-                <span className="font-mono font-bold">S/ {deliveryFee.toFixed(2)}</span>
               </div>
             )}
 
-            <div className="flex justify-between text-neutral-400 text-xs">
-              <span>IGV y Servicios (Incluido)</span>
-              <span className="font-mono">S/ {tax.toFixed(2)}</span>
+            {/* DETAILED PER-UNIT DISHES BREAKDOWN */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-white uppercase tracking-wider">
+                  Detalle y Observaciones ({cart.length})
+                </span>
+                <span className="text-xs text-neutral-400">
+                  Desglose por plato
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {cart.map(entry => {
+                  const itemBase = entry.item.price * entry.quantity;
+                  const entryAddonsSum = entry.units.reduce((s, u) => {
+                    return s + (u.selectedAddons || []).reduce((as, a) => as + a.price, 0);
+                  }, 0);
+                  const entryTotal = itemBase + entryAddonsSum;
+
+                  return (
+                    <div 
+                      key={entry.item.id}
+                      className="relative p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5"
+                    >
+                      {/* Item Header */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <img 
+                            src={entry.item.imageUrl} 
+                            alt={entry.item.name} 
+                            className="w-10 h-10 rounded-lg object-cover border border-neutral-700 shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div>
+                            <h4 className="text-sm font-bold text-white">
+                              {entry.quantity}x {entry.item.name}
+                            </h4>
+                            <span className="text-sm text-amber-400 font-mono font-bold">
+                              S/ {entryTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 items-center mr-8">
+                          {onEditCartEntry && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onEditCartEntry(entry.item);
+                                onClose();
+                              }}
+                              className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-950/40 transition cursor-pointer"
+                              title="Editar opciones de este plato"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Unit breakdown - increased font-size to text-sm, removed border line */}
+                      <div className="space-y-1 text-sm">
+                        {entry.units.map(u => {
+                          const unitAddons = u.selectedAddons || [];
+                          const hasObs = !!u.observation?.trim();
+                          return (
+                            <div key={u.unitNumber} className="text-neutral-300 flex items-start gap-1.5">
+                              <span className="font-bold text-amber-400 font-mono">
+                                Plato #{u.unitNumber}:
+                              </span>
+                              <div className="flex-1">
+                                {unitAddons.length > 0 && (
+                                  <span className="text-neutral-200">
+                                    Extras: {unitAddons.map(a => `${a.name} (+S/${a.price})`).join(', ')}.
+                                  </span>
+                                )}
+                                {hasObs && (
+                                  <span className="text-neutral-400 italic ml-1">
+                                    "{u.observation}"
+                                  </span>
+                                )}
+                                {unitAddons.length === 0 && !hasObs && (
+                                  <span className="text-neutral-500 italic">
+                                    Preparación clásica estándar
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Trash icon moved absolutely to the bottom right corner of the box */}
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEntry(entry.item.id)}
+                          className="p-2 rounded-xl text-rose-400 hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Quitar plato"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+
+                {cart.length === 0 && (
+                  <div className="p-8 text-center rounded-xl bg-neutral-900/40 border border-neutral-800 text-neutral-400 text-sm">
+                    Aún no has agregado platos a tu pedido.
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="pt-2 border-t border-neutral-800 flex justify-between items-baseline">
-              <span className="font-bold text-white text-base">Total a Pagar</span>
-              <span className="font-black text-amber-400 font-mono text-lg">
-                S/ {grandTotal.toFixed(2)}
-              </span>
+            {/* ERROR ALERT IF VALIDATION FAILS */}
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* SUMMARY TOTALS - removed IGV y Servicios row */}
+            <div className="p-4 rounded-xl bg-black border border-neutral-800 space-y-1.5 text-sm">
+              <div className="flex justify-between text-neutral-400">
+                <span>Subtotal Platos y Extras</span>
+                <span className="font-mono text-white">S/ {subtotal.toFixed(2)}</span>
+              </div>
+
+              {orderType === 'DELIVERY' && (
+                <div className="flex justify-between text-purple-300">
+                  <span>Costo de Envío / Reparto</span>
+                  <span className="font-mono font-bold">S/ {deliveryFee.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-neutral-800 flex justify-between items-baseline">
+                <span className="font-bold text-white text-base">Total a Pagar</span>
+                <span className="font-black text-amber-400 font-mono text-lg">
+                  S/ {grandTotal.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* ACTION BUTTON */}
-          <div className="sticky bottom-0 bg-neutral-950/95 backdrop-blur-md pt-3 pb-8 sm:pb-2 border-t border-neutral-800 -mx-4 -mb-4 px-4 sm:static sm:bg-transparent sm:border-0 sm:mx-0 sm:mb-0 sm:px-0 z-10 shrink-0">
+          {/* Sticky Pie de Página for ACTION BUTTON */}
+          <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-neutral-900 border-t border-neutral-800 shrink-0 z-10">
             <button
               type="submit"
               disabled={orderSent || cart.length === 0}
-              className={`w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-xl cursor-pointer ${
+              className={`w-full py-3.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-xl cursor-pointer ${
                 orderSent 
                   ? 'bg-emerald-500 text-black' 
                   : orderType === 'DELIVERY'
