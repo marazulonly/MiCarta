@@ -4,7 +4,10 @@ import {
   INITIAL_CATEGORIES, 
   INITIAL_MENU_ITEMS, 
   INITIAL_USERS, 
-  INITIAL_ORDERS 
+  INITIAL_ORDERS,
+  CEVICHITO_PLIZ_LOGO_SVG,
+  VORAZ_LOGO_SVG,
+  RIENDAS_DE_PLATA_LOGO_SVG
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
 import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
@@ -170,7 +173,17 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
     };
 
     const userBrand: Partial<RestaurantBranding> = r.branding || {};
-    const userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
+    let userLogo = userBrand?.headerLogoUrl || r.logoUrl || fallback?.branding?.headerLogoUrl || fallback?.logoUrl || '';
+
+    if (!userLogo) {
+      if (r.id === 'rest-costa' || r.slug === 'cevichito-pliz' || r.name.toLowerCase().includes('cevichito')) {
+        userLogo = CEVICHITO_PLIZ_LOGO_SVG;
+      } else if (r.id === 'rest-1790204393895' || r.slug === 'voraz' || r.name.toLowerCase().includes('voraz')) {
+        userLogo = VORAZ_LOGO_SVG;
+      } else if (r.id === 'rest-1790352289887' || r.slug === 'riendas-de-plata' || r.name.toLowerCase().includes('riendas')) {
+        userLogo = RIENDAS_DE_PLATA_LOGO_SVG;
+      }
+    }
 
     // CRITICAL COLOR PROTECTION:
     // Build a clean branding object. If userBrand has custom colors (keys exist),

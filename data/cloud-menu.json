@@ -10,7 +10,7 @@
       "phone": "+51 945 678 901",
       "rating": 4.9,
       "reviewCount": 390,
-      "logoUrl": "",
+      "logoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgQGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9RnJlZG9rYTp3Z2h0QDcwMDs4MDAmYW1wO2Rpc3BsYXk9c3dhcCIpOwogICAgICAuYnJhbmQtdGl0bGUgeyBmb250LWZhbWlseTogIkZyZWRva2EiLCAiT3V0Zml0IiwgIkFyaWFsIEJsYWNrIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogIzExMTExMTsgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSI0NCIgbGV0dGVyLXNwYWNpbmc9IjEuNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXRpdGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMS41IDIwMCA1NSkiPkNFVklDSElUTzwvdGV4dD4KICA8cG9seWdvbiBwb2ludHM9IjExMCw4OCAxMjYsODEgMTI2LDk1IiBmaWxsPSIjMTExMTExIi8+CiAgPHRleHQgeD0iMjAwIiB5PSI5NCIgZm9udC1zaXplPSIzOCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEuNSAyMDAgOTQpIj5QTElaPC90ZXh0PgogIDxwb2x5Z29uIHBvaW50cz0iMjkwLDg4IDI3NCw4MSAyNzQsOTUiIGZpbGw9IiMxMTExMTEiLz4KPC9zdmc+",
       "coverUrl": "https://images.unsplash.com/photo-1535400255456-984241443b29?w=900&auto=format&fit=crop&q=80",
       "ownerId": "u-owner-stephanie",
       "templateId": "tmpl-marine",
@@ -32,7 +32,8 @@
         "showHeaderTagline": false,
         "showHeaderBadge": false,
         "headerLogoFit": "contain",
-        "headerBannerHeight": 95
+        "headerBannerHeight": 95,
+        "headerLogoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgQGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9RnJlZG9rYTp3Z2h0QDcwMDs4MDAmYW1wO2Rpc3BsYXk9c3dhcCIpOwogICAgICAuYnJhbmQtdGl0bGUgeyBmb250LWZhbWlseTogIkZyZWRva2EiLCAiT3V0Zml0IiwgIkFyaWFsIEJsYWNrIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogIzExMTExMTsgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSI0NCIgbGV0dGVyLXNwYWNpbmc9IjEuNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXRpdGxlIiB0cmFuc2Zvcm09InJvdGF0ZSgtMS41IDIwMCA1NSkiPkNFVklDSElUTzwvdGV4dD4KICA8cG9seWdvbiBwb2ludHM9IjExMCw4OCAxMjYsODEgMTI2LDk1IiBmaWxsPSIjMTExMTExIi8+CiAgPHRleHQgeD0iMjAwIiB5PSI5NCIgZm9udC1zaXplPSIzOCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEuNSAyMDAgOTQpIj5QTElaPC90ZXh0PgogIDxwb2x5Z29uIHBvaW50cz0iMjkwLDg4IDI3NCw4MSAyNzQsOTUiIGZpbGw9IiMxMTExMTEiLz4KPC9zdmc+"
       },
       "metrics": {
         "dailyRevenue": 4150.2,
@@ -55,7 +56,7 @@
       "phone": "+51 987 654 321",
       "rating": 4.8,
       "reviewCount": 120,
-      "logoUrl": "",
+      "logoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48ZGVmcz48c3R5bGU+QGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9U3luZTp3Z2h0QDgwMCZhbXA7ZGlzcGxheT1zd2FwIik7IC5icmFuZC12b3JheiB7IGZvbnQtZmFtaWx5OiAiU3luZSIsICJPdXRmaXQiLCAiSW1wYWN0Iiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogI0UxMUQ0ODsgfSAuYnJhbmQtc3ViIHsgZm9udC1mYW1pbHk6ICJTeW5lIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDcwMDsgZmlsbDogI0ZGRkZGRjsgZm9udC1zaXplOiAxNXB4OyBsZXR0ZXItc3BhY2luZzogNnB4OyB9PC9zdHlsZT48L2RlZnM+PHRleHQgeD0iMjAwIiB5PSI2NSIgZm9udC1zaXplPSI1NCIgbGV0dGVyLXNwYWNpbmc9IjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC12b3JheiI+Vk9SQVo8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSI5OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXN1YiI+RlVTScOTTiBVUkJBTkE8L3RleHQ+PC9zdmc+",
       "coverUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&auto=format&fit=crop&q=80",
       "ownerId": "u-owner-stephanie",
       "templateId": "tmpl-modern",
@@ -77,7 +78,8 @@
         "showHeaderTagline": true,
         "showHeaderBadge": true,
         "headerLogoFit": "contain",
-        "headerBannerHeight": 120
+        "headerBannerHeight": 120,
+        "headerLogoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48ZGVmcz48c3R5bGU+QGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9U3luZTp3Z2h0QDgwMCZhbXA7ZGlzcGxheT1zd2FwIik7IC5icmFuZC12b3JheiB7IGZvbnQtZmFtaWx5OiAiU3luZSIsICJPdXRmaXQiLCAiSW1wYWN0Iiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDgwMDsgZmlsbDogI0UxMUQ0ODsgfSAuYnJhbmQtc3ViIHsgZm9udC1mYW1pbHk6ICJTeW5lIiwgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDcwMDsgZmlsbDogI0ZGRkZGRjsgZm9udC1zaXplOiAxNXB4OyBsZXR0ZXItc3BhY2luZzogNnB4OyB9PC9zdHlsZT48L2RlZnM+PHRleHQgeD0iMjAwIiB5PSI2NSIgZm9udC1zaXplPSI1NCIgbGV0dGVyLXNwYWNpbmc9IjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC12b3JheiI+Vk9SQVo8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSI5OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9ImJyYW5kLXN1YiI+RlVTScOTTiBVUkJBTkE8L3RleHQ+PC9zdmc+"
       },
       "metrics": {
         "dailyRevenue": 2850,
@@ -89,6 +91,52 @@
       },
       "isOpen": true,
       "totalTablesCount": 16
+    },
+    {
+      "id": "rest-1790352289887",
+      "name": "Riendas de Plata",
+      "tagline": "Parrilla Criolla, Carnes Nobles & Vinos de Autor",
+      "cuisineType": "Parrillas & Carnes",
+      "slug": "riendas-de-plata",
+      "address": "Av. Dos de Mayo 640, San Isidro",
+      "phone": "+51 982 341 550",
+      "rating": 4.9,
+      "reviewCount": 140,
+      "logoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48ZGVmcz48c3R5bGU+QGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9Q2luemVsOndnaHRANzAwOzkwMCZhbXA7ZGlzcGxheT1zd2FwIik7IC5icmFuZC10aXRsZSB7IGZvbnQtZmFtaWx5OiAiQ2luemVsIiwgIlBsYXlmYWlyIERpc3BsYXkiLCBzZXJpZjsgZm9udC13ZWlnaHQ6IDkwMDsgZmlsbDogI0Q0QUYzNzsgfSAuYnJhbmQtc3ViIHsgZm9udC1mYW1pbHk6ICJDaW56ZWwiLCBzZXJpZjsgZm9udC13ZWlnaHQ6IDYwMDsgZmlsbDogI0U1RTdFQjsgZm9udC1zaXplOiAxM3B4OyBsZXR0ZXItc3BhY2luZzogNXB4OyB9PC9zdHlsZT48L2RlZnM+PHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSIzNCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSI+UklFTkRBUyBERSBQTEFUQTwvdGV4dD48bGluZSB4MT0iOTAiIHkxPSI3MiIgeDI9IjMxMCIgeTI9IjcyIiBzdHJva2U9IiNENEFGMzciIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2Utb3BhY2l0eT0iMC43Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iNzIiIHI9IjMuNSIgZmlsbD0iI0Q0QUYzNyIvPjx0ZXh0IHg9IjIwMCIgeT0iOTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC1zdWIiPlBBUlJJTExBICZhbXA7IENPUlRFUzwvdGV4dD48L3N2Zz4=",
+      "coverUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80",
+      "ownerId": "u-1790352263608",
+      "templateId": "tmpl-luxury",
+      "branding": {
+        "primaryColor": "#D4AF37",
+        "secondaryColor": "#71717A",
+        "accentColor": "#18181B",
+        "darkBgColor": "#111111",
+        "cardBgColor": "#1C1C1E",
+        "dishCardBgColor": "#1C1C1E",
+        "textColor": "#FFFFFF",
+        "fontDisplay": "Cinzel, serif",
+        "buttonColor": "#D4AF37",
+        "buttonTextColor": "#000000",
+        "restaurantNameFont": "Cinzel, serif",
+        "restaurantNameColor": "#D4AF37",
+        "headerLogoUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj48ZGVmcz48c3R5bGU+QGltcG9ydCB1cmwoImh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9Q2luemVsOndnaHRANzAwOzkwMCZhbXA7ZGlzcGxheT1zd2FwIik7IC5icmFuZC10aXRsZSB7IGZvbnQtZmFtaWx5OiAiQ2luemVsIiwgIlBsYXlmYWlyIERpc3BsYXkiLCBzZXJpZjsgZm9udC13ZWlnaHQ6IDkwMDsgZmlsbDogI0Q0QUYzNzsgfSAuYnJhbmQtc3ViIHsgZm9udC1mYW1pbHk6ICJDaW56ZWwiLCBzZXJpZjsgZm9udC13ZWlnaHQ6IDYwMDsgZmlsbDogI0U1RTdFQjsgZm9udC1zaXplOiAxM3B4OyBsZXR0ZXItc3BhY2luZzogNXB4OyB9PC9zdHlsZT48L2RlZnM+PHRleHQgeD0iMjAwIiB5PSI1NSIgZm9udC1zaXplPSIzNCIgbGV0dGVyLXNwYWNpbmc9IjMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC10aXRsZSI+UklFTkRBUyBERSBQTEFUQTwvdGV4dD48bGluZSB4MT0iOTAiIHkxPSI3MiIgeDI9IjMxMCIgeTI9IjcyIiBzdHJva2U9IiNENEFGMzciIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2Utb3BhY2l0eT0iMC43Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iNzIiIHI9IjMuNSIgZmlsbD0iI0Q0QUYzNyIvPjx0ZXh0IHg9IjIwMCIgeT0iOTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJicmFuZC1zdWIiPlBBUlJJTExBICZhbXA7IENPUlRFUzwvdGV4dD48L3N2Zz4=",
+        "headerDisplayMode": "NAME_AND_TAGLINE",
+        "showHeaderName": true,
+        "showHeaderTagline": true,
+        "showHeaderBadge": true,
+        "headerLogoFit": "contain",
+        "headerBannerHeight": 120
+      },
+      "metrics": {
+        "dailyRevenue": 3400,
+        "activeOrders": 0,
+        "avgTicket": 55,
+        "customerRating": 4.9,
+        "totalTables": 18,
+        "occupancyRate": 0
+      },
+      "isOpen": true,
+      "totalTablesCount": 18
     }
   ],
   "items": [
@@ -966,6 +1014,21 @@
       "totalOrdersCount": 28,
       "creditBalance": 120,
       "createdByOwnerId": "u-3"
+    },
+    {
+      "id": "u-1790352263608",
+      "name": "Diego Castillo",
+      "email": "diego.castillo@riendasdeplata.pe",
+      "dni": "72849102",
+      "password": "password",
+      "role": "OWNER",
+      "phone": "+51 982 341 550",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
+      "restaurantIds": [
+        "rest-1790352289887"
+      ],
+      "status": "active",
+      "lastActive": "En línea"
     }
   ],
   "orders": [
