@@ -121,13 +121,10 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   (rests || []).forEach(r => {
     if (r && r.id) {
       let cleaned = { ...r };
-      // Prevent rest-costa from taking Voraz's name or slug if accidentally overwritten in modal
-      if (r.id === 'rest-costa' && (r.name?.trim().toLowerCase() === 'voraz' || r.slug === 'voraz')) {
-        cleaned.name = 'Cevichito Pliz';
-        cleaned.slug = 'cevichito-pliz';
-        cleaned.tagline = 'Cevichería Contemporánea & Pesca Artesanal del Día';
-        cleaned.cuisineType = 'Cevichería & Mariscos';
-      }
+      // Force correct slug mapping to prevent link breakage
+      if (r.id === 'rest-costa') cleaned.slug = 'cevichito-pliz';
+      if (r.id === 'rest-1790204393895') cleaned.slug = 'voraz';
+      if (r.id === 'rest-1790352289887') cleaned.slug = 'riendas-de-plata';
       const existing = map.get(r.id);
       
       // If cleaned contains custom branding with actual keys, prioritize it completely
