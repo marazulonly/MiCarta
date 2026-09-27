@@ -844,7 +844,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <h2 className="text-base font-bold text-neutral-900">
               Mis Restaurantes ({ownedRestaurants.length})
             </h2>
-            <span className="text-xs text-neutral-500 hidden sm:inline">· Sedes creadas o asignadas a tu cuenta</span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -928,9 +927,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <div className="pr-16">
                       <h3 className="text-sm font-black leading-tight" style={{ color: brandTextColor }}>{rest.name}</h3>
                       <p className="text-xs opacity-80 mt-0.5 line-clamp-1">{rest.tagline}</p>
-                      <span className="text-[11px] font-mono mt-1 block font-bold" style={{ color: brandPrimaryColor }}>
-                        /r/{rest.slug}
-                      </span>
                       <div className="flex items-center gap-1.5 mt-2">
                         <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" title="Guardado en Nube">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -1053,17 +1049,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <SlidersHorizontal className="w-4 h-4" />
               <span>Editor Pantalla Dividida</span>
             </button>
-
-            {onDeleteRestaurant && (
-              <button
-                onClick={() => setRestaurantToDelete(currentRestaurant)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-semibold transition cursor-pointer"
-                title="Eliminar esta sede"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Eliminar Sede</span>
-              </button>
-            )}
           </div>
         </div>
 

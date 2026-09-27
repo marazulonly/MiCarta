@@ -2,17 +2,10 @@ import React from 'react';
 import { 
   Building2, 
   Shield, 
-  Database,
-  ExternalLink,
-  LogIn,
   KeyRound,
   Sparkles,
-  User as UserIcon,
   LogOut,
-  Check,
   SlidersHorizontal,
-  Eye,
-  LayoutTemplate,
   Settings
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
@@ -82,9 +75,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <span className="text-sm font-black tracking-widest text-neutral-950 uppercase">
                   Micarta
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-300 font-mono">
-                  SaaS v2.5
-                </span>
               </div>
               <div className="flex items-center gap-2 -mt-0.5 flex-wrap">
                 <span className="text-[11px] text-neutral-500">
@@ -112,19 +102,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
                 <span className="hidden sm:inline">Editor Pantalla Dividida</span>
                 <span className="sm:hidden">Editor</span>
-              </button>
-            )}
-
-            {/* Quick Preview Button */}
-            {onOpenCustomerPreview && (
-              <button
-                type="button"
-                onClick={onOpenCustomerPreview}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-100 border border-neutral-300 hover:border-neutral-400 text-neutral-800 hover:text-black text-xs font-bold transition cursor-pointer"
-                title="Previsualizar Carta Digital"
-              >
-                <Eye className="w-3.5 h-3.5 text-neutral-700" />
-                <span className="hidden md:inline">Previsualizar Carta</span>
               </button>
             )}
             
@@ -240,30 +217,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <span className="hidden sm:inline">Salir</span>
               </button>
             )}
-
-            {/* DB & Technical Schema */}
-            <button
-              id="header-btn-architecture"
-              onClick={() => onTabChange(activeTab === 'architecture' ? 'home' : 'architecture')}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-medium border transition cursor-pointer ${
-                activeTab === 'architecture'
-                  ? 'bg-black text-white border-black'
-                  : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800 hover:text-white'
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>Esquema DB</span>
-            </button>
-
-            {/* Customer Digital Menu Preview */}
-            <button
-              id="header-btn-preview-menu"
-              onClick={onOpenCustomerPreview}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold bg-neutral-900 hover:bg-black text-white transition cursor-pointer shadow"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Carta Digital</span>
-            </button>
 
           </div>
         </div>
