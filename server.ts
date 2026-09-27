@@ -276,15 +276,28 @@ async function startServer() {
     const publishedMenus = current.publishedMenus || {};
     let matchedSnapshot: any = null;
 
+    // Normalizamos el objetivo una sola vez
+    const targetSlug = normalizeSlug(slugOrId);
+    console.log(`[Server Debug] Buscando slugOrId: "${slugOrId}", targetSlug: "${targetSlug}"`);
+    console.log(`[Server Debug] Keys in publishedMenus: ${Object.keys(publishedMenus).join(', ')}`);
+
     for (const [restId, snapshot] of Object.entries(publishedMenus)) {
       if (!snapshot) continue;
       const snapRest = (snapshot as any).restaurant;
+      
+      // Creamos slugs normalizados de los campos de comparación
+      const snapRestId = normalizeSlug(restId);
+      const snapRestSlug = normalizeSlug(snapRest?.slug);
+      const snapRestName = normalizeSlug(snapRest?.name);
+      
+      console.log(`[Server Debug] Comparando contra restId: "${restId}" (norm: "${snapRestId}"), slug: "${snapRest?.slug}" (norm: "${snapRestSlug}"), name: "${snapRest?.name}" (norm: "${snapRestName}")`);
+
       if (
-        normalizeSlug(restId) === target || 
-        normalizeSlug(snapRest?.id) === target || 
-        normalizeSlug(snapRest?.slug) === target ||
-        normalizeSlug(snapRest?.name) === target
+        snapRestId === targetSlug || 
+        snapRestSlug === targetSlug ||
+        snapRestName === targetSlug
       ) {
+        console.log(`[Server Debug] ¡Match encontrado!`);
         matchedSnapshot = snapshot;
         break;
       }
