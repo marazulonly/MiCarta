@@ -226,25 +226,25 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 backgroundColor: accentColor,
                 color: btnTextColor,
               }}
-              className="text-[10px] uppercase tracking-wider font-mono font-bold px-2.5 py-0.5 rounded-md inline-block mb-1 shadow"
+              className="text-xs uppercase tracking-wider font-mono font-bold px-2.5 py-0.5 rounded-md inline-block mb-1 shadow"
             >
               Personalizar Pedido
             </span>
             <h2 
               style={{ fontFamily: dishNameFont }}
-              className="text-base sm:text-xl font-black leading-tight text-white drop-shadow-md line-clamp-1"
+              className="text-lg sm:text-2xl font-black leading-tight text-white drop-shadow-md line-clamp-1"
             >
               {item.name}
             </h2>
             <div className="flex items-center gap-3 mt-0.5 sm:mt-1">
               <span 
                 style={{ fontFamily: dishPriceFont, color: '#FFFFFF' }}
-                className="text-xs sm:text-sm font-black font-mono bg-black/60 px-2.5 py-0.5 rounded-md border border-white/30 backdrop-blur-sm"
+                className="text-sm sm:text-base font-black font-mono bg-black/60 px-2.5 py-0.5 rounded-md border border-white/30 backdrop-blur-sm"
               >
                 S/ {item.price.toFixed(2)} c/u
               </span>
               {item.prepTimeMinutes && (
-                <span className="text-[10px] sm:text-[11px] font-bold text-white/90 flex items-center gap-1 drop-shadow-sm">
+                <span className="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-1 drop-shadow-sm">
                   ⏱ {item.prepTimeMinutes} min
                 </span>
               )}
@@ -264,8 +264,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             className="p-3.5 rounded-xl border flex items-center justify-between shadow-sm"
           >
             <div>
-              <span style={{ color: primaryText }} className="text-xs font-black block">Cantidad de platos</span>
-              <span style={{ color: subText }} className="text-[11px] font-medium block mt-0.5">
+              <span style={{ color: primaryText }} className="text-sm font-black block">Cantidad</span>
+              <span style={{ color: subText }} className="text-xs font-medium block mt-0.5">
                 {quantity === 1 ? '1 plato individual' : `${quantity} platos (personalizables por separado)`}
               </span>
             </div>
@@ -282,7 +282,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
               >
                 <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
-              <span style={{ color: primaryText }} className="w-8 text-center font-black text-base font-mono">
+              <span style={{ color: primaryText }} className="w-8 text-center font-black text-lg font-mono">
                 {quantity}
               </span>
               <button
@@ -302,11 +302,11 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           {quantity > 1 && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label style={{ color: primaryText }} className="text-xs font-bold flex items-center gap-1.5">
+                <label style={{ color: primaryText }} className="text-sm font-bold flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5" style={{ color: accentColor }} />
                   <span>Selecciona la unidad a personalizar:</span>
                 </label>
-                <span style={{ color: subText }} className="text-[10px] font-mono font-medium">
+                <span style={{ color: subText }} className="text-xs font-mono font-medium">
                   Independientes por cada plato
                 </span>
               </div>
@@ -326,7 +326,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           ? { backgroundColor: accentColor, color: btnTextColor, borderColor: accentColor } 
                           : { backgroundColor: cardBg, color: primaryText, borderColor: cardBorder }
                       }
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                      className={`px-3.5 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer border ${
                         isSelectedTab ? 'shadow-md scale-[1.02]' : 'hover:brightness-95'
                       }`}
                     >
@@ -353,11 +353,11 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             className="p-4 rounded-xl border space-y-4 shadow-sm"
           >
             <div style={{ borderColor: cardBorder }} className="flex items-center justify-between pb-2 border-b">
-              <span className="text-xs font-black flex items-center gap-1.5" style={{ color: primaryText }}>
+              <span className="text-sm font-black flex items-center gap-1.5" style={{ color: primaryText }}>
                 <Utensils className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                <span>Configuración de Plato #{activeUnitTab + 1}</span>
+                <span>Personalizar Plato #{activeUnitTab + 1}</span>
               </span>
-              <span style={{ color: subText }} className="text-[10px] font-mono font-bold">
+              <span style={{ color: subText }} className="text-xs font-mono font-bold">
                 {quantity > 1 ? `Plato ${activeUnitTab + 1} de ${quantity}` : 'Plato único'}
               </span>
             </div>
@@ -365,8 +365,8 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             {/* 1. Adicionales de esta unidad */}
             {availableAddons.length > 0 && (
               <div className="space-y-2">
-                <label style={{ color: primaryText }} className="text-xs font-bold block">
-                  <span>Adicionales Opcionales</span>
+                <label style={{ color: primaryText }} className="text-sm font-bold block">
+                  <span>Adicionales</span>
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -400,11 +400,11 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" style={{ color: btnTextColor }} />}
                           </div>
-                          <span className="text-xs font-bold leading-tight">{addon.name}</span>
+                          <span className="text-sm font-bold leading-tight">{addon.name}</span>
                         </div>
                         <span 
                           style={{ color: accentColor, fontFamily: dishPriceFont }}
-                          className="text-xs font-mono font-black shrink-0 ml-2"
+                          className="text-sm font-mono font-black shrink-0 ml-2"
                         >
                           +S/ {addon.price.toFixed(2)}
                         </span>
@@ -417,7 +417,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
 
             {/* 2. Observaciones / Instrucciones de preparación de esta unidad */}
             <div style={{ borderColor: cardBorder }} className="space-y-2 pt-2 border-t">
-              <label style={{ color: primaryText }} className="text-xs font-bold flex items-center">
+              <label style={{ color: primaryText }} className="text-sm font-bold flex items-center">
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5" style={{ color: accentColor }} />
                   <span>Observaciones para cocina</span>
@@ -443,7 +443,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                           borderColor: buttonUnselectedBorder,
                           color: buttonUnselectedText
                         }}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition cursor-pointer font-bold shadow-sm ${
+                        className={`text-sm px-3 py-1.5 rounded-full border transition cursor-pointer font-bold shadow-sm ${
                           isChipActive ? 'scale-[1.03] shadow-md' : 'hover:brightness-110 hover:scale-105'
                         }`}
                       >
@@ -466,7 +466,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                   borderColor: inputBorder,
                   color: inputText
                 }}
-                className="w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none transition resize-none font-medium shadow-inner placeholder:text-neutral-400"
+                className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none transition resize-none font-medium shadow-inner placeholder:text-neutral-400"
               />
             </div>
           </div>
@@ -482,18 +482,18 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
           className="p-3.5 sm:p-4 pb-8 sm:pb-4 border-t flex items-center justify-between gap-2 shrink-0 z-10"
         >
           <div>
-            <span style={{ color: subText }} className="text-[10px] uppercase tracking-wider font-mono font-bold block">
+            <span style={{ color: subText }} className="text-xs uppercase tracking-wider font-mono font-bold block">
               Subtotal ({quantity} {quantity === 1 ? 'plato' : 'platos'})
             </span>
             <div className="flex items-baseline gap-1">
               <span 
                 style={{ color: accentColor, fontFamily: dishPriceFont }}
-                className="text-lg sm:text-xl font-black font-mono"
+                className="text-xl sm:text-2xl font-black font-mono"
               >
                 S/ {grandTotal.toFixed(2)}
               </span>
               {addonsTotal > 0 && (
-                <span style={{ color: subText }} className="text-[10px] font-mono font-bold hidden sm:inline">
+                <span style={{ color: subText }} className="text-xs font-mono font-bold hidden sm:inline">
                   (+S/ {addonsTotal.toFixed(2)})
                 </span>
               )}
@@ -508,7 +508,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 color: primaryText,
                 borderColor: cardBorder 
               }}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition border cursor-pointer hover:brightness-90"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition border cursor-pointer hover:brightness-90"
             >
               Cancelar
             </button>
@@ -521,7 +521,7 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
                 backgroundColor: accentColor, 
                 color: btnTextColor 
               }}
-              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 whitespace-nowrap"
+              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 whitespace-nowrap"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Agregar al Pedido</span>

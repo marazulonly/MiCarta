@@ -18,7 +18,8 @@ import {
   Camera, 
   Sliders, 
   Zap,
-  Tag
+  Tag,
+  Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -35,6 +36,8 @@ interface NeonStreetMenuProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isOwnerOrAdmin?: boolean;
+  isOrderActive?: boolean;
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -65,6 +68,8 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isOwnerOrAdmin = false,
+  isOrderActive = false,
+  onOpenActiveOrderModal,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -210,6 +215,21 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
 
             {/* Top action buttons */}
+            {/* Eye button to view active order status */}
+            {!isOrderActive && (
+              <div className="absolute top-3 left-3 z-10" />
+            )}
+            {isOrderActive && onOpenActiveOrderModal && (
+              <div className="absolute top-3 left-3 z-10">
+                <button 
+                  onClick={onOpenActiveOrderModal} 
+                  className="p-2 rounded-xl bg-amber-400 text-black font-bold transition cursor-pointer animate-pulse"
+                  title="Ver comanda activa"
+                >
+                  <Eye className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </div>
+            )}
             <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
               <button 
                 onClick={copyUrl} 

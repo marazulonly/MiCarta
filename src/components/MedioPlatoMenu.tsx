@@ -13,7 +13,8 @@ import {
   MapPin,
   Edit3,
   Image as ImageIcon,
-  Utensils
+  Utensils,
+  Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -30,6 +31,8 @@ interface MedioPlatoMenuProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isOwnerOrAdmin?: boolean;
+  isOrderActive?: boolean;
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -117,6 +120,8 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isOwnerOrAdmin = false,
+  isOrderActive = false,
+  onOpenActiveOrderModal,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -299,6 +304,18 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               className="absolute top-2 right-2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white transition cursor-pointer z-30"
             >
               <X className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Eye button to view active order status */}
+          {!isOwnerOrAdmin && isOrderActive && onOpenActiveOrderModal && (
+            <button
+              type="button"
+              onClick={onOpenActiveOrderModal}
+              aria-label="Ver comanda activa"
+              className="absolute top-2 left-2 p-2 rounded-full bg-amber-400 hover:bg-amber-300 text-black transition cursor-pointer z-30 animate-pulse"
+            >
+              <Eye className="w-4 h-4 stroke-[2.5]" />
             </button>
           )}
 

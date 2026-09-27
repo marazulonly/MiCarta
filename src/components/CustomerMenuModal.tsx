@@ -37,6 +37,9 @@ interface CustomerMenuModalProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isLoading?: boolean;
+  customerActiveOrderId?: string | null;
+  orders?: Order[];
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Callbacks
   onUpdateRestaurant?: (updated: Restaurant) => void;
   onUpdateMenuItem?: (updated: MenuItem) => void;
@@ -76,6 +79,9 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isLoading = false,
+  customerActiveOrderId,
+  orders,
+  onOpenActiveOrderModal,
   onUpdateRestaurant,
   onUpdateMenuItem,
   onAddMenuItem,
@@ -563,98 +569,135 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       )}
 
       {/* Render Appropriate Specialized Menu Template */}
-      {isMedioPlatoTemplate ? (
-        <MedioPlatoMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : isStartersEditorialTemplate ? (
-        <StartersEditorialMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : isNeonTemplate ? (
-        <NeonStreetMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : isMinimalTemplate ? (
-        <MinimalistBistroMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : isMarineTemplate ? (
-        <CostaMarinaMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : isCriolloTemplate ? (
-        <CriolloChalkboardMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      ) : (
-        <BrasasLuxuryMenu
-          isOpen={isOpen}
-          onClose={onClose}
-          restaurant={restaurant}
-          categories={effectiveCategories}
-          items={effectiveItems}
-          onOrderCreated={onOrderCreated}
-          initialMode={initialMode}
-          initialTableNumber={initialTableNumber}
-          isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-          {...liveEditProps}
-        />
-      )}
+      {(() => {
+        const activeOrder = customerActiveOrderId 
+          ? (orders || []).find(o => o.id === customerActiveOrderId) 
+          : null;
+        const isOrderActive = Boolean(
+          activeOrder && 
+          activeOrder.status !== 'DELIVERED' && 
+          activeOrder.status !== 'CANCELLED'
+        );
+
+        const activeOrderProps = {
+          isOrderActive,
+          onOpenActiveOrderModal,
+        };
+
+        if (isMedioPlatoTemplate) {
+          return (
+            <MedioPlatoMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isStartersEditorialTemplate) {
+          return (
+            <StartersEditorialMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isNeonTemplate) {
+          return (
+            <NeonStreetMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isMinimalTemplate) {
+          return (
+            <MinimalistBistroMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isMarineTemplate) {
+          return (
+            <CostaMarinaMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isCriolloTemplate) {
+          return (
+            <CriolloChalkboardMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else {
+          return (
+            <BrasasLuxuryMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={restaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        }
+      })()}
 
       {/* Discrete Official Published Badge for Public Diners & QR Guests */}
       {publishedSnapshotInfo && (

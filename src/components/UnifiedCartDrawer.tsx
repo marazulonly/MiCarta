@@ -98,10 +98,10 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-black text-emerald-300">
+                <h3 className="text-sm sm:text-base font-black text-emerald-300">
                   ¡Pedido Confirmado con Éxito!
                 </h3>
-                <p className="text-[10px] sm:text-[11px] text-neutral-300 font-mono">
+                <p className="text-xs sm:text-sm text-neutral-300 font-mono">
                   Orden {confirmedOrder.orderNumber} • {restaurant.name}
                 </p>
               </div>
@@ -123,22 +123,22 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
             {/* Status Badge */}
             <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between flex-wrap gap-2">
               <div>
-                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono block">Estado del Pedido</span>
-                <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 mt-0.5">
+                <span className="text-xs text-neutral-400 uppercase tracking-wider font-mono block">Estado del Pedido</span>
+                <span className="text-sm font-bold text-amber-400 flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                   <span>Enviado a Cocina / En Preparación</span>
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono block">Tiempo Estimado</span>
-                <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                <span className="text-xs text-neutral-400 uppercase tracking-wider font-mono block">Tiempo Estimado</span>
+                <span className="text-sm font-mono font-bold text-white mt-0.5 block">
                   ⏱ ~{confirmedOrder.estimatedMinutes || 20} minutos
                 </span>
               </div>
             </div>
 
             {/* Service & Customer Details */}
-            <div className="p-3.5 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-2 text-xs">
+            <div className="p-3.5 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-2 text-sm">
               <div className="flex justify-between text-neutral-300">
                 <span className="text-neutral-400">Tipo de Servicio:</span>
                 <span className="font-bold text-white">
@@ -165,18 +165,18 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
 
             {/* Items Breakdown */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+              <span className="text-sm font-bold text-white uppercase tracking-wider block">
                 Detalle de Platos Confirmados ({confirmedOrder.items.length})
               </span>
               <div className="space-y-2">
                 {confirmedOrder.items.map(item => (
                   <div key={item.id} className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold text-white">
+                    <div className="flex justify-between text-sm font-bold text-white">
                       <span>{item.quantity}x {item.name}</span>
                       <span className="font-mono text-amber-400 font-bold">S/ {(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                     {item.units && item.units.map(u => (
-                      <div key={u.unitNumber} className="text-[11px] text-neutral-300 pl-2.5 border-l-2 border-amber-400/50">
+                      <div key={u.unitNumber} className="text-xs text-neutral-300 pl-2.5 border-l-2 border-amber-400/50">
                         <span className="font-mono font-bold text-amber-300">Plato #{u.unitNumber}:</span>{' '}
                         {u.selectedAddons && u.selectedAddons.length > 0 && (
                           <span className="text-neutral-200">Extras: {u.selectedAddons.map(a => a.name).join(', ')}. </span>
@@ -194,8 +194,8 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
 
             {/* Total */}
             <div className="p-4 rounded-xl bg-black border border-neutral-800 flex items-center justify-between">
-              <span className="font-bold text-white text-sm">Total del Pedido:</span>
-              <span className="font-black text-amber-400 font-mono text-lg">
+              <span className="font-bold text-white text-base">Total del Pedido:</span>
+              <span className="font-black text-amber-400 font-mono text-xl">
                 S/ {confirmedOrder.total.toFixed(2)}
               </span>
             </div>
@@ -209,9 +209,9 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                 setOrderSent(false);
                 onClose();
               }}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-extrabold transition shadow-lg cursor-pointer text-center"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-extrabold transition shadow-lg cursor-pointer text-center"
             >
-              Entendido / Volver al Menú
+              Regresar al Menú
             </button>
           </div>
 
@@ -345,10 +345,10 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-amber-400" />
             <div>
-              <span className="text-xs font-bold text-white block">
+              <span className="text-sm font-bold text-white block">
                 Tu Pedido en {restaurant.name}
               </span>
-              <span className="text-[10px] text-neutral-400 block font-mono">
+              <span className="text-xs text-neutral-400 block font-mono">
                 {cart.length} {cart.length === 1 ? 'producto' : 'productos'} · {cart.reduce((s, c) => s + c.quantity, 0)} platos en total
               </span>
             </div>
@@ -373,7 +373,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                 setOrderType('DINE_IN');
                 setErrorMsg(null);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                 orderType === 'DINE_IN'
                   ? 'bg-amber-400 text-black shadow-md'
                   : 'text-neutral-400 hover:text-white'
@@ -389,7 +389,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                 setOrderType('DELIVERY');
                 setErrorMsg(null);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 px-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                 orderType === 'DELIVERY'
                   ? 'bg-purple-400 text-black shadow-md'
                   : 'text-neutral-400 hover:text-white'
@@ -404,11 +404,11 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           {orderType === 'DINE_IN' ? (
             <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-900/40 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
+                <span className="text-sm font-bold text-sky-300 flex items-center gap-1.5">
                   <ChefHat className="w-3.5 h-3.5 text-sky-400" />
                   <span>Atención Presencial por Mozos</span>
                 </span>
-                <span className="text-[10px] text-sky-400 font-mono">
+                <span className="text-xs text-sky-400 font-mono">
                   Comanda directa a Cocina
                 </span>
               </div>
@@ -416,11 +416,11 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-bold text-neutral-300">
+                    <label className="text-xs font-bold text-neutral-300">
                       Número de Mesa *
                     </label>
                     {initialTableNumber && (
-                      <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800">
+                      <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800">
                         ⚡ QR Mesa
                       </span>
                     )}
@@ -428,7 +428,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                   <select
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition font-mono font-bold"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition font-mono font-bold"
                   >
                     {restaurant.tables && restaurant.tables.length > 0 ? (
                       restaurant.tables.map((tbl) => (
@@ -447,7 +447,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-neutral-300 block mb-1">
+                  <label className="text-sm font-bold text-neutral-300 block mb-1">
                     Nombre del Comensal
                   </label>
                   <input
@@ -455,7 +455,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                     value={dinerName}
                     onChange={(e) => setDinerName(e.target.value)}
                     placeholder="Ej: Carlos M."
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm text-white focus:border-amber-400 transition"
                   />
                 </div>
               </div>
@@ -463,23 +463,23 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           ) : (
             <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-900/40 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                <span className="text-sm font-bold text-purple-300 flex items-center gap-1.5">
                   <Bike className="w-3.5 h-3.5 text-purple-400" />
                   <span>Despacho Delivery Gestionado por Repartidores</span>
                 </span>
-                <span className="text-[10px] text-purple-300 font-mono">
+                <span className="text-xs text-purple-300 font-mono">
                   Obligatorio WhatsApp y Dirección
                 </span>
               </div>
 
               {/* Mandatory Field 1: WhatsApp */}
               <div>
-                <label className="text-[11px] font-bold text-white block mb-1 flex items-center justify-between">
+                <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Número de WhatsApp * (OBLIGATORIO)</span>
                   </span>
-                  <span className="text-[9px] text-emerald-400 font-mono font-bold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
+                  <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
                     Requerido
                   </span>
                 </label>
@@ -489,18 +489,18 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                   value={customerWhatsapp}
                   onChange={(e) => setCustomerWhatsapp(e.target.value)}
                   placeholder="Ej: +51 987 654 321 (para coordinar entrega)"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-xs text-white font-mono placeholder:text-neutral-500 focus:border-purple-400 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white font-mono placeholder:text-neutral-500 focus:border-purple-400 transition"
                 />
               </div>
 
               {/* Mandatory Field 2: Delivery Address */}
               <div>
-                <label className="text-[11px] font-bold text-white block mb-1 flex items-center justify-between">
+                <label className="text-xs font-bold text-white block mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-rose-400" />
                     <span>Dirección de Entrega * (OBLIGATORIO)</span>
                   </span>
-                  <span className="text-[9px] text-purple-400 font-mono font-bold bg-purple-950 px-1.5 py-0.5 rounded border border-purple-800">
+                  <span className="text-xs text-purple-400 font-mono font-bold bg-purple-950 px-1.5 py-0.5 rounded border border-purple-800">
                     Requerido
                   </span>
                 </label>
@@ -510,7 +510,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   placeholder="Ej: Av. Benavides 1420, Dpto 402, Miraflores"
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-xs text-white placeholder:text-neutral-500 focus:border-purple-400 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-700 text-sm text-white placeholder:text-neutral-500 focus:border-purple-400 transition"
                 />
               </div>
 
@@ -518,13 +518,13 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-medium text-neutral-300">
+                    <label className="text-xs font-medium text-neutral-300">
                       Ubicación GPS (Opcional)
                     </label>
                     <button
                       type="button"
                       onClick={handleGetGps}
-                      className="text-[10px] text-amber-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                      className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
                     >
                       <Navigation className="w-2.5 h-2.5" />
                       <span>{gpsDetected ? 'GPS Listo' : '📍 Detectar GPS'}</span>
@@ -535,12 +535,12 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                     value={deliveryGpsLocation}
                     onChange={(e) => setDeliveryGpsLocation(e.target.value)}
                     placeholder="Coordenadas o link Google Maps"
-                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-[11px] font-mono text-neutral-300 focus:border-purple-400 transition"
+                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-neutral-300 focus:border-purple-400 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-neutral-300 block mb-1">
+                  <label className="text-xs font-medium text-neutral-300 block mb-1">
                     Referencia de domicilio (Opcional)
                   </label>
                   <input
@@ -548,7 +548,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                     value={deliveryReference}
                     onChange={(e) => setDeliveryReference(e.target.value)}
                     placeholder="Ej: Frente al parque, reja negra"
-                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-[11px] text-neutral-300 focus:border-purple-400 transition"
+                    className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs text-neutral-300 focus:border-purple-400 transition"
                   />
                 </div>
               </div>
@@ -558,10 +558,10 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
           {/* DETAILED PER-UNIT DISHES BREAKDOWN */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <span className="text-sm font-bold text-white uppercase tracking-wider">
                 Detalle de Platos y Observaciones ({cart.length})
               </span>
-              <span className="text-[10px] text-neutral-400">
+              <span className="text-xs text-neutral-400">
                 Desglose individual por plato
               </span>
             </div>
@@ -589,10 +589,10 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                           referrerPolicy="no-referrer"
                         />
                         <div>
-                          <h4 className="text-xs font-bold text-white">
+                          <h4 className="text-sm font-bold text-white">
                             {entry.quantity}x {entry.item.name}
                           </h4>
-                          <span className="text-[11px] text-amber-400 font-mono font-bold">
+                          <span className="text-sm text-amber-400 font-mono font-bold">
                             S/ {entryTotal.toFixed(2)}
                           </span>
                         </div>
@@ -624,7 +624,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
                     </div>
 
                     {/* Unit breakdown */}
-                    <div className="pl-2 border-l-2 border-amber-400/40 space-y-1 text-[11px]">
+                    <div className="pl-2 border-l-2 border-amber-400/40 space-y-1 text-xs">
                       {entry.units.map(u => {
                         const unitAddons = u.selectedAddons || [];
                         const hasObs = !!u.observation?.trim();
@@ -660,7 +660,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
               })}
 
               {cart.length === 0 && (
-                <div className="p-8 text-center rounded-xl bg-neutral-900/40 border border-neutral-800 text-neutral-400 text-xs">
+                <div className="p-8 text-center rounded-xl bg-neutral-900/40 border border-neutral-800 text-neutral-400 text-sm">
                   Aún no has agregado platos a tu pedido.
                 </div>
               )}
@@ -669,14 +669,14 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
 
           {/* ERROR ALERT IF VALIDATION FAILS */}
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* SUMMARY TOTALS */}
-          <div className="p-4 rounded-xl bg-black border border-neutral-800 space-y-1.5 text-xs">
+          <div className="p-4 rounded-xl bg-black border border-neutral-800 space-y-1.5 text-sm">
             <div className="flex justify-between text-neutral-400">
               <span>Subtotal Platos y Extras</span>
               <span className="font-mono text-white">S/ {subtotal.toFixed(2)}</span>
@@ -689,14 +689,14 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
               </div>
             )}
 
-            <div className="flex justify-between text-neutral-400 text-[11px]">
+            <div className="flex justify-between text-neutral-400 text-xs">
               <span>IGV y Servicios (Incluido)</span>
               <span className="font-mono">S/ {tax.toFixed(2)}</span>
             </div>
 
             <div className="pt-2 border-t border-neutral-800 flex justify-between items-baseline">
-              <span className="font-bold text-white text-sm">Total a Pagar</span>
-              <span className="font-black text-amber-400 font-mono text-base">
+              <span className="font-bold text-white text-base">Total a Pagar</span>
+              <span className="font-black text-amber-400 font-mono text-lg">
                 S/ {grandTotal.toFixed(2)}
               </span>
             </div>
@@ -707,7 +707,7 @@ export const UnifiedCartDrawer: React.FC<UnifiedCartDrawerProps> = ({
             <button
               type="submit"
               disabled={orderSent || cart.length === 0}
-              className={`w-full py-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-xl cursor-pointer ${
+              className={`w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-xl cursor-pointer ${
                 orderSent 
                   ? 'bg-emerald-500 text-black' 
                   : orderType === 'DELIVERY'

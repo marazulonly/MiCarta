@@ -1519,6 +1519,9 @@ export default function App() {
           initialMode={previewMode}
           initialTableNumber={previewTableNumber}
           isLoading={isLoadingPublishedMenu}
+          customerActiveOrderId={customerActiveOrderId}
+          orders={orders}
+          onOpenActiveOrderModal={() => setIsCustomerActiveOrderModalOpen(true)}
           onUpdateRestaurant={handleUpdateRestaurant}
           onUpdateMenuItem={handleUpdateMenuItem}
           onAddMenuItem={handleAddMenuItem}
@@ -1672,6 +1675,9 @@ export default function App() {
           onOrderCreated={handleCreateOrder}
           initialMode={previewMode}
           initialTableNumber={previewTableNumber}
+          customerActiveOrderId={customerActiveOrderId}
+          orders={orders}
+          onOpenActiveOrderModal={() => setIsCustomerActiveOrderModalOpen(true)}
           onUpdateRestaurant={handleUpdateRestaurant}
           onUpdateMenuItem={handleUpdateMenuItem}
           onAddMenuItem={handleAddMenuItem}
@@ -1864,6 +1870,9 @@ export default function App() {
         onOrderCreated={handleCreateOrder}
         initialMode={previewMode}
         initialTableNumber={previewTableNumber}
+        customerActiveOrderId={customerActiveOrderId}
+        orders={orders}
+        onOpenActiveOrderModal={() => setIsCustomerActiveOrderModalOpen(true)}
         onUpdateRestaurant={handleUpdateRestaurant}
         onUpdateMenuItem={handleUpdateMenuItem}
         onAddMenuItem={handleAddMenuItem}

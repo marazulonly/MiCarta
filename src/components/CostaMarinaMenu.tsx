@@ -17,7 +17,8 @@ import {
   Edit3,
   Camera,
   Sliders,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -34,6 +35,8 @@ interface CostaMarinaMenuProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isOwnerOrAdmin?: boolean;
+  isOrderActive?: boolean;
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -64,6 +67,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isOwnerOrAdmin = false,
+  isOrderActive = false,
+  onOpenActiveOrderModal,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -434,6 +439,19 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
                   className="absolute top-1 right-1 p-2 rounded-full hover:bg-black/15 transition cursor-pointer z-30"
                 >
                   <X className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Eye button to view active order status */}
+              {!isOwnerOrAdmin && isOrderActive && onOpenActiveOrderModal && (
+                <button
+                  type="button"
+                  onClick={onOpenActiveOrderModal}
+                  aria-label="Ver comanda activa"
+                  style={{ backgroundColor: `${COLOR_BTN}25`, color: COLOR_TEXT }}
+                  className="absolute top-1 left-1 p-2 rounded-full hover:bg-black/15 transition cursor-pointer z-30 animate-pulse"
+                >
+                  <Eye className="w-4 h-4" />
                 </button>
               )}
 

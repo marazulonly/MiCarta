@@ -16,7 +16,8 @@ import {
   Edit3, 
   Camera, 
   Sliders,
-  Utensils
+  Utensils,
+  Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -32,6 +33,8 @@ interface MinimalistBistroMenuProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isOwnerOrAdmin?: boolean;
+  isOrderActive?: boolean;
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -60,6 +63,8 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isOwnerOrAdmin = false,
+  isOrderActive = false,
+  onOpenActiveOrderModal,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -160,7 +165,18 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
       >
         {/* Editorial Top Bar: logo grows upwards to the top */}
         <div className="p-3 sm:p-5 border-b border-neutral-800 flex items-start justify-between">
-          <div className="pt-0">
+          <div className="pt-0 flex flex-col items-start">
+            {isOrderActive && onOpenActiveOrderModal && (
+              <button
+                type="button"
+                onClick={onOpenActiveOrderModal}
+                className="mb-4 px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-black flex items-center gap-1.5 transition cursor-pointer animate-pulse text-xs font-mono font-bold uppercase tracking-wider"
+                title="Ver mi comanda activa"
+              >
+                <Eye className="w-4 h-4 stroke-[2.5]" />
+                <span>Ver Pedido</span>
+              </button>
+            )}
             {(branding.headerLogoUrl || restaurant.logoUrl) && (
               <div className="mb-3 pt-0">
                 <img

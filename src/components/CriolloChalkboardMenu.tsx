@@ -16,7 +16,8 @@ import {
   Edit3,
   Camera,
   Sliders,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -33,6 +34,8 @@ interface CriolloChalkboardMenuProps {
   initialMode?: 'DINE_IN' | 'DELIVERY';
   initialTableNumber?: string;
   isOwnerOrAdmin?: boolean;
+  isOrderActive?: boolean;
+  onOpenActiveOrderModal?: () => void;
   // Live Editing Props
   isLiveEditActive?: boolean;
   onToggleLiveEdit?: () => void;
@@ -63,6 +66,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
   initialMode = 'DINE_IN',
   initialTableNumber,
   isOwnerOrAdmin = false,
+  isOrderActive = false,
+  onOpenActiveOrderModal,
   isLiveEditActive = false,
   onToggleLiveEdit,
   onEditItem,
@@ -207,6 +212,17 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
           {/* Top Bar */}
           <div className="relative z-30 px-4 py-2.5 bg-[#21160e] border-b border-[#5c3e23] flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
+              {isOrderActive && onOpenActiveOrderModal && (
+                <button
+                  type="button"
+                  onClick={onOpenActiveOrderModal}
+                  className="p-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black flex items-center gap-1.5 transition cursor-pointer animate-pulse shrink-0 mr-1"
+                  title="Ver comanda activa"
+                >
+                  <Eye className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span className="text-[10px] font-black hidden sm:inline">Ver Pedido</span>
+                </button>
+              )}
               <span className="text-[#f5d0a9] font-mono tracking-wider uppercase text-[11px] font-bold">
                 Pizarra Criolla · {restaurant.name}
               </span>
