@@ -238,6 +238,44 @@ function broadcastMenuUpdate(payload: any) {
   }
 }
 
+// Helper to look up restaurant branding for direct link access & preloading
+async function getRestaurantBrandingForSlug(slugOrId: string) {
+  if (!slugOrId) return null;
+  await ensureCloudDataHydrated();
+  const current = cachedCloudData || { restaurants: [], publishedMenus: {} };
+  const targetSlug = normalizeSlug(slugOrId);
+
+  // 1. Check publishedMenus
+  if (current.publishedMenus) {
+    for (const [restId, snapshot] of Object.entries(current.publishedMenus)) {
+      if (!snapshot) continue;
+      const snapRest = (snapshot as any).restaurant;
+      if (
+        normalizeSlug(restId) === targetSlug ||
+        normalizeSlug(snapRest?.slug) === targetSlug ||
+        normalizeSlug(snapRest?.name) === targetSlug
+      ) {
+        return snapRest;
+      }
+    }
+  }
+
+  // 2. Check restaurants list
+  if (Array.isArray(current.restaurants)) {
+    const found = current.restaurants.find((r: any) => {
+      if (!r) return false;
+      return (
+        normalizeSlug(r.id) === targetSlug ||
+        normalizeSlug(r.slug) === targetSlug ||
+        normalizeSlug(r.name) === targetSlug
+      );
+    });
+    if (found) return found;
+  }
+
+  return null;
+}
+
 async function startServer() {
   const app = express();
 
@@ -861,16 +899,149 @@ async function startServer() {
   });
 
   // Mount Vite or Serve Static Files
+  let vite: any = null;
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-    });
   } else {
-    const vite = await createViteServer({
+    vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
-      appType: 'spa',
+      appType: 'custom',
     });
+  }
+
+  // Handle HTML document requests with instant branding & logo preload for direct menu links
+  app.get('*', async (req, res, next) => {
+    const url = req.originalUrl;
+    // Pass non-HTML requests (API, Vite internal modules, static assets)
+    if (
+      url.startsWith('/api') ||
+      url.startsWith('/@') ||
+      url.startsWith('/src') ||
+      url.startsWith('/node_modules') ||
+      (url.split('?')[0].includes('.') && !url.split('?')[0].endsWith('.html'))
+    ) {
+      if (vite) {
+        return vite.middlewares(req, res, next);
+      }
+      return next();
+    }
+
+    try {
+      const isProd = process.env.NODE_ENV === 'production';
+      const indexPath = isProd 
+        ? path.resolve(__dirname, 'dist', 'index.html')
+        : path.resolve(__dirname, 'index.html');
+
+      if (!fs.existsSync(indexPath)) {
+        if (vite) return vite.middlewares(req, res, next);
+        return next();
+      }
+
+      let template = fs.readFileSync(indexPath, 'utf-8');
+      if (!isProd && vite) {
+        template = await vite.transformIndexHtml(url, template);
+      }
+
+      const requestedSlug = (req.query.r || req.query.rest || req.query.restaurant) as string;
+      if (requestedSlug) {
+        const foundRest = await getRestaurantBrandingForSlug(requestedSlug);
+        if (foundRest) {
+          const bgColor = foundRest.branding?.backgroundColor || foundRest.branding?.darkBgColor || foundRest.branding?.primaryColor || '#852323';
+          const logoUrl = foundRest.branding?.headerLogoUrl || foundRest.logoUrl || '';
+          const restName = foundRest.name || 'Carta Digital';
+
+          // Preload style: Instant background color on html/body/#root so there is zero dark flicker
+          const preloadStyle = `
+  <style id="menu-preload-style">
+    html, body {
+      background-color: ${bgColor} !important;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    #root {
+      background-color: ${bgColor} !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    @keyframes splashLogoFade {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashLogoPulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    #initial-preload-splash {
+      min-height: 100vh;
+      width: 100%;
+      background-color: ${bgColor};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      pointer-events: none;
+    }
+    #initial-preload-splash img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      animation: splashLogoFade 0.3s ease-out forwards, splashLogoPulse 1.8s ease-in-out infinite 0.3s;
+    }
+  </style>`;
+
+          // Image preload tag (if URL)
+          const preloadLink = logoUrl && (logoUrl.startsWith('http') || logoUrl.startsWith('/'))
+            ? `<link rel="preload" as="image" href="${logoUrl}" />`
+            : '';
+
+          // Preloaded branding data injected into client window
+          const preloadScript = `
+  <script>
+    window.__PRELOADED_RESTAURANT_BRANDING__ = ${JSON.stringify({
+      id: foundRest.id,
+      slug: foundRest.slug,
+      name: foundRest.name,
+      bgColor: bgColor,
+      logoUrl: logoUrl,
+    })};
+  </script>`;
+
+          // Initial visual placeholder inside #root
+          const initialSplashHtml = `
+    <div id="initial-preload-splash">
+      ${logoUrl ? `<img src="${logoUrl}" alt="${restName}" />` : ''}
+    </div>`;
+
+          // Inject into template
+          template = template.replace('</head>', `${preloadStyle}\n${preloadLink}\n${preloadScript}\n</head>`);
+          template = template.replace('<div id="root"></div>', `<div id="root">${initialSplashHtml}</div>`);
+
+          res.status(200).set({
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
+          }).end(template);
+          return;
+        }
+      }
+
+      // Default HTML response (for /, /admin, etc.)
+      if (!isProd) {
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } else {
+        res.sendFile(indexPath);
+      }
+    } catch (err) {
+      if (vite) return vite.middlewares(req, res, next);
+      next(err);
+    }
+  });
+
+  if (vite) {
     app.use(vite.middlewares);
   }
 

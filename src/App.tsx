@@ -1281,7 +1281,25 @@ export default function App() {
   // Global loading screen while fetching initial cloud data from authoritative backend
   if (!isInitialCloudFetchDone || (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant)) {
     if (isDirectLinkAccess) {
-      return <div className="min-h-screen bg-neutral-950" />;
+      const preloadedBranding = (typeof window !== 'undefined' && (window as any).__PRELOADED_RESTAURANT_BRANDING__) || null;
+      const targetRest = previewRestaurant || publishedMenuData?.restaurant;
+      const activeBgColor = targetRest?.branding?.backgroundColor || targetRest?.branding?.darkBgColor || targetRest?.branding?.primaryColor || preloadedBranding?.bgColor || '#852323';
+      const activeLogo = targetRest?.branding?.headerLogoUrl || targetRest?.logoUrl || preloadedBranding?.logoUrl || null;
+      const activeName = targetRest?.name || preloadedBranding?.name || '';
+      return (
+        <div 
+          className="min-h-screen flex flex-col items-center justify-center transition-all duration-300"
+          style={{ backgroundColor: activeBgColor }}
+        >
+          {activeLogo && (
+            <img 
+              src={activeLogo} 
+              alt={activeName} 
+              className="w-28 h-28 sm:w-36 sm:h-36 object-contain animate-pulse" 
+            />
+          )}
+        </div>
+      );
     }
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">

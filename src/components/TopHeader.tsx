@@ -165,7 +165,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <button
               id="header-btn-login-modal"
               onClick={currentUser ? onOpenProfileSettings : onOpenLoginModal}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
               title={currentUser ? "Configuración de Cuenta" : "Ingresar con tu DNI"}
             >
               {currentUser ? (
@@ -173,15 +173,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
-                    className="w-5 h-5 rounded-full object-cover border border-neutral-300"
+                    className="w-6 h-6 rounded-full object-cover border border-neutral-300"
                   />
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-neutral-900 max-w-[90px] sm:max-w-[120px] truncate">
+                  <div className="text-left">
+                    <div className="font-bold text-neutral-900 max-w-[110px] sm:max-w-[150px] truncate leading-tight">
                       {currentUser.name}
-                    </span>
-                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-black text-white">
-                      DNI: {currentUser.dni}
-                    </span>
+                    </div>
+                    <div className="text-[10px] text-neutral-500 font-medium leading-tight mt-0.5">
+                      {currentUser.role === 'ADMIN' ? 'Administrador' : (currentUser.role === 'OWNER' ? 'Dueño / Propietario' : 'Usuario')}
+                    </div>
                   </div>
                 </div>
               ) : (

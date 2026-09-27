@@ -254,25 +254,12 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
           {/* Right Section: User Profile & Actions */}
           <div className="flex items-center gap-2 flex-wrap">
 
-            {/* Role Badge if owner view is active - Clickable to open Profile / Account Settings */}
-            {isOwnerOrManager && (
-              <button
-                type="button"
-                onClick={onOpenProfileSettings}
-                className={`text-[10px] px-2.5 py-1.5 rounded-xl ${badge.color} flex items-center gap-1 border border-neutral-700 shadow-sm cursor-pointer hover:opacity-90 active:scale-95 transition`}
-                title="Configuración de Cuenta"
-              >
-                <RoleIcon className="w-3 h-3" />
-                <span>{badge.label}</span>
-              </button>
-            )}
-
-            {/* User Profile Card - Also clickable to open Profile / Account Settings */}
+            {/* User Profile Card - Clickable to open Profile / Account Settings */}
             <div 
               onClick={onOpenProfileSettings}
               role="button"
               tabIndex={0}
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-300 cursor-pointer transition select-none"
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-300 cursor-pointer transition select-none shadow-sm"
               title="Configuración de Cuenta"
             >
               <img
@@ -281,14 +268,11 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
                 className="w-7 h-7 rounded-full object-cover border border-neutral-300 shrink-0"
               />
               <div className="text-left">
-                <div className="text-xs font-bold text-neutral-900 max-w-[120px] sm:max-w-[170px] truncate leading-tight">
+                <div className="text-xs font-bold text-neutral-900 max-w-[130px] sm:max-w-[180px] truncate leading-tight">
                   {currentUser.name}
                 </div>
-                <div className="text-[10px] text-neutral-600 font-mono flex items-center gap-1.5">
-                  <span>DNI: <strong className="text-neutral-900">{currentUser.dni}</strong></span>
-                  {currentUser.phone && (
-                    <span className="hidden md:inline text-neutral-500">• {currentUser.phone}</span>
-                  )}
+                <div className="text-[10px] text-neutral-500 font-medium truncate leading-tight mt-0.5">
+                  {badge.label}
                 </div>
               </div>
             </div>
@@ -309,40 +293,42 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
         </div>
       </div>
 
-      {/* Subtab Navigation Bar Attached Directly to the Header (Sin Espacios) */}
+      {/* Subtab Navigation Bar Attached Directly to the Header (Equidistante en todo el ancho) */}
       {isOwnerOrManager && onSelectOwnerSubTab && (
-        <div className="border-t border-neutral-200/80 bg-white">
-          <div className="max-w-7xl mx-auto px-2 sm:px-6 py-1.5 flex items-center justify-start gap-1 overflow-x-auto no-scrollbar">
-            {[
-              { id: 'sales_monitor', label: 'Ventas', icon: Eye },
-              { id: 'dishes', label: 'Carta', icon: Utensils },
-              { id: 'tables', label: `Mesas (${tablesCount ?? 6})`, icon: Layers },
-              { id: 'schedules', label: 'Horarios', icon: Clock },
-              { id: 'shifts', label: `Turnos (${shiftsCount ?? 4})`, icon: Calendar },
-              { id: 'kitchen', label: `Cocina (${kitchenCount ?? 1})`, icon: Flame },
-              { id: 'waiters', label: `Mozos (${waitersCount ?? 1})`, icon: ChefHat },
-              { id: 'delivery', label: `Riders (${ridersCount ?? 1})`, icon: Bike },
-              { id: 'customers', label: 'Clientes', icon: UserCheck },
-              { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
-            ].map(tab => {
-              const isActive = activeOwnerSubTab === tab.id;
-              const IconComp = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onSelectOwnerSubTab(tab.id)}
-                  title={tab.label}
-                  className={`p-2 lg:px-3 lg:py-1.5 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs shrink-0 ${
-                    isActive
-                      ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
-                  }`}
-                >
-                  <IconComp className="w-4 h-4 shrink-0" />
-                  <span className="hidden lg:inline whitespace-nowrap">{tab.label}</span>
-                </button>
-              );
-            })}
+        <div className="border-t border-neutral-200/80 bg-white w-full">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1.5">
+            <div className="w-full grid grid-cols-5 md:grid-cols-10 gap-1 sm:gap-1.5 items-center justify-between">
+              {[
+                { id: 'sales_monitor', label: 'Ventas', icon: Eye },
+                { id: 'dishes', label: 'Carta', icon: Utensils },
+                { id: 'tables', label: `Mesas (${tablesCount ?? 6})`, icon: Layers },
+                { id: 'schedules', label: 'Horarios', icon: Clock },
+                { id: 'shifts', label: `Turnos (${shiftsCount ?? 4})`, icon: Calendar },
+                { id: 'kitchen', label: `Cocina (${kitchenCount ?? 1})`, icon: Flame },
+                { id: 'waiters', label: `Mozos (${waitersCount ?? 1})`, icon: ChefHat },
+                { id: 'delivery', label: `Riders (${ridersCount ?? 1})`, icon: Bike },
+                { id: 'customers', label: 'Clientes', icon: UserCheck },
+                { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
+              ].map(tab => {
+                const isActive = activeOwnerSubTab === tab.id;
+                const IconComp = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onSelectOwnerSubTab(tab.id)}
+                    title={tab.label}
+                    className={`w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl font-bold transition flex flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-[11px] sm:text-xs text-center ${
+                      isActive
+                        ? 'bg-neutral-900 text-white shadow-sm ring-1 ring-neutral-900'
+                        : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
+                    }`}
+                  >
+                    <IconComp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span className="truncate whitespace-nowrap">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
