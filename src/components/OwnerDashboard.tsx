@@ -848,15 +848,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {/* BARRA DE NAVEGACIÓN DE BOTONES (JUSTO DEBAJO DEL ENCABEZADO DE LA PÁGINA) */}
       <div className="bg-white border border-neutral-200/80 rounded-2xl p-2 shadow-sm flex items-center justify-start gap-1.5 overflow-x-auto">
         {[
-          { id: 'sales_monitor', label: 'Supervisar Ventas', icon: Eye },
-          { id: 'dishes', label: 'Carta & Platos', icon: Utensils },
+          { id: 'sales_monitor', label: 'Ventas', icon: Eye },
+          { id: 'dishes', label: 'Carta', icon: Utensils },
           { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
           { id: 'schedules', label: 'Horarios', icon: Clock },
           { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar },
           { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame },
           { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat },
           { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike },
-          { id: 'customers', label: 'Clientes & QR', icon: UserCheck },
+          { id: 'customers', label: 'Clientes', icon: UserCheck },
           { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
         ].map(tab => {
           const isActive = activeSubTab === tab.id;
@@ -880,197 +880,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. LISTA DE RESTAURANTES DEL DUEÑO                            */}
-      {/* ------------------------------------------------------------- */}
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
-            <Store className="w-4 h-4 text-[#1E1F24]" />
-            <h2 className="text-base font-bold text-neutral-900">
-              Mis Restaurantes ({ownedRestaurants.length})
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setIsCreatingRestaurant(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1E1F24] text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5 text-white" />
-              <span>Crear Restaurante</span>
-            </button>
-
-            <button
-              onClick={() => setIsCreatingUser(true)}
-              disabled={ownedRestaurants.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-neutral-200 text-neutral-800 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer shadow-sm"
-            >
-              <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
-              <span>Crear Personal / Cliente</span>
-            </button>
-          </div>
-        </div>
-
-        {ownedRestaurants.length === 0 ? (
-          <div className="p-8 rounded-[32px] border border-dashed border-neutral-300 bg-white text-center flex flex-col items-center justify-center gap-3 shadow-sm">
-            <Store className="w-10 h-10 text-neutral-400" />
-            <h3 className="text-sm font-bold text-neutral-800">No tienes restaurantes creados ni asignados</h3>
-            <p className="text-xs text-neutral-500 max-w-md">
-              Como propietario, puedes crear tu propio restaurante o solicitar al administrador que te asigne una sede existente.
-            </p>
-            <button
-              onClick={() => setIsCreatingRestaurant(true)}
-              className="mt-2 px-4 py-2 rounded-xl bg-[#1E1F24] hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4 text-white" />
-              <span>Crear Mi Primer Restaurante</span>
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ownedRestaurants.map((rest) => {
-              const isSelected = rest.id === currentRestaurant?.id;
-              const brandCardBg = rest.branding?.cardBgColor || rest.branding?.darkBgColor || '#12111A';
-              const brandTextColor = rest.branding?.textColor || '#FFFFFF';
-              const brandPrimaryColor = rest.branding?.buttonColor || rest.branding?.primaryColor || '#D4AF37';
-              const brandButtonText = rest.branding?.buttonTextColor || '#000000';
-
-              return (
-                <div
-                  key={rest.id}
-                  onClick={() => handleSelectRestaurant(rest.id)}
-                  style={{
-                    backgroundColor: brandCardBg,
-                    color: brandTextColor,
-                    borderColor: isSelected ? brandPrimaryColor : `${brandPrimaryColor}40`
-                  }}
-                  className={`p-4.5 rounded-[22px] border transition cursor-pointer flex flex-col justify-between gap-3 relative shadow-md ${
-                    isSelected ? 'ring-2' : 'hover:opacity-95'
-                  }`}
-                >
-                  {isSelected && (
-                    <span 
-                      className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow"
-                      style={{
-                        backgroundColor: brandPrimaryColor,
-                        color: brandButtonText
-                      }}
-                    >
-                      Gestionando
-                    </span>
-                  )}
-
-                  <div className="flex items-start gap-3">
-                    {rest.logoUrl && (
-                      <img 
-                        src={rest.logoUrl} 
-                        alt={rest.name} 
-                        className="w-12 h-12 rounded-xl object-cover border shrink-0 shadow" 
-                        style={{ borderColor: `${brandPrimaryColor}80` }}
-                      />
-                    )}
-                    <div className="pr-16">
-                      <h3 className="text-sm font-black leading-tight" style={{ color: brandTextColor }}>{rest.name}</h3>
-                      <p className="text-xs opacity-80 mt-0.5 line-clamp-1">{rest.tagline}</p>
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" title="Guardado en Nube">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                          <span>☁️</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                      <span className="font-bold" style={{ color: brandPrimaryColor }}>Link:</span>
-                      <span className="opacity-90">/?r={rest.slug}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${rest.slug}`;
-                          navigator.clipboard?.writeText(url);
-                          showToast(`Link de ${rest.name} copiado al portapapeles.`);
-                        }}
-                        className="p-1.5 rounded-lg border transition cursor-pointer hover:bg-white/10"
-                        style={{
-                          borderColor: 'rgba(255,255,255,0.2)',
-                          color: brandTextColor
-                        }}
-                        title="Copiar link para probar como cliente"
-                      >
-                        <Copy className="w-3.5 h-3.5 opacity-80" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenCustomerPreview(rest, 'DINE_IN', '01');
-                        }}
-                        style={{
-                          backgroundColor: brandPrimaryColor,
-                          color: brandButtonText
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer shadow"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Probar</span>
-                      </button>
-                      {onDeleteRestaurant && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRestaurantToDelete(rest);
-                          }}
-                          className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 transition cursor-pointer"
-                          title={`Eliminar sede ${rest.name}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 2. PANEL DE EDICIÓN DE ACCESOS Y PLANTILLAS                   */}
+      {/* PANEL DE EDICIÓN DE ACCESOS Y PLANTILLAS                   */}
       {/* ------------------------------------------------------------- */}
       {currentRestaurant && (
       <div className="rounded-[32px] border border-neutral-200 bg-white shadow-sm overflow-hidden">
         
-        {/* Restaurant Header Banner */}
-        <div className="p-4 sm:p-5 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img 
-              src={currentRestaurant.logoUrl} 
-              alt={currentRestaurant.name} 
-              className="w-11 h-11 rounded-xl object-cover border border-neutral-200" 
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-neutral-800">
-                  {currentRestaurant.name}
-                </h2>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                  currentRestaurant.isOpen ? 'bg-neutral-900 text-white border border-neutral-800' : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
-                }`}>
-                  {currentRestaurant.isOpen ? 'Sede Abierta' : 'Sede Cerrada'}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300" title="Sincronizado en Nube">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>☁️</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* ============================================================= */}
         {/* SUBTAB 0: CARTAS, PLATOS, FONDOS, ADICIONALES Y OBSERVACIONES */}
         {/* ============================================================= */}
