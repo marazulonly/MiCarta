@@ -5,8 +5,7 @@ import {
   KeyRound,
   Sparkles,
   LogOut,
-  SlidersHorizontal,
-  Settings
+  SlidersHorizontal
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
@@ -66,9 +65,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           {/* Brand */}
           <div className="flex items-center gap-3">
             <img 
-              src="/huevofrito.png" 
+              src="/huevofrito.svg" 
               alt="Micarta" 
-              className="w-8 h-8 object-contain"
+              className="w-8 h-8 object-contain border-0 shadow-none outline-none"
             />
             <div>
               <div className="flex items-center gap-2">
@@ -162,12 +161,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               </select>
             </div>
 
-            {/* Login / Current User Profile Button */}
+            {/* Login / Current User Profile Button (Click opens Configuración de Cuenta) */}
             <button
               id="header-btn-login-modal"
               onClick={currentUser ? onOpenProfileSettings : onOpenLoginModal}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
-              title={currentUser ? "Configuración de Perfil (Editar datos y foto)" : "Ingresar con tu DNI"}
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 transition cursor-pointer text-neutral-800 shadow-sm"
+              title={currentUser ? "Configuración de Cuenta" : "Ingresar con tu DNI"}
             >
               {currentUser ? (
                 <div className="flex items-center gap-2">
@@ -193,28 +192,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               )}
             </button>
 
-            {/* Profile Settings Gear Button */}
-            {currentUser && onOpenProfileSettings && (
-              <button
-                id="header-btn-profile-settings"
-                onClick={onOpenProfileSettings}
-                className="flex items-center justify-center p-2 rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
-                title="Configuración de Perfil (Editar datos y foto)"
-              >
-                <Settings className="w-4 h-4 text-neutral-700 animate-spin-slow" />
-              </button>
-            )}
-
-            {/* Logout Button */}
+            {/* Logout Button (Icon only, no text) */}
             {currentUser && onLogout && (
               <button
                 id="header-btn-logout"
                 onClick={onLogout}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer"
-                title="Cerrar Sesión y Regresar al Login"
+                className="flex items-center justify-center p-2 rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
+                title="Cerrar Sesión"
+                aria-label="Cerrar Sesión"
               >
-                <LogOut className="w-3.5 h-3.5 text-neutral-700" />
-                <span className="hidden sm:inline">Salir</span>
+                <LogOut className="w-4 h-4 text-neutral-700" />
               </button>
             )}
 

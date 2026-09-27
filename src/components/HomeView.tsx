@@ -201,83 +201,83 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* Render General Financial Overview */}
       {viewMode === 'overview' && (
-        <div className="space-y-8 pb-28">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-900 pb-6">
+        <div className="space-y-6 pb-28">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-200 pb-5">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
                 Resumen Financiero y Comandas
               </h1>
-              <p className="text-xs text-neutral-400 mt-1">
+              <p className="text-xs text-neutral-600 mt-1">
                 Supervisión general de los 4 locales, enlaces públicos y comandas activas.
               </p>
             </div>
 
             <button
               onClick={onNavigateToOrders}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer self-start sm:self-auto"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-neutral-900 border border-neutral-300 shadow-sm font-bold text-xs hover:bg-neutral-100 transition cursor-pointer self-start sm:self-auto"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-3.5 h-3.5 text-neutral-700" />
               <span>Comandas Activas ({activeOrdersCount})</span>
             </button>
           </div>
 
           {/* Minimalist 4-Metric Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-4 rounded-xl border border-neutral-800/80 bg-neutral-900/40">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">Facturación Diaria</span>
-                <DollarSign className="w-4 h-4 text-neutral-400" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-xs hover:border-neutral-300 transition">
+              <div className="flex items-center justify-between text-neutral-500">
+                <span className="text-xs font-bold text-neutral-600">Facturación Diaria</span>
+                <DollarSign className="w-4 h-4 text-neutral-500" />
               </div>
               <div className="mt-3">
-                <span className="text-2xl font-black tracking-tight text-white">
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
                   ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <span className="text-[11px] text-neutral-400 block mt-1">
+                <span className="text-[11px] text-neutral-500 font-medium block mt-1">
                   En los 4 locales hoy
                 </span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-neutral-800/80 bg-neutral-900/40">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">Comandas Activas</span>
-                <ShoppingBag className="w-4 h-4 text-neutral-400" />
+            <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-xs hover:border-neutral-300 transition">
+              <div className="flex items-center justify-between text-neutral-500">
+                <span className="text-xs font-bold text-neutral-600">Comandas Activas</span>
+                <ShoppingBag className="w-4 h-4 text-neutral-500" />
               </div>
               <div className="mt-3">
-                <span className="text-2xl font-black tracking-tight text-white">
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
                   {activeOrdersCount}
                 </span>
-                <span className="text-[11px] text-neutral-400 block mt-1">
+                <span className="text-[11px] text-neutral-500 font-medium block mt-1">
                   En salón y delivery
                 </span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-neutral-800/80 bg-neutral-900/40">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">Ocupación Media</span>
-                <Store className="w-4 h-4 text-neutral-400" />
+            <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-xs hover:border-neutral-300 transition">
+              <div className="flex items-center justify-between text-neutral-500">
+                <span className="text-xs font-bold text-neutral-600">Ocupación Media</span>
+                <Store className="w-4 h-4 text-neutral-500" />
               </div>
               <div className="mt-3">
-                <span className="text-2xl font-black tracking-tight text-white">
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
                   {avgOccupancy}%
                 </span>
-                <span className="text-[11px] text-neutral-400 block mt-1">
+                <span className="text-[11px] text-neutral-500 font-medium block mt-1">
                   82 mesas disponibles en total
                 </span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-neutral-800/80 bg-neutral-900/40">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">Ticket Promedio</span>
-                <TrendingUp className="w-4 h-4 text-neutral-400" />
+            <div className="p-5 rounded-2xl border border-neutral-200 bg-white shadow-xs hover:border-neutral-300 transition">
+              <div className="flex items-center justify-between text-neutral-500">
+                <span className="text-xs font-bold text-neutral-600">Ticket Promedio</span>
+                <TrendingUp className="w-4 h-4 text-neutral-500" />
               </div>
               <div className="mt-3">
-                <span className="text-2xl font-black tracking-tight text-white">
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
                   $36.15
                 </span>
-                <span className="text-[11px] text-neutral-400 block mt-1">
+                <span className="text-[11px] text-neutral-500 font-medium block mt-1">
                   +8.4% vs semana previa
                 </span>
               </div>
@@ -285,46 +285,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Orders List */}
-          <div className="p-5 rounded-xl border border-neutral-800 bg-neutral-900/20 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Comandas Recientes en Tiempo Real</h3>
+          <div className="p-5 sm:p-6 rounded-2xl border border-neutral-200 bg-white shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <h3 className="text-sm font-bold text-neutral-900">Comandas Recientes en Tiempo Real</h3>
               <button
                 onClick={onNavigateToOrders}
-                className="text-xs text-neutral-300 hover:text-white font-medium flex items-center gap-1 cursor-pointer"
+                className="text-xs text-neutral-600 hover:text-neutral-900 font-bold flex items-center gap-1 cursor-pointer transition"
               >
                 <span>Ver Tablero KDS</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="divide-y divide-neutral-800/80">
+            <div className="divide-y divide-neutral-100">
               {(orders || []).filter(Boolean).slice(0, 4).map(order => {
                 const rest = restaurants.find(r => r && r.id === order.restaurantId);
                 return (
                   <div 
                     key={order.id}
-                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-neutral-50/60 rounded-xl px-2 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center font-mono font-bold text-xs text-white">
+                      <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center font-mono font-bold text-xs text-white shrink-0 shadow-xs">
                         {order.orderNumber}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{order.customerName || 'Cliente'}</span>
-                          <span className="text-[11px] text-neutral-400 font-mono">
+                          <span className="text-xs font-bold text-neutral-900">{order.customerName || 'Cliente'}</span>
+                          <span className="text-[11px] text-neutral-500 font-mono">
                             ({rest?.name || 'Local'})
                           </span>
                         </div>
-                        <p className="text-[11px] text-neutral-400 mt-0.5">
+                        <p className="text-[11px] text-neutral-600 mt-0.5">
                           {(order.items || []).map(i => i ? `${i.quantity}x ${i.name}` : '').filter(Boolean).join(', ')}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3 text-xs">
-                      <span className="font-bold text-white font-mono">S/ {(order.total || 0).toFixed(2)}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">
+                      <span className="font-bold text-neutral-900 font-mono text-sm">S/ {(order.total || 0).toFixed(2)}</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-neutral-100 text-neutral-800 border border-neutral-300">
                         {order.status === 'PENDING' ? 'Pendiente' :
                          order.status === 'IN_KITCHEN' || (order.status as string) === 'PREPARING' ? 'En Cocina' :
                          order.status === 'READY' ? 'Listo' : 'Entregado'}

@@ -72,6 +72,8 @@ interface OwnerDashboardProps {
   restaurants: Restaurant[];
   selectedRestaurantId?: string;
   onSelectRestaurant?: (id: string) => void;
+  activeSubTab?: AccessSubTab;
+  onSelectSubTab?: (subtab: AccessSubTab) => void;
   users: User[];
   templates: MenuTemplate[];
   menuItems?: MenuItem[];
@@ -113,6 +115,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   restaurants,
   selectedRestaurantId,
   onSelectRestaurant,
+  activeSubTab: externalActiveSubTab,
+  onSelectSubTab: externalOnSelectSubTab,
   users,
   templates,
   menuItems = [],
@@ -197,7 +201,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [selectedOrderForModal, setSelectedOrderForModal] = useState<Order | null>(null);
 
   // Active subtab inside restaurant management
-  const [activeSubTab, setActiveSubTab] = useState<AccessSubTab>('waiters');
+  const [internalActiveSubTab, setInternalActiveSubTab] = useState<AccessSubTab>('sales_monitor');
+  const activeSubTab = externalActiveSubTab || internalActiveSubTab;
+  const setActiveSubTab = (tab: AccessSubTab) => {
+    setInternalActiveSubTab(tab);
+    if (externalOnSelectSubTab) externalOnSelectSubTab(tab);
+  };
 
   // Real-time sales and orders monitor mode
   const [monitorMode, setMonitorMode] = useState<'restaurant' | 'table' | 'waiter' | 'kitchen'>('restaurant');
@@ -835,7 +844,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-2.5 sm:space-y-6 pb-28">
 
       {/* Floating Toast Notification */}
       {toastMessage && (
@@ -845,51 +854,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
       )}
 
-      {/* BARRA DE NAVEGACIÓN DE BOTONES (JUSTO DEBAJO DEL ENCABEZADO DE LA PÁGINA) */}
-      <div className="bg-white border border-neutral-200/80 rounded-2xl p-2 shadow-sm flex items-center justify-start gap-1.5 overflow-x-auto">
-        {[
-          { id: 'sales_monitor', label: 'Ventas', icon: Eye },
-          { id: 'dishes', label: 'Carta', icon: Utensils },
-          { id: 'tables', label: `Mesas (${tablesState.length})`, icon: Layers },
-          { id: 'schedules', label: 'Horarios', icon: Clock },
-          { id: 'shifts', label: `Turnos (${shiftsState.length})`, icon: Calendar },
-          { id: 'kitchen', label: `Cocina (${assignedKitchen.length})`, icon: Flame },
-          { id: 'waiters', label: `Mozos (${assignedWaiters.length})`, icon: ChefHat },
-          { id: 'delivery', label: `Riders (${assignedRiders.length})`, icon: Bike },
-          { id: 'customers', label: 'Clientes', icon: UserCheck },
-          { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
-        ].map(tab => {
-          const isActive = activeSubTab === tab.id;
-          const IconComp = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
-              title={tab.label}
-              className={`p-2.5 lg:px-3.5 lg:py-2 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer text-xs shrink-0 ${
-                isActive
-                  ? 'bg-neutral-900 text-white shadow-md'
-                  : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
-              }`}
-            >
-              <IconComp className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:inline whitespace-nowrap">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ------------------------------------------------------------- */}
       {/* PANEL DE EDICIÓN DE ACCESOS Y PLANTILLAS                   */}
       {/* ------------------------------------------------------------- */}
       {currentRestaurant && (
-      <div className="rounded-[32px] border border-neutral-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl sm:rounded-[32px] border border-neutral-200 bg-white shadow-sm overflow-hidden">
         
         {/* ============================================================= */}
         {/* SUBTAB 0: CARTAS, PLATOS, FONDOS, ADICIONALES Y OBSERVACIONES */}
         {/* ============================================================= */}
         {activeSubTab === 'dishes' && (
-          <div className="p-4 sm:p-6">
+          <div className="p-2.5 sm:p-6">
             <OwnerMenuEditor
               restaurant={currentRestaurant}
               categories={categories}
@@ -915,19 +890,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB: MESAS Y CÓDIGOS QR                                   */}
         {/* ============================================================= */}
         {activeSubTab === 'tables' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-neutral-900" />
-                  <span>Configuración de Mesas y Asignación de Mozos</span>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-5">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Mesas y Mozos ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Define la cantidad de mesas físicas, sus capacidades y qué mozos atenderán cada una. Los clientes escanearán el QR de cada mesa para abrir la carta con el número asignado.
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Define mesas físicas, capacidades y mozos asignados.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => {
                     const nextNum = (tablesState.length > 0 ? Math.max(...tablesState.map(t => t.number)) : 0) + 1;
@@ -939,84 +914,86 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewTableNotes('');
                     setIsCreatingTable(true);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Agregar Mesa"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Agregar Mesa</span>
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Agregar Mesa</span>
                 </button>
 
                 <button
                   onClick={handleSaveTables}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Mesas"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Guardar Mesas</span>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Mesas</span>
                 </button>
               </div>
             </div>
 
             {/* Quick Generator Toolbar */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-neutral-800 shrink-0" />
-                <span className="text-xs font-bold text-neutral-800">Generador Rápido de Cuadrícula:</span>
+            <div className="p-2 sm:p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+                <span className="text-xs font-bold text-neutral-800">Generador Rápido:</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-500 font-medium">Total de mesas:</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] sm:text-xs text-neutral-500 font-medium">Mesas:</span>
                 {[6, 12, 18, 24].map(count => (
                   <button
                     key={count}
                     onClick={() => handleBatchGenerateTables(count)}
-                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
+                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
                       tablesState.length === count 
                         ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm' 
                         : 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-300'
                     }`}
                   >
-                    {count} mesas
+                    {count}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Table Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {tablesState.map((tbl) => {
                 const assignedStaff = users.filter(u => tbl.assignedWaiterIds?.includes(u.id));
 
                 return (
                   <div 
                     key={tbl.id} 
-                    className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-3"
+                    className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-2 sm:gap-3"
                   >
                     <div>
                       {/* Top badges */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center font-mono font-bold text-white text-sm">
+                      <div className="flex items-center justify-between mb-1 sm:mb-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center font-mono font-bold text-white text-xs sm:text-sm">
                             {tbl.number < 10 ? `0${tbl.number}` : tbl.number}
                           </span>
                           <div>
                             <h4 className="text-xs font-bold text-neutral-900 leading-tight">{tbl.name}</h4>
-                            <span className="text-[11px] text-neutral-500 font-medium">{tbl.capacity} personas</span>
+                            <span className="text-[10px] sm:text-[11px] text-neutral-500 font-medium">{tbl.capacity} personas</span>
                           </div>
                         </div>
 
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
+                        <span className="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
                           {tbl.zone}
                         </span>
                       </div>
 
                       {/* Notes if any */}
                       {tbl.notes && (
-                        <p className="text-[11px] text-neutral-600 italic mb-2 line-clamp-1">
+                        <p className="text-[10px] sm:text-[11px] text-neutral-600 italic mb-1 line-clamp-1">
                           "{tbl.notes}"
                         </p>
                       )}
 
                       {/* Assigned Waiters */}
-                      <div className="p-2.5 rounded-xl bg-white border border-neutral-200 mb-2">
-                        <span className="text-[10px] text-neutral-500 block uppercase font-bold tracking-wider mb-1">
+                      <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-white border border-neutral-200 mb-1 sm:mb-2">
+                        <span className="text-[9px] sm:text-[10px] text-neutral-500 block uppercase font-bold tracking-wider mb-0.5">
                           Mozos Asignados:
                         </span>
                         {assignedStaff.length > 0 ? (
@@ -1024,7 +1001,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             {assignedStaff.map(waiter => (
                               <span 
                                 key={waiter.id} 
-                                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200 font-medium"
+                                className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200 font-medium"
                               >
                                 <ChefHat className="w-3 h-3 text-neutral-600" />
                                 <span>{waiter.name.split(' ')[0]}</span>
@@ -1032,7 +1009,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-neutral-500 italic">
+                          <span className="text-[10px] sm:text-[11px] text-neutral-500 italic">
                             Sin mozo asignado (Todos)
                           </span>
                         )}
@@ -1040,24 +1017,24 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="pt-2.5 border-t border-neutral-200 flex items-center justify-between gap-1 text-xs">
+                    <div className="pt-1.5 sm:pt-2 border-t border-neutral-200 flex items-center justify-between gap-1 text-xs">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setSelectedTableForQr(tbl)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[11px] font-bold shadow-sm"
+                          className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[10px] sm:text-[11px] font-bold shadow-sm"
                           title="Ver e Imprimir Código QR"
                         >
-                          <QrCode className="w-3 h-3 text-neutral-700" />
-                          <span>QR</span>
+                          <QrCode className="w-3.5 h-3.5 text-neutral-700" />
+                          <span className="hidden sm:inline">QR</span>
                         </button>
 
                         <button
                           onClick={() => onOpenCustomerPreview(currentRestaurant, 'DINE_IN', `${tbl.number}`)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[11px] font-bold shadow-sm"
+                          className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-200 transition cursor-pointer text-[10px] sm:text-[11px] font-bold shadow-sm"
                           title="Probar Carta como Cliente en esta Mesa"
                         >
-                          <Eye className="w-3 h-3 text-neutral-700" />
-                          <span>Carta</span>
+                          <Eye className="w-3.5 h-3.5 text-neutral-700" />
+                          <span className="hidden sm:inline">Carta</span>
                         </button>
                       </div>
 
@@ -1090,82 +1067,99 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB: HORARIOS SEMANALES                                   */}
         {/* ============================================================= */}
         {activeSubTab === 'schedules' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-neutral-900" />
-                  <span>Horarios de Atención Semanales ({currentRestaurant.name})</span>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-5">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Horarios de Atención ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Configura los horarios de apertura y cierre de cada día de la semana. Los clientes y mozos verán estos horarios en la carta digital y en la cabecera.
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Configura los horarios de apertura y cierre de cada día de la semana.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={handleSaveWeeklySchedule}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Horarios"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Guardar Horarios</span>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Horarios</span>
                 </button>
               </div>
             </div>
 
             {/* Presets Toolbar */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-neutral-800 shrink-0" />
-                <span className="text-xs font-bold text-neutral-800">Plantillas de Horario Rápidas:</span>
+            <div className="p-2 sm:p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+                <span className="text-xs font-bold text-neutral-800">Plantillas Rápidas:</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => handleApplySchedulePreset('standard')}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
+                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-[10px] sm:text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
-                  Horario Estándar (12:00 - 23:00)
+                  Estándar (12:00 - 23:00)
                 </button>
                 <button
                   onClick={() => handleApplySchedulePreset('copy_monday')}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
+                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-[10px] sm:text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
-                  Copiar Lunes a toda la semana
+                  Copiar Lunes
                 </button>
                 <button
                   onClick={() => handleApplySchedulePreset('weekend_extended')}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
+                  className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-[10px] sm:text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
                 >
-                  Fin de Semana Extendido (02:00 am)
+                  Fin de Semana Ext.
                 </button>
               </div>
             </div>
 
             {/* Days Table List */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               {scheduleState.map((dayItem, idx) => (
                 <div 
                   key={dayItem.day} 
-                  className={`p-3.5 sm:p-4 rounded-2xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  className={`p-2 sm:p-3.5 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-1.5 sm:gap-4 ${
                     dayItem.isOpen 
                       ? 'bg-neutral-50 border-neutral-200 shadow-sm' 
                       : 'bg-neutral-50/60 border-neutral-200/60 opacity-60'
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-[140px]">
-                    <span className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center font-bold text-xs text-white">
-                      {dayItem.day.slice(0, 2)}
-                    </span>
-                    <div>
-                      <h4 className="text-xs font-bold text-neutral-900">{dayItem.day}</h4>
-                      <span className={`text-[11px] font-bold ${dayItem.isOpen ? 'text-neutral-800' : 'text-neutral-400'}`}>
-                        {dayItem.isOpen ? '● Abierto' : '○ Cerrado'}
+                  <div className="flex items-center justify-between md:justify-start gap-2 min-w-[120px]">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-neutral-900 flex items-center justify-center font-bold text-[11px] sm:text-xs text-white">
+                        {dayItem.day.slice(0, 2)}
                       </span>
+                      <div>
+                        <h4 className="text-xs font-bold text-neutral-900">{dayItem.day}</h4>
+                        <span className={`text-[10px] sm:text-[11px] font-bold ${dayItem.isOpen ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                          {dayItem.isOpen ? '● Abierto' : '○ Cerrado'}
+                        </span>
+                      </div>
                     </div>
+
+                    <label className="flex md:hidden items-center gap-1 cursor-pointer text-[10px] font-bold text-neutral-800">
+                      <input
+                        type="checkbox"
+                        checked={dayItem.isOpen}
+                        onChange={(e) => {
+                          const updated = [...scheduleState];
+                          updated[idx] = { ...updated[idx], isOpen: e.target.checked };
+                          setScheduleState(updated);
+                        }}
+                        className="w-3.5 h-3.5 rounded text-neutral-900 accent-neutral-900 focus:ring-0 border-neutral-300 bg-white cursor-pointer"
+                      />
+                      <span>{dayItem.isOpen ? 'Habilitado' : 'Cerrado'}</span>
+                    </label>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 flex-1">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 flex-1">
+                    <label className="hidden md:flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
                       <input
                         type="checkbox"
                         checked={dayItem.isOpen}
@@ -1180,9 +1174,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </label>
 
                     {dayItem.isOpen && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] font-medium text-neutral-600">Apertura:</span>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 w-full md:w-auto">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] sm:text-[11px] font-medium text-neutral-600">Apertura:</span>
                           <input
                             type="time"
                             value={dayItem.openTime}
@@ -1191,14 +1185,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               updated[idx] = { ...updated[idx], openTime: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
+                            className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
                           />
                         </div>
 
                         <span className="text-neutral-400">—</span>
 
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] font-medium text-neutral-600">Cierre:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] sm:text-[11px] font-medium text-neutral-600">Cierre:</span>
                           <input
                             type="time"
                             value={dayItem.closeTime}
@@ -1207,22 +1201,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                               updated[idx] = { ...updated[idx], closeTime: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
+                            className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white border border-neutral-300 text-xs font-mono font-bold text-neutral-900"
                           />
                         </div>
 
-                        <div className="flex items-center gap-1.5 flex-1 min-w-[180px]">
-                          <span className="text-[11px] font-medium text-neutral-600">Nota:</span>
+                        <div className="flex items-center gap-1 flex-1 min-w-[120px]">
                           <input
                             type="text"
-                            placeholder="Ej: Almuerzos y cenas, DJ en vivo..."
+                            placeholder="Nota opcional..."
                             value={dayItem.notes || ''}
                             onChange={(e) => {
                               const updated = [...scheduleState];
                               updated[idx] = { ...updated[idx], notes: e.target.value };
                               setScheduleState(updated);
                             }}
-                            className="w-full px-2.5 py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 placeholder:text-neutral-400"
+                            className="w-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 placeholder:text-neutral-400"
                           />
                         </div>
                       </div>
@@ -1238,19 +1231,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB: TURNOS DE PERSONAL                                   */}
         {/* ============================================================= */}
         {activeSubTab === 'shifts' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-neutral-900" />
-                  <span>Turnos de Meseros y Repartidores ({currentRestaurant.name})</span>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-5">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Turnos de Personal ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Define los turnos operativos y asigna personal para la atención de salón y despacho de delivery.
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Define turnos operativos y asigna personal para salón y delivery.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => {
                     setNewShiftName('');
@@ -1261,61 +1254,63 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewShiftUsers([]);
                     setIsCreatingShift(true);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Crear Nuevo Turno"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Crear Nuevo Turno</span>
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Crear Turno</span>
                 </button>
 
                 <button
                   onClick={handleSaveShifts}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Turnos"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Guardar Turnos</span>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Turnos</span>
                 </button>
               </div>
             </div>
 
             {/* Shifts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
               {shiftsState.map((shift) => {
                 const assignedUsers = users.filter(u => shift.assignedUserIds?.includes(u.id));
 
                 return (
                   <div 
                     key={shift.id} 
-                    className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-3"
+                    className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 shadow-sm transition flex flex-col justify-between gap-2 sm:gap-3"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="p-2 rounded-lg bg-neutral-900 text-white">
-                            <Clock className="w-4 h-4 text-white" />
+                      <div className="flex items-center justify-between mb-1 sm:mb-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <span className="p-1.5 sm:p-2 rounded-lg bg-neutral-900 text-white">
+                            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </span>
                           <div>
                             <h4 className="text-xs font-bold text-neutral-900">{shift.name}</h4>
-                            <span className="text-[11px] text-neutral-600 font-mono font-bold">
+                            <span className="text-[10px] sm:text-[11px] text-neutral-600 font-mono font-bold">
                               {shift.startTime} — {shift.endTime}
                             </span>
                           </div>
                         </div>
 
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
-                          {shift.roleTarget === 'WAITER' ? 'Salón / Mozos' : shift.roleTarget === 'DELIVERY' ? 'Delivery / Riders' : 'General'}
+                        <span className="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-neutral-200 text-neutral-800 border-neutral-300">
+                          {shift.roleTarget === 'WAITER' ? 'Salón' : shift.roleTarget === 'DELIVERY' ? 'Riders' : 'General'}
                         </span>
                       </div>
 
                       {/* Applicable Days */}
-                      <div className="mb-3">
-                        <span className="text-[10px] text-neutral-500 font-bold block mb-1">Días de Cobertura:</span>
+                      <div className="mb-1.5 sm:mb-3">
+                        <span className="text-[9px] sm:text-[10px] text-neutral-500 font-bold block mb-0.5">Días:</span>
                         <div className="flex flex-wrap gap-1">
                           {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
                             const isIncluded = shift.applicableDays.includes(d as DayOfWeek);
                             return (
                               <span 
                                 key={d} 
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                                className={`text-[8px] sm:text-[10px] px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded font-mono ${
                                   isIncluded 
                                     ? 'bg-neutral-900 text-white font-bold' 
                                     : 'bg-neutral-200 text-neutral-400'
@@ -1329,44 +1324,46 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       </div>
 
                       {/* Staff Assigned */}
-                      <div className="p-2.5 rounded-xl bg-white border border-neutral-200">
-                        <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-1.5">
+                      <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-white border border-neutral-200">
+                        <span className="text-[9px] sm:text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-0.5">
                           Personal Asignado ({assignedUsers.length}):
                         </span>
                         {assignedUsers.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="space-y-0.5 sm:space-y-1">
                             {assignedUsers.map(u => (
-                              <div key={u.id} className="flex items-center justify-between text-xs text-neutral-800 font-medium">
-                                <div className="flex items-center gap-2">
-                                  {u.role === 'WAITER' ? <ChefHat className="w-3.5 h-3.5 text-neutral-600" /> : <Bike className="w-3.5 h-3.5 text-neutral-600" />}
+                              <div key={u.id} className="flex items-center justify-between text-[10px] sm:text-xs text-neutral-800 font-medium">
+                                <div className="flex items-center gap-1 sm:gap-1.5">
+                                  {u.role === 'WAITER' ? <ChefHat className="w-3 h-3 text-neutral-600" /> : <Bike className="w-3 h-3 text-neutral-600" />}
                                   <span>{u.name}</span>
                                 </div>
-                                <span className="text-[10px] font-mono text-neutral-500">DNI: {u.dni}</span>
+                                <span className="text-[9px] sm:text-[10px] font-mono text-neutral-500">DNI: {u.dni}</span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-neutral-500 italic">Sin colaboradores asignados a este turno</span>
+                          <span className="text-[10px] sm:text-[11px] text-neutral-500 italic">Sin colaboradores asignados</span>
                         )}
                       </div>
                     </div>
 
                     {/* Shift Actions */}
-                    <div className="pt-2.5 border-t border-neutral-200 flex items-center justify-end gap-2">
+                    <div className="pt-1.5 sm:pt-2 border-t border-neutral-200 flex items-center justify-end gap-1 sm:gap-1.5">
                       <button
                         onClick={() => setEditingShift({ ...shift })}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
+                        className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 transition cursor-pointer shadow-sm"
+                        title="Editar Turno"
                       >
-                        <Edit3 className="w-3 h-3" />
-                        <span>Editar</span>
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Editar</span>
                       </button>
 
                       <button
                         onClick={() => handleDeleteShift(shift.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs border border-neutral-200 transition cursor-pointer shadow-sm"
+                        className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 text-xs border border-neutral-200 transition cursor-pointer shadow-sm"
+                        title="Eliminar Turno"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Eliminar</span>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Eliminar</span>
                       </button>
                     </div>
                   </div>
@@ -1380,21 +1377,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB: GESTIÓN DE COCINA & PANTALLAS KDS                     */}
         {/* ============================================================= */}
         {activeSubTab === 'kitchen' && (
-          <div className="p-5 sm:p-6 space-y-6">
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-6">
             
             {/* Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-neutral-900" />
-                  <span>Gestión del Rol Cocina & Pantalla KDS ({currentRestaurant.name})</span>
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Cocina & Pantalla KDS ({currentRestaurant.name})</span>
                 </h3>
-                <p className="text-xs text-neutral-600 mt-1">
-                  Gestiona jefes de cocina, cocineros de partida, permisos de pase de salón y control de inventario de platos agotados (Lista 86).
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Gestiona cocineros, pases de salón y control de platos agotados (Lista 86).
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => {
                     setNewUserRole('KITCHEN');
@@ -1406,74 +1403,78 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     setNewUserShift('TARDE');
                     setIsCreatingUser(true);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Alta Personal Cocina"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Alta Personal Cocina</span>
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Alta Cocina</span>
                 </button>
 
                 <button
                   onClick={handleSaveKitchenPerms}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Configuración Cocina"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Guardar Configuración Cocina</span>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Configuración</span>
                 </button>
               </div>
             </div>
 
             {/* Assigned Kitchen Staff Cards */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-2">
-                  <span>Equipo de Cocina Asignado ({assignedKitchen.length})</span>
+              <div className="flex items-center justify-between mb-1.5 sm:mb-3">
+                <h4 className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Equipo de Cocina ({assignedKitchen.length})</span>
                 </h4>
               </div>
 
               {assignedKitchen.length === 0 ? (
-                <div className="p-8 rounded-2xl border border-dashed border-neutral-300 text-center text-xs text-neutral-600 bg-neutral-50">
-                  <Flame className="w-6 h-6 text-neutral-400 mx-auto mb-2" />
-                  <p className="font-medium">No hay cocineros o jefes de cocina asignados a esta sede.</p>
+                <div className="p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-dashed border-neutral-300 text-center text-xs text-neutral-600 bg-neutral-50">
+                  <Flame className="w-5 h-5 text-neutral-400 mx-auto mb-1.5" />
+                  <p className="font-medium">No hay cocineros asignados a esta sede.</p>
                   <button
                     onClick={() => {
                       setNewUserRole('KITCHEN');
                       setIsCreatingUser(true);
                     }}
-                    className="mt-2 text-neutral-900 font-bold hover:underline cursor-pointer"
+                    className="mt-1.5 text-neutral-900 font-bold hover:underline cursor-pointer"
                   >
-                    + Registrar primer personal de cocina
+                    + Registrar primer personal
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3.5">
                   {assignedKitchen.map((chef) => (
-                    <div key={chef.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition flex items-center justify-between gap-3 shadow-sm">
-                      <div className="flex items-center gap-3">
+                    <div key={chef.id} className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition flex items-center justify-between gap-2.5 shadow-sm">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <img 
                           src={chef.avatar || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=120&auto=format&fit=crop&q=80'} 
                           alt={chef.name} 
-                          className="w-10 h-10 rounded-xl object-cover border border-neutral-200 shrink-0" 
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-cover border border-neutral-200 shrink-0" 
                         />
-                        <div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-neutral-900">{chef.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-900 text-white font-mono font-bold">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-neutral-900 truncate">{chef.name}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-neutral-900 text-white font-mono font-bold shrink-0">
                               KDS
                             </span>
                           </div>
-                          <div className="text-[11px] text-neutral-600 mt-0.5 flex items-center gap-1.5 font-medium">
+                          <div className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 flex items-center gap-1 font-medium truncate">
                             <span>DNI: <strong className="font-mono text-neutral-900">{chef.dni}</strong></span>
                             <span>•</span>
-                            <span className="text-neutral-700 font-bold">{chef.kitchenStation || 'Cocina General'}</span>
+                            <span className="text-neutral-700 font-bold truncate">{chef.kitchenStation || 'Cocina'}</span>
                           </div>
                         </div>
                       </div>
 
                       <button
                         onClick={() => setEditingUser(chef)}
-                        className="px-2.5 py-1 rounded-lg bg-white border border-neutral-300 hover:bg-neutral-100 text-[11px] text-neutral-800 font-bold transition cursor-pointer shrink-0 shadow-sm"
+                        className="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white border border-neutral-300 hover:bg-neutral-100 text-xs text-neutral-800 font-bold transition cursor-pointer shrink-0 shadow-sm"
+                        title="Permisos"
                       >
-                        Permisos
+                        <SlidersHorizontal className="w-3.5 h-3.5 sm:hidden" />
+                        <span className="hidden sm:inline">Permisos</span>
                       </button>
                     </div>
                   ))}
@@ -1483,106 +1484,106 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
             {/* Master Kitchen Permissions & Policies */}
             <div>
-              <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <h4 className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-800" />
                 <span>Políticas y Facultades del Rol Cocina</span>
               </h4>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                 
                 {/* canMarkReady */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Marcar Platos Listos para Servir</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Permite al personal de cocina cambiar el estado de platos a "Listo" y notificar automáticamente al mozo o pase de salón.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Permite cambiar el estado de platos a "Listo" y notificar al mozo o pase.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.canMarkReady}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canMarkReady: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
                 {/* canManageStockOut (Lista 86) */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Control de Lista 86 (Platos Agotados)</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Faculta a cocina para agotar platos al instante cuando se terminan insumos, ocultándolos inmediatamente de las cartas QR.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Faculta a cocina para agotar platos al instante cuando se terminan insumos.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.canManageStockOut}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canManageStockOut: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
                 {/* canRejectItems */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Observaciones y Ajustes con Salón</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Permite solicitar rectificación o confirmación al mozo respecto a términos de cocción o alergias de la mesa.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Permite solicitar rectificación o confirmación al mozo de cocción o alergias.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.canRejectItems}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canRejectItems: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
                 {/* canReorderQueue */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Reordenar Cola de Comandas en Pantalla</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Permite al Jefe de Cocina priorizar tickets por orden de llegada, marcha de entradas o cortes a punto.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Permite priorizar tickets por orden de llegada o marcha de entradas.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.canReorderQueue}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, canReorderQueue: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
                 {/* autoPrintTickets */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Recepción Inmediata en KDS</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Las comandas generadas por clientes vía QR o mozos ingresan al instante a la pantalla de cocina sin retardo.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Las comandas generadas por clientes vía QR ingresan al instante a pantalla.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.autoPrintTickets}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, autoPrintTickets: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
                 {/* soundAlerts */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                  <div>
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-neutral-900">Campana Acústica de Nueva Comanda</div>
-                    <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                      Emite un timbre sonoro en el dispositivo de cocina cada vez que ingresa un nuevo pedido de salón o delivery.
+                    <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                      Emite un timbre sonoro en cocina cada vez que entra un nuevo pedido.
                     </p>
                   </div>
                   <input
                     type="checkbox"
                     checked={kitchenPerms.soundAlerts}
                     onChange={(e) => setKitchenPerms({ ...kitchenPerms, soundAlerts: e.target.checked })}
-                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                    className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                   />
                 </div>
 
@@ -1590,17 +1591,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* Default Station Filter */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
               <div>
                 <span className="text-xs font-bold text-neutral-900 block">Estación Predeterminada del Local</span>
-                <span className="text-[11px] text-neutral-600 mt-0.5 block">
-                  Filtro visual por defecto que se aplicará a la vista KDS para este restaurante.
+                <span className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 block">
+                  Filtro visual por defecto aplicado a la vista KDS.
                 </span>
               </div>
               <select
                 value={kitchenPerms.stationFilter || 'Todas las estaciones'}
                 onChange={(e) => setKitchenPerms({ ...kitchenPerms, stationFilter: e.target.value })}
-                className="px-3 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer shadow-sm"
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-neutral-900 cursor-pointer shadow-sm"
               >
                 <option value="Todas las estaciones">Todas las estaciones</option>
                 <option value="Parrilla & Carnes">Parrilla & Carnes</option>
@@ -1617,22 +1618,49 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB 1: ACCESOS DE MESEROS                                  */}
         {/* ============================================================= */}
         {activeSubTab === 'waiters' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="pb-4 border-b border-neutral-200">
-              <h3 className="text-base font-bold text-neutral-900">
-                Permisos Operativos del Personal de Salón ({currentRestaurant.name})
-              </h3>
-              <p className="text-xs text-neutral-600 mt-1">
-                Define qué acciones pueden realizar los mozos asignados a este restaurante sin requerir autorización de gerencia.
-              </p>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-6">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <ChefHat className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Personal de Salón ({currentRestaurant.name})</span>
+                </h3>
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Define qué acciones pueden realizar los mozos sin autorización de gerencia.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    setNewUserRole('WAITER');
+                    setNewUserRestId(currentRestaurant.id);
+                    setIsCreatingUser(true);
+                  }}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Registrar Mesero"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Registrar Mesero</span>
+                </button>
+
+                <button
+                  onClick={handleSaveWaiterPerms}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Accesos de Meseros"
+                >
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Accesos</span>
+                </button>
+              </div>
             </div>
 
             {/* Waiter Switch List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Anular Platos y Comandas</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
                     Permite al mozo dar de baja platos ya enviados a cocina sin clave de supervisor.
                   </p>
                 </div>
@@ -1640,14 +1668,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canCancelOrders}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canCancelOrders: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Aplicar Cortesías y Descuentos</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
                     Permite al mesero aplicar descuentos promocionales directamente en la cuenta.
                   </p>
                 </div>
@@ -1655,115 +1683,104 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   type="checkbox"
                   checked={waiterPerms.canApplyDiscounts}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canApplyDiscounts: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Reasignar Mesas y Juntar Cuentas</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Permite mover comensales entre mesas físicas o unir mesas para grupos grandes.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Permite mover comensales entre mesas físicas o unir mesas para grupos.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={waiterPerms.canAssignTables}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canAssignTables: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Dividir Cuentas (Split Bill)</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Habilita el cobro fraccionado por ítem o por comensal al momento del cierre.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Habilita cobro fraccionado por ítem o por comensal al cierre.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={waiterPerms.canSplitBills}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, canSplitBills: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Exigir PIN de Supervisor para Modificaciones</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Bloquea cambios críticos si no se ingresa el código PIN del administrador.
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Exigir PIN de Supervisor para Cambios</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Bloquea cambios críticos si no se ingresa el PIN del administrador.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={waiterPerms.requireSupervisorPin}
                   onChange={(e) => setWaiterPerms({ ...waiterPerms, requireSupervisorPin: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Límite de Mesas Simultáneas por Mozo</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Tope para garantizar un servicio ágil y sin cuellos de botella.
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Límite de Mesas Simultáneas</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Tope para garantizar un servicio ágil sin cuellos de botella.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <input
                     type="number"
                     min={1}
                     max={15}
                     value={waiterPerms.maxActiveTables}
                     onChange={(e) => setWaiterPerms({ ...waiterPerms, maxActiveTables: parseInt(e.target.value) || 5 })}
-                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
+                    className="w-14 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-500 font-medium">mesas</span>
+                  <span className="text-[10px] sm:text-xs text-neutral-500 font-medium">mesas</span>
                 </div>
               </div>
             </div>
 
             {/* List of Assigned Waiters */}
-            <div className="pt-4 border-t border-neutral-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-neutral-900 block">
-                  Meseros Registrados y Asignados a Esta Sede ({assignedWaiters.length}):
+            <div className="pt-2 sm:pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider block">
+                  Meseros Registrados ({assignedWaiters.length}):
                 </span>
-                <button
-                  onClick={() => {
-                    setNewUserRole('WAITER');
-                    setNewUserRestId(currentRestaurant.id);
-                    setIsCreatingUser(true);
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Registrar Mesero</span>
-                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {assignedWaiters.map(waiter => (
-                  <div key={waiter.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
-                    <div className="flex items-center gap-3">
-                      <img src={waiter.avatar} alt={waiter.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
-                      <div>
-                        <div className="text-xs font-bold text-neutral-900">{waiter.name}</div>
+                  <div key={waiter.id} className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-between gap-2.5 shadow-sm hover:border-neutral-300 transition">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img src={waiter.avatar} alt={waiter.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-cover border border-neutral-200 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-neutral-900 truncate">{waiter.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {waiter.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                        <div className="text-[10px] sm:text-[11px] text-neutral-600 font-medium mt-0.5 truncate">
                           Turno: <strong className="text-neutral-800">{waiter.assignedShift || 'TARDE'}</strong> · PIN: <strong className="font-mono text-neutral-800">{waiter.pinCode || '1234'}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(waiter)}
-                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm shrink-0"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1772,16 +1789,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 ))}
               </div>
             </div>
-
-            <div className="flex justify-end pt-4 border-t border-neutral-200">
-              <button
-                onClick={handleSaveWaiterPerms}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
-              >
-                <Check className="w-4 h-4" />
-                <span>Guardar Accesos de Meseros</span>
-              </button>
-            </div>
           </div>
         )}
 
@@ -1789,87 +1796,114 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB 2: ACCESOS DE REPARTIDORES                             */}
         {/* ============================================================= */}
         {activeSubTab === 'delivery' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="pb-4 border-b border-neutral-200">
-              <h3 className="text-base font-bold text-neutral-900">
-                Reglas de Operación y Accesos de Reparto ({currentRestaurant.name})
-              </h3>
-              <p className="text-xs text-neutral-600 mt-1">
-                Configura los parámetros de seguridad, cobro y despacho para los motorizados de este local.
-              </p>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-6">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <Bike className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Riders & Reparto ({currentRestaurant.name})</span>
+                </h3>
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Configura parámetros de seguridad, cobro y despacho para motorizados.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    setNewUserRole('DELIVERY');
+                    setNewUserRestId(currentRestaurant.id);
+                    setIsCreatingUser(true);
+                  }}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Registrar Repartidor"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Registrar Rider</span>
+                </button>
+
+                <button
+                  onClick={handleSaveDeliveryPerms}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Accesos de Repartidores"
+                >
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Accesos</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Permitir Cobro en Efectivo contra Entrega</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Habilita a los repartidores recibir dinero en mano y reportar cuadre en caja.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Habilita a los repartidores recibir dinero en mano y reportar cuadre.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={deliveryPerms.canAcceptCash}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, canAcceptCash: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Asignación Inteligente por Proximidad GPS</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Asigna automáticamente el pedido al rider más cercano al restaurante o al cliente.
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Asignación Inteligente GPS</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Asigna automáticamente el pedido al rider más cercano al local.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={deliveryPerms.autoAssignZone}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, autoAssignZone: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Telemetría y Control de Velocidad</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Envía avisos a gerencia si el motorizado excede límites de velocidad en ruta.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Envía avisos a gerencia si el motorizado excede límites de velocidad.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={deliveryPerms.gpsSpeedTracking}
                   onChange={(e) => setDeliveryPerms({ ...deliveryPerms, gpsSpeedTracking: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Máximo de Pedidos Simultáneos por Rider</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Máximo de Pedidos por Rider</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
                     Evita que un motorizado lleve más órdenes de las que puede entregar en caliente.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <input
                     type="number"
                     min={1}
                     max={6}
                     value={deliveryPerms.maxActiveOrders}
                     onChange={(e) => setDeliveryPerms({ ...deliveryPerms, maxActiveOrders: parseInt(e.target.value) || 3 })}
-                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
+                    className="w-14 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-500 font-medium">pedidos</span>
+                  <span className="text-[10px] sm:text-xs text-neutral-500 font-medium">pedidos</span>
                 </div>
               </div>
             </div>
 
             {/* Allowed Delivery Zones */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
-              <span className="text-xs font-bold text-neutral-900 block">Zonas de Cobertura Habilitadas:</span>
-              <div className="flex flex-wrap gap-2">
+            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 space-y-1.5 sm:space-y-2">
+              <span className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider block">Zonas de Cobertura Habilitadas:</span>
+              <div className="flex flex-wrap gap-1.5">
                 {['San Isidro', 'Miraflores', 'Barranco', 'Surco', 'San Borja', 'Jesús María', 'Magdalena', 'Lince', 'Breña', 'Centro de Lima'].map((zone) => {
                   const isZoneActive = deliveryPerms.allowedZones.includes(zone);
                   return (
@@ -1882,7 +1916,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           : [...deliveryPerms.allowedZones, zone];
                         setDeliveryPerms({ ...deliveryPerms, allowedZones: newZones });
                       }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                      className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold transition cursor-pointer border ${
                         isZoneActive
                           ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
                           : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100'
@@ -1896,44 +1930,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </div>
 
             {/* List of Assigned Delivery Personnel */}
-            <div className="pt-4 border-t border-neutral-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-neutral-900 block">
-                  Repartidores Habilitados para {currentRestaurant.name} ({assignedRiders.length}):
+            <div className="pt-2 sm:pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider block">
+                  Repartidores Habilitados ({assignedRiders.length}):
                 </span>
-                <button
-                  onClick={() => {
-                    setNewUserRole('DELIVERY');
-                    setNewUserRestId(currentRestaurant.id);
-                    setIsCreatingUser(true);
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Registrar Repartidor</span>
-                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {assignedRiders.map(rider => (
-                  <div key={rider.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
-                    <div className="flex items-center gap-3">
-                      <img src={rider.avatar} alt={rider.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
-                      <div>
-                        <div className="text-xs font-bold text-neutral-900">{rider.name}</div>
+                  <div key={rider.id} className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-between gap-2.5 shadow-sm hover:border-neutral-300 transition">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img src={rider.avatar} alt={rider.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-cover border border-neutral-200 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-neutral-900 truncate">{rider.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {rider.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                        <div className="text-[10px] sm:text-[11px] text-neutral-600 font-medium mt-0.5 truncate">
                           {rider.vehicleType} · Placa: <strong className="font-mono text-neutral-800">{rider.licensePlate || 'S/P'}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(rider)}
-                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm shrink-0"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1941,16 +1964,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-neutral-200">
-              <button
-                onClick={handleSaveDeliveryPerms}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
-              >
-                <Check className="w-4 h-4" />
-                <span>Guardar Accesos de Repartidores</span>
-              </button>
             </div>
           </div>
         )}
@@ -1959,99 +1972,126 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB 3: ACCESOS DE CLIENTES & QR                            */}
         {/* ============================================================= */}
         {activeSubTab === 'customers' && (
-          <div className="p-5 sm:p-6 space-y-6">
-            <div className="pb-4 border-b border-neutral-200">
-              <h3 className="text-base font-bold text-neutral-900">
-                Políticas de Autoservicio y Pedidos QR para Clientes ({currentRestaurant.name})
-              </h3>
-              <p className="text-xs text-neutral-600 mt-1">
-                Controla la experiencia que ven los comensales cuando escanean el código QR en la mesa.
-              </p>
+          <div className="p-2.5 sm:p-6 space-y-2.5 sm:space-y-6">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-4 border-b border-neutral-200">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-base font-bold text-neutral-900 flex items-center gap-1.5 truncate">
+                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                  <span className="truncate">Clientes & Autoservicio QR ({currentRestaurant.name})</span>
+                </h3>
+                <p className="text-[10px] sm:text-xs text-neutral-600 line-clamp-1 mt-0.5">
+                  Controla la experiencia que ven los comensales cuando escanean el código QR en la mesa.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    setNewUserRole('CUSTOMER');
+                    setNewUserRestId(currentRestaurant.id);
+                    setIsCreatingUser(true);
+                  }}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-3.5 sm:py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Registrar Cliente"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Registrar Cliente</span>
+                </button>
+
+                <button
+                  onClick={handleSaveCustomerSettings}
+                  className="flex items-center justify-center gap-1 p-2 sm:px-4 sm:py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition shadow-md cursor-pointer"
+                  title="Guardar Accesos de Clientes & QR"
+                >
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Guardar Accesos</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Habilitar Pedido Directo desde QR (Self-Ordering)</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Permite al cliente enviar platos directo a cocina desde su teléfono inteligente.
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Pedido Directo desde QR (Self-Ordering)</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Permite al cliente enviar platos directo a cocina desde su smartphone.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={customerSettings.qrOrderingEnabled}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, qrOrderingEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">Permitir Comanda como Invitado (Sin Registro)</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Los comensales no están forzados a crear una cuenta ni dar contraseña para ordenar.
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-neutral-900">Comanda como Invitado (Sin Registro)</div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Los comensales no están forzados a crear una cuenta para ordenar.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={customerSettings.guestCheckout}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, guestCheckout: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Permitir Pago en Efectivo Llamando al Mozo</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Muestra el botón "Pagar en efectivo" en el checkout digital de la carta.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Muestra el botón "Pagar en efectivo" en el checkout digital.
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={customerSettings.allowCashAtTable}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, allowCashAtTable: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-1"
+                  className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer focus:ring-0 mt-0.5 shrink-0"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 hover:bg-neutral-100/50 transition">
-                <div>
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-2.5 hover:bg-neutral-100/50 transition">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-neutral-900">Descuento Automático Clientes VIP (%)</div>
-                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">
-                    Beneficio directo aplicado en la carta para comensales frecuentes reconocidos.
+                  <p className="text-[10px] sm:text-[11px] text-neutral-600 mt-0.5 line-clamp-1 sm:line-clamp-none leading-relaxed">
+                    Beneficio directo aplicado en la carta para comensales frecuentes.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <input
                     type="number"
                     min={0}
                     max={50}
                     value={customerSettings.vipDiscountPercent}
                     onChange={(e) => setCustomerSettings({ ...customerSettings, vipDiscountPercent: parseInt(e.target.value) || 0 })}
-                    className="w-16 px-2.5 py-1.5 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
+                    className="w-14 px-2 py-1 rounded-lg bg-white border border-neutral-300 text-xs text-neutral-900 font-mono font-bold text-center focus:outline-none focus:border-neutral-900"
                   />
-                  <span className="text-xs text-neutral-500 font-medium">%</span>
+                  <span className="text-[10px] sm:text-xs text-neutral-500 font-medium">%</span>
                 </div>
               </div>
             </div>
 
             {/* Custom Welcome Message and WiFi */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-neutral-900 block mb-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200">
+                <label className="text-[11px] sm:text-xs font-bold text-neutral-900 block mb-1">
                   Mensaje de Bienvenida en la Carta Digital
                 </label>
                 <input
                   type="text"
                   value={customerSettings.welcomeMessage}
                   onChange={(e) => setCustomerSettings({ ...customerSettings, welcomeMessage: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 shadow-sm"
+                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 shadow-sm"
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-neutral-900 block mb-1">
+              <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200">
+                <label className="text-[11px] sm:text-xs font-bold text-neutral-900 block mb-1">
                   Contraseña de WiFi del Local (Visible al cliente)
                 </label>
                 <div className="relative">
@@ -2060,51 +2100,40 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     type="text"
                     value={customerSettings.wifiPassword}
                     onChange={(e) => setCustomerSettings({ ...customerSettings, wifiPassword: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-mono focus:outline-none focus:border-neutral-900 shadow-sm"
+                    className="w-full pl-9 pr-3 py-1.5 sm:py-2 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 font-mono focus:outline-none focus:border-neutral-900 shadow-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* List of Registered Customers */}
-            <div className="pt-4 border-t border-neutral-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-neutral-900 block">
-                  Clientes Registrados con Acceso al Portal y Carta ({assignedCustomers.length}):
+            <div className="pt-2 sm:pt-4 border-t border-neutral-200">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-[11px] sm:text-xs font-bold text-neutral-900 uppercase tracking-wider block">
+                  Clientes Registrados ({assignedCustomers.length}):
                 </span>
-                <button
-                  onClick={() => {
-                    setNewUserRole('CUSTOMER');
-                    setNewUserRestId(currentRestaurant.id);
-                    setIsCreatingUser(true);
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-neutral-600 transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Registrar Cliente</span>
-                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {assignedCustomers.map(customer => (
-                  <div key={customer.id} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-start justify-between gap-3 shadow-sm hover:border-neutral-300 transition">
-                    <div className="flex items-center gap-3">
-                      <img src={customer.avatar} alt={customer.name} className="w-10 h-10 rounded-xl object-cover border border-neutral-200" />
-                      <div>
-                        <div className="text-xs font-bold text-neutral-900">{customer.name}</div>
+                  <div key={customer.id} className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-between gap-2.5 shadow-sm hover:border-neutral-300 transition">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img src={customer.avatar} alt={customer.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-cover border border-neutral-200 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-neutral-900 truncate">{customer.name}</div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-neutral-200 text-neutral-800 border border-neutral-300">
                             DNI: {customer.dni || 'No reg.'}
                           </span>
                         </div>
-                        <div className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                        <div className="text-[10px] sm:text-[11px] text-neutral-600 font-medium mt-0.5 truncate">
                           Nivel: <strong className="text-neutral-800">{customer.vipTier || 'STANDARD'}</strong> · Saldo: <strong className="text-neutral-800">S/ {customer.creditBalance || 0}</strong>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setEditingUser(customer)}
-                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm"
+                      className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 transition cursor-pointer shadow-sm shrink-0"
                       title="Editar Accesos y Permisos"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -2112,16 +2141,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-neutral-200">
-              <button
-                onClick={handleSaveCustomerSettings}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition cursor-pointer shadow-md"
-              >
-                <Check className="w-4 h-4" />
-                <span>Guardar Accesos de Clientes & QR</span>
-              </button>
             </div>
           </div>
         )}

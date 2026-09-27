@@ -7,15 +7,17 @@ import {
   Flame, 
   LogOut, 
   KeyRound, 
-  ExternalLink,
-  Shield,
-  Clock,
-  SlidersHorizontal,
-  Eye,
-  LayoutTemplate,
-  Settings,
-  ChevronDown,
-  Check
+  ExternalLink, 
+  Shield, 
+  Clock, 
+  SlidersHorizontal, 
+  Eye, 
+  LayoutTemplate, 
+  ChevronDown, 
+  Check,
+  Utensils,
+  Layers,
+  Calendar
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
 
@@ -29,6 +31,13 @@ interface RoleHeaderProps {
   onOpenCustomerPreview?: (targetRestaurant?: Restaurant) => void;
   onOpenTemplateSplitEditor?: () => void;
   onOpenProfileSettings?: () => void;
+  activeOwnerSubTab?: string;
+  onSelectOwnerSubTab?: (tabId: string) => void;
+  tablesCount?: number;
+  shiftsCount?: number;
+  kitchenCount?: number;
+  waitersCount?: number;
+  ridersCount?: number;
 }
 
 export const RoleHeader: React.FC<RoleHeaderProps> = ({
@@ -41,6 +50,13 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
   onOpenCustomerPreview,
   onOpenTemplateSplitEditor,
   onOpenProfileSettings,
+  activeOwnerSubTab,
+  onSelectOwnerSubTab,
+  tablesCount,
+  shiftsCount,
+  kitchenCount,
+  waitersCount,
+  ridersCount,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -213,9 +229,9 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
               /* Default Logo & Brand Info for non-owner views */
               <div className="flex items-center gap-3">
                 <img 
-                  src="/huevofrito.png" 
+                  src="/huevofrito.svg" 
                   alt="Micarta" 
-                  className="w-9 h-9 object-contain"
+                  className="w-9 h-9 object-contain border-0 shadow-none outline-none"
                 />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -236,25 +252,36 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
           </div>
 
           {/* Right Section: User Profile & Actions */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
 
-            {/* Role Badge if owner view is active */}
+            {/* Role Badge if owner view is active - Clickable to open Profile / Account Settings */}
             {isOwnerOrManager && (
-              <span className={`text-[10px] px-2.5 py-1 rounded-xl ${badge.color} hidden sm:flex items-center gap-1 border border-neutral-700 shadow-sm`}>
+              <button
+                type="button"
+                onClick={onOpenProfileSettings}
+                className={`text-[10px] px-2.5 py-1.5 rounded-xl ${badge.color} flex items-center gap-1 border border-neutral-700 shadow-sm cursor-pointer hover:opacity-90 active:scale-95 transition`}
+                title="Configuración de Cuenta"
+              >
                 <RoleIcon className="w-3 h-3" />
                 <span>{badge.label}</span>
-              </span>
+              </button>
             )}
 
-            {/* User Profile Card */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-100 border border-neutral-300">
+            {/* User Profile Card - Also clickable to open Profile / Account Settings */}
+            <div 
+              onClick={onOpenProfileSettings}
+              role="button"
+              tabIndex={0}
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-300 cursor-pointer transition select-none"
+              title="Configuración de Cuenta"
+            >
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
                 className="w-7 h-7 rounded-full object-cover border border-neutral-300 shrink-0"
               />
               <div className="text-left">
-                <div className="text-xs font-bold text-neutral-900 max-w-[130px] sm:max-w-[170px] truncate leading-tight">
+                <div className="text-xs font-bold text-neutral-900 max-w-[120px] sm:max-w-[170px] truncate leading-tight">
                   {currentUser.name}
                 </div>
                 <div className="text-[10px] text-neutral-600 font-mono flex items-center gap-1.5">
@@ -266,33 +293,59 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
               </div>
             </div>
 
-            {/* Profile Settings Gear Button */}
-            {onOpenProfileSettings && (
-              <button
-                id="role-header-btn-profile-settings"
-                onClick={onOpenProfileSettings}
-                className="flex items-center justify-center p-2 rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
-                title="Configuración de Perfil (Editar datos y foto)"
-              >
-                <Settings className="w-4 h-4 text-neutral-700 animate-spin-slow" />
-              </button>
-            )}
-
-            {/* Logout Button */}
+            {/* Logout Button (Icon only) */}
             <button
               id="role-header-btn-logout"
               onClick={onLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium transition cursor-pointer"
-              title="Cerrar Sesión y volver a la pantalla de ingreso"
+              className="flex items-center justify-center p-2 rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition cursor-pointer shadow-sm"
+              title="Cerrar Sesión"
+              aria-label="Cerrar Sesión"
             >
-              <LogOut className="w-3.5 h-3.5 text-neutral-700" />
-              <span>Cerrar Sesión</span>
+              <LogOut className="w-4 h-4 text-neutral-700" />
             </button>
 
           </div>
 
         </div>
       </div>
+
+      {/* Subtab Navigation Bar Attached Directly to the Header (Sin Espacios) */}
+      {isOwnerOrManager && onSelectOwnerSubTab && (
+        <div className="border-t border-neutral-200/80 bg-white">
+          <div className="max-w-7xl mx-auto px-2 sm:px-6 py-1.5 flex items-center justify-start gap-1 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'sales_monitor', label: 'Ventas', icon: Eye },
+              { id: 'dishes', label: 'Carta', icon: Utensils },
+              { id: 'tables', label: `Mesas (${tablesCount ?? 6})`, icon: Layers },
+              { id: 'schedules', label: 'Horarios', icon: Clock },
+              { id: 'shifts', label: `Turnos (${shiftsCount ?? 4})`, icon: Calendar },
+              { id: 'kitchen', label: `Cocina (${kitchenCount ?? 1})`, icon: Flame },
+              { id: 'waiters', label: `Mozos (${waitersCount ?? 1})`, icon: ChefHat },
+              { id: 'delivery', label: `Riders (${ridersCount ?? 1})`, icon: Bike },
+              { id: 'customers', label: 'Clientes', icon: UserCheck },
+              { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
+            ].map(tab => {
+              const isActive = activeOwnerSubTab === tab.id;
+              const IconComp = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onSelectOwnerSubTab(tab.id)}
+                  title={tab.label}
+                  className={`p-2 lg:px-3 lg:py-1.5 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs shrink-0 ${
+                    isActive
+                      ? 'bg-neutral-900 text-white shadow-sm'
+                      : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
+                  }`}
+                >
+                  <IconComp className="w-4 h-4 shrink-0" />
+                  <span className="hidden lg:inline whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

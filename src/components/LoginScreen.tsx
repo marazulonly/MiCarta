@@ -190,35 +190,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col justify-between selection:bg-neutral-800 selection:text-white">
       
-      {/* Top Brand Bar */}
-      <header className="w-full border-b border-neutral-200/60 bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/huevofrito.png" 
-              alt="Micarta" 
-              className="w-9 h-9 object-contain"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="text-right hidden md:block ml-2 border-l border-neutral-200 pl-3">
-              <span className="text-xs text-neutral-500 block">Seguridad & RBAC</span>
-              <span className="text-[11px] font-mono text-emerald-600 font-bold">● 4 Restaurantes en Red</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Login Body */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col items-center justify-center">
         
         <div className="w-full max-w-xl space-y-8">
           
           {/* Headline */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3 flex flex-col items-center">
+            <img 
+              src="/huevofrito.svg" 
+              alt="Mi Carta" 
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain border-0 shadow-none outline-none transition-transform hover:scale-105"
+            />
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#1E1F24]">
-              Iniciar Sesión
+              Mi Carta
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
               Ingresa con tu <strong>DNI</strong> y <strong>Contraseña</strong>. La vista se adaptará automáticamente a los privilegios de tu rol asignado.
@@ -292,24 +277,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <ArrowRight className="w-4 h-4 text-white" />
               </button>
             </form>
-
-            <div className="pt-4 border-t border-neutral-100 flex flex-col items-center gap-2">
-              <p className="text-[11px] text-neutral-400 text-center">
-                ¿Problemas con datos o sesiones antiguas guardadas en tu navegador?
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== 'undefined' && window.localStorage) {
-                    localStorage.clear();
-                    window.location.reload();
-                  }
-                }}
-                className="text-[11px] text-red-500 hover:text-red-700 font-bold underline transition cursor-pointer"
-              >
-                Limpiar todo el Caché y Reiniciar Aplicación
-              </button>
-            </div>
 
           </div>
 

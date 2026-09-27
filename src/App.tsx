@@ -256,6 +256,7 @@ export default function App() {
   
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
+  const [ownerActiveSubTab, setOwnerActiveSubTab] = useState<string>('sales_monitor');
   
   // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
@@ -1475,10 +1476,17 @@ export default function App() {
           onOpenCustomerPreview={(targetRest) => handleOpenCustomerPreview(targetRest)}
           onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
           onOpenProfileSettings={() => setIsProfileSettingsOpen(true)}
+          activeOwnerSubTab={ownerActiveSubTab}
+          onSelectOwnerSubTab={setOwnerActiveSubTab}
+          tablesCount={currentSelectedRest?.tables?.length || 6}
+          shiftsCount={currentSelectedRest?.shifts?.length || 4}
+          kitchenCount={safeUsers.filter(u => u.role === 'KITCHEN').length}
+          waitersCount={safeUsers.filter(u => u.role === 'WAITER').length}
+          ridersCount={safeUsers.filter(u => u.role === 'DELIVERY').length}
         />
 
         {/* Role-Specific View Container */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-20">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-6 pt-1 sm:pt-3 pb-20">
           
           {/* OWNER & RESTAURANT MANAGER: Full Owner Dashboard with Menus, Tables/QR, Staff, Shifts, Schedules */}
           {(currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER') && (
@@ -1487,6 +1495,8 @@ export default function App() {
               restaurants={safeRestaurants}
               selectedRestaurantId={selectedRestaurantId}
               onSelectRestaurant={setSelectedRestaurantId}
+              activeSubTab={ownerActiveSubTab as any}
+              onSelectSubTab={setOwnerActiveSubTab as any}
               users={safeUsers}
               templates={safeTemplates}
               menuItems={safeMenuItems}
