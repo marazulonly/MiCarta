@@ -1229,18 +1229,23 @@ export default function App() {
 
   const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => {
     const target = restaurant || (restaurants || []).find(r => r && r.id === selectedRestaurantId) || (restaurants || []).filter(Boolean)[0];
+    if (target) {
+      const targetCats = categories.filter(c => c.restaurantId === target.id);
+      const targetItems = menuItems.filter(i => i.restaurantId === target.id);
+      setPublishedMenuData({
+        published: true,
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        restaurant: target,
+        categories: targetCats,
+        items: targetItems
+      });
+    }
     setPreviewRestaurant(target);
     setPreviewMode(mode || 'DINE_IN');
     setPreviewTableNumber(tableNumber);
     setIsMenuClosedByGuest(false);
     setIsCustomerModalOpen(true);
-    if (target) {
-      fetchPublicPublishedMenu(target.slug || target.id).then(pub => {
-        if (pub && pub.restaurant) {
-          setPublishedMenuData(pub);
-        }
-      }).catch(() => {});
-    }
   };
 
   // Robust state sanitization to guarantee children components never receive null/undefined elements

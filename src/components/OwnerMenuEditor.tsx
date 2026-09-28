@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, 
+  Camera,
   Trash2, 
   Edit3, 
   Check, 
@@ -97,6 +98,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
   const [isListView, setIsListView] = useState<boolean>(true);
+  const dishImageInputRef = useRef<HTMLInputElement>(null);
   const [hoveredOrClickedItemId, setHoveredOrClickedItemId] = useState<string | null>(null);
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -2120,6 +2122,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsItemModalOpen(false)}
                 className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition cursor-pointer"
               >
@@ -2130,43 +2133,87 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             {/* Modal Form Scrollable Body */}
             <form onSubmit={handleSaveItem} className="flex-1 overflow-y-auto p-5 space-y-5">
               
-              {/* Row 1: Nombre & Categoría */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-neutral-300 block mb-1">
-                    Nombre del Plato *
+              {/* Top Section: Foto del Plato (Arriba a la Izquierda) + Nombre & Categoría */}
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                
+                {/* Foto del Plato (Arriba a la Izquierda) - Clic para reemplazar */}
+                <div className="shrink-0 flex flex-col items-center gap-1">
+                  <label className="text-xs font-bold text-neutral-400 block self-start">
+                    Foto del Plato
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder="Ej: Lomo Saltado Especial al Wok"
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                  <div 
+                    onClick={() => dishImageInputRef.current?.click()}
+                    className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-amber-500/50 bg-neutral-900 hover:bg-neutral-800 transition cursor-pointer overflow-hidden flex flex-col items-center justify-center group shadow-md"
+                    title="Haz clic para cambiar la imagen del plato"
+                  >
+                    {formImageUrl ? (
+                      <>
+                        <img 
+                          src={formImageUrl} 
+                          alt="Foto del plato" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white text-center p-1">
+                          <Camera className="w-5 h-5 text-amber-400 mb-0.5" />
+                          <span className="text-[10px] font-bold">Cambiar Foto</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-2 text-center text-neutral-400 group-hover:text-amber-400 transition">
+                        <Camera className="w-6 h-6 mb-1 text-amber-400" />
+                        <span className="text-[10px] font-bold">Subir Foto</span>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    ref={dishImageInputRef}
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => handleImageFileUpload(e, setFormImageUrl)} 
                   />
+                  <span className="text-[9px] text-neutral-500 text-center">Clic para cambiar</span>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-neutral-300 block mb-1">
-                    Categoría de Carta *
-                  </label>
-                  <select
-                    value={formCategoryId}
-                    onChange={(e) => setFormCategoryId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
-                  >
-                    {restaurantCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                {/* Nombre del Plato & Categoría de Carta */}
+                <div className="flex-1 w-full space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 block mb-1">
+                      Nombre del Plato *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder="Ej: Lomo Saltado Especial al Wok"
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 block mb-1">
+                      Categoría de Carta *
+                    </label>
+                    <select
+                      value={formCategoryId}
+                      onChange={(e) => setFormCategoryId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    >
+                      {restaurantCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
               </div>
 
-              {/* Row 2: Descripción */}
+              {/* Row 2: Descripción del Plato */}
               <div>
-                <label className="text-xs font-bold text-neutral-300 block mb-1">
+                <label className="text-xs font-bold text-neutral-400 block mb-1">
                   Descripción del Plato (Ingredientes, técnica de cocción)
                 </label>
                 <textarea
@@ -2181,7 +2228,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
               {/* Row 3: Precio, Tiempo, Ámbito y Disponibilidad */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  <label className="text-xs font-bold text-neutral-400 block mb-1">
                     Precio Base (S/) *
                   </label>
                   <input
@@ -2196,7 +2243,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  <label className="text-xs font-bold text-neutral-400 block mb-1">
                     Cocina (min)
                   </label>
                   <input
@@ -2209,7 +2256,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  <label className="text-xs font-bold text-neutral-400 block mb-1">
                     Ámbito de Carta
                   </label>
                   <select
@@ -2236,96 +2283,38 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
               </div>
 
-              {/* Row 4: Foto del Plato */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-neutral-300 block">
-                  Foto del Plato
-                </label>
-                
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={formImageUrl}
-                    onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="URL de la imagen o sube desde el disco..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs font-mono text-white focus:border-amber-400 transition"
-                  />
-                  {formImageUrl && (
-                    <img 
-                      src={formImageUrl} 
-                      alt="Preview" 
-                      className="w-9 h-9 rounded-lg object-cover border border-neutral-800 shrink-0" 
-                    />
-                  )}
-                </div>
-
-                <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-dashed border-amber-500/50 cursor-pointer text-amber-400 text-xs font-semibold transition">
-                  <Upload className="w-3.5 h-3.5 text-amber-400" />
-                  <span>📁 Reemplazar foto subiendo desde el disco</span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handleImageFileUpload(e, setFormImageUrl)} 
-                  />
-                </label>
-
-                {/* Stock photo suggestions */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
-                  <span className="text-[10px] text-neutral-400 shrink-0">Fotos rápidas:</span>
-                  {STOCK_PHOTOS.map((ph, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setFormImageUrl(ph.url)}
-                      className={`text-[10px] px-2 py-1 rounded-lg border shrink-0 transition cursor-pointer ${
-                        formImageUrl === ph.url
-                          ? 'bg-amber-400 text-black font-bold border-amber-400'
-                          : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      {ph.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Row 5: Constructor de Adicionales */}
+              {/* Row 4: Constructor de Adicionales */}
               <div className="p-4 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-neutral-400 flex items-center gap-1.5">
                     <Plus className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Adicionales disponibles para este plato</span>
+                    <span>+ Adicionales</span>
                   </label>
-                  <span className="text-[10px] text-neutral-400">
-                    Se cobran y seleccionan por unidad de plato pedida
-                  </span>
                 </div>
 
                 {/* List of current addons */}
-                <div className="space-y-1.5">
-                  {formAddons.map((addon, aIdx) => (
-                    <div 
-                      key={addon.id || aIdx}
-                      className="p-2 rounded-lg bg-black border border-neutral-800 flex items-center justify-between gap-2 text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-white">{addon.name}</span>
-                        <span className="text-amber-400 font-mono font-bold">+S/ {addon.price.toFixed(2)}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setFormAddons(prev => prev.filter((_, idx) => idx !== aIdx))}
-                        className="p-1 rounded text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                {formAddons.length > 0 && (
+                  <div className="space-y-1.5">
+                    {formAddons.map((addon, aIdx) => (
+                      <div 
+                        key={addon.id || aIdx}
+                        className="p-2 rounded-lg bg-black border border-neutral-800 flex items-center justify-between gap-2 text-xs"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                  {formAddons.length === 0 && (
-                    <p className="text-[11px] text-neutral-500 italic">No hay adicionales configurados para este plato.</p>
-                  )}
-                </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-white">{addon.name}</span>
+                          <span className="text-amber-400 font-mono font-bold">+S/ {addon.price.toFixed(2)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormAddons(prev => prev.filter((_, idx) => idx !== aIdx))}
+                          className="p-1 rounded text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Add new addon inputs */}
                 <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
@@ -2364,38 +2353,34 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
               </div>
 
-              {/* Row 6: Constructor de Observaciones Sugeridas */}
+              {/* Row 5: Constructor de Observaciones */}
               <div className="p-4 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-neutral-400 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Observaciones sugeridas para cocina</span>
+                    <span>Observaciones para cocina</span>
                   </label>
-                  <span className="text-[10px] text-neutral-400">
-                    Opciones rápidas para el mozo o cliente
-                  </span>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
-                  {formObservations.map((obs, oIdx) => (
-                    <div
-                      key={oIdx}
-                      className="px-2.5 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-xs text-neutral-200 flex items-center gap-1.5"
-                    >
-                      <span>{obs}</span>
-                      <button
-                        type="button"
-                        onClick={() => setFormObservations(prev => prev.filter((_, idx) => idx !== oIdx))}
-                        className="text-neutral-400 hover:text-rose-400 cursor-pointer"
+                {formObservations.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {formObservations.map((obs, oIdx) => (
+                      <div
+                        key={oIdx}
+                        className="px-2.5 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-xs text-neutral-200 flex items-center gap-1.5"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {formObservations.length === 0 && (
-                    <p className="text-[11px] text-neutral-500 italic">No hay sugerencias predeterminadas.</p>
-                  )}
-                </div>
+                        <span>{obs}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormObservations(prev => prev.filter((_, idx) => idx !== oIdx))}
+                          className="text-neutral-400 hover:text-rose-400 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Add new observation chip */}
                 <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
@@ -2429,12 +2414,12 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 >
                   Cancelar
                 </button>
+
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition flex items-center gap-1.5 shadow-lg cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer shadow-lg shadow-amber-950/20"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Guardar Plato</span>
+                  {editingItem ? 'Guardar Cambios' : '+ Crear Plato'}
                 </button>
               </div>
 
