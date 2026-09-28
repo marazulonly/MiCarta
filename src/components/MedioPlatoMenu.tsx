@@ -440,9 +440,18 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
             // Clases de contenedor de foto
             let photoShapeClass = 'rounded-xl';
+            let photoShapeStyle: React.CSSProperties = {};
             if (photoShape === 'circle') photoShapeClass = 'rounded-full';
             if (photoShape === 'square') photoShapeClass = 'rounded-none';
             if (photoShape === 'none') photoShapeClass = 'bg-transparent border-0 shadow-none rounded-none';
+            if (photoShape === 'medialuna-izq') {
+              photoShapeClass = '';
+              photoShapeStyle = { borderRadius: '9999px 0px 0px 9999px' };
+            }
+            if (photoShape === 'medialuna-der') {
+              photoShapeClass = '';
+              photoShapeStyle = { borderRadius: '0px 9999px 9999px 0px' };
+            }
 
             let photoBorderClass = 'border-0';
             if (photoBorder === 'thin') photoBorderClass = 'border border-white/20';
@@ -457,21 +466,30 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             const isColumn = layout === 'column';
             const isCover = layout === 'cover';
 
+            const photoTranslateVal = photoTranslate || (isEven ? 100 : 1);
+            const photoWidth = isRow ? 80 : 110; 
+            const isAbsolutePhoto = !isCover;
+
             // Elementos visuales
             const imageEl = item.imageUrl ? (
               <div 
                 style={{
-                  transform: `translateX(${photoTranslate}px)`,
-                  transition: 'transform 0.15s ease-out'
+                  ...(isAbsolutePhoto ? {
+                    position: 'absolute',
+                    top: '12px',
+                    width: `${photoWidth}px`,
+                    height: `${photoWidth}px`,
+                    left: `calc(${photoTranslateVal}% - (${photoTranslateVal}% * ${photoWidth}px / 100))`,
+                  } : {}),
+                  ...photoShapeStyle,
+                  transition: 'left 0.15s ease-out, transform 0.15s ease-out'
                 }}
-                className={`overflow-hidden shrink-0 relative transition-transform duration-200 hover:scale-105 ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
+                className={`overflow-hidden shrink-0 z-10 transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
                   photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
                 } ${
-                  isRow 
-                    ? 'w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36' 
-                    : isColumn 
-                    ? 'w-full h-48' 
-                    : 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]'
+                  !isAbsolutePhoto 
+                    ? 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]' 
+                    : ''
                 }`}
               >
                 <img 
@@ -545,6 +563,13 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             const isMobileFullscreen = branding.cardMobileFullscreen === true;
             const fullscreenCardClass = isMobileFullscreen ? 'min-h-[440px] md:min-h-0 flex flex-col justify-between' : '';
 
+            // Text wrapper style shifts itself dynamically to never overlap with absolute photo!
+            const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoShape !== 'none' ? {
+              paddingLeft: photoTranslateVal < 50 ? `${photoWidth + 14}px` : '0px',
+              paddingRight: photoTranslateVal >= 50 ? `${photoWidth + 14}px` : '0px',
+              transition: 'padding 0.15s ease-out'
+            } : {};
+
             return (
               <div 
                 key={item.id}
@@ -614,19 +639,11 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                       {textEl}
                       {footerEl}
                     </div>
-                  ) : isRow ? (
-                    <div className="flex flex-col h-full justify-between">
-                      <div className="flex gap-4 sm:gap-6 items-center">
-                        {first}
-                        {second}
-                      </div>
-                      {footerEl}
-                    </div>
                   ) : (
-                    <div className="flex flex-col gap-3 h-full justify-between">
-                      <div className="flex flex-col gap-3">
-                        {first}
-                        {second}
+                    <div className="flex flex-col h-full justify-between flex-1 relative min-h-[110px]">
+                      {imageEl}
+                      <div style={textWrapperStyle}>
+                        {textEl}
                       </div>
                       {footerEl}
                     </div>

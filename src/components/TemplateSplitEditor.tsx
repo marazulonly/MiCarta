@@ -647,9 +647,18 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
                 // Photo borders, shadows and shape
                 let photoShapeClass = 'rounded-xl';
+                let photoShapeStyle: React.CSSProperties = {};
                 if (photoShape === 'circle') photoShapeClass = 'rounded-full';
                 if (photoShape === 'square') photoShapeClass = 'rounded-none';
                 if (photoShape === 'none') photoShapeClass = 'bg-transparent border-0 shadow-none rounded-none';
+                if (photoShape === 'medialuna-izq') {
+                  photoShapeClass = '';
+                  photoShapeStyle = { borderRadius: '9999px 0px 0px 9999px' };
+                }
+                if (photoShape === 'medialuna-der') {
+                  photoShapeClass = '';
+                  photoShapeStyle = { borderRadius: '0px 9999px 9999px 0px' };
+                }
 
                 let photoBorderClass = 'border-0';
                 if (photoBorder === 'thin') photoBorderClass = 'border border-white/20';
@@ -664,21 +673,33 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const isColumn = layout === 'column';
                 const isCover = layout === 'cover';
 
-                // Build element render structures with magnetic snap offset translate
+                // We default photoTranslate value (between 1 and 100). If it is not set or is 0, we can default it to 1% (leftmost edge) for ODD, or 100% (rightmost edge) for EVEN if we want to follow a nice default.
+                const photoTranslateVal = photoTranslate || (isEven ? 100 : 1);
+
+                // Width of the photo container
+                const photoWidth = isRow ? 72 : 110; 
+                const isAbsolutePhoto = !isCover;
+
+                // Build element render structures with percentage offset absolute alignment
                 const imageEl = item.imageUrl ? (
                   <div 
                     style={{
-                      transform: `translateX(${photoTranslate}px)`,
-                      transition: 'transform 0.15s ease-out'
+                      ...(isAbsolutePhoto ? {
+                        position: 'absolute',
+                        top: '12px',
+                        width: `${photoWidth}px`,
+                        height: `${photoWidth}px`,
+                        left: `calc(${photoTranslateVal}% - (${photoTranslateVal}% * ${photoWidth}px / 100))`,
+                      } : {}),
+                      ...photoShapeStyle,
+                      transition: 'left 0.15s ease-out, transform 0.15s ease-out'
                     }}
-                    className={`overflow-hidden shrink-0 relative transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
+                    className={`overflow-hidden shrink-0 z-10 transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
                       photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
                     } ${
-                      isRow 
-                        ? 'w-20 h-20' 
-                        : isColumn 
-                        ? 'w-full h-40' 
-                        : 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]'
+                      !isAbsolutePhoto 
+                        ? 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]' 
+                        : ''
                     }`}
                   >
                     <img 
@@ -748,6 +769,13 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const isMobileFullscreen = workingBranding.cardMobileFullscreen && deviceMode === 'mobile';
                 const fullscreenCardClass = isMobileFullscreen ? 'min-h-[440px] flex flex-col justify-between' : '';
 
+                // Text wrapper style shifts itself dynamically to never overlap with absolute photo!
+                const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoShape !== 'none' ? {
+                  paddingLeft: photoTranslateVal < 50 ? `${photoWidth + 14}px` : '0px',
+                  paddingRight: photoTranslateVal >= 50 ? `${photoWidth + 14}px` : '0px',
+                  transition: 'padding 0.15s ease-out'
+                } : {};
+
                 return (
                   <div
                     key={item.id}
@@ -768,19 +796,11 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         {textEl}
                         {footerEl}
                       </div>
-                    ) : isRow ? (
-                      <div className="flex flex-col h-full justify-between flex-1">
-                        <div className="flex gap-3 items-center">
-                          {first}
-                          {second}
-                        </div>
-                        {footerEl}
-                      </div>
                     ) : (
-                      <div className="flex flex-col gap-3 h-full justify-between flex-1">
-                        <div className="flex flex-col gap-3">
-                          {first}
-                          {second}
+                      <div className="flex flex-col h-full justify-between flex-1 relative min-h-[110px]">
+                        {imageEl}
+                        <div style={textWrapperStyle}>
+                          {textEl}
                         </div>
                         {footerEl}
                       </div>
@@ -1316,43 +1336,46 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         {/* Translación con topes magnéticos */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-white font-medium">Traslación X (Desplazar):</span>
+                            <span className="text-white font-medium">Traslación X (Alineación Horizontal):</span>
                             <span className="text-amber-400 font-mono font-bold">
-                              {photoTranslate === 0 ? 'Centro (0px)' : `${photoTranslate > 0 ? '+' : ''}${photoTranslate}px`}
+                              {photoTranslateVal}%
                             </span>
                           </div>
                           <input
                             type="range"
-                            min={-99}
-                            max={99}
+                            min={1}
+                            max={100}
                             step={33}
-                            value={photoTranslate}
+                            value={photoTranslateVal}
                             onChange={(e) => updateBranding(isEditingEven ? 'cardPhotoTranslateEven' : 'cardPhotoTranslate', parseInt(e.target.value))}
                             className="w-full accent-amber-400 cursor-pointer"
                           />
                           <div className="flex justify-between text-[9px] text-neutral-500 px-1 font-mono">
-                            <span>Izquierda Max</span>
-                            <span>Tercio</span>
-                            <span>Centro</span>
-                            <span>Tercio</span>
-                            <span>Derecha Max</span>
+                            <span>Borde Izq (1%)</span>
+                            <span>Un Tercio (34%)</span>
+                            <span>Dos Tercios (67%)</span>
+                            <span>Borde Der (100%)</span>
                           </div>
                         </div>
 
                         {/* Forma de contenedor */}
                         <div className="space-y-1.5">
                           <span className="text-xs text-white block font-medium">Forma de Foto:</span>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 gap-2">
                             {[
                               { id: 'square' as const, label: 'Cuadrado' },
                               { id: 'circle' as const, label: 'Circular' },
-                              { id: 'none' as const, label: 'Sin Contenedor' }
+                              { id: 'medialuna-izq' as const, label: 'Medialuna Izq' },
+                              { id: 'medialuna-der' as const, label: 'Medialuna Der' },
+                              { id: 'none' as const, label: 'Sin Contenedor', colSpan: true }
                             ].map(shape => (
                               <button
                                 type="button"
                                 key={shape.id}
                                 onClick={() => updateBranding(isEditingEven ? 'cardPhotoShapeEven' : 'cardPhotoShape', shape.id)}
                                 className={`p-1.5 rounded-lg text-xs transition cursor-pointer border font-bold ${
+                                  shape.colSpan ? 'col-span-2' : ''
+                                } ${
                                   photoShape === shape.id
                                     ? 'bg-amber-400 text-black border-amber-400'
                                     : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'

@@ -70,8 +70,8 @@ export interface RestaurantBranding {
   cardMobileFullscreen?: boolean; // Mostrar a pantalla completa en vista móvil
   cardPhotoTranslate?: number; // Traslación X de foto de plato (0, 33, 66, 100)
   cardPhotoTranslateEven?: number;
-  cardPhotoShape?: 'square' | 'circle' | 'none'; // cuadrado, circular, sin contenedor
-  cardPhotoShapeEven?: 'square' | 'circle' | 'none';
+  cardPhotoShape?: 'square' | 'circle' | 'none' | 'medialuna-izq' | 'medialuna-der'; // cuadrado, circular, sin contenedor, medialuna izq, medialuna der
+  cardPhotoShapeEven?: 'square' | 'circle' | 'none' | 'medialuna-izq' | 'medialuna-der';
   cardPhotoBorder?: 'none' | 'thin' | 'thick'; // Control de borde de la foto
   cardPhotoBorderEven?: 'none' | 'thin' | 'thick';
   cardPhotoShadow?: 'none' | 'sutil' | 'medium' | 'intense'; // Control de sombra de la foto
