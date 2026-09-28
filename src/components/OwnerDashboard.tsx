@@ -2276,62 +2276,62 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         {/* SUBTAB 9: SUPERVISAR VENTAS Y PEDIDOS EN TIEMPO REAL          */}
         {/* ============================================================= */}
         {activeSubTab === 'sales_monitor' && (
-          <div className="p-4 sm:p-6 space-y-6 animate-in fade-in duration-200">
-            {/* Minimalist Top KPI Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">Pedidos Activos</span>
-                  <div className="text-xl font-black text-neutral-900">
+          <div className="p-2 sm:p-6 space-y-3 sm:space-y-6 animate-in fade-in duration-200">
+            {/* Minimalist Top KPI Bar (4 Columns on mobile & desktop) */}
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+              <div className="bg-white border border-neutral-100 rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center sm:justify-between text-center sm:text-left gap-1 sm:gap-0">
+                <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                  <span className="text-[8px] sm:text-[10px] text-neutral-400 uppercase tracking-wider font-mono block truncate">Pedidos Activos</span>
+                  <div className="text-sm sm:text-xl font-black text-neutral-900 leading-none">
                     {monitorOrders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length}
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Layers className="w-4 h-4" />
+                <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Layers className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
               </div>
 
-              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-emerald-600">Ventas Hoy</span>
-                  <div className="text-xl font-black text-neutral-900">
+              <div className="bg-white border border-neutral-100 rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center sm:justify-between text-center sm:text-left gap-1 sm:gap-0">
+                <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                  <span className="text-[8px] sm:text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-emerald-600 block truncate">Ventas Hoy</span>
+                  <div className="text-xs sm:text-xl font-black text-neutral-900 leading-none truncate">
                     S/ {monitorOrders.filter(o => o.status !== 'CANCELLED').reduce((sum, o) => sum + o.total, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-black font-mono">S/</span>
+                <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] sm:text-sm font-black font-mono">S/</span>
                 </div>
               </div>
 
-              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-orange-600">En Cocina</span>
-                  <div className="text-xl font-black text-orange-600 flex items-center gap-1">
+              <div className="bg-white border border-neutral-100 rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center sm:justify-between text-center sm:text-left gap-1 sm:gap-0">
+                <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                  <span className="text-[8px] sm:text-[10px] text-neutral-400 uppercase tracking-wider font-mono font-bold text-orange-600 block truncate">En Cocina</span>
+                  <div className="text-sm sm:text-xl font-black text-orange-600 flex items-center justify-center sm:justify-start gap-0.5 sm:gap-1 leading-none">
                     <span>{monitorOrders.filter(o => o.status === 'IN_KITCHEN' || (o.status as any) === 'PREPARING').length}</span>
-                    <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                    <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 shrink-0" />
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
-                  <Flame className="w-4 h-4" />
+                <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                  <Flame className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
               </div>
 
-              <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">Listos p/ Servir</span>
-                  <div className="text-xl font-black text-emerald-600">
+              <div className="bg-white border border-neutral-100 rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center sm:justify-between text-center sm:text-left gap-1 sm:gap-0">
+                <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                  <span className="text-[8px] sm:text-[10px] text-neutral-400 uppercase tracking-wider font-mono block truncate">Listos p/ Servir</span>
+                  <div className="text-sm sm:text-xl font-black text-emerald-600 leading-none">
                     {monitorOrders.filter(o => o.status === 'READY').length}
                   </div>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Check className="w-4 h-4" />
+                <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
               </div>
             </div>
 
             {/* REAL-TIME CONTROLS / PERSPECTIVE SWITCHERS */}
-            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-1.5 bg-neutral-100 p-1.5 rounded-xl w-full sm:w-auto">
+            <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-2">
+              <div className="flex items-center gap-1 bg-neutral-100 p-1 sm:p-1.5 rounded-xl w-full sm:w-auto">
                 {[
                   { id: 'restaurant', label: 'Por Sede', icon: Store },
                   { id: 'table', label: 'Por Mesa', icon: Layers },
@@ -2344,14 +2344,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <button
                       key={mode.id}
                       onClick={() => setMonitorMode(mode.id as any)}
-                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 py-2 px-3 sm:px-4 rounded-lg font-bold text-[11px] sm:text-xs transition cursor-pointer ${
+                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 py-1.5 px-2 sm:px-4 rounded-lg font-bold text-[10px] sm:text-xs transition cursor-pointer ${
                         isActive
                           ? 'bg-neutral-900 text-white shadow-sm'
                           : 'text-neutral-500 hover:text-neutral-800'
                       }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span className="hidden sm:inline">{mode.label}</span>
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                      <span>{mode.label}</span>
                     </button>
                   );
                 })}
@@ -2368,17 +2368,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
             {/* 1. BY RESTAURANT */}
             {monitorMode === 'restaurant' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
                 {ownedRestaurants.map(rest => {
                   const restOrders = monitorOrders.filter(o => o.restaurantId === rest.id);
                   const active = restOrders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
                   const salesTotal = restOrders.filter(o => o.status !== 'CANCELLED').reduce((sum, o) => sum + o.total, 0);
 
                   return (
-                    <div key={rest.id} className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-sm space-y-4 hover:border-neutral-200 transition">
-                      <div className="flex items-center justify-between border-b border-neutral-50 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs text-neutral-800">
+                    <div key={rest.id} className="bg-white border border-neutral-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm space-y-2.5 sm:space-y-4 hover:border-neutral-200 transition">
+                      <div className="flex items-center justify-between border-b border-neutral-50 pb-2 sm:pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs text-neutral-800">
                             {rest.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
@@ -2393,7 +2393,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       </div>
 
                       {/* Status Summary pill indicator */}
-                      <div className="grid grid-cols-3 gap-2 text-center bg-neutral-50 p-2.5 rounded-xl">
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center bg-neutral-50 p-2 sm:p-2.5 rounded-lg sm:rounded-xl">
                         <div>
                           <span className="text-[9px] text-neutral-400 block uppercase">Pendientes</span>
                           <span className="text-xs font-bold text-amber-600">{active.filter(o => o.status === 'PENDING').length}</span>
@@ -2409,17 +2409,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       </div>
 
                       {/* Minimal orders list */}
-                      <div className="space-y-1.5 pt-1">
+                      <div className="space-y-1 pt-0.5">
                         <h5 className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">Ordenes en Curso (Click para detalle)</h5>
                         {active.length === 0 ? (
-                          <div className="text-center py-4 text-[11px] text-neutral-400 italic">No hay órdenes activas</div>
+                          <div className="text-center py-2 sm:py-4 text-[11px] text-neutral-400 italic">No hay órdenes activas</div>
                         ) : (
-                          <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                          <div className="space-y-1 max-h-[160px] overflow-y-auto pr-1">
                             {active.slice(0, 5).map(o => (
                               <div 
                                 key={o.id} 
                                 onClick={() => setSelectedOrderForModal(o)}
-                                className="flex items-center justify-between text-xs p-2 rounded-lg bg-neutral-50/60 hover:bg-amber-50/60 hover:border-amber-200 transition border border-neutral-100/40 cursor-pointer active:scale-[0.99]"
+                                className="flex items-center justify-between text-xs p-1.5 sm:p-2 rounded-lg bg-neutral-50/60 hover:bg-amber-50/60 hover:border-amber-200 transition border border-neutral-100/40 cursor-pointer active:scale-[0.99]"
                                 title="Click para ver detalle del pedido y gestionar comanda"
                               >
                                 <div className="flex items-center gap-1.5">
