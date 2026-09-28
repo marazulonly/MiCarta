@@ -467,7 +467,10 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             const isCover = layout === 'cover';
 
             const photoTranslateVal = photoTranslate || (isEven ? 100 : 1);
-            const photoWidth = isRow ? 80 : 110; 
+            const defaultPhotoWidth = isRow ? 80 : 110;
+            const photoSize = isEven 
+              ? (branding.cardPhotoSizeEven ?? defaultPhotoWidth) 
+              : (branding.cardPhotoSize ?? defaultPhotoWidth);
             const isAbsolutePhoto = !isCover;
 
             // Elementos visuales
@@ -477,12 +480,12 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                   ...(isAbsolutePhoto ? {
                     position: 'absolute',
                     top: '12px',
-                    width: `${photoWidth}px`,
-                    height: `${photoWidth}px`,
-                    left: `calc(${photoTranslateVal}% - (${photoTranslateVal / 100} * ${photoWidth}px))`,
+                    width: `${photoSize}px`,
+                    height: `${photoSize}px`,
+                    left: `calc(${photoTranslateVal}% - (${photoTranslateVal / 100} * ${photoSize}px))`,
                   } : {}),
                   ...photoShapeStyle,
-                  transition: 'left 0.15s ease-out, transform 0.15s ease-out'
+                  transition: 'left 0.15s ease-out, transform 0.15s ease-out, width 0.15s ease-out, height 0.15s ease-out'
                 }}
                 className={`overflow-hidden shrink-0 z-10 transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
                   photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
@@ -532,27 +535,41 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               </div>
             );
 
+            const hideOrderButton = isEven 
+              ? (branding.cardHideOrderButtonEven === true) 
+              : (branding.cardHideOrderButton === true);
+
+            const priceStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoTranslateVal < 50 ? {
+              paddingLeft: `${photoSize - 4}px`,
+              transition: 'padding 0.15s ease-out'
+            } : {
+              transition: 'padding 0.15s ease-out'
+            };
+
             const footerEl = (
               <div className={`mt-3 pt-2.5 border-t border-black/10 flex items-center justify-between ${
                 isCover ? 'relative z-10 border-t-0 mt-2 px-4 pb-4' : ''
               }`}>
                 <span 
-                  className="text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900"
+                  className="text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900 transition-all duration-200"
+                  style={priceStyle}
                 >
                   S/ {item.price.toFixed(2)}
                 </span>
 
-                <button
-                  type="button"
-                  style={{
-                    backgroundColor: branding.buttonColor || '#D4AF37',
-                    color: branding.buttonTextColor || '#000000',
-                    borderRadius: '8px'
-                  }}
-                  className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow active:scale-95"
-                >
-                  + Pedir
-                </button>
+                {!hideOrderButton && (
+                  <button
+                    type="button"
+                    style={{
+                      backgroundColor: branding.buttonColor || '#D4AF37',
+                      color: branding.buttonTextColor || '#000000',
+                      borderRadius: '8px'
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow active:scale-95"
+                  >
+                    + Pedir
+                  </button>
+                )}
               </div>
             );
 
@@ -565,73 +582,75 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
             // Text wrapper style shifts itself dynamically to never overlap with absolute photo!
             const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl ? {
-              paddingLeft: photoTranslateVal < 50 ? `${photoWidth + 14}px` : '0px',
-              paddingRight: photoTranslateVal >= 50 ? `${photoWidth + 14}px` : '0px',
+              paddingLeft: photoTranslateVal < 50 ? `${photoSize + 14}px` : '0px',
+              paddingRight: photoTranslateVal >= 50 ? `${photoSize + 14}px` : '0px',
               transition: 'padding 0.15s ease-out'
             } : {};
 
-            return (
-              <div 
-                key={item.id}
-                className="relative group transition-opacity duration-200"
-              >
-                {/* Live Edit Controls Header for Owner */}
-                {isOwnerOrAdmin && isLiveEditActive && (
-                  <div className="mb-2 p-2 rounded-lg bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-sm z-20">
-                    <span className="font-mono font-bold text-amber-300 line-clamp-1">{item.name}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {onQuickPriceItem && (
-                        <button
-                          onClick={() => onQuickPriceItem(item)}
-                          className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-mono font-bold"
-                          title="Editar Precio"
-                        >
-                          S/ {item.price.toFixed(2)}
-                        </button>
-                      )}
-                      {onQuickPhotoItem && (
-                        <button
-                          onClick={() => onQuickPhotoItem(item)}
-                          className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
-                          title="Cambiar Foto"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                        </button>
-                      )}
-                      {onEditItem && (
-                        <button
-                          onClick={() => onEditItem(item)}
-                          className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
-                          title="Editar Plato"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-blue-400" />
-                        </button>
-                      )}
-                      {onDeleteItem && (
-                        <button
-                          onClick={() => onDeleteItem(item.id)}
-                          className="p-1 rounded bg-neutral-800 hover:bg-red-950 text-red-400"
-                          title="Eliminar Plato"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                const cardHoverClass = hideOrderButton ? 'hover:scale-[1.01] hover:brightness-[1.03] active:scale-[0.99] transition duration-200 cursor-pointer' : 'cursor-pointer';
 
-                <div 
-                  onClick={() => setSelectedItemForCustomization(item)}
-                  style={{ 
-                    backgroundColor: cardBg,
-                    borderRadius: cardRadius,
-                    borderColor: cardBorder,
-                    borderWidth: borderW,
-                    color: branding.textColor || '#1a1a1a',
-                    ...shadowStyle
-                  }}
-                  className={`w-full relative overflow-hidden transition flex flex-col justify-between border ${paddingClass} ${shadowClass} ${fullscreenCardClass} cursor-pointer select-none`}
-                >
+                return (
+                  <div 
+                    key={item.id}
+                    className="relative group transition-opacity duration-200"
+                  >
+                    {/* Live Edit Controls Header for Owner */}
+                    {isOwnerOrAdmin && isLiveEditActive && (
+                      <div className="mb-2 p-2 rounded-lg bg-neutral-900 text-white font-sans text-xs flex items-center justify-between gap-2 shadow-sm z-20">
+                        <span className="font-mono font-bold text-amber-300 line-clamp-1">{item.name}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {onQuickPriceItem && (
+                            <button
+                              onClick={() => onQuickPriceItem(item)}
+                              className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-mono font-bold"
+                              title="Editar Precio"
+                            >
+                              S/ {item.price.toFixed(2)}
+                            </button>
+                          )}
+                          {onQuickPhotoItem && (
+                            <button
+                              onClick={() => onQuickPhotoItem(item)}
+                              className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
+                              title="Cambiar Foto"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                            </button>
+                          )}
+                          {onEditItem && (
+                            <button
+                              onClick={() => onEditItem(item)}
+                              className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200"
+                              title="Editar Plato"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                            </button>
+                          )}
+                          {onDeleteItem && (
+                            <button
+                              onClick={() => onDeleteItem(item.id)}
+                              className="p-1 rounded bg-neutral-800 hover:bg-red-950 text-red-400"
+                              title="Eliminar Plato"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div 
+                      onClick={() => setSelectedItemForCustomization(item)}
+                      style={{ 
+                        backgroundColor: cardBg,
+                        borderRadius: cardRadius,
+                        borderColor: cardBorder,
+                        borderWidth: borderW,
+                        color: branding.textColor || '#1a1a1a',
+                        ...shadowStyle
+                      }}
+                      className={`w-full relative overflow-hidden transition flex flex-col justify-between border ${paddingClass} ${shadowClass} ${fullscreenCardClass} ${cardHoverClass} select-none`}
+                    >
                   {isCover ? (
                     <div className="relative w-full h-full flex flex-col justify-end min-h-[140px]">
                       {imageEl}

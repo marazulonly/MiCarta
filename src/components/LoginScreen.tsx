@@ -202,12 +202,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               alt="Mi Carta" 
               className="w-16 h-16 sm:w-20 sm:h-20 object-contain border-0 shadow-none outline-none transition-transform hover:scale-105"
             />
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#1E1F24]">
-              Mi Carta
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
-              Ingresa con tu <strong>DNI</strong> y <strong>Contraseña</strong>. La vista se adaptará automáticamente a los privilegios de tu rol asignado.
-            </p>
+            <img 
+              src="/micarta.svg" 
+              alt="Mi Carta" 
+              className="h-8 sm:h-9 w-auto object-contain mt-1" 
+            />
           </div>
 
           {/* Form Card */}
@@ -457,11 +456,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="w-full border-t border-neutral-900 bg-neutral-950/40 py-4 px-6 text-center text-xs text-neutral-500">
-        MiCarta 2026
-      </footer>
-
+      {/* Footer deleted as requested */}
     </div>
   );
 };

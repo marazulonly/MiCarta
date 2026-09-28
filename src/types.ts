@@ -76,6 +76,10 @@ export interface RestaurantBranding {
   cardPhotoBorderEven?: 'none' | 'thin' | 'thick';
   cardPhotoShadow?: 'none' | 'sutil' | 'medium' | 'intense'; // Control de sombra de la foto
   cardPhotoShadowEven?: 'none' | 'sutil' | 'medium' | 'intense';
+  cardPhotoSize?: number; // Tamaño de la foto (en px)
+  cardPhotoSizeEven?: number;
+  cardHideOrderButton?: boolean; // Ocultar botón de "Pedir"
+  cardHideOrderButtonEven?: boolean;
 }
 
 export interface RestaurantMetrics {

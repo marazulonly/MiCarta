@@ -91,7 +91,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end">
             
             {/* Split-Screen Template Editor Trigger Button */}
-            {onOpenTemplateSplitEditor && (
+            {onOpenTemplateSplitEditor && currentUser?.role === 'ADMIN' && activeRole === 'ADMIN' && (
               <button
                 type="button"
                 onClick={onOpenTemplateSplitEditor}

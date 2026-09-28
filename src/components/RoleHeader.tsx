@@ -294,45 +294,57 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
       </div>
 
       {/* Subtab Navigation Bar Attached Directly to the Header (Equidistante en todo el ancho) */}
-      {isOwnerOrManager && onSelectOwnerSubTab && (
-        <div className="border-t border-neutral-200/80 bg-white w-full">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1.5">
-            <div className="w-full grid grid-cols-10 gap-1 sm:gap-1.5 items-center justify-between">
-              {[
-                { id: 'sales_monitor', label: 'Ventas', icon: Eye },
-                { id: 'dishes', label: 'Carta', icon: Utensils },
-                { id: 'tables', label: `Mesas (${tablesCount ?? 6})`, icon: Layers },
-                { id: 'schedules', label: 'Horarios', icon: Clock },
-                { id: 'shifts', label: `Turnos (${shiftsCount ?? 4})`, icon: Calendar },
-                { id: 'kitchen', label: `Cocina (${kitchenCount ?? 1})`, icon: Flame },
-                { id: 'waiters', label: `Mozos (${waitersCount ?? 1})`, icon: ChefHat },
-                { id: 'delivery', label: `Riders (${ridersCount ?? 1})`, icon: Bike },
-                { id: 'customers', label: 'Clientes', icon: UserCheck },
-                { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
-              ].map(tab => {
-                const isActive = activeOwnerSubTab === tab.id;
-                const IconComp = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => onSelectOwnerSubTab(tab.id)}
-                    title={tab.label}
-                    aria-label={tab.label}
-                    className={`w-full py-2 px-1 sm:px-1.5 lg:px-2 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs text-center ${
-                      isActive
-                        ? 'bg-neutral-900 text-white shadow-sm ring-1 ring-neutral-900'
-                        : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
-                    }`}
-                  >
-                    <IconComp className="w-4 h-4 shrink-0" />
-                    <span className="hidden xl:inline truncate whitespace-nowrap">{tab.label}</span>
-                  </button>
-                );
-              })}
+      {isOwnerOrManager && onSelectOwnerSubTab && (() => {
+        const filteredTabs = [
+          { id: 'sales_monitor', label: 'Ventas', icon: Eye },
+          { id: 'dishes', label: 'Carta', icon: Utensils },
+          { id: 'tables', label: `Mesas (${tablesCount ?? 6})`, icon: Layers },
+          { id: 'schedules', label: 'Horarios', icon: Clock },
+          { id: 'shifts', label: `Turnos (${shiftsCount ?? 4})`, icon: Calendar },
+          { id: 'kitchen', label: `Cocina (${kitchenCount ?? 1})`, icon: Flame },
+          { id: 'waiters', label: `Mozos (${waitersCount ?? 1})`, icon: ChefHat },
+          { id: 'delivery', label: `Riders (${ridersCount ?? 1})`, icon: Bike },
+          { id: 'customers', label: 'Clientes', icon: UserCheck },
+          { id: 'templates', label: 'Plantillas', icon: LayoutTemplate },
+        ].filter(tab => {
+          if (tab.id === 'templates' && (currentUser.role === 'OWNER' || currentUser.role === 'RESTAURANT_MANAGER')) {
+            return false;
+          }
+          return true;
+        });
+
+        return (
+          <div className="border-t border-neutral-200/80 bg-white w-full">
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1.5">
+              <div 
+                className="w-full grid gap-1 sm:gap-1.5 items-center justify-between"
+                style={{ gridTemplateColumns: `repeat(${filteredTabs.length}, minmax(0, 1fr))` }}
+              >
+                {filteredTabs.map(tab => {
+                  const isActive = activeOwnerSubTab === tab.id;
+                  const IconComp = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => onSelectOwnerSubTab(tab.id)}
+                      title={tab.label}
+                      aria-label={tab.label}
+                      className={`w-full py-2 px-1 sm:px-1.5 lg:px-2 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs text-center ${
+                        isActive
+                          ? 'bg-neutral-900 text-white shadow-sm ring-1 ring-neutral-900'
+                          : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent'
+                      }`}
+                    >
+                      <IconComp className="w-4 h-4 shrink-0" />
+                      <span className="hidden xl:inline truncate whitespace-nowrap">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </header>
   );
 };

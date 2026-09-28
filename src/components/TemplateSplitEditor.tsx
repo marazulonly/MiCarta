@@ -673,11 +673,15 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const isColumn = layout === 'column';
                 const isCover = layout === 'cover';
 
-                // We default photoTranslate value (between 1 and 100). If it is not set or is 0, we can default it to 1% (leftmost edge) for ODD, or 100% (rightmost edge) for EVEN if we want to follow a nice default.
+                 // We default photoTranslate value (between 1 and 100). If it is not set or is 0, we can default it to 1% (leftmost edge) for ODD, or 100% (rightmost edge) for EVEN if we want to follow a nice default.
                 const photoTranslateVal = photoTranslate || (isEven ? 100 : 1);
 
                 // Width of the photo container
-                const photoWidth = isRow ? 72 : 110; 
+                const defaultPhotoWidth = isRow ? 72 : 110; 
+                const photoSize = isEven 
+                  ? (workingBranding.cardPhotoSizeEven ?? defaultPhotoWidth) 
+                  : (workingBranding.cardPhotoSize ?? defaultPhotoWidth);
+
                 const isAbsolutePhoto = !isCover;
 
                 // Build element render structures with percentage offset absolute alignment
@@ -687,12 +691,12 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                       ...(isAbsolutePhoto ? {
                         position: 'absolute',
                         top: '12px',
-                        width: `${photoWidth}px`,
-                        height: `${photoWidth}px`,
-                        left: `calc(${photoTranslateVal}% - (${photoTranslateVal / 100} * ${photoWidth}px))`,
+                        width: `${photoSize}px`,
+                        height: `${photoSize}px`,
+                        left: `calc(${photoTranslateVal}% - (${photoTranslateVal / 100} * ${photoSize}px))`,
                       } : {}),
                       ...photoShapeStyle,
-                      transition: 'left 0.15s ease-out, transform 0.15s ease-out'
+                      transition: 'left 0.15s ease-out, transform 0.15s ease-out, width 0.15s ease-out, height 0.15s ease-out'
                     }}
                     className={`overflow-hidden shrink-0 z-10 transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
                       photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
@@ -733,31 +737,45 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   </div>
                 );
 
+                 const hideOrderButton = isEven 
+                  ? (workingBranding.cardHideOrderButtonEven === true) 
+                  : (workingBranding.cardHideOrderButton === true);
+
+                const priceStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoTranslateVal < 50 ? {
+                  paddingLeft: `${photoSize - 4}px`,
+                  transition: 'padding 0.15s ease-out'
+                } : {
+                  transition: 'padding 0.15s ease-out'
+                };
+
                 const footerEl = (
                   <div className={`mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between ${
                     isCover ? 'relative z-10 border-t-0 mt-2' : ''
                   }`}>
                     <span 
-                      className="text-sm font-black font-mono"
+                      className="text-sm font-black font-mono animate-all duration-200"
                       style={{
                         fontFamily: workingBranding.dishPriceFont || 'monospace',
-                        color: workingBranding.priceColor || workingBranding.buttonColor || '#D4AF37'
+                        color: workingBranding.priceColor || workingBranding.buttonColor || '#D4AF37',
+                        ...priceStyle
                       }}
                     >
                       S/ {item.price.toFixed(2)}
                     </span>
 
-                    <button
-                      type="button"
-                      style={{
-                        backgroundColor: workingBranding.buttonColor || '#D4AF37',
-                        color: workingBranding.buttonTextColor || '#000000',
-                        borderRadius: '8px'
-                      }}
-                      className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow"
-                    >
-                      + Pedir
-                    </button>
+                    {!hideOrderButton && (
+                      <button
+                        type="button"
+                        style={{
+                          backgroundColor: workingBranding.buttonColor || '#D4AF37',
+                          color: workingBranding.buttonTextColor || '#000000',
+                          borderRadius: '8px'
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow"
+                      >
+                        + Pedir
+                      </button>
+                    )}
                   </div>
                 );
 
@@ -771,10 +789,12 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
                 // Text wrapper style shifts itself dynamically to never overlap with absolute photo!
                 const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl ? {
-                  paddingLeft: photoTranslateVal < 50 ? `${photoWidth + 14}px` : '0px',
-                  paddingRight: photoTranslateVal >= 50 ? `${photoWidth + 14}px` : '0px',
+                  paddingLeft: photoTranslateVal < 50 ? `${photoSize + 14}px` : '0px',
+                  paddingRight: photoTranslateVal >= 50 ? `${photoSize + 14}px` : '0px',
                   transition: 'padding 0.15s ease-out'
                 } : {};
+
+                const cardHoverClass = hideOrderButton ? 'hover:scale-[1.01] hover:brightness-[1.03] active:scale-[0.99] transition duration-200 cursor-pointer' : '';
 
                 return (
                   <div
@@ -787,7 +807,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                       color: workingBranding.textColor || '#FFFFFF',
                       ...shadowStyle
                     }}
-                    className={`relative overflow-hidden transition border flex flex-col justify-between ${paddingClass} ${shadowClass} ${fullscreenCardClass}`}
+                    className={`relative overflow-hidden transition border flex flex-col justify-between ${paddingClass} ${shadowClass} ${fullscreenCardClass} ${cardHoverClass}`}
                   >
                     {isCover ? (
                       <div className="relative w-full h-full flex flex-col justify-end min-h-[140px] flex-1">
@@ -1417,7 +1437,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         <div className="space-y-1.5">
                           <span className="text-xs text-white block font-medium">Sombra de Foto:</span>
                           <div className="grid grid-cols-4 gap-1.5">
-                            {[
+                             {[
                               { id: 'none' as const, label: 'Ninguna' },
                               { id: 'sutil' as const, label: 'Sutil' },
                               { id: 'medium' as const, label: 'Media' },
@@ -1437,6 +1457,42 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                               </button>
                             ))}
                           </div>
+                        </div>
+
+                        {/* Tamaño de la foto */}
+                        <div className="space-y-1.5 pt-3 border-t border-neutral-800/60">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-white font-medium">Tamaño de la Foto:</span>
+                            <span className="text-amber-400 font-mono font-bold">{photoSize}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={40}
+                            max={160}
+                            step={5}
+                            value={photoSize}
+                            onChange={(e) => updateBranding(isEditingEven ? 'cardPhotoSizeEven' : 'cardPhotoSize', parseInt(e.target.value))}
+                            className="w-full accent-amber-400 cursor-pointer"
+                          />
+                          <div className="flex justify-between text-[9px] text-neutral-500 px-1 font-mono">
+                            <span>Mín (40px)</span>
+                            <span>Estándar</span>
+                            <span>Máx (160px)</span>
+                          </div>
+                        </div>
+
+                        {/* Ocultar botón Pedir */}
+                        <div className="pt-3 border-t border-neutral-800/60 flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-white block">Ocultar Botón "Pedir"</span>
+                            <span className="text-[10px] text-neutral-400">La ficha completa actuará como botón de pedido</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={hideOrderButton === true}
+                            onChange={(e) => updateBranding(isEditingEven ? 'cardHideOrderButtonEven' : 'cardHideOrderButton', e.target.checked)}
+                            className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
+                          />
                         </div>
                       </div>
 
