@@ -715,8 +715,8 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     <div className="space-y-6">
       
       {/* Top Header */}
-      <div className="p-5 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="p-5 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-neutral-900">
             Gestión de Carta y Platos: {restaurant.name}
           </h2>
@@ -725,7 +725,36 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Subtabs Selector (Moved next to the title/green box) */}
+        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 rounded-xl shrink-0 self-start lg:self-auto shadow-xs border border-neutral-200/50">
+          <button
+            type="button"
+            onClick={() => setSubTab('items')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              subTab === 'items'
+                ? 'bg-neutral-900 text-white shadow-sm font-bold'
+                : 'text-neutral-600 hover:text-neutral-900 font-bold'
+            }`}
+          >
+            <Utensils className="w-3.5 h-3.5" />
+            <span>Platos y Precios ({restaurantItems.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab('categories')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              subTab === 'categories'
+                ? 'bg-neutral-900 text-white shadow-sm font-bold'
+                : 'text-neutral-600 hover:text-neutral-900 font-bold'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Categorías ({restaurantCategories.length})</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
             onClick={handleOpenNewCategoryModal}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
@@ -742,33 +771,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             <span>+ Nuevo Plato</span>
           </button>
         </div>
-      </div>
-
-      {/* Subtabs Selector */}
-      <div className="flex items-center gap-2 border-b border-neutral-200 pb-2 flex-wrap">
-        <button
-          onClick={() => setSubTab('items')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-            subTab === 'items'
-              ? 'bg-neutral-900 text-white shadow-sm'
-              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
-          }`}
-        >
-          <Utensils className="w-3.5 h-3.5" />
-          <span>Platos y Precios ({restaurantItems.length})</span>
-        </button>
-
-        <button
-          onClick={() => setSubTab('categories')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-            subTab === 'categories'
-              ? 'bg-neutral-900 text-white shadow-sm'
-              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Categorías ({restaurantCategories.length})</span>
-        </button>
       </div>
 
       {/* SUBTAB 1: GESTIÓN DE PLATOS */}
