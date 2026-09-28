@@ -1271,6 +1271,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   const photoBorder = isEditingEven ? (workingBranding.cardPhotoBorderEven || 'none') : (workingBranding.cardPhotoBorder || 'none');
                   const photoShadow = isEditingEven ? (workingBranding.cardPhotoShadowEven || 'none') : (workingBranding.cardPhotoShadow || 'none');
                   const photoTranslate = isEditingEven ? (workingBranding.cardPhotoTranslateEven ?? 0) : (workingBranding.cardPhotoTranslate ?? 0);
+                  const photoTranslateVal = photoTranslate || (isEditingEven ? 100 : 1);
 
                   return (
                     <div className="space-y-4 pt-1">
