@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Restaurant, Order, MenuItem, MenuCategory, User, OrderStatus, RestaurantTable, StaffShift } from '../types';
 import { WaiterQrScannerModal } from './WaiterQrScannerModal';
-import { WaiterTableOrderModal } from './WaiterTableOrderModal';
 import { TableQrModal } from './TableQrModal';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
 import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
@@ -121,7 +120,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
 
   // Handle table detection from QR scanner
   const handleTableDetected = (table: RestaurantTable) => {
-    setSelectedTableForOrder(table);
+    onOpenCustomerPreview(activeRest, 'DINE_IN', String(table.number).padStart(2, '0'));
   };
 
   const handleOrderSubmitted = (newOrder: Order) => {
@@ -358,7 +357,7 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
                   {/* Table Actions */}
                   <div className="space-y-1.5 pt-2 border-t border-neutral-100">
                     <button
-                      onClick={() => setSelectedTableForOrder(tbl)}
+                      onClick={() => onOpenCustomerPreview(activeRest, 'DINE_IN', String(tbl.number).padStart(2, '0'))}
                       className="w-full py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-sm"
                     >
                       <Plus className="w-3 h-3 text-white" />
@@ -626,20 +625,6 @@ export const WaiterView: React.FC<WaiterViewProps> = ({
           restaurant={activeRest}
           tables={restaurantTables}
           onTableSelected={handleTableDetected}
-        />
-      )}
-
-      {/* Table Order Taker Modal */}
-      {selectedTableForOrder && (
-        <WaiterTableOrderModal
-          isOpen={!!selectedTableForOrder}
-          onClose={() => setSelectedTableForOrder(null)}
-          restaurant={activeRest}
-          table={selectedTableForOrder}
-          currentUser={currentUser}
-          categories={categories}
-          menuItems={menuItems}
-          onOrderCreated={handleOrderSubmitted}
         />
       )}
 

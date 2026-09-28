@@ -39,6 +39,14 @@ export const UPSTASH_REST_TOKEN = 'gQAAAAAABHrMAAIgcDExYmEwMjliM2FlZTg0NjJjOTM3Z
 
 let lastSavedTimestamp: string | null = null;
 let lastLocalWriteTime = 0;
+let isCloudSyncPaused = false;
+
+export function setCloudSyncPaused(paused: boolean) {
+  isCloudSyncPaused = paused;
+  if (!paused) {
+    lastLocalWriteTime = Date.now();
+  }
+}
 
 /**
  * Direct client-side fetch from Upstash Cloud Redis hosting.
@@ -535,7 +543,7 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
       eventSource = new EventSource('/api/cloud-menu/events');
 
       eventSource.onmessage = (e) => {
-        if (isClosed || !e.data) return;
+        if (isClosed || isCloudSyncPaused || !e.data) return;
         try {
           const payload = JSON.parse(e.data);
           if (payload && payload.type) {
@@ -554,7 +562,7 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
 
   // 2. High-speed fallback polling every 2 seconds to the backend /api/cloud-menu
   const pollInterval = setInterval(async () => {
-    if (isClosed) return;
+    if (isClosed || isCloudSyncPaused) return;
     try {
       // Do not overwrite user while they are actively making local saves (within 2s)
       if (Date.now() - lastLocalWriteTime < 2000) {

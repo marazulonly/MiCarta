@@ -105,8 +105,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
+  // Initialize form state ONLY when modal opens to prevent background polls from resetting unsaved edits
   useEffect(() => {
-    if (currentUser && isOpen) {
+    if (isOpen && currentUser) {
       setName(currentUser.name || '');
       setEmail(currentUser.email || '');
       setPhone(currentUser.phone || '');
@@ -116,7 +117,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       setErrorMsg(null);
       setSuccessMsg(null);
     }
-  }, [currentUser, isOpen]);
+  }, [isOpen]);
 
   if (!isOpen || !currentUser) return null;
 

@@ -47,6 +47,7 @@ import {
   subscribeToCloudUpdates,
   autoSyncOrder,
   autoUpdateOrderStatus,
+  setCloudSyncPaused,
 } from './lib/cloudSync';
 
 // Helper function to normalize slugs for matching URLs, names, and IDs
@@ -567,9 +568,14 @@ export default function App() {
     }
   }, [restaurants, previewRestaurant]);
 
-  // Synchronize currentUser whenever users or restaurants are updated
+  // Pause cloud polling/updates while Account Settings modal is open to ensure clean photo edits
   useEffect(() => {
-    if (currentUser) {
+    setCloudSyncPaused(isProfileSettingsOpen);
+  }, [isProfileSettingsOpen]);
+
+  // Synchronize currentUser whenever users or restaurants are updated (skipping when modal is open)
+  useEffect(() => {
+    if (currentUser && !isProfileSettingsOpen) {
       const freshUser = users.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
       if (freshUser) {
         if (JSON.stringify(freshUser.restaurantIds) !== JSON.stringify(currentUser.restaurantIds)) {
@@ -577,7 +583,7 @@ export default function App() {
         }
       }
     }
-  }, [users, currentUser]);
+  }, [users, currentUser, isProfileSettingsOpen]);
 
   // Login handler
   const handleLogin = (rawUser: User) => {
