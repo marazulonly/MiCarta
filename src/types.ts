@@ -65,6 +65,17 @@ export interface RestaurantBranding {
   cardPaddingEven?: 'compact' | 'normal' | 'elegant';
   cardShadowEven?: 'none' | 'sutil' | 'medium' | 'intense' | 'glow';
   cardBorderWidthEven?: '0px' | '1px' | '2px' | '4px';
+  // Additional requested designer options
+  cardUniformStyles?: boolean; // Si es true, todas las tarjetas son iguales (sin par/impar)
+  cardMobileFullscreen?: boolean; // Mostrar a pantalla completa en vista móvil
+  cardPhotoTranslate?: number; // Traslación X de foto de plato (0, 33, 66, 100)
+  cardPhotoTranslateEven?: number;
+  cardPhotoShape?: 'square' | 'circle' | 'none'; // cuadrado, circular, sin contenedor
+  cardPhotoShapeEven?: 'square' | 'circle' | 'none';
+  cardPhotoBorder?: 'none' | 'thin' | 'thick'; // Control de borde de la foto
+  cardPhotoBorderEven?: 'none' | 'thin' | 'thick';
+  cardPhotoShadow?: 'none' | 'sutil' | 'medium' | 'intense'; // Control de sombra de la foto
+  cardPhotoShadowEven?: 'none' | 'sutil' | 'medium' | 'intense';
 }
 
 export interface RestaurantMetrics {

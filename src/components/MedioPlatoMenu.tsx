@@ -382,7 +382,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
         {/* ========================================================================= */}
         <main className="flex-1 px-3 sm:px-6 py-4 pb-44 space-y-6 sm:space-y-8 overflow-y-auto">
           {displayedItems.map((item, index) => {
-            const isEven = index % 2 === 1;
+            const isEven = branding.cardUniformStyles ? false : (index % 2 === 1);
 
             // Extrae configuración dinámica par/impar desde branding
             const layoutOdd = branding.cardLayout || 'row';
@@ -406,6 +406,12 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             const padding = isEven ? paddingEven : paddingOdd;
             const shadow = isEven ? shadowEven : shadowOdd;
             const borderW = isEven ? borderW_Even : borderW_Odd;
+
+            // Foto personalizada
+            const photoShape = isEven ? (branding.cardPhotoShapeEven || 'square') : (branding.cardPhotoShape || 'square');
+            const photoBorder = isEven ? (branding.cardPhotoBorderEven || 'none') : (branding.cardPhotoBorder || 'none');
+            const photoShadow = isEven ? (branding.cardPhotoShadowEven || 'none') : (branding.cardPhotoShadow || 'none');
+            const photoTranslate = isEven ? (branding.cardPhotoTranslateEven ?? 0) : (branding.cardPhotoTranslate ?? 0);
 
             const cardBg = branding.dishCardBgColor || 'transparent';
             const cardRadius = branding.cardBorderRadius || '12px';
@@ -432,6 +438,21 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               };
             }
 
+            // Clases de contenedor de foto
+            let photoShapeClass = 'rounded-xl';
+            if (photoShape === 'circle') photoShapeClass = 'rounded-full';
+            if (photoShape === 'square') photoShapeClass = 'rounded-none';
+            if (photoShape === 'none') photoShapeClass = 'bg-transparent border-0 shadow-none rounded-none';
+
+            let photoBorderClass = 'border-0';
+            if (photoBorder === 'thin') photoBorderClass = 'border border-white/20';
+            if (photoBorder === 'thick') photoBorderClass = 'border-4 border-amber-400/55';
+
+            let photoShadowClass = 'shadow-none';
+            if (photoShadow === 'sutil') photoShadowClass = 'shadow-sm';
+            if (photoShadow === 'medium') photoShadowClass = 'shadow-md';
+            if (photoShadow === 'intense') photoShadowClass = 'shadow-xl';
+
             const isRow = layout === 'row';
             const isColumn = layout === 'column';
             const isCover = layout === 'cover';
@@ -439,9 +460,15 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             // Elementos visuales
             const imageEl = item.imageUrl ? (
               <div 
-                className={`rounded-xl overflow-hidden bg-black/40 shrink-0 relative transition-transform duration-200 hover:scale-105 ${
+                style={{
+                  transform: `translateX(${photoTranslate}px)`,
+                  transition: 'transform 0.15s ease-out'
+                }}
+                className={`overflow-hidden shrink-0 relative transition-transform duration-200 hover:scale-105 ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
+                  photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
+                } ${
                   isRow 
-                    ? 'w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full' 
+                    ? 'w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36' 
                     : isColumn 
                     ? 'w-full h-48' 
                     : 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]'
@@ -514,6 +541,10 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             const first = elementOrder === 'title-first' ? textEl : imageEl;
             const second = elementOrder === 'title-first' ? imageEl : textEl;
 
+            // Fullscreen mobile support (only visible on mobile size elements)
+            const isMobileFullscreen = branding.cardMobileFullscreen === true;
+            const fullscreenCardClass = isMobileFullscreen ? 'min-h-[440px] md:min-h-0 flex flex-col justify-between' : '';
+
             return (
               <div 
                 key={item.id}
@@ -574,7 +605,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                     color: branding.textColor || '#1a1a1a',
                     ...shadowStyle
                   }}
-                  className={`w-full relative overflow-hidden transition flex flex-col justify-between border ${paddingClass} ${shadowClass} cursor-pointer select-none`}
+                  className={`w-full relative overflow-hidden transition flex flex-col justify-between border ${paddingClass} ${shadowClass} ${fullscreenCardClass} cursor-pointer select-none`}
                 >
                   {isCover ? (
                     <div className="relative w-full h-full flex flex-col justify-end min-h-[140px]">

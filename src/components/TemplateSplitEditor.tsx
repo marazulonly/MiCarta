@@ -584,7 +584,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             {/* Dishes list */}
             <div className="flex-1 p-4 space-y-3 overflow-y-auto">
               {previewFilteredItems.map((item, idx) => {
-                const isEven = idx % 2 === 1;
+                const isEven = workingBranding.cardUniformStyles ? false : (idx % 2 === 1);
 
                 // Odd (Impar) configuration
                 const layoutOdd = workingBranding.cardLayout || 'row';
@@ -611,6 +611,12 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const padding = isEven ? paddingEven : paddingOdd;
                 const shadow = isEven ? shadowEven : shadowOdd;
                 const borderW = isEven ? borderW_Even : borderW_Odd;
+
+                // Photo Customizations
+                const photoShape = isEven ? (workingBranding.cardPhotoShapeEven || 'square') : (workingBranding.cardPhotoShape || 'square');
+                const photoBorder = isEven ? (workingBranding.cardPhotoBorderEven || 'none') : (workingBranding.cardPhotoBorder || 'none');
+                const photoShadow = isEven ? (workingBranding.cardPhotoShadowEven || 'none') : (workingBranding.cardPhotoShadow || 'none');
+                const photoTranslate = isEven ? (workingBranding.cardPhotoTranslateEven ?? 0) : (workingBranding.cardPhotoTranslate ?? 0);
 
                 const cardBg = workingBranding.dishCardBgColor || workingBranding.cardBgColor || 'rgba(255,255,255,0.05)';
                 const cardRadius = workingBranding.cardBorderRadius || '12px';
@@ -639,14 +645,35 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   };
                 }
 
+                // Photo borders, shadows and shape
+                let photoShapeClass = 'rounded-xl';
+                if (photoShape === 'circle') photoShapeClass = 'rounded-full';
+                if (photoShape === 'square') photoShapeClass = 'rounded-none';
+                if (photoShape === 'none') photoShapeClass = 'bg-transparent border-0 shadow-none rounded-none';
+
+                let photoBorderClass = 'border-0';
+                if (photoBorder === 'thin') photoBorderClass = 'border border-white/20';
+                if (photoBorder === 'thick') photoBorderClass = 'border-4 border-amber-400/55';
+
+                let photoShadowClass = 'shadow-none';
+                if (photoShadow === 'sutil') photoShadowClass = 'shadow-sm';
+                if (photoShadow === 'medium') photoShadowClass = 'shadow-md';
+                if (photoShadow === 'intense') photoShadowClass = 'shadow-xl';
+
                 const isRow = layout === 'row';
                 const isColumn = layout === 'column';
                 const isCover = layout === 'cover';
 
-                // Build element render structures
+                // Build element render structures with magnetic snap offset translate
                 const imageEl = item.imageUrl ? (
                   <div 
-                    className={`rounded-xl overflow-hidden bg-black/40 shrink-0 relative ${
+                    style={{
+                      transform: `translateX(${photoTranslate}px)`,
+                      transition: 'transform 0.15s ease-out'
+                    }}
+                    className={`overflow-hidden shrink-0 relative transition-all ${photoShapeClass} ${photoBorderClass} ${photoShadowClass} ${
+                      photoShape === 'none' ? 'bg-transparent' : 'bg-black/40'
+                    } ${
                       isRow 
                         ? 'w-20 h-20' 
                         : isColumn 
@@ -717,6 +744,10 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const first = elementOrder === 'title-first' ? textEl : imageEl;
                 const second = elementOrder === 'title-first' ? imageEl : textEl;
 
+                // Support Fullscreen mobile card look
+                const isMobileFullscreen = workingBranding.cardMobileFullscreen && deviceMode === 'mobile';
+                const fullscreenCardClass = isMobileFullscreen ? 'min-h-[440px] flex flex-col justify-between' : '';
+
                 return (
                   <div
                     key={item.id}
@@ -728,25 +759,25 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                       color: workingBranding.textColor || '#FFFFFF',
                       ...shadowStyle
                     }}
-                    className={`relative overflow-hidden transition border flex flex-col justify-between ${paddingClass} ${shadowClass}`}
+                    className={`relative overflow-hidden transition border flex flex-col justify-between ${paddingClass} ${shadowClass} ${fullscreenCardClass}`}
                   >
                     {isCover ? (
-                      <div className="relative w-full h-full flex flex-col justify-end min-h-[140px]">
+                      <div className="relative w-full h-full flex flex-col justify-end min-h-[140px] flex-1">
                         {imageEl}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-5" />
                         {textEl}
                         {footerEl}
                       </div>
                     ) : isRow ? (
-                      <div className="flex flex-col h-full justify-between">
-                        <div className="flex gap-3">
+                      <div className="flex flex-col h-full justify-between flex-1">
+                        <div className="flex gap-3 items-center">
                           {first}
                           {second}
                         </div>
                         {footerEl}
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-3 h-full justify-between">
+                      <div className="flex flex-col gap-3 h-full justify-between flex-1">
                         <div className="flex flex-col gap-3">
                           {first}
                           {second}
@@ -1165,34 +1196,50 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   </p>
                 </div>
 
-                {/* Sub-tabs selector for Odd vs Even card types */}
-                <div className="flex border border-neutral-800 bg-neutral-900 p-1 rounded-xl gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setCardDesignSubtab('odd')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
-                      cardDesignSubtab === 'odd'
-                        ? 'bg-amber-400 text-black shadow-sm font-black'
-                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
-                    }`}
-                  >
-                    Ficha Impar (Platos 1, 3, 5...)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCardDesignSubtab('even')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
-                      cardDesignSubtab === 'even'
-                        ? 'bg-amber-400 text-black shadow-sm font-black'
-                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
-                    }`}
-                  >
-                    Ficha Par (Platos 2, 4, 6...)
-                  </button>
+                {/* Checkbox global: Todas las tarjetas son iguales */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Tarjetas Uniformes (Sin Par/Impar)</span>
+                    <span className="text-[10px] text-neutral-400">Todas las fichas heredarán el diseño Impar</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={workingBranding.cardUniformStyles === true}
+                    onChange={(e) => updateBranding('cardUniformStyles', e.target.checked)}
+                    className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
+                  />
                 </div>
 
+                {/* Sub-tabs selector for Odd vs Even card types (Only visible if cards are NOT uniform) */}
+                {!workingBranding.cardUniformStyles && (
+                  <div className="flex border border-neutral-800 bg-neutral-900 p-1 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCardDesignSubtab('odd')}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
+                        cardDesignSubtab === 'odd'
+                          ? 'bg-amber-400 text-black shadow-sm font-black'
+                          : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
+                      }`}
+                    >
+                      Ficha Impar (Platos 1, 3, 5...)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCardDesignSubtab('even')}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
+                        cardDesignSubtab === 'even'
+                          ? 'bg-amber-400 text-black shadow-sm font-black'
+                          : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
+                      }`}
+                    >
+                      Ficha Par (Platos 2, 4, 6...)
+                    </button>
+                  </div>
+                )}
+
                 {(() => {
-                  const isEditingEven = cardDesignSubtab === 'even';
+                  const isEditingEven = !workingBranding.cardUniformStyles && cardDesignSubtab === 'even';
                   const layoutVal = isEditingEven ? (workingBranding.cardLayoutEven || 'row') : (workingBranding.cardLayout || 'row');
                   const orderVal = isEditingEven ? (workingBranding.cardElementOrderEven || 'image-first') : (workingBranding.cardElementOrder || 'image-first');
                   const alignVal = isEditingEven ? (workingBranding.cardTextAlignmentEven || 'left') : (workingBranding.cardTextAlignment || 'left');
@@ -1200,10 +1247,15 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   const borderWVal = isEditingEven ? (workingBranding.cardBorderWidthEven || '1px') : (workingBranding.cardBorderWidth || '1px');
                   const shadowVal = isEditingEven ? (workingBranding.cardShadowEven || 'medium') : (workingBranding.cardShadow || 'medium');
 
+                  const photoShape = isEditingEven ? (workingBranding.cardPhotoShapeEven || 'square') : (workingBranding.cardPhotoShape || 'square');
+                  const photoBorder = isEditingEven ? (workingBranding.cardPhotoBorderEven || 'none') : (workingBranding.cardPhotoBorder || 'none');
+                  const photoShadow = isEditingEven ? (workingBranding.cardPhotoShadowEven || 'none') : (workingBranding.cardPhotoShadow || 'none');
+                  const photoTranslate = isEditingEven ? (workingBranding.cardPhotoTranslateEven ?? 0) : (workingBranding.cardPhotoTranslate ?? 0);
+
                   return (
                     <div className="space-y-4 pt-1">
                       <div className="text-[10px] uppercase font-mono tracking-wider text-amber-300 font-bold bg-amber-400/5 px-2.5 py-1 rounded border border-amber-400/20">
-                        Editando: {isEditingEven ? 'Estilo de Ficha PAR (Pares)' : 'Estilo de Ficha IMPAR (Impares)'}
+                        Editando: {isEditingEven ? 'Estilo de Ficha PAR (Pares)' : 'Estilo de Ficha IMPAR (Impares / General)'}
                       </div>
 
                       {/* 1. Mover de Lugar / Disposición General (Card Layout) */}
@@ -1255,9 +1307,118 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         </div>
                       </div>
 
-                      {/* 3. Alineación de Textos */}
+                      {/* 3. Propiedades de la Foto del Plato (Alineación, forma, bordes, sombras) */}
+                      <div className="p-3.5 rounded-xl bg-neutral-900/80 border border-neutral-800 space-y-4">
+                        <span className="text-xs font-bold text-amber-300 block uppercase tracking-wider font-mono">
+                          📸 Propiedades de la Foto del Plato
+                        </span>
+
+                        {/* Translación con topes magnéticos */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-white font-medium">Traslación X (Desplazar):</span>
+                            <span className="text-amber-400 font-mono font-bold">
+                              {photoTranslate === 0 ? 'Centro (0px)' : `${photoTranslate > 0 ? '+' : ''}${photoTranslate}px`}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={-99}
+                            max={99}
+                            step={33}
+                            value={photoTranslate}
+                            onChange={(e) => updateBranding(isEditingEven ? 'cardPhotoTranslateEven' : 'cardPhotoTranslate', parseInt(e.target.value))}
+                            className="w-full accent-amber-400 cursor-pointer"
+                          />
+                          <div className="flex justify-between text-[9px] text-neutral-500 px-1 font-mono">
+                            <span>Izquierda Max</span>
+                            <span>Tercio</span>
+                            <span>Centro</span>
+                            <span>Tercio</span>
+                            <span>Derecha Max</span>
+                          </div>
+                        </div>
+
+                        {/* Forma de contenedor */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs text-white block font-medium">Forma de Foto:</span>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { id: 'square' as const, label: 'Cuadrado' },
+                              { id: 'circle' as const, label: 'Circular' },
+                              { id: 'none' as const, label: 'Sin Contenedor' }
+                            ].map(shape => (
+                              <button
+                                type="button"
+                                key={shape.id}
+                                onClick={() => updateBranding(isEditingEven ? 'cardPhotoShapeEven' : 'cardPhotoShape', shape.id)}
+                                className={`p-1.5 rounded-lg text-xs transition cursor-pointer border font-bold ${
+                                  photoShape === shape.id
+                                    ? 'bg-amber-400 text-black border-amber-400'
+                                    : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                                }`}
+                              >
+                                {shape.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Borde de foto */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs text-white block font-medium">Borde de Foto:</span>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { id: 'none' as const, label: 'Ninguno' },
+                              { id: 'thin' as const, label: 'Fino' },
+                              { id: 'thick' as const, label: 'Grueso Oro' }
+                            ].map(bord => (
+                              <button
+                                type="button"
+                                key={bord.id}
+                                onClick={() => updateBranding(isEditingEven ? 'cardPhotoBorderEven' : 'cardPhotoBorder', bord.id)}
+                                className={`p-1.5 rounded-lg text-xs transition cursor-pointer border font-bold ${
+                                  photoBorder === bord.id
+                                    ? 'bg-amber-400 text-black border-amber-400'
+                                    : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                                }`}
+                              >
+                                {bord.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sombra de foto */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs text-white block font-medium">Sombra de Foto:</span>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[
+                              { id: 'none' as const, label: 'Ninguna' },
+                              { id: 'sutil' as const, label: 'Sutil' },
+                              { id: 'medium' as const, label: 'Media' },
+                              { id: 'intense' as const, label: 'Intensa' }
+                            ].map(shd => (
+                              <button
+                                type="button"
+                                key={shd.id}
+                                onClick={() => updateBranding(isEditingEven ? 'cardPhotoShadowEven' : 'cardPhotoShadow', shd.id)}
+                                className={`p-1 rounded-lg text-[10px] transition cursor-pointer border font-bold text-center ${
+                                  photoShadow === shd.id
+                                    ? 'bg-amber-400 text-black border-amber-400'
+                                    : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                                }`}
+                              >
+                                {shd.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. Alineación de Textos */}
                       <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                        <span className="text-xs font-bold text-white block">3. Alineación del Texto:</span>
+                        <span className="text-xs font-bold text-white block">4. Alineación del Texto:</span>
                         <div className="grid grid-cols-3 gap-2">
                           {[
                             { id: 'left' as const, label: 'Izquierda' },
@@ -1280,9 +1441,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         </div>
                       </div>
 
-                      {/* 4. Espaciado / Relleno (Card Padding) */}
+                      {/* 5. Espaciado / Relleno (Card Padding) */}
                       <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                        <span className="text-xs font-bold text-white block">4. Relleno Interno (Padding):</span>
+                        <span className="text-xs font-bold text-white block">5. Relleno Interno (Padding):</span>
                         <div className="grid grid-cols-3 gap-2">
                           {[
                             { id: 'compact' as const, label: 'Compacto' },
@@ -1305,9 +1466,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         </div>
                       </div>
 
-                      {/* 5. Grosor de Borde (Card Border Width) */}
+                      {/* 6. Grosor de Borde (Card Border Width) */}
                       <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                        <span className="text-xs font-bold text-white block">5. Grosor del Borde:</span>
+                        <span className="text-xs font-bold text-white block">6. Grosor del Borde:</span>
                         <div className="grid grid-cols-4 gap-2">
                           {[
                             { label: 'Ninguno', val: '0px' },
@@ -1331,9 +1492,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         </div>
                       </div>
 
-                      {/* 6. Sombras & Glow de Marca (Card Shadow Intensity) */}
+                      {/* 7. Sombras & Glow de Marca (Card Shadow Intensity) */}
                       <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                        <span className="text-xs font-bold text-white block">6. Sombra & Brillo (Neon Glow):</span>
+                        <span className="text-xs font-bold text-white block">7. Sombra & Brillo (Neon Glow):</span>
                         <div className="grid grid-cols-3 gap-2">
                           {[
                             { id: 'none' as const, label: 'Sin Sombra' },
@@ -1366,6 +1527,20 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-bold block">
                     Parámetros Generales de Diseño
                   </span>
+
+                  {/* Mostrar ficha a pantalla completa en vista móvil */}
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Ficha Móvil a Pantalla Completa</span>
+                      <span className="text-[10px] text-neutral-400">Las tarjetas tomarán el alto total de pantalla móvil</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={workingBranding.cardMobileFullscreen === true}
+                      onChange={(e) => updateBranding('cardMobileFullscreen', e.target.checked)}
+                      className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
+                    />
+                  </div>
 
                   {/* Curvatura de Esquinas (Border Radius) */}
                   <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
@@ -1422,7 +1597,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         type="checkbox"
                         checked={workingBranding.showHeaderName !== false}
                         onChange={(e) => updateBranding('showHeaderName', e.target.checked)}
-                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
                       />
                     </label>
 
@@ -1432,7 +1607,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         type="checkbox"
                         checked={workingBranding.showHeaderTagline !== false}
                         onChange={(e) => updateBranding('showHeaderTagline', e.target.checked)}
-                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
                       />
                     </label>
 
@@ -1442,7 +1617,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         type="checkbox"
                         checked={workingBranding.showHeaderBadge !== false}
                         onChange={(e) => updateBranding('showHeaderBadge', e.target.checked)}
-                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400 cursor-pointer"
                       />
                     </label>
                   </div>
