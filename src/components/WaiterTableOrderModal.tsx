@@ -164,65 +164,65 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-5xl h-[90vh] rounded-3xl overflow-hidden flex flex-col bg-neutral-950 border border-neutral-800 text-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+      <div className="relative w-full max-w-5xl h-[92vh] sm:h-[88vh] rounded-3xl overflow-hidden flex flex-col bg-white border border-neutral-200 text-neutral-900 shadow-2xl">
         
         {/* Top Header */}
-        <div className="px-5 py-3.5 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-neutral-900 text-white border-b border-neutral-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+            <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
               <ChefHat className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-white">
-                  Tomar Comanda: <span className="text-sky-400">{table.name}</span>
+                  Tomar Comanda: <span className="text-amber-400">{table.name}</span>
                 </h3>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-800 text-amber-300 border border-neutral-700">
                   {table.zone} • Cap. {table.capacity}p
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400">
-                Mozo: <strong className="text-neutral-200">{currentUser.name}</strong> • Sede: {restaurant.name}
+              <p className="text-[11px] text-neutral-300">
+                Mozo: <strong className="text-white">{currentUser.name}</strong> • Sede: {restaurant.name}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body: 2-Columns */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-neutral-100">
           
           {/* Left / Center: Menu Catalog */}
-          <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-neutral-800 overflow-hidden">
+          <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-neutral-200 overflow-hidden bg-neutral-100">
             
             {/* Search & Category Filter Bar */}
-            <div className="p-3 bg-neutral-900/50 border-b border-neutral-800 space-y-2">
+            <div className="p-3 bg-white border-b border-neutral-200 space-y-2.5 shrink-0">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar plato en la carta..."
-                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-sky-500"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
                 />
               </div>
 
               {/* Categories Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 <button
                   onClick={() => setActiveCategory('all')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                     activeCategory === 'all'
-                      ? 'bg-sky-400 text-black'
-                      : 'bg-neutral-800 text-neutral-400 hover:text-white'
+                      ? 'bg-neutral-900 text-white shadow-sm'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
                   }`}
                 >
                   Todos ({restItems.length})
@@ -231,10 +231,10 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                       activeCategory === cat.id
-                        ? 'bg-sky-400 text-black'
-                        : 'bg-neutral-800 text-neutral-400 hover:text-white'
+                        ? 'bg-neutral-900 text-white shadow-sm'
+                        : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-200'
                     }`}
                   >
                     {cat.name}
@@ -243,7 +243,7 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
               </div>
             </div>
 
-            {/* Dishes Grid */}
+            {/* Dishes Grid - Match menu cards structure, NO DESCRIPTIONS */}
             <div className="flex-1 p-3.5 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredItems.map(item => {
                 const hasAddons = (item.availableAddons && item.availableAddons.length > 0) || 
@@ -252,36 +252,49 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
                 return (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 hover:border-neutral-700 transition flex flex-col justify-between space-y-2 group"
+                    className="p-3.5 rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 hover:shadow-md transition flex flex-col justify-between space-y-3 group"
                   >
-                    <div className="space-y-1.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-xs font-bold text-white group-hover:text-sky-300 transition line-clamp-1">
+                    {/* Top Row: Dish Photo/Icon + Name + Price (NO DESCRIPTION) */}
+                    <div className="flex items-center gap-3">
+                      {item.imageUrl ? (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0 group-hover:scale-105 transition"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xs shrink-0">
+                          <Utensils className="w-5 h-5" />
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-neutral-900 group-hover:text-amber-700 transition truncate">
                           {item.name}
                         </h4>
-                        <span className="text-xs font-mono font-black text-amber-400 shrink-0">
-                          ${item.price.toFixed(2)}
-                        </span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-xs font-mono font-black text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                            S/ {item.price.toFixed(2)}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed">
-                        {item.description}
-                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-neutral-800/60">
+                    {/* Bottom Row: Addons indicator & Add button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
                       {hasAddons ? (
-                        <span className="text-[10px] text-neutral-500 font-mono">
-                          +{item.availableAddons?.length || 0} Adicionales
+                        <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          +{item.availableAddons?.length || 0} Opciones
                         </span>
                       ) : (
-                        <span className="text-[10px] text-emerald-400/80 font-mono">
+                        <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                           Directo
                         </span>
                       )}
 
                       <button
                         onClick={() => handleQuickAdd(item)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-black text-xs font-bold transition cursor-pointer shadow"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition cursor-pointer shadow-sm active:scale-95"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{hasAddons ? 'Configurar' : 'Agregar'}</span>
@@ -294,80 +307,75 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
           </div>
 
           {/* Right: Active Order Cart Drawer */}
-          <div className="w-full md:w-80 lg:w-96 flex flex-col bg-neutral-900/30 overflow-hidden">
+          <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white border-t md:border-t-0 md:border-l border-neutral-200 shrink-0 overflow-hidden">
             
             {/* Diner Name & Info */}
-            <div className="p-4 bg-neutral-900/60 border-b border-neutral-800 space-y-2">
+            <div className="p-4 bg-neutral-50 border-b border-neutral-200 space-y-2.5 shrink-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                  <ShoppingBag className="w-4 h-4 text-amber-600" />
                   <span>Comanda ({cart.reduce((s, c) => s + c.quantity, 0)} platos)</span>
                 </span>
-                <span className="text-[10px] font-mono text-sky-400 bg-sky-950 px-2 py-0.5 rounded border border-sky-800">
+                <span className="text-[10px] font-mono font-bold text-neutral-800 bg-white px-2 py-0.5 rounded border border-neutral-300 shadow-sm">
                   {table.name}
                 </span>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-neutral-400 block mb-1">
+                <label className="text-[10px] font-bold text-neutral-500 block mb-1">
                   Nombre del Comensal (Opcional):
                 </label>
                 <input
                   type="text"
                   value={dinerName}
                   onChange={(e) => setDinerName(e.target.value)}
-                  placeholder="Ej: Familia Ramírez / Mesa 4"
-                  className="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-sky-500"
+                  placeholder="Ej: Comensal / Mesa 1"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 shadow-sm"
                 />
               </div>
             </div>
 
             {/* Cart Items List */}
-            <div className="flex-1 p-3 overflow-y-auto space-y-2.5">
+            <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-neutral-50/50">
               {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neutral-500 space-y-2">
-                  <Utensils className="w-8 h-8 mx-auto text-neutral-600" />
-                  <p className="text-xs">No hay platos agregados a la comanda.</p>
-                  <p className="text-[10px] text-neutral-600">Selecciona platos de la carta para empezar.</p>
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neutral-400 space-y-2">
+                  <Utensils className="w-8 h-8 mx-auto text-neutral-300" />
+                  <p className="text-xs font-bold text-neutral-600">No hay platos en la comanda.</p>
+                  <p className="text-[10px] text-neutral-400">Selecciona platos de la carta para empezar.</p>
                 </div>
               ) : (
                 cart.map(entry => (
                   <div 
                     key={entry.item.id}
-                    className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2"
+                    className="p-3 rounded-xl bg-white border border-neutral-200 shadow-sm space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h5 className="text-xs font-bold text-white">
-                          <strong className="text-sky-400 mr-1">{entry.quantity}x</strong>
+                        <h5 className="text-xs font-bold text-neutral-900">
+                          <strong className="text-amber-600 mr-1">{entry.quantity}x</strong>
                           {entry.item.name}
                         </h5>
-                        <span className="text-[11px] font-mono text-amber-400">
-                          ${(entry.item.price * entry.quantity).toFixed(2)}
+                        <span className="text-[11px] font-mono font-bold text-neutral-700">
+                          S/ {(entry.item.price * entry.quantity).toFixed(2)}
                         </span>
                       </div>
 
                       <button
                         onClick={() => handleRemoveEntry(entry.item.id)}
-                        className="text-neutral-500 hover:text-rose-400 p-1 transition"
+                        className="p-1 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Eliminar plato"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    {/* Unit Breakdown */}
-                    {entry.units.length > 0 && (
-                      <div className="space-y-1 pt-1.5 border-t border-neutral-800/80">
+                    {/* Unit notes */}
+                    {entry.units && entry.units.length > 0 && (
+                      <div className="pl-2 border-l-2 border-neutral-200 space-y-1 pt-1 text-[10px] text-neutral-600">
                         {entry.units.map(u => (
-                          <div key={u.unitNumber} className="text-[10px] bg-black/40 px-2 py-1 rounded text-neutral-300 flex items-center justify-between">
-                            <span>
-                              <strong>U{u.unitNumber}:</strong> {u.observation || 'Sin notas especiales'}
-                            </span>
-                            {u.selectedAddons && u.selectedAddons.length > 0 && (
-                              <span className="text-amber-400 font-mono">
-                                +${u.selectedAddons.reduce((s, a) => s + a.price, 0).toFixed(2)}
-                              </span>
-                            )}
+                          <div key={u.unitNumber}>
+                            • U{u.unitNumber}: {u.observation || 'Sin nota'} 
+                            {u.selectedAddons && u.selectedAddons.length > 0 && ` (+${u.selectedAddons.map(a => a.name).join(', ')})`}
                           </div>
                         ))}
                       </div>
@@ -377,33 +385,32 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
               )}
             </div>
 
-            {/* Order Footer & Send Button */}
-            <div className="p-4 bg-neutral-900 border-t border-neutral-800 space-y-3">
+            {/* Total Footer & Send Button */}
+            <div className="p-4 bg-white border-t border-neutral-200 space-y-3 shrink-0 shadow-lg">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-neutral-400">Total Comanda:</span>
-                <span className="text-base font-black font-mono text-white">
-                  ${grandTotal.toFixed(2)}
+                <span className="text-neutral-600 font-bold">Total Comanda:</span>
+                <span className="text-base font-black font-mono text-neutral-900">
+                  S/ {grandTotal.toFixed(2)}
                 </span>
               </div>
 
               {orderSent ? (
-                <div className="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-bold text-xs flex items-center justify-center gap-2 animate-in zoom-in">
-                  <Check className="w-4 h-4" />
-                  <span>¡Comanda Enviada a Cocina!</span>
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold text-center flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>¡Comanda enviada a cocina exitosamente!</span>
                 </div>
               ) : (
                 <button
-                  disabled={cart.length === 0}
                   onClick={handleSendOrder}
-                  className={`w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg ${
+                  disabled={cart.length === 0}
+                  className={`w-full py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md ${
                     cart.length > 0
-                      ? 'bg-sky-400 text-black hover:bg-sky-300 shadow-sky-950/40'
-                      : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                      ? 'bg-neutral-900 hover:bg-black text-white cursor-pointer active:scale-95'
+                      : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                   }`}
                 >
-                  <ChefHat className="w-4 h-4" />
-                  <span>Enviar Comanda a Cocina</span>
                   <ArrowRight className="w-4 h-4" />
+                  <span>Enviar Comanda a Cocina</span>
                 </button>
               )}
             </div>
@@ -414,17 +421,18 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
 
       </div>
 
-      {/* Item Customization Modal */}
-      <ItemOrderModal
-        isOpen={!!selectedItemForCustomization}
-        onClose={() => setSelectedItemForCustomization(null)}
-        item={selectedItemForCustomization}
-        onConfirmOrder={(item, quantity, units) => {
-          handleAddItemToCart(item, quantity, units);
-          setSelectedItemForCustomization(null);
-        }}
-      />
-
+      {/* Item Customization Modal (Addons / Observations) */}
+      {selectedItemForCustomization && (
+        <ItemOrderModal
+          isOpen={!!selectedItemForCustomization}
+          onClose={() => setSelectedItemForCustomization(null)}
+          item={selectedItemForCustomization}
+          onAddToCart={(item, qty, units) => {
+            handleAddItemToCart(item, qty, units);
+            setSelectedItemForCustomization(null);
+          }}
+        />
+      )}
     </div>
   );
 };
