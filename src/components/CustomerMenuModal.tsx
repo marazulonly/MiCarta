@@ -430,20 +430,21 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   };
 
   const handleOpenBranding = () => {
+    const currentBranding = getSafeBranding(restaurant);
     setBrandName(restaurant.name);
     setBrandTagline(restaurant.tagline || '');
     setBrandLogoUrl(restaurant.logoUrl || '');
     setBrandCoverUrl(restaurant.coverUrl || '');
-    setBrandDarkBgColor(restaurant.branding?.darkBgColor || '#071A14');
-    setBrandButtonColor(restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#38bdf8');
-    setBrandButtonTextColor(restaurant.branding?.buttonTextColor || '#000000');
-    setBrandTextColor(restaurant.branding?.textColor || '#ffffff');
-    setBrandRestaurantNameFont(restaurant.branding?.restaurantNameFont || 'inherit');
-    setBrandRestaurantNameColor(restaurant.branding?.restaurantNameColor || '#ffffff');
-    setBrandDishCardBgColor(restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor || '');
-    setBrandDishNameFont(restaurant.branding?.dishNameFont || 'inherit');
-    setBrandDishDescFont(restaurant.branding?.dishDescFont || 'inherit');
-    setBrandDishPriceFont(restaurant.branding?.dishPriceFont || 'monospace');
+    setBrandDarkBgColor(currentBranding.darkBgColor || '#071A14');
+    setBrandButtonColor(currentBranding.buttonColor || currentBranding.accentColor || '#38bdf8');
+    setBrandButtonTextColor(currentBranding.buttonTextColor || '#000000');
+    setBrandTextColor(currentBranding.textColor || '#ffffff');
+    setBrandRestaurantNameFont(currentBranding.restaurantNameFont || 'inherit');
+    setBrandRestaurantNameColor(currentBranding.restaurantNameColor || '#ffffff');
+    setBrandDishCardBgColor(currentBranding.dishCardBgColor || currentBranding.darkBgColor || '');
+    setBrandDishNameFont(currentBranding.dishNameFont || 'inherit');
+    setBrandDishDescFont(currentBranding.dishDescFont || 'inherit');
+    setBrandDishPriceFont(currentBranding.dishPriceFont || 'monospace');
     setEnableDineIn(restaurant.menuAccessSettings?.enableDineIn !== false);
     setEnableDelivery(restaurant.menuAccessSettings?.enableDelivery !== false);
     setIsBrandingModalOpen(true);

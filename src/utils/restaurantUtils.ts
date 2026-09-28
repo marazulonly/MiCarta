@@ -262,18 +262,6 @@ export function getSafeBranding(restaurant?: Restaurant | null): RestaurantBrand
   if (!restaurant || !restaurant.branding) {
     return tmplDefaults;
   }
-  // If template is tmpl-medio-plato but restaurant branding has hardcoded darkBgColor #0a0a0c or #0f172a from old default, merge template defaults
-  const isMedio = restaurant.templateId === 'tmpl-medio-plato' || (restaurant.templateId || '').includes('medio');
-  if (isMedio && (restaurant.branding.darkBgColor === '#0a0a0c' || restaurant.branding.darkBgColor === '#0f172a' || restaurant.branding.darkBgColor === '#09090b')) {
-    return {
-      ...tmplDefaults,
-      ...restaurant.branding,
-      darkBgColor: tmplDefaults.darkBgColor,
-      cardBgColor: tmplDefaults.cardBgColor,
-      textColor: tmplDefaults.textColor,
-      buttonColor: restaurant.branding.buttonColor || tmplDefaults.buttonColor
-    };
-  }
   return {
     ...tmplDefaults,
     ...restaurant.branding

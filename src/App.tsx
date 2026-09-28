@@ -656,8 +656,13 @@ export default function App() {
 
   // Handlers
   // Helper to force automatic cloud publication of a specific restaurant
-  const triggerCloudUpdate = async (restaurantId: string) => {
-    const restaurant = restaurants.find(r => r.id === restaurantId);
+  const triggerCloudUpdate = async (
+    restaurantId: string, 
+    overrideRest?: Restaurant, 
+    overrideCats?: MenuCategory[], 
+    overrideItems?: MenuItem[]
+  ) => {
+    const restaurant = overrideRest || restaurants.find(r => r.id === restaurantId);
     if (!restaurant) return;
 
     // Ensure slug is normalized before sending to cloud
@@ -666,8 +671,8 @@ export default function App() {
       slug: normalizeSlug(restaurant.slug)
     };
 
-    const filterCats = categories.filter(c => c.restaurantId === restaurantId);
-    const filterItems = menuItems.filter(i => i.restaurantId === restaurantId);
+    const filterCats = overrideCats || categories.filter(c => c.restaurantId === restaurantId);
+    const filterItems = overrideItems || menuItems.filter(i => i.restaurantId === restaurantId);
 
     try {
       await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador');
@@ -872,7 +877,8 @@ export default function App() {
     setMenuItems(nextItems);
     autoSyncMenuItem(updated);
     saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
-    triggerCloudUpdate(updated.restaurantId);
+    const restItems = nextItems.filter(i => i.restaurantId === updated.restaurantId);
+    triggerCloudUpdate(updated.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
 
@@ -881,15 +887,21 @@ export default function App() {
     setMenuItems(nextItems);
     autoSyncMenuItem(newItem);
     saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
-    triggerCloudUpdate(newItem.restaurantId);
+    const restItems = nextItems.filter(i => i.restaurantId === newItem.restaurantId);
+    triggerCloudUpdate(newItem.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
+    const targetItem = menuItems.find(i => i.id === itemId);
     const updatedItems = menuItems.filter(i => i.id !== itemId);
     setMenuItems(updatedItems);
     autoDeleteMenuItem(itemId);
     saveFullCloudMenu({ restaurants, categories, items: updatedItems, users, orders });
+    if (targetItem) {
+      const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
+      triggerCloudUpdate(targetItem.restaurantId, undefined, undefined, restItems);
+    }
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
   };
 
@@ -900,6 +912,8 @@ export default function App() {
     const updatedList = [...otherCats, ...reorderedCats];
     setCategories(updatedList);
     saveFullCloudMenu({ categories: updatedList, restaurants, items: menuItems, users, orders });
+    const restCats = updatedList.filter(c => c.restaurantId === restId);
+    triggerCloudUpdate(restId, undefined, restCats, undefined);
     showToast(`✓ Orden de categorías guardado en la nube.`);
   };
 
@@ -915,6 +929,8 @@ export default function App() {
     const updatedList = [...otherItems, ...reorderedItems, ...existingRestItemsNotInReordered];
     setMenuItems(updatedList);
     saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
+    const restItems = updatedList.filter(i => i.restaurantId === restId);
+    triggerCloudUpdate(restId, undefined, undefined, restItems);
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
 
@@ -923,7 +939,8 @@ export default function App() {
     setCategories(nextCategories);
     autoSyncCategory(newCategory);
     saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
-    triggerCloudUpdate(newCategory.restaurantId);
+    const restCats = nextCategories.filter(c => c.restaurantId === newCategory.restaurantId);
+    triggerCloudUpdate(newCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
 
@@ -932,7 +949,8 @@ export default function App() {
     setCategories(nextCategories);
     autoSyncCategory(updatedCategory);
     saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
-    triggerCloudUpdate(updatedCategory.restaurantId);
+    const restCats = nextCategories.filter(c => c.restaurantId === updatedCategory.restaurantId);
+    triggerCloudUpdate(updatedCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
