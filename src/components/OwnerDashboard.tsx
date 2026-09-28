@@ -63,7 +63,7 @@ import { TableQrModal } from './TableQrModal';
 import { TemplateSplitEditor } from './TemplateSplitEditor';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
 import { OwnerOrderDetailModal } from './OwnerOrderDetailModal';
-import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings, generateSlug } from '../utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, getSafeMenuAccessSettings, generateSlug, getTemplateDefaultBranding } from '../utils/restaurantUtils';
 import { DEFAULT_WEEKLY_SCHEDULE, generateTablesForRestaurant, generateShiftsForRestaurant } from '../data/mockData';
 import { Order, OrderStatus } from '../types';
 
@@ -662,6 +662,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     }
 
     const newId = `rest-${Date.now()}`;
+    const selectedTmplId = newRestTemplateId || 'tmpl-luxury';
+    const templateBranding = getTemplateDefaultBranding(selectedTmplId);
+
     const newRest: Restaurant = {
       id: newId,
       name: cleanName,
@@ -675,17 +678,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       coverUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80',
       isOpen: true,
-      templateId: newRestTemplateId,
+      templateId: selectedTmplId,
       ownerId: currentOwner.id,
-      branding: {
-        primaryColor: '#0EA5E9',
-        secondaryColor: '#38BDF8',
-        accentColor: '#F59E0B',
-        darkBgColor: '#0B1528',
-        cardBgColor: '#132238',
-        textColor: '#F0F9FF',
-        fontDisplay: 'Playfair Display, serif',
-      },
+      branding: templateBranding,
       metrics: {
         dailyRevenue: 0,
         activeOrders: 0,

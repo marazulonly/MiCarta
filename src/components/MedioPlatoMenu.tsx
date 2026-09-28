@@ -14,7 +14,9 @@ import {
   Edit3,
   Image as ImageIcon,
   Utensils,
-  Eye
+  Eye,
+  Sparkles,
+  Layout
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
@@ -289,6 +291,48 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Live Edit Mode Floating Banner for Medio Plato */}
+        {isOwnerOrAdmin && isLiveEditActive && (
+          <div className="relative z-30 px-3.5 py-2.5 bg-neutral-900 border-b border-neutral-800 text-white flex flex-wrap items-center justify-between gap-2 text-xs shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+              <span className="font-bold text-xs">Modo Edición en Vivo:</span>
+              <span className="text-[11px] hidden sm:inline text-neutral-300">
+                Toca sobre cualquier plato, precio, foto o marca para editar directamente.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {onAddNewItem && (
+                <button
+                  onClick={() => onAddNewItem(activeCategory !== 'all' ? activeCategory : undefined)}
+                  className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] flex items-center gap-1 transition shadow cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Agregar Plato</span>
+                </button>
+              )}
+              {onEditBranding && (
+                <button
+                  onClick={onEditBranding}
+                  className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium text-[11px] flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Personalizar Marca</span>
+                </button>
+              )}
+              {onEditHeader && (
+                <button
+                  onClick={onEditHeader}
+                  className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium text-[11px] flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Layout className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Editar Cabecera</span>
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -26,7 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
-import { generateSlug } from '../utils/restaurantUtils';
+import { generateSlug, getTemplateDefaultBranding } from '../utils/restaurantUtils';
 
 interface AdminDashboardProps {
   restaurants: Restaurant[];
@@ -196,6 +196,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const newId = `rest-${Date.now()}`;
     const selectedOwnerId = newRestOwnerId || (ownersList[0]?.id || '');
+    const selectedTmplId = newRestTemplateId || (templates[0]?.id || 'tmpl-luxury');
+    const templateBranding = getTemplateDefaultBranding(selectedTmplId);
 
     const newRest: Restaurant = {
       id: newId,
@@ -210,21 +212,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       coverUrl: newRestCoverUrl.trim() || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80',
       logoUrl: newRestLogoUrl.trim() || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80',
       isOpen: true,
-      templateId: newRestTemplateId || (templates[0]?.id || 'tmpl-luxury'),
+      templateId: selectedTmplId,
       ownerId: selectedOwnerId,
-      branding: {
-        fontFamily: 'Playfair Display',
-        primaryColor: '#0f172a',
-        secondaryColor: '#3F3F46',
-        accentColor: '#000000',
-        darkBgColor: '#0a0a0c',
-        cardBgColor: 'rgba(255, 255, 255, 0.05)',
-        cardBorderColor: 'rgba(255, 255, 255, 0.1)',
-        textColor: '#ffffff',
-        fontDisplay: 'Playfair Display',
-        buttonColor: '#D4AF37',
-        buttonTextColor: '#000000',
-      },
+      branding: templateBranding,
       tables: [],
       shifts: [],
       weeklySchedule: []
@@ -295,8 +285,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const previousRest = restaurants.find(r => r.id === editingRestaurant.id);
     const prevOwnerId = previousRest?.ownerId;
     const newOwnerId = editingRestaurant.ownerId;
+    const templateChanged = previousRest && previousRest.templateId !== editingRestaurant.templateId;
+    const templateBranding = getTemplateDefaultBranding(editingRestaurant.templateId);
 
-    onUpdateRestaurant({ ...editingRestaurant, name: cleanName });
+    const updatedRest: Restaurant = {
+      ...editingRestaurant,
+      name: cleanName,
+      branding: templateChanged 
+        ? { ...templateBranding, ...editingRestaurant.branding, darkBgColor: templateBranding.darkBgColor, cardBgColor: templateBranding.cardBgColor, textColor: templateBranding.textColor, buttonColor: templateBranding.buttonColor }
+        : (editingRestaurant.branding || templateBranding)
+    };
+
+    onUpdateRestaurant(updatedRest);
 
     // Sync owners' assigned restaurantIds if owner changed
     if (prevOwnerId && prevOwnerId !== newOwnerId) {

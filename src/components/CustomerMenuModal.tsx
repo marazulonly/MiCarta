@@ -17,6 +17,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
+import { getSafeBranding } from '../utils/restaurantUtils';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
@@ -144,8 +145,14 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     }
   }, [isOpen, restaurant?.id, isLoading]);
 
-  // Live Editing Mode (ONLY accessible to verified Owner or Admin, default false)
-  const [isLiveEditActive, setIsLiveEditActive] = useState(false);
+  // Live Editing Mode (ONLY accessible to verified Owner or Admin, default true for owner/admin)
+  const [isLiveEditActive, setIsLiveEditActive] = useState(Boolean(isOwnerOrAdmin));
+  
+  React.useEffect(() => {
+    if (isOpen && isOwnerOrAdmin) {
+      setIsLiveEditActive(true);
+    }
+  }, [isOpen, isOwnerOrAdmin, restaurant?.id]);
   
   // Modals for live editing
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -486,6 +493,13 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   if (!isOpen || !restaurant) return null;
 
+  // Resolve branding with template default fallbacks
+  const effectiveBranding = getSafeBranding(restaurant);
+  const effectiveRestaurant: Restaurant = {
+    ...restaurant,
+    branding: effectiveBranding
+  };
+
   // Template resolution: strict templateId checking with intuitive fallbacks
   const tmplId = restaurant.templateId || 'tmpl-luxury';
   const isMedioPlatoTemplate = tmplId === 'tmpl-medio-plato' || tmplId.includes('medio-plato') || tmplId.includes('medio');
@@ -589,7 +603,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <MedioPlatoMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -605,7 +619,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <StartersEditorialMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -621,7 +635,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <NeonStreetMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -637,7 +651,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <MinimalistBistroMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -653,7 +667,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <CostaMarinaMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -669,7 +683,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <CriolloChalkboardMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}
@@ -685,7 +699,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
             <BrasasLuxuryMenu
               isOpen={isOpen}
               onClose={onClose}
-              restaurant={restaurant}
+              restaurant={effectiveRestaurant}
               categories={effectiveCategories}
               items={effectiveItems}
               onOrderCreated={onOrderCreated}

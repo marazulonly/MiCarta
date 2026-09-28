@@ -95,14 +95,187 @@ export function getSafeActiveRestaurant(
 }
 
 /**
- * Safely gets branding settings with full default fallbacks
+ * Returns signature default branding palette and typography for a template ID
+ */
+export function getTemplateDefaultBranding(templateId?: string): RestaurantBranding {
+  const tmpl = templateId || 'tmpl-luxury';
+  if (tmpl === 'tmpl-medio-plato' || tmpl.includes('medio')) {
+    return {
+      primaryColor: '#000000',
+      secondaryColor: '#D97757',
+      accentColor: '#D97757',
+      darkBgColor: '#E6E8DF',
+      cardBgColor: '#E6E8DF',
+      dishCardBgColor: 'transparent',
+      textColor: '#1A1A1A',
+      buttonColor: '#D97757',
+      buttonTextColor: '#FFFFFF',
+      fontDisplay: "'Playfair Display', serif",
+      dishNameFont: "'Playfair Display', serif",
+      dishDescFont: "'Plus Jakarta Sans', sans-serif",
+      dishPriceFont: "'Playfair Display', serif",
+      restaurantNameFont: "'Playfair Display', serif",
+      restaurantNameColor: '#1A1A1A',
+      cardBorderRadius: '12px',
+      cardStyle: 'horizontal',
+      headerStyle: 'centered'
+    };
+  }
+  if (tmpl === 'tmpl-marine' || tmpl.includes('marine') || tmpl.includes('costa') || tmpl.includes('cevichito')) {
+    return {
+      primaryColor: '#18181B',
+      secondaryColor: '#0284C7',
+      accentColor: '#0284C7',
+      darkBgColor: '#09090B',
+      cardBgColor: '#FFFFFF',
+      dishCardBgColor: '#FFFFFF',
+      textColor: '#18181B',
+      buttonColor: '#18181B',
+      buttonTextColor: '#FFFFFF',
+      fontDisplay: 'Outfit, sans-serif',
+      dishNameFont: 'Outfit, sans-serif',
+      dishDescFont: 'Outfit, sans-serif',
+      dishPriceFont: 'Outfit, monospace',
+      restaurantNameFont: 'Outfit, sans-serif',
+      restaurantNameColor: '#18181B',
+      cardBorderRadius: '16px',
+      cardStyle: 'horizontal',
+      headerStyle: 'banner'
+    };
+  }
+  if (tmpl === 'tmpl-criollo' || tmpl.includes('criollo') || tmpl.includes('chalkboard')) {
+    return {
+      primaryColor: '#000000',
+      secondaryColor: '#D97757',
+      accentColor: '#D97757',
+      darkBgColor: '#18181B',
+      cardBgColor: '#27272A',
+      dishCardBgColor: '#27272A',
+      textColor: '#FAFAFA',
+      buttonColor: '#FFFFFF',
+      buttonTextColor: '#000000',
+      fontDisplay: 'Plus Jakarta Sans, sans-serif',
+      dishNameFont: 'Plus Jakarta Sans, sans-serif',
+      dishDescFont: 'Plus Jakarta Sans, sans-serif',
+      dishPriceFont: 'monospace',
+      restaurantNameFont: 'Plus Jakarta Sans, sans-serif',
+      restaurantNameColor: '#FFFFFF',
+      cardBorderRadius: '8px',
+      cardStyle: 'horizontal',
+      headerStyle: 'centered'
+    };
+  }
+  if (tmpl === 'tmpl-neon' || tmpl.includes('neon') || tmpl.includes('street')) {
+    return {
+      primaryColor: '#000000',
+      secondaryColor: '#EF4444',
+      accentColor: '#EF4444',
+      darkBgColor: '#09090B',
+      cardBgColor: '#18181B',
+      dishCardBgColor: '#18181B',
+      textColor: '#FFFFFF',
+      buttonColor: '#FFFFFF',
+      buttonTextColor: '#000000',
+      fontDisplay: 'Syne, sans-serif',
+      dishNameFont: 'Syne, sans-serif',
+      dishDescFont: 'Syne, sans-serif',
+      dishPriceFont: 'monospace',
+      restaurantNameFont: 'Syne, sans-serif',
+      restaurantNameColor: '#FFFFFF',
+      cardBorderRadius: '20px',
+      cardStyle: 'grid',
+      headerStyle: 'split'
+    };
+  }
+  if (tmpl === 'tmpl-minimalist' || tmpl.includes('minimal')) {
+    return {
+      primaryColor: '#FFFFFF',
+      secondaryColor: '#E5E5E5',
+      accentColor: '#FFFFFF',
+      darkBgColor: '#000000',
+      cardBgColor: '#0A0A0A',
+      dishCardBgColor: '#0A0A0A',
+      textColor: '#E5E5E5',
+      buttonColor: '#FFFFFF',
+      buttonTextColor: '#000000',
+      fontDisplay: 'Plus Jakarta Sans, sans-serif',
+      dishNameFont: 'Plus Jakarta Sans, sans-serif',
+      dishDescFont: 'Plus Jakarta Sans, sans-serif',
+      dishPriceFont: 'monospace',
+      restaurantNameFont: 'Plus Jakarta Sans, sans-serif',
+      restaurantNameColor: '#FFFFFF',
+      cardBorderRadius: '0px',
+      cardStyle: 'compact',
+      headerStyle: 'minimal'
+    };
+  }
+  if (tmpl === 'tmpl-starters-editorial' || tmpl === 'tmpl-editorial' || tmpl.includes('editorial') || tmpl.includes('starters')) {
+    return {
+      primaryColor: '#000000',
+      secondaryColor: '#D4AF37',
+      accentColor: '#D4AF37',
+      darkBgColor: '#071A14',
+      cardBgColor: '#FFFFFF',
+      dishCardBgColor: '#FFFFFF',
+      textColor: '#1A1A1A',
+      buttonColor: '#1A1A1A',
+      buttonTextColor: '#FFFFFF',
+      fontDisplay: "'Playfair Display', serif",
+      dishNameFont: "'Playfair Display', serif",
+      dishDescFont: "'Plus Jakarta Sans', sans-serif",
+      dishPriceFont: "'Playfair Display', serif",
+      restaurantNameFont: "'Playfair Display', serif",
+      restaurantNameColor: '#FFFFFF',
+      cardBorderRadius: '4px',
+      cardStyle: 'horizontal',
+      headerStyle: 'centered'
+    };
+  }
+  // Default: Brasas Luxury Gold & Emerald (tmpl-luxury)
+  return {
+    primaryColor: '#000000',
+    secondaryColor: '#D4AF37',
+    accentColor: '#D4AF37',
+    darkBgColor: '#0F172A',
+    cardBgColor: '#1E293B',
+    dishCardBgColor: '#1E293B',
+    textColor: '#FFFFFF',
+    buttonColor: '#D4AF37',
+    buttonTextColor: '#000000',
+    fontDisplay: 'Cinzel, serif',
+    dishNameFont: 'Cinzel, serif',
+    dishDescFont: 'Plus Jakarta Sans, sans-serif',
+    dishPriceFont: 'monospace',
+    restaurantNameFont: 'Cinzel, serif',
+    restaurantNameColor: '#D4AF37',
+    cardBorderRadius: '12px',
+    cardStyle: 'grid',
+    headerStyle: 'banner'
+  };
+}
+
+/**
+ * Safely gets branding settings with full default fallbacks based on template
  */
 export function getSafeBranding(restaurant?: Restaurant | null): RestaurantBranding {
+  const tmplDefaults = getTemplateDefaultBranding(restaurant?.templateId);
   if (!restaurant || !restaurant.branding) {
-    return DEFAULT_BRANDING;
+    return tmplDefaults;
+  }
+  // If template is tmpl-medio-plato but restaurant branding has hardcoded darkBgColor #0a0a0c or #0f172a from old default, merge template defaults
+  const isMedio = restaurant.templateId === 'tmpl-medio-plato' || (restaurant.templateId || '').includes('medio');
+  if (isMedio && (restaurant.branding.darkBgColor === '#0a0a0c' || restaurant.branding.darkBgColor === '#0f172a' || restaurant.branding.darkBgColor === '#09090b')) {
+    return {
+      ...tmplDefaults,
+      ...restaurant.branding,
+      darkBgColor: tmplDefaults.darkBgColor,
+      cardBgColor: tmplDefaults.cardBgColor,
+      textColor: tmplDefaults.textColor,
+      buttonColor: restaurant.branding.buttonColor || tmplDefaults.buttonColor
+    };
   }
   return {
-    ...DEFAULT_BRANDING,
+    ...tmplDefaults,
     ...restaurant.branding
   };
 }
