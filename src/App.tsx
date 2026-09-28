@@ -947,12 +947,10 @@ export default function App() {
   };
 
   const handleUpdateUser = (updated: User) => {
-    const nextUsers = deduplicateUsers(users.map(u => u.id === updated.id ? updated : u));
+    const nextUsers = deduplicateUsers(users.map(u => (u.id === updated.id || (u.dni && u.dni === updated.dni)) ? updated : u));
     setUsers(nextUsers);
-    if (currentUser?.id === updated.id) {
+    if (currentUser?.id === updated.id || (currentUser?.dni && currentUser.dni === updated.dni)) {
       setCurrentUser(updated);
-    }
-    if (currentUser?.id === updated.id) {
       try {
         localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(updated));
       } catch {}

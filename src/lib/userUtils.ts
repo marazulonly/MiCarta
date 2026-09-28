@@ -43,6 +43,11 @@ export function deduplicateUsers(users: User[]): User[] {
 
     // Sort duplicate records to pick the primary user record
     records.sort((a, b) => {
+      // Prefer record with valid base64 custom avatar
+      const isBase64A = Boolean(a.avatar && a.avatar.startsWith('data:image/'));
+      const isBase64B = Boolean(b.avatar && b.avatar.startsWith('data:image/'));
+      if (isBase64A !== isBase64B) return isBase64B ? 1 : -1;
+
       const pA = rolePriority[a.role] || 0;
       const pB = rolePriority[b.role] || 0;
       if (pA !== pB) return pB - pA; // Higher role first

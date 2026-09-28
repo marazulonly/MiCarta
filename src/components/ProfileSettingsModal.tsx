@@ -164,13 +164,18 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
             
             // Export as JPEG
-            const base64Jpeg = canvas.toDataURL('image/jpeg', 0.9);
+            const base64Jpeg = canvas.toDataURL('image/jpeg', 0.88);
             
-            // Format to 72 DPI explicitly in binary JFIF
-            const formatted = formatJpegTo72Dpi(base64Jpeg);
+            // Format to 72 DPI explicitly in binary JFIF with safe fallback
+            let formatted = base64Jpeg;
+            try {
+              formatted = formatJpegTo72Dpi(base64Jpeg);
+            } catch {
+              formatted = base64Jpeg;
+            }
             
             setAvatarPreview(formatted);
-            setSuccessMsg('Foto cargada y formateada con éxito a formato 2:3 (72 DPI).');
+            setSuccessMsg('Foto de perfil actualizada con éxito.');
           } else {
             setErrorMsg('No se pudo procesar la imagen.');
           }

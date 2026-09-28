@@ -96,7 +96,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   onImportBackupJSON,
 }) => {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
-  const [isListView, setIsListView] = useState<boolean>(false);
+  const [isListView, setIsListView] = useState<boolean>(true);
   const [hoveredOrClickedItemId, setHoveredOrClickedItemId] = useState<string | null>(null);
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -856,7 +856,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   >
                     <button
                       onClick={() => setSelectedCategoryFilter(cat.id)}
-                      className={`px-3 py-1.5 rounded-l-lg text-xs font-bold transition whitespace-nowrap cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
                         selectedCategoryFilter === cat.id
                           ? 'bg-neutral-900 text-white shadow font-bold'
                           : 'bg-white text-neutral-800 hover:bg-neutral-100 border border-neutral-200'
@@ -866,27 +866,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       <GripHorizontal className="w-3 h-3 text-neutral-400 shrink-0" />
                       <span>{cat.name} ({count})</span>
                     </button>
-
-                    <div className="flex items-center bg-neutral-100 border border-neutral-200 border-l-0 rounded-r-lg p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleMoveCategory(cat.id, 'up')}
-                        disabled={catIdx === 0}
-                        className="p-1 hover:bg-neutral-200 text-neutral-600 disabled:opacity-20 cursor-pointer"
-                        title="Mover categoría a la izquierda"
-                      >
-                        <ArrowLeft className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMoveCategory(cat.id, 'down')}
-                        disabled={catIdx === restaurantCategories.length - 1}
-                        className="p-1 hover:bg-neutral-200 text-neutral-600 disabled:opacity-20 cursor-pointer"
-                        title="Mover categoría a la derecha"
-                      >
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
                   </div>
                 );
               })}
@@ -915,28 +894,52 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
           {/* Dishes Presentation: List or Grid */}
           {isListView ? (
-            /* LIST VIEW: 2 Líneas por plato con Nombre, Categoría, Precio y Descripción debajo */
+            /* LIST VIEW: 2 Líneas por plato con Nombre, Categoría, Precio y Descripción debajo (Arrastrable para reordenar) */
             <div className="space-y-2">
               {restaurantItems.map((item, itemIdx) => {
                 const catObj = restaurantCategories.find(c => c.id === item.categoryId);
                 const isInteracted = hoveredOrClickedItemId === item.id;
+                const isDragging = draggedItemId === item.id;
+                const isOver = dragOverItemId === item.id;
                 
                 return (
                   <div
                     key={item.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', item.id);
+                      setDraggedItemId(item.id);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverItemId(item.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedItemId(null);
+                      setDragOverItemId(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleItemDrop(item.id);
+                    }}
                     onClick={() => setHoveredOrClickedItemId(hoveredOrClickedItemId === item.id ? null : item.id)}
                     onMouseEnter={() => setHoveredOrClickedItemId(item.id)}
                     onMouseLeave={() => setHoveredOrClickedItemId(null)}
-                    className={`group p-3 sm:p-3.5 rounded-xl bg-white border transition-all cursor-pointer relative flex flex-col justify-center gap-1.5 shadow-sm ${
-                      isInteracted 
-                        ? 'border-neutral-400 bg-neutral-50 shadow-md' 
-                        : 'border-neutral-200 hover:border-neutral-300'
+                    className={`group p-3 sm:p-3.5 rounded-xl bg-white border transition-all cursor-grab active:cursor-grabbing relative flex flex-col justify-center gap-1.5 shadow-sm ${
+                      isDragging ? 'opacity-30 scale-95 border-dashed border-neutral-400 bg-neutral-100' : ''
+                    } ${
+                      isOver ? 'ring-2 ring-neutral-400 border-neutral-400 bg-neutral-100 scale-[1.005]' : 'border-neutral-200 hover:border-neutral-300'
+                    } ${
+                      isInteracted && !isDragging && !isOver ? 'border-neutral-400 bg-neutral-50 shadow-md' : ''
                     }`}
                   >
-                    {/* Línea 1: Columnas de Nombre, Categoría, Precio y Botones de acción */}
+                    {/* Línea 1: Columnas de Arrastre, Nombre, Categoría, Precio y Botones de acción */}
                     <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-[10px] text-neutral-400 font-mono shrink-0">#{itemIdx + 1}</span>
+                        <div className="flex items-center gap-1 text-neutral-400 hover:text-neutral-700 shrink-0 cursor-grab active:cursor-grabbing" title="Arrastra para cambiar el orden de este plato">
+                          <GripVertical className="w-4 h-4 text-neutral-400" />
+                          <span className="text-[10px] text-neutral-400 font-mono font-bold">#{itemIdx + 1}</span>
+                        </div>
                         {item.imageUrl && (
                           <img 
                             src={item.imageUrl} 
@@ -1060,30 +1063,10 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     {/* Reorder Bar & Drag Grip */}
                     <div className="px-3 py-1.5 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between text-[10px] text-neutral-600 font-mono">
                       <div className="flex items-center gap-1 cursor-grab active:cursor-grabbing font-bold text-neutral-700 hover:text-black">
-                        <GripVertical className="w-3.5 h-3.5" />
+                        <GripVertical className="w-3.5 h-3.5 text-neutral-500" />
                         <span>Arrastrar</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-neutral-400 mr-1">#{itemIdx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveItem(item.id, 'up')}
-                          disabled={itemIdx === 0}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 disabled:opacity-20 cursor-pointer transition"
-                          title="Mover plato hacia arriba / antes"
-                        >
-                          <ArrowUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveItem(item.id, 'down')}
-                          disabled={itemIdx === restaurantItems.length - 1}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 disabled:opacity-20 cursor-pointer transition"
-                          title="Mover plato hacia abajo / después"
-                        >
-                          <ArrowDown className="w-3 h-3" />
-                        </button>
-                      </div>
+                      <span className="text-[10px] font-bold text-neutral-500">#{itemIdx + 1}</span>
                     </div>
 
                     {/* Image Header */}
