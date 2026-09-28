@@ -182,6 +182,8 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const [deviceMode, setDeviceMode] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
   // Inspector sub-tab
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('templates');
+  // Card customization sub-tab (Odd vs Even styling)
+  const [cardDesignSubtab, setCardDesignSubtab] = useState<'odd' | 'even'>('odd');
   // Preview active category
   const [previewCategory, setPreviewCategory] = useState<string>('all');
   // Notification toast
@@ -582,115 +584,55 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             {/* Dishes list */}
             <div className="flex-1 p-4 space-y-3 overflow-y-auto">
               {previewFilteredItems.map((item, idx) => {
-                const isEditorial = activeTemplateId === 'tmpl-editorial' || activeTemplateId === 'tmpl-medio-plato' || activeTemplateId === 'tmpl-starters-editorial';
                 const isEven = idx % 2 === 1;
 
-                if (isEditorial) {
-                  return (
-                    <div
-                      key={item.id}
-                      className="p-3 bg-white border border-neutral-100 rounded-xl transition shadow-sm"
-                    >
-                      <div className={`grid grid-cols-2 items-center gap-2 w-full`}>
-                        {!isEven ? (
-                          <div className="relative flex justify-end items-center overflow-hidden h-20 pr-0">
-                            {item.imageUrl ? (
-                              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 translate-x-1/2">
-                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                              </div>
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 translate-x-1/2" />
-                            )}
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[1.5px] h-[calc(100%+10px)] bg-black" />
-                          </div>
-                        ) : (
-                          <div className="flex flex-col justify-center items-end text-right pr-2">
-                            <h3 
-                              className="text-xs font-bold font-serif text-neutral-900 leading-tight"
-                              style={{ fontFamily: workingBranding.dishNameFont || 'serif' }}
-                            >
-                              {item.name}
-                            </h3>
-                            <p 
-                              className="text-[10px] text-neutral-600 font-sans mt-0.5 whitespace-normal break-words"
-                              style={{ fontFamily: workingBranding.dishDescFont || 'sans-serif' }}
-                            >
-                              {item.description}
-                            </p>
-                            <span className="text-[10px] text-neutral-800 tracking-widest mt-0.5">★★★★★</span>
-                            <span 
-                              className="text-xs font-bold font-serif text-neutral-900 mt-1"
-                              style={{ fontFamily: workingBranding.dishPriceFont || 'serif' }}
-                            >
-                              S/ {item.price.toFixed(2)}
-                            </span>
-                          </div>
-                        )}
+                // Odd (Impar) configuration
+                const layoutOdd = workingBranding.cardLayout || 'row';
+                const elementOrderOdd = workingBranding.cardElementOrder || 'image-first';
+                const textAlignmentOdd = workingBranding.cardTextAlignment || 'left';
+                const paddingOdd = workingBranding.cardPadding || 'normal';
+                const shadowOdd = workingBranding.cardShadow || 'medium';
+                const borderW_Odd = workingBranding.cardBorderWidth || '1px';
 
-                        {!isEven ? (
-                          <div className="flex flex-col justify-center items-start text-left pl-2">
-                            <h3 
-                              className="text-xs font-bold font-serif text-neutral-900 leading-tight"
-                              style={{ fontFamily: workingBranding.dishNameFont || 'serif' }}
-                            >
-                              {item.name}
-                            </h3>
-                            <p 
-                              className="text-[10px] text-neutral-600 font-sans mt-0.5 whitespace-normal break-words"
-                              style={{ fontFamily: workingBranding.dishDescFont || 'sans-serif' }}
-                            >
-                              {item.description}
-                            </p>
-                            <span className="text-[10px] text-neutral-800 tracking-widest mt-0.5">★★★★★</span>
-                            <span 
-                              className="text-xs font-bold font-serif text-neutral-900 mt-1"
-                              style={{ fontFamily: workingBranding.dishPriceFont || 'serif' }}
-                            >
-                              S/ {item.price.toFixed(2)}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="relative flex justify-start items-center overflow-hidden h-20 pl-0">
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1.5px] h-[calc(100%+10px)] bg-black" />
-                            {item.imageUrl ? (
-                              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 -translate-x-1/2">
-                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                              </div>
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 -translate-x-1/2" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
+                // Even (Par) configuration (defaults to alternating styles if template is Medio Plato or similar, otherwise defaults to Odd styles)
+                const isMedioPlato = activeTemplateId === 'tmpl-editorial' || activeTemplateId === 'tmpl-medio-plato' || activeTemplateId === 'tmpl-starters-editorial';
+                
+                const layoutEven = workingBranding.cardLayoutEven || (isMedioPlato ? 'row' : layoutOdd);
+                const elementOrderEven = workingBranding.cardElementOrderEven || (isMedioPlato ? 'title-first' : elementOrderOdd);
+                const textAlignmentEven = workingBranding.cardTextAlignmentEven || (isMedioPlato ? 'right' : textAlignmentOdd);
+                const paddingEven = workingBranding.cardPaddingEven || paddingOdd;
+                const shadowEven = workingBranding.cardShadowEven || shadowOdd;
+                const borderW_Even = workingBranding.cardBorderWidthEven || borderW_Odd;
+
+                // Determine active style set based on card index (Par vs Impar)
+                const layout = isEven ? layoutEven : layoutOdd;
+                const elementOrder = isEven ? elementOrderEven : elementOrderOdd;
+                const textAlignment = isEven ? textAlignmentEven : textAlignmentOdd;
+                const padding = isEven ? paddingEven : paddingOdd;
+                const shadow = isEven ? shadowEven : shadowOdd;
+                const borderW = isEven ? borderW_Even : borderW_Odd;
 
                 const cardBg = workingBranding.dishCardBgColor || workingBranding.cardBgColor || 'rgba(255,255,255,0.05)';
                 const cardRadius = workingBranding.cardBorderRadius || '12px';
                 const cardBorder = workingBranding.dishCardBorderColor || (workingBranding.buttonColor ? `${workingBranding.buttonColor}50` : 'rgba(255,255,255,0.1)');
-                const borderW = workingBranding.cardBorderWidth || '1px';
-                const textAlignment = workingBranding.cardTextAlignment || 'left';
-                const layout = workingBranding.cardLayout || 'row';
-                const elementOrder = workingBranding.cardElementOrder || 'image-first';
                 
                 // Paddings
                 let paddingClass = 'p-3.5';
-                if (workingBranding.cardPadding === 'compact') paddingClass = 'p-2.5';
-                if (workingBranding.cardPadding === 'elegant') paddingClass = 'p-5';
+                if (padding === 'compact') paddingClass = 'p-2.5';
+                if (padding === 'elegant') paddingClass = 'p-5';
 
                 // Shadows & Glowing
                 let shadowStyle = {};
                 let shadowClass = 'shadow-md';
-                if (workingBranding.cardShadow === 'none') {
+                if (shadow === 'none') {
                   shadowClass = 'shadow-none';
-                } else if (workingBranding.cardShadow === 'sutil') {
+                } else if (shadow === 'sutil') {
                   shadowClass = 'shadow-sm';
-                } else if (workingBranding.cardShadow === 'medium') {
+                } else if (shadow === 'medium') {
                   shadowClass = 'shadow-md';
-                } else if (workingBranding.cardShadow === 'intense') {
+                } else if (shadow === 'intense') {
                   shadowClass = 'shadow-2xl';
-                } else if (workingBranding.cardShadow === 'glow') {
+                } else if (shadow === 'glow') {
                   shadowClass = 'shadow-lg';
                   shadowStyle = {
                     boxShadow: `0 8px 30px -4px ${(workingBranding.buttonColor || '#D4AF37')}50`
@@ -1219,240 +1161,291 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                     Constructor Atómico de Fichas (Tarjetas)
                   </span>
                   <p className="text-xs text-neutral-300 mt-0.5">
-                    Mueve elementos, ajusta sombras de marca, bordes y espaciados con control absoluto.
+                    Modifica sombras, bordes, espaciados y arrastre visual de forma independiente para fichas pares e impares.
                   </p>
                 </div>
 
-                {/* 1. Mover de Lugar / Disposición General (Card Layout) */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">1. Estilo de Disposición (Layout):</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'row' as const, label: 'Fila Compacta' },
-                      { id: 'column' as const, label: 'Tarjeta Vertical' },
-                      { id: 'cover' as const, label: 'Fondo de Imagen' }
-                    ].map(lay => (
-                      <button
-                        type="button"
-                        key={lay.id}
-                        onClick={() => updateBranding('cardLayout', lay.id)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardLayout || 'row') === lay.id
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {lay.label}
-                      </button>
-                    ))}
-                  </div>
+                {/* Sub-tabs selector for Odd vs Even card types */}
+                <div className="flex border border-neutral-800 bg-neutral-900 p-1 rounded-xl gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCardDesignSubtab('odd')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
+                      cardDesignSubtab === 'odd'
+                        ? 'bg-amber-400 text-black shadow-sm font-black'
+                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
+                    }`}
+                  >
+                    Ficha Impar (Platos 1, 3, 5...)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCardDesignSubtab('even')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
+                      cardDesignSubtab === 'even'
+                        ? 'bg-amber-400 text-black shadow-sm font-black'
+                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/40'
+                    }`}
+                  >
+                    Ficha Par (Platos 2, 4, 6...)
+                  </button>
                 </div>
 
-                {/* 2. Coordenada / Orden de Elementos */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">2. Secuencia de Elementos (Orden):</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'image-first' as const, label: 'Imagen Primero' },
-                      { id: 'title-first' as const, label: 'Textos Primero' }
-                    ].map(order => (
-                      <button
-                        type="button"
-                        key={order.id}
-                        onClick={() => updateBranding('cardElementOrder', order.id)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardElementOrder || 'image-first') === order.id
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {order.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {(() => {
+                  const isEditingEven = cardDesignSubtab === 'even';
+                  const layoutVal = isEditingEven ? (workingBranding.cardLayoutEven || 'row') : (workingBranding.cardLayout || 'row');
+                  const orderVal = isEditingEven ? (workingBranding.cardElementOrderEven || 'image-first') : (workingBranding.cardElementOrder || 'image-first');
+                  const alignVal = isEditingEven ? (workingBranding.cardTextAlignmentEven || 'left') : (workingBranding.cardTextAlignment || 'left');
+                  const paddingVal = isEditingEven ? (workingBranding.cardPaddingEven || 'normal') : (workingBranding.cardPadding || 'normal');
+                  const borderWVal = isEditingEven ? (workingBranding.cardBorderWidthEven || '1px') : (workingBranding.cardBorderWidth || '1px');
+                  const shadowVal = isEditingEven ? (workingBranding.cardShadowEven || 'medium') : (workingBranding.cardShadow || 'medium');
 
-                {/* 3. Alineación de Textos */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">3. Alineación del Texto:</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'left' as const, label: 'Izquierda' },
-                      { id: 'center' as const, label: 'Centro' },
-                      { id: 'right' as const, label: 'Derecha' }
-                    ].map(align => (
-                      <button
-                        type="button"
-                        key={align.id}
-                        onClick={() => updateBranding('cardTextAlignment', align.id)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardTextAlignment || 'left') === align.id
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {align.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  return (
+                    <div className="space-y-4 pt-1">
+                      <div className="text-[10px] uppercase font-mono tracking-wider text-amber-300 font-bold bg-amber-400/5 px-2.5 py-1 rounded border border-amber-400/20">
+                        Editando: {isEditingEven ? 'Estilo de Ficha PAR (Pares)' : 'Estilo de Ficha IMPAR (Impares)'}
+                      </div>
 
-                {/* 4. Espaciado / Relleno (Card Padding) */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">4. Relleno Interno (Padding):</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'compact' as const, label: 'Compacto' },
-                      { id: 'normal' as const, label: 'Balanceado' },
-                      { id: 'elegant' as const, label: 'Elegante' }
-                    ].map(pad => (
-                      <button
-                        type="button"
-                        key={pad.id}
-                        onClick={() => updateBranding('cardPadding', pad.id)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardPadding || 'normal') === pad.id
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {pad.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                      {/* 1. Mover de Lugar / Disposición General (Card Layout) */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">1. Estilo de Disposición (Layout):</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'row' as const, label: 'Fila Compacta' },
+                            { id: 'column' as const, label: 'Tarjeta Vertical' },
+                            { id: 'cover' as const, label: 'Fondo de Imagen' }
+                          ].map(lay => (
+                            <button
+                              type="button"
+                              key={lay.id}
+                              onClick={() => updateBranding(isEditingEven ? 'cardLayoutEven' : 'cardLayout', lay.id)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                layoutVal === lay.id
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {lay.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* 5. Editor de Esquinas / Border Radius */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">5. Esquinas Redondeadas:</span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { label: 'Recto (0px)', val: '0px' },
-                      { label: 'Sutil (8px)', val: '8px' },
-                      { label: 'Curvo (16px)', val: '16px' },
-                      { label: 'Píldora (24px)', val: '24px' }
-                    ].map(r => (
-                      <button
-                        type="button"
-                        key={r.val}
-                        onClick={() => updateBranding('cardBorderRadius', r.val)}
-                        className={`p-2 rounded-xl text-xs font-mono transition cursor-pointer border ${
-                          workingBranding.cardBorderRadius === r.val
-                            ? 'bg-amber-400 text-black font-bold border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                      {/* 2. Coordenada / Orden de Elementos */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">2. Secuencia de Elementos (Orden):</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'image-first' as const, label: 'Imagen Primero' },
+                            { id: 'title-first' as const, label: 'Textos Primero' }
+                          ].map(order => (
+                            <button
+                              type="button"
+                              key={order.id}
+                              onClick={() => updateBranding(isEditingEven ? 'cardElementOrderEven' : 'cardElementOrder', order.id)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                orderVal === order.id
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {order.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* 6. Grosor de Borde (Card Border Width) */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">6. Grosor del Borde:</span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { label: 'Ninguno', val: '0px' },
-                      { label: 'Fino', val: '1px' },
-                      { label: 'Grueso', val: '2px' },
-                      { label: 'X-Grueso', val: '4px' }
-                    ].map(b => (
-                      <button
-                        type="button"
-                        key={b.val}
-                        onClick={() => updateBranding('cardBorderWidth', b.val)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardBorderWidth || '1px') === b.val
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {b.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                      {/* 3. Alineación de Textos */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">3. Alineación del Texto:</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'left' as const, label: 'Izquierda' },
+                            { id: 'center' as const, label: 'Centro' },
+                            { id: 'right' as const, label: 'Derecha' }
+                          ].map(align => (
+                            <button
+                              type="button"
+                              key={align.id}
+                              onClick={() => updateBranding(isEditingEven ? 'cardTextAlignmentEven' : 'cardTextAlignment', align.id)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                alignVal === align.id
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {align.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* 7. Sombras & Glow de Marca (Card Shadow Intensity) */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">7. Sombra & Brillo (Neon Glow):</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'none' as const, label: 'Sin Sombra' },
-                      { id: 'sutil' as const, label: 'Sutil' },
-                      { id: 'medium' as const, label: 'Media' },
-                      { id: 'intense' as const, label: 'Intensa' },
-                      { id: 'glow' as const, label: 'Brillo Marca' }
-                    ].map(sh => (
-                      <button
-                        type="button"
-                        key={sh.id}
-                        onClick={() => updateBranding('cardShadow', sh.id)}
-                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
-                          (workingBranding.cardShadow || 'medium') === sh.id
-                            ? 'bg-amber-400 text-black border-amber-400'
-                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                        }`}
-                      >
-                        {sh.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                      {/* 4. Espaciado / Relleno (Card Padding) */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">4. Relleno Interno (Padding):</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'compact' as const, label: 'Compacto' },
+                            { id: 'normal' as const, label: 'Balanceado' },
+                            { id: 'elegant' as const, label: 'Elegante' }
+                          ].map(pad => (
+                            <button
+                              type="button"
+                              key={pad.id}
+                              onClick={() => updateBranding(isEditingEven ? 'cardPaddingEven' : 'cardPadding', pad.id)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                paddingVal === pad.id
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {pad.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* 8. Altura del Banner / Cabecera */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-white">8. Altura de Cabecera / Banner:</span>
-                    <span className="text-xs font-mono text-amber-400 font-bold">
-                      {workingBranding.headerBannerHeight || 120} px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={60}
-                    max={260}
-                    step={10}
-                    value={workingBranding.headerBannerHeight || 120}
-                    onChange={(e) => updateBranding('headerBannerHeight', parseInt(e.target.value))}
-                    className="w-full accent-amber-400 cursor-pointer"
-                  />
-                </div>
+                      {/* 5. Grosor de Borde (Card Border Width) */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">5. Grosor del Borde:</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { label: 'Ninguno', val: '0px' },
+                            { label: 'Fino', val: '1px' },
+                            { label: 'Grueso', val: '2px' },
+                            { label: 'X-Grueso', val: '4px' }
+                          ].map(b => (
+                            <button
+                              type="button"
+                              key={b.val}
+                              onClick={() => updateBranding(isEditingEven ? 'cardBorderWidthEven' : 'cardBorderWidth', b.val)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                borderWVal === b.val
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {b.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* 9. Elementos Visibles de Cabecera */}
-                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-3">
-                  <span className="text-xs font-bold text-white block">9. Elementos Visibles de Cabecera:</span>
-                  
-                  <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
-                    <span>Mostrar Nombre de Restaurante</span>
+                      {/* 6. Sombras & Glow de Marca (Card Shadow Intensity) */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">6. Sombra & Brillo (Neon Glow):</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'none' as const, label: 'Sin Sombra' },
+                            { id: 'sutil' as const, label: 'Sutil' },
+                            { id: 'medium' as const, label: 'Media' },
+                            { id: 'intense' as const, label: 'Intensa' },
+                            { id: 'glow' as const, label: 'Brillo Marca' }
+                          ].map(sh => (
+                            <button
+                              type="button"
+                              key={sh.id}
+                              onClick={() => updateBranding(isEditingEven ? 'cardShadowEven' : 'cardShadow', sh.id)}
+                              className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                                shadowVal === sh.id
+                                  ? 'bg-amber-400 text-black border-amber-400'
+                                  : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                              }`}
+                            >
+                              {sh.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* General/Global Parameters */}
+                <div className="pt-4 border-t border-neutral-800 space-y-4">
+                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-bold block">
+                    Parámetros Generales de Diseño
+                  </span>
+
+                  {/* Curvatura de Esquinas (Border Radius) */}
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                    <span className="text-xs font-bold text-white block">Curvatura de Esquinas (Radio):</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: 'Recto (0px)', val: '0px' },
+                        { label: 'Sutil (8px)', val: '8px' },
+                        { label: 'Curvo (16px)', val: '16px' },
+                        { label: 'Píldora (24px)', val: '24px' }
+                      ].map(r => (
+                        <button
+                          type="button"
+                          key={r.val}
+                          onClick={() => updateBranding('cardBorderRadius', r.val)}
+                          className={`p-2 rounded-xl text-xs font-mono transition cursor-pointer border ${
+                            workingBranding.cardBorderRadius === r.val
+                              ? 'bg-amber-400 text-black font-bold border-amber-400'
+                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          }`}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Altura del Banner / Cabecera */}
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-white">Altura de Cabecera / Banner:</span>
+                      <span className="text-xs font-mono text-amber-400 font-bold">
+                        {workingBranding.headerBannerHeight || 120} px
+                      </span>
+                    </div>
                     <input
-                      type="checkbox"
-                      checked={workingBranding.showHeaderName !== false}
-                      onChange={(e) => updateBranding('showHeaderName', e.target.checked)}
-                      className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                      type="range"
+                      min={60}
+                      max={260}
+                      step={10}
+                      value={workingBranding.headerBannerHeight || 120}
+                      onChange={(e) => updateBranding('headerBannerHeight', parseInt(e.target.value))}
+                      className="w-full accent-amber-400 cursor-pointer"
                     />
-                  </label>
+                  </div>
 
-                  <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
-                    <span>Mostrar Slogan / Subtítulo</span>
-                    <input
-                      type="checkbox"
-                      checked={workingBranding.showHeaderTagline !== false}
-                      onChange={(e) => updateBranding('showHeaderTagline', e.target.checked)}
-                      className="w-4 h-4 rounded border-neutral-700 text-amber-400"
-                    />
-                  </label>
+                  {/* Elementos Visibles de Cabecera */}
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-3">
+                    <span className="text-xs font-bold text-white block">Elementos Visibles de Cabecera:</span>
+                    
+                    <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
+                      <span>Mostrar Nombre de Restaurante</span>
+                      <input
+                        type="checkbox"
+                        checked={workingBranding.showHeaderName !== false}
+                        onChange={(e) => updateBranding('showHeaderName', e.target.checked)}
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                      />
+                    </label>
 
-                  <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
-                    <span>Mostrar Distintivo de Carta</span>
-                    <input
-                      type="checkbox"
-                      checked={workingBranding.showHeaderBadge !== false}
-                      onChange={(e) => updateBranding('showHeaderBadge', e.target.checked)}
-                      className="w-4 h-4 rounded border-neutral-700 text-amber-400"
-                    />
-                  </label>
+                    <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
+                      <span>Mostrar Slogan / Subtítulo</span>
+                      <input
+                        type="checkbox"
+                        checked={workingBranding.showHeaderTagline !== false}
+                        onChange={(e) => updateBranding('showHeaderTagline', e.target.checked)}
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
+                      <span>Mostrar Distintivo de Carta</span>
+                      <input
+                        type="checkbox"
+                        checked={workingBranding.showHeaderBadge !== false}
+                        onChange={(e) => updateBranding('showHeaderBadge', e.target.checked)}
+                        className="w-4 h-4 rounded border-neutral-700 text-amber-400"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             )}

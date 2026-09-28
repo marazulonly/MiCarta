@@ -384,6 +384,136 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
           {displayedItems.map((item, index) => {
             const isEven = index % 2 === 1;
 
+            // Extrae configuración dinámica par/impar desde branding
+            const layoutOdd = branding.cardLayout || 'row';
+            const elementOrderOdd = branding.cardElementOrder || 'image-first';
+            const textAlignmentOdd = branding.cardTextAlignment || 'left';
+            const paddingOdd = branding.cardPadding || 'normal';
+            const shadowOdd = branding.cardShadow || 'medium';
+            const borderW_Odd = branding.cardBorderWidth || '1px';
+
+            const layoutEven = branding.cardLayoutEven || 'row';
+            const elementOrderEven = branding.cardElementOrderEven || 'title-first';
+            const textAlignmentEven = branding.cardTextAlignmentEven || 'right';
+            const paddingEven = branding.cardPaddingEven || paddingOdd;
+            const shadowEven = branding.cardShadowEven || shadowOdd;
+            const borderW_Even = branding.cardBorderWidthEven || borderW_Odd;
+
+            // Asigna estilos según el índice de la ficha (Par vs Impar)
+            const layout = isEven ? layoutEven : layoutOdd;
+            const elementOrder = isEven ? elementOrderEven : elementOrderOdd;
+            const textAlignment = isEven ? textAlignmentEven : textAlignmentOdd;
+            const padding = isEven ? paddingEven : paddingOdd;
+            const shadow = isEven ? shadowEven : shadowOdd;
+            const borderW = isEven ? borderW_Even : borderW_Odd;
+
+            const cardBg = branding.dishCardBgColor || 'transparent';
+            const cardRadius = branding.cardBorderRadius || '12px';
+            const cardBorder = branding.dishCardBorderColor || (branding.buttonColor ? `${branding.buttonColor}50` : 'rgba(0,0,0,0.1)');
+
+            // Rellenos
+            let paddingClass = 'p-3';
+            if (padding === 'compact') paddingClass = 'p-2';
+            if (padding === 'elegant') paddingClass = 'p-5';
+
+            // Sombras & Glow de marca
+            let shadowStyle = {};
+            let shadowClass = '';
+            if (shadow === 'sutil') {
+              shadowClass = 'shadow-sm';
+            } else if (shadow === 'medium') {
+              shadowClass = 'shadow-md';
+            } else if (shadow === 'intense') {
+              shadowClass = 'shadow-2xl';
+            } else if (shadow === 'glow') {
+              shadowClass = 'shadow-lg';
+              shadowStyle = {
+                boxShadow: `0 8px 30px -4px ${(branding.buttonColor || '#D4AF37')}50`
+              };
+            }
+
+            const isRow = layout === 'row';
+            const isColumn = layout === 'column';
+            const isCover = layout === 'cover';
+
+            // Elementos visuales
+            const imageEl = item.imageUrl ? (
+              <div 
+                className={`rounded-xl overflow-hidden bg-black/40 shrink-0 relative transition-transform duration-200 hover:scale-105 ${
+                  isRow 
+                    ? 'w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full' 
+                    : isColumn 
+                    ? 'w-full h-48' 
+                    : 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]'
+                }`}
+              >
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.name} 
+                  className="w-full h-full object-cover pointer-events-none" 
+                  loading="lazy"
+                />
+              </div>
+            ) : null;
+
+            const textEl = (
+              <div className={`flex-1 min-w-0 ${isCover ? 'relative z-10 p-4' : ''} ${
+                textAlignment === 'center' ? 'text-center' : textAlignment === 'right' ? 'text-right' : 'text-left'
+              }`}>
+                <h3 
+                  className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
+                  style={{ fontFamily: dishNameFont }}
+                >
+                  {item.name}
+                </h3>
+                {item.description && (
+                  <p 
+                    className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
+                    style={{ fontFamily: dishDescFont }}
+                  >
+                    {item.description}
+                  </p>
+                )}
+                {/* 5-Star Rating */}
+                <div className={`flex items-center gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider ${
+                  textAlignment === 'center' ? 'justify-center' : textAlignment === 'right' ? 'justify-end' : 'justify-start'
+                }`}>
+                  <span>★</span>
+                  <span>★</span>
+                  <span>★</span>
+                  <span>★</span>
+                  <span>★</span>
+                </div>
+              </div>
+            );
+
+            const footerEl = (
+              <div className={`mt-3 pt-2.5 border-t border-black/10 flex items-center justify-between ${
+                isCover ? 'relative z-10 border-t-0 mt-2 px-4 pb-4' : ''
+              }`}>
+                <span 
+                  className="text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900"
+                >
+                  S/ {item.price.toFixed(2)}
+                </span>
+
+                <button
+                  type="button"
+                  style={{
+                    backgroundColor: branding.buttonColor || '#D4AF37',
+                    color: branding.buttonTextColor || '#000000',
+                    borderRadius: '8px'
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow active:scale-95"
+                >
+                  + Pedir
+                </button>
+              </div>
+            );
+
+            const first = elementOrder === 'title-first' ? textEl : imageEl;
+            const second = elementOrder === 'title-first' ? imageEl : textEl;
+
             return (
               <div 
                 key={item.id}
@@ -434,128 +564,40 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                   </div>
                 )}
 
-                {/* 
-                  THE DISH CARD:
-                  - Background matches the carta background (bg-transparent, no white box)
-                  - NO border (border-0 border-transparent)
-                  - NO shadow (shadow-none)
-                */}
                 <div 
                   onClick={() => setSelectedItemForCustomization(item)}
-                  style={{ backgroundColor: 'transparent' }}
-                  className="w-full border-0 border-transparent shadow-none rounded-none p-1 sm:p-2 cursor-pointer select-none"
+                  style={{ 
+                    backgroundColor: cardBg,
+                    borderRadius: cardRadius,
+                    borderColor: cardBorder,
+                    borderWidth: borderW,
+                    color: branding.textColor || '#1a1a1a',
+                    ...shadowStyle
+                  }}
+                  className={`w-full relative overflow-hidden transition flex flex-col justify-between border ${paddingClass} ${shadowClass} cursor-pointer select-none`}
                 >
-                  {!isEven ? (
-                    /* ------------------------------------------------------------- */
-                    /* ODD ROW: PHOTO ON LEFT, INFO ON RIGHT                         */
-                    /* ------------------------------------------------------------- */
-                    <div className="flex items-center gap-4 sm:gap-6">
-                      {/* Photo on Left: Enlarged circular dish plate */}
-                      <div className="shrink-0 flex items-center justify-center">
-                        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-full overflow-hidden bg-[#A30D0D] flex items-center justify-center transition-transform duration-200 hover:scale-105">
-                          {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover pointer-events-none"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-[#A30D0D]" />
-                          )}
-                        </div>
+                  {isCover ? (
+                    <div className="relative w-full h-full flex flex-col justify-end min-h-[140px]">
+                      {imageEl}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-5" />
+                      {textEl}
+                      {footerEl}
+                    </div>
+                  ) : isRow ? (
+                    <div className="flex flex-col h-full justify-between">
+                      <div className="flex gap-4 sm:gap-6 items-center">
+                        {first}
+                        {second}
                       </div>
-
-                      {/* Info on Right: Left-aligned, full description without cuts */}
-                      <div className="flex-1 min-w-0 text-left">
-                        {/* Title: Uppercase Serif Bold */}
-                        <h3 
-                          className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
-                          style={{ fontFamily: dishNameFont }}
-                        >
-                          {item.name}
-                        </h3>
-
-                        {/* Description: 100% visible, no truncation or line-clamp */}
-                        {item.description && (
-                          <p 
-                            className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
-                            style={{ fontFamily: dishDescFont }}
-                          >
-                            {item.description}
-                          </p>
-                        )}
-
-                        {/* 5-Star Rating (★★★★★) */}
-                        <div className="flex items-center gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider">
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="mt-1 text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900">
-                          S/ {item.price.toFixed(2)}
-                        </div>
-                      </div>
+                      {footerEl}
                     </div>
                   ) : (
-                    /* ------------------------------------------------------------- */
-                    /* EVEN ROW: INFO ON LEFT (RIGHT-ALIGNED), PHOTO ON RIGHT         */
-                    /* ------------------------------------------------------------- */
-                    <div className="flex items-center gap-4 sm:gap-6 flex-row-reverse">
-                      {/* Photo on Right: Enlarged circular dish plate */}
-                      <div className="shrink-0 flex items-center justify-center">
-                        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-full overflow-hidden bg-[#A30D0D] flex items-center justify-center transition-transform duration-200 hover:scale-105">
-                          {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover pointer-events-none"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-[#A30D0D]" />
-                          )}
-                        </div>
+                    <div className="flex flex-col gap-3 h-full justify-between">
+                      <div className="flex flex-col gap-3">
+                        {first}
+                        {second}
                       </div>
-
-                      {/* Info on Left: Right-aligned, full description without cuts */}
-                      <div className="flex-1 min-w-0 text-right">
-                        {/* Title: Uppercase Serif Bold */}
-                        <h3 
-                          className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
-                          style={{ fontFamily: dishNameFont }}
-                        >
-                          {item.name}
-                        </h3>
-
-                        {/* Description: 100% visible, no truncation or line-clamp */}
-                        {item.description && (
-                          <p 
-                            className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
-                            style={{ fontFamily: dishDescFont }}
-                          >
-                            {item.description}
-                          </p>
-                        )}
-
-                        {/* 5-Star Rating (★★★★★, Right-aligned) */}
-                        <div className="flex items-center justify-end gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider">
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                          <span>★</span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="mt-1 text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900">
-                          S/ {item.price.toFixed(2)}
-                        </div>
-                      </div>
+                      {footerEl}
                     </div>
                   )}
                 </div>
