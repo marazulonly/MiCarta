@@ -689,7 +689,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                         top: '12px',
                         width: `${photoWidth}px`,
                         height: `${photoWidth}px`,
-                        left: `calc(${photoTranslateVal}% - (${photoTranslateVal}% * ${photoWidth}px / 100))`,
+                        left: `calc(${photoTranslateVal}% - (${photoTranslateVal / 100} * ${photoWidth}px))`,
                       } : {}),
                       ...photoShapeStyle,
                       transition: 'left 0.15s ease-out, transform 0.15s ease-out'
@@ -770,7 +770,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const fullscreenCardClass = isMobileFullscreen ? 'min-h-[440px] flex flex-col justify-between' : '';
 
                 // Text wrapper style shifts itself dynamically to never overlap with absolute photo!
-                const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoShape !== 'none' ? {
+                const textWrapperStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl ? {
                   paddingLeft: photoTranslateVal < 50 ? `${photoWidth + 14}px` : '0px',
                   paddingRight: photoTranslateVal >= 50 ? `${photoWidth + 14}px` : '0px',
                   transition: 'padding 0.15s ease-out'
