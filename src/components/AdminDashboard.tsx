@@ -26,6 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
+import { generateSlug } from '../utils/restaurantUtils';
 
 interface AdminDashboardProps {
   restaurants: Restaurant[];
@@ -76,6 +77,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newOwnerPassword, setNewOwnerPassword] = useState('12345678');
   const [newOwnerRests, setNewOwnerRests] = useState<string[]>([]);
   const [ownerError, setOwnerError] = useState<string | null>(null);
+
+  // Restaurant Creation State
+  const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
+  const [newRestName, setNewRestName] = useState('');
+  const [newRestSlug, setNewRestSlug] = useState('');
+  const [newRestTagline, setNewRestTagline] = useState('');
+  const [newRestCuisine, setNewRestCuisine] = useState('Gourmet');
+  const [newRestAddress, setNewRestAddress] = useState('');
+  const [newRestPhone, setNewRestPhone] = useState('');
+  const [newRestOwnerId, setNewRestOwnerId] = useState('');
+  const [newRestTemplateId, setNewRestTemplateId] = useState('');
+  const [newRestLogoUrl, setNewRestLogoUrl] = useState('');
+  const [newRestCoverUrl, setNewRestCoverUrl] = useState('');
+  const [newRestError, setNewRestError] = useState<string | null>(null);
 
   // Editing Modals State
   const [editingOwner, setEditingOwner] = useState<User | null>(null);
@@ -155,6 +170,84 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewOwnerPassword('12345678');
     setNewOwnerRests([]);
     setOwnerError(null);
+  };
+
+  // Creation Handler for Restaurants
+  const handleCreateRestaurant = (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewRestError(null);
+
+    const cleanName = newRestName.trim();
+    if (!cleanName) {
+      setNewRestError('El nombre del restaurante no puede estar vacío.');
+      return;
+    }
+
+    if (restaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+      setNewRestError(`Ya existe un restaurante registrado con el nombre "${cleanName}".`);
+      return;
+    }
+
+    const cleanSlug = generateSlug(newRestSlug || newRestName);
+    if (restaurants.some(r => r.slug === cleanSlug)) {
+      setNewRestError(`Ya existe un restaurante con el slug /${cleanSlug}. Por favor elige otro.`);
+      return;
+    }
+
+    const newId = `rest-${Date.now()}`;
+    const selectedOwnerId = newRestOwnerId || (ownersList[0]?.id || '');
+
+    const newRest: Restaurant = {
+      id: newId,
+      name: cleanName,
+      slug: cleanSlug,
+      tagline: newRestTagline.trim() || 'Gastronomía de Autor & Excelencia',
+      cuisineType: newRestCuisine.trim() || 'Gourmet',
+      address: newRestAddress.trim() || 'Av. Principal 123',
+      phone: newRestPhone.trim() || '+51 987 654 321',
+      rating: 5.0,
+      reviewCount: 1,
+      coverUrl: newRestCoverUrl.trim() || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80',
+      logoUrl: newRestLogoUrl.trim() || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80',
+      isOpen: true,
+      templateId: newRestTemplateId || (templates[0]?.id || 'tmpl-luxury'),
+      ownerId: selectedOwnerId,
+      branding: {
+        fontFamily: 'Playfair Display',
+        primaryColor: '#0f172a',
+        secondaryColor: '#3F3F46',
+        accentColor: '#000000',
+        darkBgColor: '#0a0a0c',
+        cardBgColor: 'rgba(255, 255, 255, 0.05)',
+        cardBorderColor: 'rgba(255, 255, 255, 0.1)',
+        textColor: '#ffffff',
+        fontDisplay: 'Playfair Display',
+        buttonColor: '#D4AF37',
+        buttonTextColor: '#000000',
+      },
+      tables: [],
+      shifts: [],
+      weeklySchedule: []
+    };
+
+    if (onAddRestaurant) {
+      onAddRestaurant(newRest);
+    } else {
+      onUpdateRestaurant(newRest);
+    }
+
+    if (selectedOwnerId && onUpdateUser) {
+      const targetOwner = users.find(u => u.id === selectedOwnerId);
+      if (targetOwner) {
+        onUpdateUser({
+          ...targetOwner,
+          restaurantIds: [...(targetOwner.restaurantIds || []).filter(id => id !== newId), newId]
+        });
+      }
+    }
+
+    setIsCreatingRestaurant(false);
+    setNewRestError(null);
   };
 
   // Save Handlers with DNI uniqueness checks
@@ -537,7 +630,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* 2. SECCIÓN: RESTAURANTES                                      */}
       {/* ------------------------------------------------------------- */}
       {activeSection === 'restaurants' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm">
+            <div>
+              <p className="text-xs font-bold text-neutral-900">Administración de Sedes y Marcas de Restaurantes</p>
+              <p className="text-[11px] text-neutral-500">Crea nuevos locales, asigna dueños, plantillas de diseño y enlaces web únicos.</p>
+            </div>
+            <button
+              onClick={() => {
+                setNewRestError(null);
+                setNewRestName('');
+                setNewRestSlug('');
+                setNewRestTagline('');
+                setNewRestCuisine('Cevichería & Mariscos');
+                setNewRestAddress('');
+                setNewRestPhone('');
+                setNewRestOwnerId(ownersList[0]?.id || '');
+                setNewRestTemplateId(templates[0]?.id || 'tmpl-luxury');
+                setNewRestLogoUrl('');
+                setNewRestCoverUrl('');
+                setIsCreatingRestaurant(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#12111A] hover:bg-[#1A1924] text-white text-xs font-bold transition cursor-pointer shrink-0 shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Crear Nuevo Restaurante</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {restaurants.filter(r => filterBySearch(r.name) || filterBySearch(r.cuisineType) || filterBySearch(r.slug)).map(rest => {
               const currentTmpl = templates.find(t => t.id === rest.templateId) || templates[0];
@@ -1139,6 +1259,199 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Crear Dueño</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL CREAR NUEVO RESTAURANTE / SEDE                          */}
+      {/* ============================================================= */}
+      {isCreatingRestaurant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl bg-neutral-900 border border-neutral-700 p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Store className="w-5 h-5 text-amber-400" />
+                  <span>Crear Nuevo Restaurante / Sede</span>
+                </h3>
+                <p className="text-xs text-neutral-400">Registra un nuevo local con su enlace web, dueño asignado y plantilla visual</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsCreatingRestaurant(false);
+                  setNewRestError(null);
+                }}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {newRestError && (
+              <div className="p-3 rounded-lg bg-red-950/70 border border-red-800 text-xs text-red-200">
+                {newRestError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateRestaurant} className="space-y-4">
+              {/* Nombre del Restaurante */}
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                  Nombre del Restaurante / Marca <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Cevichito Pliz - Sede Miraflores"
+                  value={newRestName}
+                  onChange={(e) => {
+                    setNewRestName(e.target.value);
+                    if (!newRestSlug || newRestSlug === generateSlug(newRestName)) {
+                      setNewRestSlug(generateSlug(e.target.value));
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                    Slug de URL (Único)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-500 font-mono">/r/</span>
+                    <input
+                      type="text"
+                      placeholder="cevichito-miraflores"
+                      value={newRestSlug}
+                      onChange={(e) => setNewRestSlug(generateSlug(e.target.value))}
+                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">Tipo de Gastronomía</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Cevichería & Mariscos"
+                    value={newRestCuisine}
+                    onChange={(e) => setNewRestCuisine(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  />
+                </div>
+              </div>
+
+              {/* Dueño Asignado y Plantilla */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">Dueño / Propietario</label>
+                  <select
+                    value={newRestOwnerId}
+                    onChange={(e) => setNewRestOwnerId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  >
+                    <option value="">-- Seleccionar Dueño --</option>
+                    {ownersList.map(o => (
+                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">Plantilla Visual Carta</label>
+                  <select
+                    value={newRestTemplateId}
+                    onChange={(e) => setNewRestTemplateId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  >
+                    {templates.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Slogan */}
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1">Eslogan / Descripción Breve</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Cevichería Contemporánea & Pesca Artesanal del Día"
+                  value={newRestTagline}
+                  onChange={(e) => setNewRestTagline(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                />
+              </div>
+
+              {/* Dirección y Teléfono */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">Dirección del Local</label>
+                  <input
+                    type="text"
+                    placeholder="Av. Larco 456, Miraflores"
+                    value={newRestAddress}
+                    onChange={(e) => setNewRestAddress(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">Teléfono / WhatsApp</label>
+                  <input
+                    type="text"
+                    placeholder="+51 987 654 321"
+                    value={newRestPhone}
+                    onChange={(e) => setNewRestPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  />
+                </div>
+              </div>
+
+              {/* Logos & Banner URLs (Opcionales) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">URL Logo (Opcional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={newRestLogoUrl}
+                    onChange={(e) => setNewRestLogoUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">URL Banner Portada (Opcional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={newRestCoverUrl}
+                    onChange={(e) => setNewRestCoverUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingRestaurant(false);
+                    setNewRestError(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition cursor-pointer shadow-lg flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Crear Restaurante</span>
                 </button>
               </div>
             </form>
