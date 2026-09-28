@@ -715,39 +715,22 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       {/* Top Header */}
       <div className="p-5 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-neutral-900">
-              Gestión de Carta y Platos: {restaurant.name}
-            </h2>
-            <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-neutral-100 text-neutral-700 border border-neutral-300 font-bold">
-              Plantilla: {restaurant.templateId || 'Bespoke'} (Intacta)
-            </span>
-          </div>
+          <h2 className="text-base font-bold text-neutral-900">
+            Gestión de Carta y Platos: {restaurant.name}
+          </h2>
           <p className="text-xs text-neutral-500 mt-1">
-            Crea y edita categorías, platos, adicionales, observaciones y fondos independientes. Descarga copia JSON al disco local.
+            Crea y edita categorías, platos, adicionales, observaciones y fondos independientes.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => downloadRestaurantJSON(restaurant, categories, items)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer"
-            title="Descargar copia de seguridad en archivo JSON al disco duro"
+            onClick={handleOpenNewCategoryModal}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
           >
-            <Download className="w-3.5 h-3.5 text-neutral-600" />
-            <span>Descargar JSON</span>
+            <FolderPlus className="w-3.5 h-3.5 text-neutral-600" />
+            <span>+ Nueva Categoría</span>
           </button>
-
-          <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer">
-            <FileJson className="w-3.5 h-3.5 text-neutral-600" />
-            <span>Cargar JSON</span>
-            <input
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImportJSONFile}
-            />
-          </label>
 
           <button
             onClick={handleOpenNewItemModal}
@@ -783,27 +766,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         >
           <Layers className="w-3.5 h-3.5" />
           <span>Categorías ({restaurantCategories.length})</span>
-        </button>
-
-        <button
-          onClick={() => setSubTab('backgrounds')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-            subTab === 'backgrounds'
-              ? 'bg-neutral-900 text-white shadow-sm'
-              : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
-          }`}
-        >
-          <Palette className="w-3.5 h-3.5" />
-          <span>Cartas: Salón vs Delivery & Fondos</span>
-        </button>
-
-        <button
-          onClick={() => setIsHeaderModalOpen(true)}
-          className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-white text-neutral-800 hover:bg-neutral-100 border border-neutral-200"
-          title="Editar cabecera de la carta (Subir logo JPG/PNG/SVG, autoajuste y mostrar/ocultar nombre o slogan)"
-        >
-          <Sliders className="w-3.5 h-3.5 text-neutral-600" />
-          <span>Cabecera de la Carta (Logo JPG/PNG/SVG)</span>
         </button>
       </div>
 
@@ -881,14 +843,6 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 />
                 <span>Vista Lista (2 líneas)</span>
               </label>
-
-              <button
-                onClick={handleOpenNewCategoryModal}
-                className="text-xs text-neutral-900 hover:underline flex items-center gap-1 font-bold cursor-pointer"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-                <span>+ Nueva Categoría</span>
-              </button>
             </div>
           </div>
 

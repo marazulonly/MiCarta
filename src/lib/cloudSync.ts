@@ -280,9 +280,29 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
 }
 
 /**
- * Automatically saves a user modification (including photo and assigned restaurants) to the backend.
+ * Automatically saves a user modification (including photo and assigned restaurants) to the backend and Upstash.
  */
 export async function autoSyncUser(user: User): Promise<boolean> {
+  lastLocalWriteTime = Date.now();
+  try {
+    const current = await fetchFromUpstashDirectly();
+    if (current) {
+      const users = [...(current.users || [])];
+      const idx = users.findIndex(u => u.id === user.id || (user.dni && u.dni === user.dni));
+      if (idx >= 0) {
+        users[idx] = { ...users[idx], ...user };
+      } else {
+        users.unshift(user);
+      }
+      await saveToUpstashDirectly({
+        ...current,
+        users
+      });
+    }
+  } catch (err) {
+    console.warn('[CloudSync] autoSyncUser Upstash error:', err);
+  }
+
   try {
     const res = await fetch('/api/cloud-menu/user', {
       method: 'POST',
@@ -291,22 +311,36 @@ export async function autoSyncUser(user: User): Promise<boolean> {
     });
     return res.ok;
   } catch (err) {
-    console.warn('[CloudSync] autoSyncUser error:', err);
+    console.warn('[CloudSync] autoSyncUser server error:', err);
     return false;
   }
 }
 
 /**
- * Automatically deletes a user from the backend.
+ * Automatically deletes a user from the backend and Upstash.
  */
 export async function autoDeleteUser(userId: string): Promise<boolean> {
+  lastLocalWriteTime = Date.now();
+  try {
+    const current = await fetchFromUpstashDirectly();
+    if (current) {
+      const users = (current.users || []).filter(u => u.id !== userId);
+      await saveToUpstashDirectly({
+        ...current,
+        users
+      });
+    }
+  } catch (err) {
+    console.warn('[CloudSync] autoDeleteUser Upstash error:', err);
+  }
+
   try {
     const res = await fetch(`/api/cloud-menu/user/${encodeURIComponent(userId)}`, {
       method: 'DELETE'
     });
     return res.ok;
   } catch (err) {
-    console.warn('[CloudSync] autoDeleteUser error:', err);
+    console.warn('[CloudSync] autoDeleteUser server error:', err);
     return false;
   }
 }

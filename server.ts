@@ -737,6 +737,7 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'USER_UPDATED', user, users });
     res.json({ success: true, message: `Usuario "${user.name}" guardado permanentemente en la nube`, user });
   });
@@ -755,6 +756,7 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'USER_DELETED', userId: id, users });
     res.json({ success: true, message: 'Usuario eliminado permanentemente de la nube' });
   });
