@@ -699,15 +699,6 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
         }
       })()}
 
-      {/* Discrete Official Published Badge for Public Diners & QR Guests */}
-      {publishedSnapshotInfo && (
-        <div className="fixed bottom-4 left-4 z-[9998] px-3.5 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-emerald-500/60 text-emerald-300 text-[11px] font-mono flex items-center gap-2 shadow-2xl pointer-events-none select-none">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>
-            <strong>Carta Oficial Publicada</strong> • v{publishedSnapshotInfo.version}
-          </span>
-        </div>
-      )}
 
       {/* MODAL 1: EDIT DISH IN LIVE PREVIEW */}
       {editingItem && (
