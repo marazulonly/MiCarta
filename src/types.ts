@@ -51,6 +51,13 @@ export interface RestaurantBranding {
   headerLogoFit?: 'contain' | 'cover' | 'auto'; // Ajuste de la imagen en la cabecera
   headerBannerHeight?: number;     // Altura máxima del logo/cabecera en px (default 100)
   backgroundColor?: string;        // Color de fondo alternativo
+  // Atomic Card Designer options
+  cardLayout?: 'row' | 'column' | 'cover'; // Disposición: fila compacta, tarjeta vertical o fondo cubierto
+  cardElementOrder?: 'image-first' | 'title-first' | 'price-first'; // Coordenada secuencial / orden del plato
+  cardTextAlignment?: 'left' | 'center' | 'right'; // Alineación de textos
+  cardPadding?: 'compact' | 'normal' | 'elegant'; // Rellenos de tarjeta
+  cardShadow?: 'none' | 'sutil' | 'medium' | 'intense' | 'glow'; // Intensidad de sombra o brillo de marca
+  cardBorderWidth?: '0px' | '1px' | '2px' | '4px'; // Grosor del borde de la tarjeta
 }
 
 export interface RestaurantMetrics {

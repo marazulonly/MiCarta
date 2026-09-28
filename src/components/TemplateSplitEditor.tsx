@@ -669,6 +669,111 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                 const cardBg = workingBranding.dishCardBgColor || workingBranding.cardBgColor || 'rgba(255,255,255,0.05)';
                 const cardRadius = workingBranding.cardBorderRadius || '12px';
                 const cardBorder = workingBranding.dishCardBorderColor || (workingBranding.buttonColor ? `${workingBranding.buttonColor}50` : 'rgba(255,255,255,0.1)');
+                const borderW = workingBranding.cardBorderWidth || '1px';
+                const textAlignment = workingBranding.cardTextAlignment || 'left';
+                const layout = workingBranding.cardLayout || 'row';
+                const elementOrder = workingBranding.cardElementOrder || 'image-first';
+                
+                // Paddings
+                let paddingClass = 'p-3.5';
+                if (workingBranding.cardPadding === 'compact') paddingClass = 'p-2.5';
+                if (workingBranding.cardPadding === 'elegant') paddingClass = 'p-5';
+
+                // Shadows & Glowing
+                let shadowStyle = {};
+                let shadowClass = 'shadow-md';
+                if (workingBranding.cardShadow === 'none') {
+                  shadowClass = 'shadow-none';
+                } else if (workingBranding.cardShadow === 'sutil') {
+                  shadowClass = 'shadow-sm';
+                } else if (workingBranding.cardShadow === 'medium') {
+                  shadowClass = 'shadow-md';
+                } else if (workingBranding.cardShadow === 'intense') {
+                  shadowClass = 'shadow-2xl';
+                } else if (workingBranding.cardShadow === 'glow') {
+                  shadowClass = 'shadow-lg';
+                  shadowStyle = {
+                    boxShadow: `0 8px 30px -4px ${(workingBranding.buttonColor || '#D4AF37')}50`
+                  };
+                }
+
+                const isRow = layout === 'row';
+                const isColumn = layout === 'column';
+                const isCover = layout === 'cover';
+
+                // Build element render structures
+                const imageEl = item.imageUrl ? (
+                  <div 
+                    className={`rounded-xl overflow-hidden bg-black/40 shrink-0 relative ${
+                      isRow 
+                        ? 'w-20 h-20' 
+                        : isColumn 
+                        ? 'w-full h-40' 
+                        : 'absolute inset-0 w-full h-full object-cover z-0 brightness-[0.35]'
+                    }`}
+                  >
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                ) : null;
+
+                const textEl = (
+                  <div className={`flex-1 min-w-0 ${isCover ? 'relative z-10' : ''} ${
+                    textAlignment === 'center' ? 'text-center' : textAlignment === 'right' ? 'text-right' : 'text-left'
+                  }`}>
+                    <h3 
+                      className="text-sm font-bold line-clamp-1"
+                      style={{
+                        fontFamily: workingBranding.dishNameFont || workingBranding.fontDisplay || 'inherit'
+                      }}
+                    >
+                      {item.name}
+                    </h3>
+                    <p 
+                      className="text-xs opacity-80 mt-1 line-clamp-2 leading-relaxed"
+                      style={{
+                        fontFamily: workingBranding.dishDescFont || 'inherit'
+                      }}
+                    >
+                      {item.description}
+                    </p>
+                  </div>
+                );
+
+                const footerEl = (
+                  <div className={`mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between ${
+                    isCover ? 'relative z-10 border-t-0 mt-2' : ''
+                  }`}>
+                    <span 
+                      className="text-sm font-black font-mono"
+                      style={{
+                        fontFamily: workingBranding.dishPriceFont || 'monospace',
+                        color: workingBranding.priceColor || workingBranding.buttonColor || '#D4AF37'
+                      }}
+                    >
+                      S/ {item.price.toFixed(2)}
+                    </span>
+
+                    <button
+                      type="button"
+                      style={{
+                        backgroundColor: workingBranding.buttonColor || '#D4AF37',
+                        color: workingBranding.buttonTextColor || '#000000',
+                        borderRadius: '8px'
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow"
+                    >
+                      + Pedir
+                    </button>
+                  </div>
+                );
+
+                // Order of composition inside the card
+                const first = elementOrder === 'title-first' ? textEl : imageEl;
+                const second = elementOrder === 'title-first' ? imageEl : textEl;
 
                 return (
                   <div
@@ -677,63 +782,36 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                       backgroundColor: cardBg,
                       borderRadius: cardRadius,
                       borderColor: cardBorder,
-                      color: workingBranding.textColor || '#FFFFFF'
+                      borderWidth: borderW,
+                      color: workingBranding.textColor || '#FFFFFF',
+                      ...shadowStyle
                     }}
-                    className="p-3.5 border transition flex flex-col justify-between shadow-md"
+                    className={`relative overflow-hidden transition border flex flex-col justify-between ${paddingClass} ${shadowClass}`}
                   >
-                    <div className="flex gap-3">
-                      {item.imageUrl && (
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-black/40 shrink-0">
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 
-                            className="text-sm font-bold line-clamp-1"
-                            style={{
-                              fontFamily: workingBranding.dishNameFont || workingBranding.fontDisplay || 'inherit'
-                            }}
-                          >
-                            {item.name}
-                          </h3>
-                        </div>
-
-                        <p 
-                          className="text-xs opacity-80 mt-1 line-clamp-2 leading-relaxed"
-                          style={{
-                            fontFamily: workingBranding.dishDescFont || 'inherit'
-                          }}
-                        >
-                          {item.description}
-                        </p>
+                    {isCover ? (
+                      <div className="relative w-full h-full flex flex-col justify-end min-h-[140px]">
+                        {imageEl}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-5" />
+                        {textEl}
+                        {footerEl}
                       </div>
-                    </div>
-
-                    <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
-                      <span 
-                        className="text-sm font-black font-mono"
-                        style={{
-                          fontFamily: workingBranding.dishPriceFont || 'monospace',
-                          color: workingBranding.priceColor || workingBranding.buttonColor || '#D4AF37'
-                        }}
-                      >
-                        S/ {item.price.toFixed(2)}
-                      </span>
-
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: workingBranding.buttonColor || '#D4AF37',
-                          color: workingBranding.buttonTextColor || '#000000',
-                          borderRadius: '8px'
-                        }}
-                        className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow"
-                      >
-                        + Pedir
-                      </button>
-                    </div>
+                    ) : isRow ? (
+                      <div className="flex flex-col h-full justify-between">
+                        <div className="flex gap-3">
+                          {first}
+                          {second}
+                        </div>
+                        {footerEl}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 h-full justify-between">
+                        <div className="flex flex-col gap-3">
+                          {first}
+                          {second}
+                        </div>
+                        {footerEl}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1132,22 +1210,121 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* TAB 4: TARJETAS & BORDES                                      */}
+            {/* TAB 4: TARJETAS & BORDES (ATOMIC CARD DESIGNER)               */}
             {/* ------------------------------------------------------------- */}
             {inspectorTab === 'cards' && (
               <div className="space-y-4">
                 <div>
                   <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-bold block">
-                    Formato de Tarjetas & Cuadrícula
+                    Constructor Atómico de Fichas (Tarjetas)
                   </span>
                   <p className="text-xs text-neutral-300 mt-0.5">
-                    Modifica el radio de las esquinas y proporciones de las fichas.
+                    Mueve elementos, ajusta sombras de marca, bordes y espaciados con control absoluto.
                   </p>
                 </div>
 
-                {/* Border Radius */}
+                {/* 1. Mover de Lugar / Disposición General (Card Layout) */}
                 <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
-                  <span className="text-xs font-bold text-white block">Curvatura de Esquinas (Border Radius):</span>
+                  <span className="text-xs font-bold text-white block">1. Estilo de Disposición (Layout):</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'row' as const, label: 'Fila Compacta' },
+                      { id: 'column' as const, label: 'Tarjeta Vertical' },
+                      { id: 'cover' as const, label: 'Fondo de Imagen' }
+                    ].map(lay => (
+                      <button
+                        type="button"
+                        key={lay.id}
+                        onClick={() => updateBranding('cardLayout', lay.id)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardLayout || 'row') === lay.id
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {lay.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Coordenada / Orden de Elementos */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">2. Secuencia de Elementos (Orden):</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'image-first' as const, label: 'Imagen Primero' },
+                      { id: 'title-first' as const, label: 'Textos Primero' }
+                    ].map(order => (
+                      <button
+                        type="button"
+                        key={order.id}
+                        onClick={() => updateBranding('cardElementOrder', order.id)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardElementOrder || 'image-first') === order.id
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {order.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Alineación de Textos */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">3. Alineación del Texto:</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'left' as const, label: 'Izquierda' },
+                      { id: 'center' as const, label: 'Centro' },
+                      { id: 'right' as const, label: 'Derecha' }
+                    ].map(align => (
+                      <button
+                        type="button"
+                        key={align.id}
+                        onClick={() => updateBranding('cardTextAlignment', align.id)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardTextAlignment || 'left') === align.id
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {align.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Espaciado / Relleno (Card Padding) */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">4. Relleno Interno (Padding):</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'compact' as const, label: 'Compacto' },
+                      { id: 'normal' as const, label: 'Balanceado' },
+                      { id: 'elegant' as const, label: 'Elegante' }
+                    ].map(pad => (
+                      <button
+                        type="button"
+                        key={pad.id}
+                        onClick={() => updateBranding('cardPadding', pad.id)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardPadding || 'normal') === pad.id
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {pad.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. Editor de Esquinas / Border Radius */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">5. Esquinas Redondeadas:</span>
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       { label: 'Recto (0px)', val: '0px' },
@@ -1156,6 +1333,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                       { label: 'Píldora (24px)', val: '24px' }
                     ].map(r => (
                       <button
+                        type="button"
                         key={r.val}
                         onClick={() => updateBranding('cardBorderRadius', r.val)}
                         className={`p-2 rounded-xl text-xs font-mono transition cursor-pointer border ${
@@ -1170,10 +1348,63 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   </div>
                 </div>
 
-                {/* Header Height */}
+                {/* 6. Grosor de Borde (Card Border Width) */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">6. Grosor del Borde:</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: 'Ninguno', val: '0px' },
+                      { label: 'Fino', val: '1px' },
+                      { label: 'Grueso', val: '2px' },
+                      { label: 'X-Grueso', val: '4px' }
+                    ].map(b => (
+                      <button
+                        type="button"
+                        key={b.val}
+                        onClick={() => updateBranding('cardBorderWidth', b.val)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardBorderWidth || '1px') === b.val
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 7. Sombras & Glow de Marca (Card Shadow Intensity) */}
+                <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
+                  <span className="text-xs font-bold text-white block">7. Sombra & Brillo (Neon Glow):</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'none' as const, label: 'Sin Sombra' },
+                      { id: 'sutil' as const, label: 'Sutil' },
+                      { id: 'medium' as const, label: 'Media' },
+                      { id: 'intense' as const, label: 'Intensa' },
+                      { id: 'glow' as const, label: 'Brillo Marca' }
+                    ].map(sh => (
+                      <button
+                        type="button"
+                        key={sh.id}
+                        onClick={() => updateBranding('cardShadow', sh.id)}
+                        className={`p-2 rounded-xl text-xs transition cursor-pointer border font-bold ${
+                          (workingBranding.cardShadow || 'medium') === sh.id
+                            ? 'bg-amber-400 text-black border-amber-400'
+                            : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        {sh.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 8. Altura del Banner / Cabecera */}
                 <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-white">Altura de Cabecera / Banner:</span>
+                    <span className="text-xs font-bold text-white">8. Altura de Cabecera / Banner:</span>
                     <span className="text-xs font-mono text-amber-400 font-bold">
                       {workingBranding.headerBannerHeight || 120} px
                     </span>
@@ -1189,9 +1420,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
                   />
                 </div>
 
-                {/* Header elements toggles */}
+                {/* 9. Elementos Visibles de Cabecera */}
                 <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-3">
-                  <span className="text-xs font-bold text-white block">Elementos Visibles de Cabecera:</span>
+                  <span className="text-xs font-bold text-white block">9. Elementos Visibles de Cabecera:</span>
                   
                   <label className="flex items-center justify-between text-xs text-neutral-300 cursor-pointer">
                     <span>Mostrar Nombre de Restaurante</span>
