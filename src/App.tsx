@@ -765,6 +765,9 @@ export default function App() {
     if (previewRestaurant && previewRestaurant.id === updated.id) {
       setPreviewRestaurant(updated);
     }
+    if (publishedMenuData && publishedMenuData.restaurant && (publishedMenuData.restaurant.id === updated.id || publishedMenuData.restaurant.slug === updated.slug)) {
+      setPublishedMenuData(prev => prev ? { ...prev, restaurant: updated } : null);
+    }
 
     let nextUsers = users;
 
@@ -809,7 +812,9 @@ export default function App() {
     }
 
     autoSyncRestaurant(updated);
-    publishRestaurantMenu(updated.id, updated, categories, menuItems).catch(() => {});
+    const restCats = categories.filter(c => c.restaurantId === updated.id);
+    const restItems = menuItems.filter(i => i.restaurantId === updated.id);
+    triggerCloudUpdate(updated.id, updated, restCats, restItems);
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       categories,
