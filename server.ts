@@ -95,6 +95,28 @@ async function saveToVercelKV(data: any): Promise<boolean> {
   }
 }
 
+async function saveIndividualToVercelKV(slugOrId: string, data: any): Promise<boolean> {
+  if (!kvRestUrl || !kvRestToken) return false;
+  const norm = normalizeSlug(slugOrId);
+  if (!norm) return false;
+  try {
+    const cleanUrl = kvRestUrl.replace(/\/+$/, '');
+    const stringified = JSON.stringify(data);
+    const res = await fetch(`${cleanUrl}/set/applet_menu_pub_${norm}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${kvRestToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: stringified,
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Server] Error saving individual key to Vercel KV / Upstash:', err);
+    return false;
+  }
+}
+
 // Helper function to normalize slugs for matching URLs, names, and IDs
 function normalizeSlug(str?: string): string {
   if (!str) return '';
@@ -174,6 +196,12 @@ function saveCloudDataToDisk(data: any) {
       saveToVercelKV(cachedCloudData).catch(err => {
         console.warn('[Server] Background Vercel KV sync notice (size/payload):', err);
       });
+      if (cachedCloudData.publishedMenus) {
+        Object.values(cachedCloudData.publishedMenus).forEach((snap: any) => {
+          if (snap?.restaurant?.slug) saveIndividualToVercelKV(snap.restaurant.slug, snap).catch(() => {});
+          if (snap?.restaurant?.id) saveIndividualToVercelKV(snap.restaurant.id, snap).catch(() => {});
+        });
+      }
     }
 
     return true;
@@ -456,6 +484,9 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+
+    if (restaurant.slug) saveIndividualToVercelKV(restaurant.slug, newSnapshot).catch(() => {});
+    if (restaurant.id) saveIndividualToVercelKV(restaurant.id, newSnapshot).catch(() => {});
 
     // Broadcast publish event to all connected devices and incognito tabs
     broadcastMenuUpdate({

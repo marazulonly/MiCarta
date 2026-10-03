@@ -44,6 +44,7 @@ import {
   autoDeleteUser,
   publishRestaurantMenu,
   fetchPublicPublishedMenu,
+  saveIndividualRestaurantSnapshotToUpstash,
   subscribeToCloudUpdates,
   autoSyncOrder,
   autoUpdateOrderStatus,
@@ -389,6 +390,26 @@ export default function App() {
       setMenuItems(cleanLoadedItems);
       setUsers(deduplicateUsers(cleanLoadedUsers));
       setOrders(cleanLoadedOrders);
+
+      // Silently ensure all active restaurants have their individual lightweight snapshot ready in Upstash
+      try {
+        cleanLoadedRests.forEach((r: any) => {
+          if (!r || !r.id) return;
+          const rCats = cleanLoadedCategories.filter((c: any) => c && c.restaurantId === r.id);
+          const rItems = cleanLoadedItems.filter((i: any) => i && i.restaurantId === r.id);
+          const snap = {
+            success: true,
+            published: true,
+            version: 1,
+            publishedAt: cloudData?.updatedAt || new Date().toISOString(),
+            restaurant: r,
+            categories: rCats,
+            items: rItems
+          };
+          if (r.slug) saveIndividualRestaurantSnapshotToUpstash(r.slug, snap).catch(() => {});
+          if (r.id) saveIndividualRestaurantSnapshotToUpstash(r.id, snap).catch(() => {});
+        });
+      } catch {}
 
       // Verify and synchronize currentUser with verified cloud users
       if (currentUser) {
