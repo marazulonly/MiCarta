@@ -46,6 +46,7 @@ import {
   fetchPublicPublishedMenu,
   saveIndividualRestaurantSnapshotToUpstash,
   subscribeToCloudUpdates,
+  subscribeToOrdersFeed,
   autoSyncOrder,
   autoUpdateOrderStatus,
   setCloudSyncPaused,
@@ -573,9 +574,20 @@ export default function App() {
       }
     });
 
+    // Real-time order synchronization across staff devices (waiters, kitchen, cashier, owner, admin)
+    // Only active when logged in with a staff role or managing operations
+    let unsubOrders: (() => void) | null = null;
+    if (currentUser) {
+      unsubOrders = subscribeToOrdersFeed((freshOrders) => {
+        if (!isMounted) return;
+        setOrders(freshOrders);
+      });
+    }
+
     return () => {
       isMounted = false;
       unsubscribe();
+      if (unsubOrders) unsubOrders();
     };
   }, [currentUser]);
 
@@ -833,6 +845,15 @@ export default function App() {
     }
 
     autoSyncRestaurant(updated);
+    if (previewRestaurant && previewRestaurant.id === updated.id) {
+      setPreviewRestaurant(updated);
+    }
+    if (publishedMenuData && (publishedMenuData.restaurant?.id === updated.id || publishedMenuData.restaurant?.slug === updated.slug)) {
+      setPublishedMenuData({
+        ...publishedMenuData,
+        restaurant: updated
+      });
+    }
     const restCats = categories.filter(c => c.restaurantId === updated.id);
     const restItems = menuItems.filter(i => i.restaurantId === updated.id);
     triggerCloudUpdate(updated.id, updated, restCats, restItems);
