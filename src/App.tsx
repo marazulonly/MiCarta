@@ -358,7 +358,7 @@ export default function App() {
     } catch {
       // Ignored if window not available
     }
-  }, [restaurants]);
+  }, []);
 
   // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
@@ -1310,38 +1310,28 @@ export default function App() {
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
   const isDirectLinkAccess = Boolean((initParams.isQr || initParams.restSlug) && !initParams.isStaffLogin);
 
-  // Global loading screen while fetching initial cloud data from authoritative backend
-  if (!isInitialCloudFetchDone || (isDirectLinkAccess && isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant)) {
-    if (isDirectLinkAccess) {
-      const preloadedBranding = (typeof window !== 'undefined' && (window as any).__PRELOADED_RESTAURANT_BRANDING__) || null;
-      const targetRest = previewRestaurant || publishedMenuData?.restaurant;
-      const activeBgColor = targetRest?.branding?.backgroundColor || targetRest?.branding?.darkBgColor || targetRest?.branding?.primaryColor || preloadedBranding?.bgColor || '#852323';
-      const activeLogo = targetRest?.branding?.headerLogoUrl || targetRest?.logoUrl || preloadedBranding?.logoUrl || null;
-      const activeName = targetRest?.name || preloadedBranding?.name || '';
+  // 1. Fast-Path for direct links (QR / slug): render immediately once public menu arrives
+  if (isDirectLinkAccess) {
+    if (isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant) {
       return (
-        <div 
-          className="min-h-screen flex flex-col items-center justify-center transition-all duration-300"
-          style={{ backgroundColor: activeBgColor }}
-        >
-          {activeLogo && (
-            <img 
-              src={activeLogo} 
-              alt={activeName} 
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain animate-pulse" 
-            />
-          )}
+        <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white">
+          <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
         </div>
       );
     }
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-      </div>
-    );
+  } else {
+    // Global loading screen for staff / admin while fetching initial cloud data
+    if (!isInitialCloudFetchDone) {
+      return (
+        <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+        </div>
+      );
+    }
   }
 
   // 2. If accessing via link but no matching restaurant exists anywhere (not in cloud, not in local)
-  if (isDirectLinkAccess && !isLoadingPublishedMenu && isInitialCloudFetchDone && !previewRestaurant && !publishedMenuData) {
+  if (isDirectLinkAccess && !isLoadingPublishedMenu && !previewRestaurant && !publishedMenuData) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-4 selection:bg-amber-400 selection:text-black">
         <div className="w-full max-w-md p-8 rounded-3xl bg-neutral-900 border border-amber-500/40 text-white shadow-2xl space-y-5 text-center">

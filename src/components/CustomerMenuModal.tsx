@@ -99,51 +99,19 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const scopedItems = restId ? (items || []).filter(i => i && i.restaurantId === restId) : (items || []);
   const effectiveItems = scopedItems.length > 0 ? scopedItems : (items || []);
 
-  // Preloader State
-  const [isPreloading, setIsPreloading] = useState(true);
-  const [preloadProgress, setPreloadProgress] = useState(0);
+  // Preloader State: only active if explicitly in loading state
+  const [isPreloading, setIsPreloading] = useState(Boolean(isLoading));
+  const [preloadProgress, setPreloadProgress] = useState(isLoading ? 50 : 100);
 
-  const lastRestaurantIdRef = React.useRef<string | null>(null);
-  const wasOpenRef = React.useRef<boolean>(false);
-
-  // Preloader Progress Effect: Keeps preloader visible while background cloud menu loads
+  // Sync preloader immediately with isLoading state
   React.useEffect(() => {
-    if (isOpen && restaurant) {
-      const isFreshOpen = !wasOpenRef.current;
-      const isNewRestaurant = lastRestaurantIdRef.current !== restaurant?.id;
-
-      if (isFreshOpen || isNewRestaurant) {
-        setIsPreloading(true);
-        setPreloadProgress(15);
-        lastRestaurantIdRef.current = restaurant?.id || null;
-        wasOpenRef.current = true;
-      }
-      
-      const interval = setInterval(() => {
-        setPreloadProgress((prev) => {
-          if (isLoading) {
-            // While cloud data is loading in background, advance smoothly up to 88%
-            if (prev >= 88) return 88;
-            const increment = Math.floor(Math.random() * 12) + 8;
-            return Math.min(88, prev + increment);
-          } else {
-            // Cloud data loaded: finish progress bar to 100% and hide preloader overlay
-            if (prev >= 100) {
-              clearInterval(interval);
-              setTimeout(() => setIsPreloading(false), 200);
-              return 100;
-            }
-            const increment = Math.floor(Math.random() * 20) + 15;
-            return Math.min(100, prev + increment);
-          }
-        });
-      }, 70);
-
-      return () => clearInterval(interval);
+    if (!isLoading) {
+      setIsPreloading(false);
+      setPreloadProgress(100);
     } else {
-      wasOpenRef.current = false;
+      setIsPreloading(true);
     }
-  }, [isOpen, restaurant?.id, isLoading]);
+  }, [isLoading]);
 
   // Live Editing Mode (ONLY accessible to verified Owner or Admin, default true for owner/admin)
   const [isLiveEditActive, setIsLiveEditActive] = useState(Boolean(isOwnerOrAdmin));
