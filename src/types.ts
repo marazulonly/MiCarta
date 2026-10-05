@@ -80,6 +80,15 @@ export interface RestaurantBranding {
   cardPhotoSizeEven?: number;
   cardHideOrderButton?: boolean; // Ocultar botón de "Pedir"
   cardHideOrderButtonEven?: boolean;
+  // Graphic Canvas Template Engine (Canva/Figma inspired visual objects)
+  canvasElements?: any[];
+  canvasConfig?: {
+    width?: number;
+    height?: number;
+    backgroundColor?: string;
+    backgroundImage?: string;
+    backgroundOverlay?: string;
+  };
 }
 
 export interface RestaurantMetrics {
