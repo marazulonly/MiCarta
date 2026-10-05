@@ -213,6 +213,18 @@ function getInitialStorageState() {
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
+      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
+      if (storedRests) cachedRests = JSON.parse(storedRests);
+
+      const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (storedCategories) cachedCategories = JSON.parse(storedCategories);
+
+      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (storedItems) cachedItems = JSON.parse(storedItems);
+
+      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (storedUsers) cachedUsers = JSON.parse(storedUsers);
+
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (storedOrders) {
         cachedOrders = JSON.parse(storedOrders);
@@ -250,10 +262,10 @@ const initialFoundRest = null;
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialState.cachedRests);
+  const [categories, setCategories] = useState<MenuCategory[]>(initialState.cachedCategories);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
+  const [users, setUsers] = useState<User[]>(initialState.cachedUsers);
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
   
@@ -308,6 +320,34 @@ export default function App() {
       }
     } catch {}
   }, [currentUser]);
+
+  // Keep restaurants synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(restaurants));
+    } catch {}
+  }, [restaurants]);
+
+  // Keep categories synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    } catch {}
+  }, [categories]);
+
+  // Keep menuItems synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(menuItems));
+    } catch {}
+  }, [menuItems]);
+
+  // Keep users synced to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    } catch {}
+  }, [users]);
 
   // Keep orders synced to localStorage
   useEffect(() => {
@@ -386,11 +426,74 @@ export default function App() {
         ? cloudData.orders
         : [];
 
-      setRestaurants(cleanLoadedRests);
-      setCategories(cleanLoadedCategories);
-      setMenuItems(cleanLoadedItems);
-      setUsers(deduplicateUsers(cleanLoadedUsers));
-      setOrders(cleanLoadedOrders);
+      // Offline-first merge: Merge remote list with local cached list so newly created items are never lost!
+      setRestaurants(prev => {
+        const map = new Map<string, Restaurant>();
+        prev.forEach(r => { if (r?.id) map.set(r.id, r); });
+        cleanLoadedRests.forEach(r => { if (r?.id) map.set(r.id, r); });
+        return Array.from(map.values());
+      });
+
+      setCategories(prev => {
+        const map = new Map<string, MenuCategory>();
+        prev.forEach(c => { if (c?.id) map.set(c.id, c); });
+        cleanLoadedCategories.forEach(c => { if (c?.id) map.set(c.id, c); });
+        return Array.from(map.values());
+      });
+
+      setMenuItems(prev => {
+        const map = new Map<string, MenuItem>();
+        prev.forEach(i => { if (i?.id) map.set(i.id, i); });
+        cleanLoadedItems.forEach(i => { if (i?.id) map.set(i.id, i); });
+        return Array.from(map.values());
+      });
+
+      setUsers(prev => {
+        const map = new Map<string, User>();
+        prev.forEach(u => { if (u?.id) map.set(u.id, u); });
+        cleanLoadedUsers.forEach(u => { if (u?.id) map.set(u.id, u); });
+        return deduplicateUsers(Array.from(map.values()));
+      });
+
+      setOrders(prev => {
+        const map = new Map<string, Order>();
+        prev.forEach(o => { if (o?.id) map.set(o.id, o); });
+        cleanLoadedOrders.forEach(o => { if (o?.id) map.set(o.id, o); });
+        return Array.from(map.values());
+      });
+
+      // If the local cache had newer/more elements than the remote server snapshot,
+      // re-upload the merged state to hydrate the stateless backend!
+      const hasNewRests = cleanLoadedRests.length === 0 && initialState.cachedRests.length > 0;
+      const localRestIds = new Set(cleanLoadedRests.map(r => r.id));
+      const hasAddedRests = initialState.cachedRests.some(r => !localRestIds.has(r.id));
+
+      if (hasNewRests || hasAddedRests) {
+        setTimeout(() => {
+          setRestaurants(currentRests => {
+            setCategories(currentCats => {
+              setMenuItems(currentItems => {
+                setUsers(currentUsers => {
+                  setOrders(currentOrders => {
+                    saveFullCloudMenu({
+                      restaurants: currentRests,
+                      categories: currentCats,
+                      items: currentItems,
+                      users: currentUsers,
+                      orders: currentOrders
+                    }).catch(() => {});
+                    return currentOrders;
+                  });
+                  return currentUsers;
+                });
+                return currentItems;
+              });
+              return currentCats;
+            });
+            return currentRests;
+          });
+        }, 1500);
+      }
 
       // Silently ensure all active restaurants have their individual lightweight snapshot ready in Upstash
       try {
