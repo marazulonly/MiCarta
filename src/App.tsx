@@ -734,12 +734,10 @@ export default function App() {
     const nextCategories = hasCategory ? categories : [...categories, defaultCat];
     if (!hasCategory) {
       setCategories(nextCategories);
-      autoSyncCategory(defaultCat);
     }
 
     const nextRestaurants = [newRestaurant, ...restaurants];
     setRestaurants(nextRestaurants);
-    autoSyncRestaurant(newRestaurant);
 
     // If an owner created this restaurant or it's assigned, ensure owner has it
     let nextUsers = users;
@@ -756,8 +754,6 @@ export default function App() {
         return u;
       });
       setUsers(nextUsers);
-      const updatedUser = nextUsers.find(u => u.id === targetOwnerId);
-      if (updatedUser) autoSyncUser(updatedUser);
       if (currentUser && (currentUser.id === targetOwnerId || currentUser.role === 'OWNER')) {
         setCurrentUser(prev => prev ? {
           ...prev,
@@ -812,7 +808,6 @@ export default function App() {
             ...u,
             restaurantIds: (u.restaurantIds || []).filter(id => id !== updated.id)
           };
-          autoSyncUser(updatedUser);
           return updatedUser;
         }
         if (u.id === newOwnerId) {
@@ -822,7 +817,6 @@ export default function App() {
               ? u.restaurantIds
               : [...(u.restaurantIds || []), updated.id]
           };
-          autoSyncUser(updatedUser);
           return updatedUser;
         }
         return u;
@@ -836,7 +830,6 @@ export default function App() {
             ...u,
             restaurantIds: [...(u.restaurantIds || []), updated.id]
           };
-          autoSyncUser(updatedUser);
           return updatedUser;
         }
         return u;
@@ -844,7 +837,6 @@ export default function App() {
       setUsers(nextUsers);
     }
 
-    autoSyncRestaurant(updated);
     if (previewRestaurant && previewRestaurant.id === updated.id) {
       setPreviewRestaurant(updated);
     }
@@ -1012,7 +1004,6 @@ export default function App() {
   const handleAddUser = (newUser: User) => {
     const nextUsers = deduplicateUsers([newUser, ...users]);
     setUsers(nextUsers);
-    autoSyncUser(newUser);
     saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
     showToast(`✓ Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado permanentemente.`);
   };
@@ -1026,7 +1017,6 @@ export default function App() {
         localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(updated));
       } catch {}
     }
-    autoSyncUser(updated);
     saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
     showToast(`✓ Usuario "${updated.name}" actualizado y guardado permanentemente.`);
   };
@@ -1043,7 +1033,6 @@ export default function App() {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
       } catch {}
     }
-    autoDeleteUser(userId);
     saveFullCloudMenu({
       restaurants,
       categories,
