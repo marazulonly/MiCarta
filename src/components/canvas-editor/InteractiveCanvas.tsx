@@ -308,9 +308,9 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onClick={handleBackgroundClick}
-      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#090D14] select-none cursor-default"
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#E5E7EB] select-none cursor-default"
       style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.12) 1px, transparent 0)',
         backgroundSize: '24px 24px'
       }}
     >
@@ -322,16 +322,16 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
           height: `${config.height}px`,
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: 'center center',
-          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.08)'
+          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08)'
         }}
-        className="relative bg-black transition-transform duration-75 shrink-0"
+        className="relative bg-white transition-transform duration-75 shrink-0 rounded-2xl overflow-hidden"
       >
         {/* Render Grid Overlay */}
         {config.showGrid && (
           <div 
             className="absolute inset-0 pointer-events-none z-[990]"
             style={{
-              backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
               backgroundSize: `${config.gridSize || 20}px ${config.gridSize || 20}px`
             }}
           />
@@ -340,12 +340,12 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
         {/* Render Safety Margins Overlay */}
         {config.showSafetyMargins && (
           <div 
-            className="absolute pointer-events-none z-[991] border-2 border-dashed border-amber-500/40 rounded-2xl"
+            className="absolute pointer-events-none z-[991] border-2 border-dashed border-amber-600/60 rounded-2xl"
             style={{
               inset: `${config.safetyMarginPadding || 40}px`
             }}
           >
-            <span className="absolute top-2 left-2 text-[10px] font-mono text-amber-400/70 uppercase tracking-widest">
+            <span className="absolute top-2 left-2 text-[10px] font-mono text-amber-900 font-bold uppercase tracking-widest bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded shadow-xs">
               Margen Seguro
             </span>
           </div>
@@ -362,15 +362,15 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
                 top: 0,
                 bottom: 0,
                 width: '1px',
-                backgroundColor: '#06B6D4',
-                boxShadow: '0 0 8px #06B6D4'
+                backgroundColor: '#0284C7',
+                boxShadow: '0 0 6px #0284C7'
               } : {
                 top: `${guide.position}px`,
                 left: 0,
                 right: 0,
                 height: '1px',
-                backgroundColor: '#EC4899',
-                boxShadow: '0 0 8px #EC4899'
+                backgroundColor: '#D97706',
+                boxShadow: '0 0 6px #D97706'
               })
             }}
           />
@@ -379,7 +379,6 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
         {/* RENDER CANVAS OBJECTS */}
         {sortedElements.map((element) => {
           if (!element.visible && !isPreviewMode) {
-            // Still render lightly in editor mode if needed or skip
             return null;
           }
           if (!element.visible && isPreviewMode) return null;
@@ -401,9 +400,9 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
               }}
               className={`group transition-[outline] duration-75 ${
                 !isPreviewMode && isSelected 
-                  ? 'outline-none ring-2 ring-cyan-400 ring-offset-2 ring-offset-black/50' 
+                  ? 'outline-none ring-2 ring-neutral-950 ring-offset-2 ring-offset-white' 
                   : !isPreviewMode && !element.locked 
-                  ? 'hover:outline hover:outline-1 hover:outline-cyan-400/50' 
+                  ? 'hover:outline hover:outline-1 hover:outline-neutral-500' 
                   : ''
               }`}
             >
@@ -416,7 +415,7 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
 
               {/* Locked Indicator on hover */}
               {element.locked && !isPreviewMode && (
-                <div className="absolute top-1 right-1 bg-black/80 text-amber-400 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute top-1 right-1 bg-black/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow">
                   <Lock className="w-3 h-3" />
                 </div>
               )}
@@ -438,7 +437,7 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
               transformOrigin: 'center center',
               pointerEvents: 'none'
             }}
-            className="border-2 border-cyan-400 rounded-sm"
+            className="border-2 border-neutral-950 rounded-xs"
           >
             {/* Rotate Arm & Handle (Top Center) */}
             <div 
@@ -450,10 +449,10 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
                 pointerEvents: 'auto'
               }}
               onPointerDown={(e) => handleHandlePointerDown(e, 'rotate')}
-              className="w-5 h-5 rounded-full bg-white border-2 border-cyan-500 shadow-md flex items-center justify-center cursor-grab hover:scale-125 transition-transform"
+              className="w-5 h-5 rounded-full bg-white border-2 border-neutral-950 shadow-md flex items-center justify-center cursor-grab hover:scale-125 transition-transform"
               title="Rotar Objeto (Shift para ángulos fijos)"
             >
-              <RotateCw className="w-2.5 h-2.5 text-cyan-600" />
+              <RotateCw className="w-2.5 h-2.5 text-black" />
             </div>
             <div 
               style={{
@@ -463,48 +462,48 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
                 transform: 'translateX(-50%)',
                 width: '1px',
                 height: '14px',
-                backgroundColor: '#06B6D4'
+                backgroundColor: '#000000'
               }} 
             />
 
             {/* Corner Resize Handles */}
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-nw')}
-              className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-cyan-500 rounded-sm shadow cursor-nwse-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-neutral-950 rounded-xs shadow-md cursor-nwse-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-ne')}
-              className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-cyan-500 rounded-sm shadow cursor-nesw-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-neutral-950 rounded-xs shadow-md cursor-nesw-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-se')}
-              className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-cyan-500 rounded-sm shadow cursor-nwse-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-neutral-950 rounded-xs shadow-md cursor-nwse-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-sw')}
-              className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-cyan-500 rounded-sm shadow cursor-nesw-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-neutral-950 rounded-xs shadow-md cursor-nesw-resize pointer-events-auto hover:scale-125 transition-transform"
             />
 
             {/* Side Edge Resize Handles */}
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-n')}
-              className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-2.5 bg-white border border-cyan-500 rounded-sm shadow cursor-ns-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-2.5 bg-white border border-neutral-950 rounded-xs shadow-md cursor-ns-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-s')}
-              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-2.5 bg-white border border-cyan-500 rounded-sm shadow cursor-ns-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-2.5 bg-white border border-neutral-950 rounded-xs shadow-md cursor-ns-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-w')}
-              className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-2.5 h-3.5 bg-white border border-cyan-500 rounded-sm shadow cursor-ew-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-2.5 h-3.5 bg-white border border-neutral-950 rounded-xs shadow-md cursor-ew-resize pointer-events-auto hover:scale-125 transition-transform"
             />
             <div
               onPointerDown={(e) => handleHandlePointerDown(e, 'resize-e')}
-              className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-2.5 h-3.5 bg-white border border-cyan-500 rounded-sm shadow cursor-ew-resize pointer-events-auto hover:scale-125 transition-transform"
+              className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-2.5 h-3.5 bg-white border border-neutral-950 rounded-xs shadow-md cursor-ew-resize pointer-events-auto hover:scale-125 transition-transform"
             />
 
             {/* Coordinates Floating Badge */}
-            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-neutral-900/90 border border-neutral-700 text-[10px] font-mono text-cyan-300 font-bold whitespace-nowrap shadow-xl">
+            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-neutral-900 text-white text-[10px] font-mono font-bold whitespace-nowrap shadow-xl">
               X: {selectedElement.x} · Y: {selectedElement.y} · {selectedElement.width}×{selectedElement.height}px {selectedElement.rotation ? `· ${selectedElement.rotation}°` : ''}
             </div>
           </div>

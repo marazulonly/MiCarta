@@ -128,7 +128,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
   // Dynamic background resolution
   let customBgStyle: React.CSSProperties = brandingBg
     ? { backgroundColor: brandingBg, backgroundImage: 'none' }
-    : { background: 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
+    : { backgroundImage: 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
 
   if (!brandingBg) {
     if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgType) {
@@ -141,7 +141,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
       } else if (accessSettings.deliveryBgType === 'color') {
         customBgStyle = { backgroundColor: accessSettings.deliveryBgValue || '#0A0A0A' };
       } else if (accessSettings.deliveryBgType === 'gradient') {
-        customBgStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #0d362b 0%, #150820 100%)' };
+        customBgStyle = { backgroundImage: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #0d362b 0%, #150820 100%)' };
       }
     } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
       if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
@@ -153,7 +153,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
       } else if (accessSettings.presentialBgType === 'color') {
         customBgStyle = { backgroundColor: accessSettings.presentialBgValue || '#051813' };
       } else if (accessSettings.presentialBgType === 'gradient') {
-        customBgStyle = { background: accessSettings.presentialBgValue || 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
+        customBgStyle = { backgroundImage: accessSettings.presentialBgValue || 'radial-gradient(ellipse at 50% 0%, #0d362b 0%, #061c16 45%, #03100c 100%)' };
       }
     }
   }
@@ -651,7 +651,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
 
                   const btnStyle: React.CSSProperties = customButtonColor 
                     ? { backgroundColor: customButtonColor, color: customButtonTextColor, backgroundImage: 'none' } 
-                    : { background: 'linear-gradient(to right, #e7cb82, #b88e3d)', color: '#071d17' };
+                    : { backgroundImage: 'linear-gradient(to right, #e7cb82, #b88e3d)', color: '#071d17' };
 
                   return (
                     <div key={item.id} className="relative group">

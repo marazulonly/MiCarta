@@ -9,6 +9,7 @@ import {
 import { INITIAL_MENU_TEMPLATES } from '../data/menuTemplatesData';
 import { CanvasElement, CanvasConfig, HistoryState } from './canvas-editor/types';
 import { 
+  createBlankCanvas,
   createInitialCanvasElements, 
   sanitizeCanvasElement, 
   extractBrandingFromCanvas, 
@@ -19,7 +20,21 @@ import { EditorTopBar } from './canvas-editor/EditorTopBar';
 import { ToolboxSidebar } from './canvas-editor/ToolboxSidebar';
 import { InteractiveCanvas } from './canvas-editor/InteractiveCanvas';
 import { PropertiesInspector } from './canvas-editor/PropertiesInspector';
-import { CheckCircle2, Sparkles, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  Sparkles, 
+  FolderOpen, 
+  FilePlus2, 
+  LayoutTemplate, 
+  X, 
+  AlertTriangle, 
+  Store, 
+  BookmarkPlus, 
+  Check, 
+  ArrowRight,
+  ShieldCheck,
+  Palette
+} from 'lucide-react';
 
 interface TemplateSplitEditorProps {
   restaurants: Restaurant[];
@@ -44,41 +59,39 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   onDeleteTemplate,
   onClose
 }) => {
-  // 1. Target Restaurant State
-  const [selectedRestId, setSelectedRestId] = useState<string>(
-    currentRestaurantId || restaurants[0]?.id || ''
-  );
-  const selectedRestaurant = (restaurants || []).find(r => r && r.id === selectedRestId) || restaurants[0];
+  // 1. Editor starts BLANK by default (No restaurant loaded initially)
+  const [loadedRestaurant, setLoadedRestaurant] = useState<Restaurant | null>(null);
+  const [isInitialBlankState, setIsInitialBlankState] = useState<boolean>(true);
 
-  // 2. Active Sample Item for dynamic preview
-  const restItems = (menuItems || []).filter(i => i && i.restaurantId === selectedRestaurant?.id);
-  const sampleItem: MenuItem = restItems[0] || {
+  // Active sample item for dynamic preview
+  const sampleItem: MenuItem = (loadedRestaurant 
+    ? menuItems.find(i => i && i.restaurantId === loadedRestaurant.id)
+    : menuItems[0]) || {
     id: 'sample-item-1',
-    restaurantId: selectedRestaurant?.id || '',
+    restaurantId: loadedRestaurant?.id || '',
     categoryId: 'cat-sample',
-    name: 'Lomo Saltado Jugoso al Wok',
-    description: 'Trozos de lomo fino salteados a fuego vivo con cebolla roja, tomate fresco, cilantro y toque de pisco. Acompañado de papas doradas y arroz con choclo.',
-    price: 48.00,
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    name: 'Causa Acevichada Especial',
+    description: 'Papa amarilla con ají amarillo, atún acevichado y palta fuerte.',
+    price: 26.00,
+    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
     isAvailable: true,
     isPopular: true,
-    prepTimeMinutes: 20,
+    prepTimeMinutes: 15,
     allergens: [],
-    tags: ['Especialidad', 'Carne'],
+    tags: ['Especialidad', 'Entrada'],
     availableAddons: [
       { id: 'add-1', name: 'Porción de Arroz', price: 6.00 },
-      { id: 'add-2', name: 'Papas Nativas', price: 8.00 },
-      { id: 'add-3', name: 'Huevo Frito', price: 3.50 }
+      { id: 'add-2', name: 'Papas Nativas', price: 8.00 }
     ],
-    suggestedObservations: ['Término medio', 'Sin cebolla', 'Poco picante', 'Salsa aparte']
+    suggestedObservations: ['Poco picante', 'Salsa aparte']
   };
 
-  // 3. Canvas Elements & Config State
-  const initialData = createInitialCanvasElements(selectedRestaurant, selectedRestaurant?.branding, sampleItem);
-  const [elements, setElements] = useState<CanvasElement[]>(initialData.elements);
-  const [config, setConfig] = useState<CanvasConfig>(initialData.config);
+  // 2. Canvas Elements & Config State (Start blank)
+  const initialBlank = createBlankCanvas();
+  const [elements, setElements] = useState<CanvasElement[]>(initialBlank.elements);
+  const [config, setConfig] = useState<CanvasConfig>(initialBlank.config);
 
-  // 4. Selection & Viewport State
+  // 3. Selection & Viewport State
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState<number>(0.65);
@@ -89,9 +102,17 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [clipboard, setClipboard] = useState<CanvasElement | null>(null);
 
-  // 5. Undo / Redo History Stack
+  // Modals
+  const [isLoadMenuModalOpen, setIsLoadMenuModalOpen] = useState<boolean>(false);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState<boolean>(false);
+  const [selectedRestaurantToApply, setSelectedRestaurantToApply] = useState<string>('');
+  const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState<boolean>(false);
+  const [newTemplateName, setNewTemplateName] = useState<string>('Nueva Plantilla Personalizada');
+  const [newTemplateDesc, setNewTemplateDesc] = useState<string>('Diseño creado desde el editor gráfico');
+
+  // 4. Undo / Redo History Stack
   const [history, setHistory] = useState<HistoryState[]>([
-    { elements: initialData.elements, config: initialData.config, selectedId: null }
+    { elements: initialBlank.elements, config: initialBlank.config, selectedId: null }
   ]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
@@ -100,19 +121,6 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   }, []);
-
-  // Sync canvas when restaurant selection changes
-  useEffect(() => {
-    if (selectedRestaurant) {
-      const fresh = createInitialCanvasElements(selectedRestaurant, selectedRestaurant.branding, sampleItem);
-      setElements(fresh.elements);
-      setConfig(fresh.config);
-      setSelectedId(null);
-      setSelectedIds([]);
-      setHistory([{ elements: fresh.elements, config: fresh.config, selectedId: null }]);
-      setHistoryIndex(0);
-    }
-  }, [selectedRestId]);
 
   // Commit state to history stack
   const commitHistory = useCallback(() => {
@@ -173,10 +181,10 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
   // Add a new element to canvas
   const handleAddElement = useCallback((partial: Partial<CanvasElement>) => {
+    setIsInitialBlankState(false);
     const nextZIndex = elements.length > 0 ? Math.max(...elements.map(e => e.zIndex)) + 1 : 1;
     const newId = `elem-${partial.type || 'custom'}-${Date.now()}`;
     
-    // Position near center of canvas with slight random offset
     const defaultX = Math.round((config.width - (partial.width || 200)) / 2 + (Math.random() * 40 - 20));
     const defaultY = Math.round((config.height - (partial.height || 100)) / 2 + (Math.random() * 40 - 20));
 
@@ -197,7 +205,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       fontSize: partial.fontSize || 16,
       fontFamily: partial.fontFamily || "'Plus Jakarta Sans', sans-serif",
       fontWeight: partial.fontWeight || 600,
-      textColor: partial.textColor || '#FFFFFF',
+      textColor: partial.textColor || '#111827',
       backgroundColor: partial.backgroundColor,
       borderRadius: partial.borderRadius,
       borderWidth: partial.borderWidth,
@@ -265,7 +273,6 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
         sorted.splice(prevIdx, 0, item);
       }
 
-      // Re-assign continuous zIndexes
       return sorted.map((el, i) => ({ ...el, zIndex: i }));
     });
     commitHistory();
@@ -291,8 +298,52 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     commitHistory();
   }, [selectedId, elements, config, handleUpdateElement, commitHistory]);
 
+  // 1. CARGAR CARTA (Carga temporal de una carta existente con fidelidad 1:1)
+  const handleLoadRestaurantMenu = useCallback((restaurant: Restaurant) => {
+    const itemForRest = menuItems.find(i => i.restaurantId === restaurant.id) || sampleItem;
+    const loadedData = createInitialCanvasElements(
+      restaurant, 
+      restaurant.branding, 
+      itemForRest,
+      menuItems,
+      categories
+    );
+    
+    setLoadedRestaurant(restaurant);
+    setSelectedRestaurantToApply(restaurant.id);
+    setElements(loadedData.elements);
+    setConfig(loadedData.config);
+    setSelectedId(null);
+    setSelectedIds([]);
+    setIsInitialBlankState(false);
+    setIsLoadMenuModalOpen(false);
+
+    setHistory([{ elements: loadedData.elements, config: loadedData.config, selectedId: null }]);
+    setHistoryIndex(0);
+
+    showToast(`✓ Carta de "${restaurant.name}" importada con fidelidad 1:1. Modifica el diseño y haz clic en "Aplicar en carta" para guardar.`);
+  }, [menuItems, categories, sampleItem, showToast]);
+
+  // 2. CREAR LIENZO EN BLANCO
+  const handleStartBlankCanvas = useCallback(() => {
+    const blank = createBlankCanvas();
+    setLoadedRestaurant(null);
+    setSelectedRestaurantToApply('');
+    setElements(blank.elements);
+    setConfig(blank.config);
+    setSelectedId(null);
+    setSelectedIds([]);
+    setIsInitialBlankState(false);
+
+    setHistory([{ elements: blank.elements, config: blank.config, selectedId: null }]);
+    setHistoryIndex(0);
+
+    showToast(`✓ Lienzo en blanco listo para diseñar.`);
+  }, [showToast]);
+
   // Apply template preset
   const handleApplyTemplatePreset = useCallback((template: MenuTemplate) => {
+    setIsInitialBlankState(false);
     const primary = template.primaryColor || '#D4AF37';
     const darkBg = template.darkBgColor || '#071A14';
     const cardBg = template.cardBgColor || '#141E2E';
@@ -322,6 +373,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
   // Apply color palette
   const handleApplyColorPalette = useCallback((palette: any) => {
+    setIsInitialBlankState(false);
     setConfig(prev => ({ ...prev, backgroundColor: palette.darkBgColor }));
 
     setElements(prev => prev.map(el => {
@@ -354,19 +406,16 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
 
-      // Undo: Ctrl+Z
       if (isCtrlOrCmd && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         handleUndo();
         return;
       }
-      // Redo: Ctrl+Shift+Z or Ctrl+Y
       if ((isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'z') || (isCtrlOrCmd && e.key.toLowerCase() === 'y')) {
         e.preventDefault();
         handleRedo();
         return;
       }
-      // Copy: Ctrl+C
       if (isCtrlOrCmd && e.key.toLowerCase() === 'c' && selectedId) {
         const target = elements.find(el => el.id === selectedId);
         if (target) {
@@ -375,26 +424,22 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
         }
         return;
       }
-      // Paste: Ctrl+V
       if (isCtrlOrCmd && e.key.toLowerCase() === 'v' && clipboard) {
         e.preventDefault();
         handleDuplicateElement(clipboard);
         return;
       }
-      // Duplicate: Ctrl+D
       if (isCtrlOrCmd && e.key.toLowerCase() === 'd' && selectedId) {
         e.preventDefault();
         const target = elements.find(el => el.id === selectedId);
         if (target) handleDuplicateElement(target);
         return;
       }
-      // Delete: Delete or Backspace
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault();
         handleDeleteElement(selectedId);
         return;
       }
-      // Deselect: Escape
       if (e.key === 'Escape') {
         setSelectedId(null);
         return;
@@ -405,73 +450,99 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, elements, clipboard, handleUndo, handleRedo, handleDuplicateElement, handleDeleteElement, showToast]);
 
-  // SAVE TO RESTAURANT
-  const handleSaveToRestaurant = useCallback(() => {
-    if (!selectedRestaurant) return;
+  // 3. APLICAR EN CARTA (Guarda en la carta seleccionada con confirmación)
+  const handleConfirmApplyToRestaurant = useCallback(() => {
+    const targetRestId = selectedRestaurantToApply || loadedRestaurant?.id || restaurants[0]?.id;
+    const targetRest = restaurants.find(r => r.id === targetRestId);
+
+    if (!targetRest) {
+      showToast(`⚠️ Selecciona un restaurante válido para aplicar el diseño.`);
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      const updatedBranding = extractBrandingFromCanvas(elements, config, selectedRestaurant.branding);
-      const safeLogo = selectedRestaurant.branding?.headerLogoUrl || selectedRestaurant.logoUrl;
+      const updatedBranding = extractBrandingFromCanvas(elements, config, targetRest.branding);
+      const safeLogo = targetRest.branding?.headerLogoUrl || targetRest.logoUrl;
 
       const updatedRestaurant: Restaurant = {
-        ...selectedRestaurant,
+        ...targetRest,
         logoUrl: safeLogo,
         branding: updatedBranding
       };
 
       onUpdateRestaurant(updatedRestaurant);
-      showToast(`✓ Carta y diseño gráfico guardados exitosamente en "${selectedRestaurant.name}".`);
+      setLoadedRestaurant(updatedRestaurant);
+      setIsApplyModalOpen(false);
+      showToast(`✓ Diseño gráfico aplicado exitosamente a la carta de "${targetRest.name}".`);
     } catch (err) {
-      console.error('Error saving canvas template:', err);
-      showToast(`⚠️ Error al guardar. Verifica los valores e intenta nuevamente.`);
+      console.error('Error applying canvas template to restaurant:', err);
+      showToast(`⚠️ Ocurrió un error al aplicar. Intenta nuevamente.`);
     } finally {
       setIsSaving(false);
     }
-  }, [selectedRestaurant, elements, config, onUpdateRestaurant, showToast]);
+  }, [selectedRestaurantToApply, loadedRestaurant, restaurants, elements, config, onUpdateRestaurant, showToast]);
 
-  // Apply to ALL restaurants
-  const handleApplyToAllRestaurants = useCallback(() => {
-    setIsSaving(true);
-    try {
-      const updatedBranding = extractBrandingFromCanvas(elements, config);
-      restaurants.forEach(r => {
-        const updatedRest: Restaurant = {
-          ...r,
-          branding: {
-            ...r.branding,
-            ...updatedBranding,
-            headerLogoUrl: r.branding?.headerLogoUrl || r.logoUrl
-          }
-        };
-        onUpdateRestaurant(updatedRest);
-      });
-      showToast(`✓ Diseño gráfico aplicado a todas las sedes (${restaurants.length}).`);
-    } catch (err) {
-      console.error('Error applying to all restaurants:', err);
-    } finally {
-      setIsSaving(false);
+  // 4. GUARDAR COMO PLANTILLA
+  const handleSaveAsTemplate = useCallback(() => {
+    if (!newTemplateName.trim()) {
+      showToast(`⚠️ Ingresa un nombre para la plantilla.`);
+      return;
     }
-  }, [elements, config, restaurants, onUpdateRestaurant, showToast]);
+
+    const primaryElem = elements.find(e => e.type === 'order_button' || e.type === 'shape_badge' || e.type === 'dish_price');
+    const bgElem = elements.find(e => e.type === 'background');
+
+    const createdTemplate: MenuTemplate = {
+      id: `custom-tpl-${Date.now()}`,
+      name: newTemplateName.trim(),
+      description: newTemplateDesc.trim() || 'Plantilla personalizada guardada desde el editor visual',
+      category: 'MODERN',
+      themeStyle: 'custom',
+      layoutMode: 'grid',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+      badge: 'Personalizado',
+      tags: ['Personalizado', 'Canvas'],
+      isCustomizable: true,
+      primaryColor: primaryElem?.backgroundColor || config.backgroundColor || '#D4AF37',
+      darkBgColor: bgElem?.backgroundColor || config.backgroundColor || '#071A14',
+      cardBgColor: '#141E2E',
+      textColor: '#FFFFFF',
+      fontDisplay: "'Cinzel', serif"
+    };
+
+    setIsSaveTemplateModalOpen(false);
+    showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
+  }, [newTemplateName, newTemplateDesc, elements, config, showToast]);
 
   const selectedElement = elements.find(e => e.id === selectedId) || null;
 
   return (
-    <div className={`fixed inset-0 z-50 bg-[#070A0F] text-neutral-200 flex flex-col overflow-hidden font-sans ${isFullscreen ? 'p-0' : ''}`}>
+    <div className={`fixed inset-0 z-50 bg-neutral-100 text-neutral-900 flex flex-col overflow-hidden font-sans ${isFullscreen ? 'p-0' : ''}`}>
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[99999] px-4 py-2.5 rounded-2xl bg-neutral-900/95 border border-cyan-400 text-cyan-300 text-xs font-mono font-bold shadow-2xl backdrop-blur-md flex items-center gap-2 animate-bounce">
-          <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[99999] px-4 py-2.5 rounded-2xl bg-neutral-900 text-white text-xs font-mono font-bold shadow-2xl flex items-center gap-2 animate-bounce border border-neutral-700">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* 1. TOP CONTROLS BAR */}
       <EditorTopBar
-        restaurants={restaurants}
-        selectedRestId={selectedRestId}
-        onSelectRestaurant={setSelectedRestId}
+        loadedRestaurant={loadedRestaurant}
+        onOpenLoadMenuModal={() => setIsLoadMenuModalOpen(true)}
+        onOpenApplyModal={() => {
+          if (loadedRestaurant) {
+            setSelectedRestaurantToApply(loadedRestaurant.id);
+          } else if (restaurants[0]) {
+            setSelectedRestaurantToApply(restaurants[0].id);
+          }
+          setIsApplyModalOpen(true);
+        }}
+        onOpenSaveTemplateModal={() => setIsSaveTemplateModalOpen(true)}
+        onNewBlankCanvas={handleStartBlankCanvas}
         canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
         onUndo={handleUndo}
@@ -489,16 +560,14 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
         onTogglePreview={() => setIsPreviewMode(!isPreviewMode)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
-        onSave={handleSaveToRestaurant}
-        onApplyToAll={handleApplyToAllRestaurants}
         onClose={onClose}
         isSaving={isSaving}
       />
 
-      {/* 2. MAIN WORKSPACE (Toolbox Sidebar + Interactive Canvas + Properties Inspector) */}
+      {/* 2. MAIN WORKSPACE */}
       <div className="flex-1 flex overflow-hidden relative">
         
-        {/* Left: Toolbox & Layers Sidebar (Hidden in Preview Mode) */}
+        {/* Left: Toolbox & Layers Sidebar */}
         {!isPreviewMode && (
           <ToolboxSidebar
             elements={elements}
@@ -516,7 +585,56 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
         )}
 
         {/* Center: Interactive Graphic Canvas Workspace */}
-        <main className="flex-1 h-full relative overflow-hidden flex items-center justify-center">
+        <main className="flex-1 h-full relative overflow-hidden flex items-center justify-center bg-[#E5E7EB]">
+          
+          {/* Initial Blank Start State Overlay */}
+          {isInitialBlankState && elements.length <= 1 && (
+            <div className="absolute z-20 max-w-lg w-[90%] p-6 sm:p-8 bg-white/95 backdrop-blur-md rounded-3xl border border-neutral-300 shadow-2xl text-center flex flex-col items-center">
+              <div className="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center mb-4 text-neutral-800 shadow-xs">
+                <LayoutTemplate className="w-7 h-7 text-neutral-900" />
+              </div>
+
+              <h2 className="text-lg sm:text-xl font-black text-neutral-950 tracking-tight">
+                Comienza un nuevo diseño
+              </h2>
+              <p className="text-xs text-neutral-600 mt-1.5 mb-6 max-w-sm">
+                Diseña tu carta digital desde un lienzo en blanco, carga una carta existente como base o elige una plantilla prediseñada.
+              </p>
+
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => setIsLoadMenuModalOpen(true)}
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white text-left transition cursor-pointer shadow-md group"
+                >
+                  <div className="p-2.5 rounded-xl bg-white/10 group-hover:bg-white/20 transition">
+                    <FolderOpen className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-white">Cargar carta</span>
+                    <span className="block text-[10px] text-neutral-300">Usa una carta existente como base</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleStartBlankCanvas}
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 text-left border border-neutral-300 transition cursor-pointer shadow-2xs group"
+                >
+                  <div className="p-2.5 rounded-xl bg-neutral-100 group-hover:bg-neutral-200 transition">
+                    <FilePlus2 className="w-5 h-5 text-neutral-800" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-neutral-950">Lienzo en blanco</span>
+                    <span className="block text-[10px] text-neutral-500">Diseña con objetos desde cero</span>
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-neutral-400">
+                La carta original no se modificará hasta que hagas clic en <strong>"Aplicar en carta"</strong>.
+              </p>
+            </div>
+          )}
+
           <InteractiveCanvas
             elements={elements}
             config={config}
@@ -525,7 +643,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             zoom={zoom}
             pan={pan}
             isPreviewMode={isPreviewMode}
-            restaurant={selectedRestaurant}
+            restaurant={loadedRestaurant || undefined}
             sampleItem={sampleItem}
             onSelectElement={setSelectedId}
             onUpdateElement={handleUpdateElement}
@@ -534,12 +652,12 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
           />
         </main>
 
-        {/* Right: Contextual Properties Inspector (Hidden in Preview Mode) */}
+        {/* Right: Contextual Properties Inspector */}
         {!isPreviewMode && (
           <PropertiesInspector
             selectedElement={selectedElement}
             config={config}
-            restaurant={selectedRestaurant}
+            restaurant={loadedRestaurant || undefined}
             onUpdateElement={handleUpdateElement}
             onUpdateConfig={handleUpdateConfig}
             onDuplicateElement={handleDuplicateElement}
@@ -549,6 +667,239 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
           />
         )}
       </div>
+
+      {/* ================= MODALS ================= */}
+
+      {/* MODAL 1: CARGAR CARTA EXISTENTE */}
+      {isLoadMenuModalOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                  <FolderOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-neutral-950">Cargar carta en el editor</h3>
+                  <p className="text-xs text-neutral-500">Selecciona una carta existente para cargar su diseño como referencia.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsLoadMenuModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Notice */}
+            <div className="mx-5 mt-4 p-3 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>Edición temporal:</strong> Al cargar una carta, se copiará su diseño visual al editor. La carta original permanecerá intacta hasta que pulses explícitamente <strong>"Aplicar en carta"</strong>.
+              </span>
+            </div>
+
+            {/* Restaurant List */}
+            <div className="p-5 space-y-2.5 max-h-[360px] overflow-y-auto">
+              {restaurants.length === 0 ? (
+                <p className="text-center text-xs text-neutral-500 py-6">No hay restaurantes registrados en el sistema.</p>
+              ) : (
+                restaurants.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleLoadRestaurantMenu(r)}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 transition cursor-pointer text-left group"
+                  >
+                    <div className="flex items-center gap-3">
+                      {r.logoUrl ? (
+                        <img 
+                          src={r.logoUrl} 
+                          alt={r.name} 
+                          className="w-10 h-10 rounded-xl object-contain bg-white border border-neutral-200 p-0.5 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
+                          <Store className="w-5 h-5 text-neutral-500" />
+                        </div>
+                      )}
+                      <div>
+                        <span className="block text-xs font-bold text-neutral-900 group-hover:text-black">
+                          {r.name}
+                        </span>
+                        <span className="block text-[10px] text-neutral-500">
+                          {r.cuisineType || 'Restaurante'} • Moneda: {r.currency || 'S/'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-xs font-bold text-neutral-600 group-hover:text-black">
+                      <span>Cargar</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex justify-end">
+              <button
+                onClick={() => setIsLoadMenuModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: APLICAR EN CARTA (CONFIRMACIÓN) */}
+      {isApplyModalOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-neutral-950">Aplicar diseño en carta</h3>
+                  <p className="text-xs text-neutral-500">Confirma la aplicación del diseño actual sobre la carta digital.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsApplyModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {/* Target Restaurant Selector */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+                  Restaurante destino:
+                </label>
+                <select
+                  value={selectedRestaurantToApply}
+                  onChange={(e) => setSelectedRestaurantToApply(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-bold text-neutral-900 focus:outline-neutral-950 cursor-pointer"
+                >
+                  {restaurants.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} {loadedRestaurant?.id === r.id ? '(Carta abierta en el editor)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Guarantees / Safety list */}
+              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2.5 text-xs">
+                <div className="flex items-start gap-2 text-neutral-700">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Diseño gráfico actualizado:</strong> Se aplicarán fondos, colores, tipografías, tarjetas y elementos visuales.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-neutral-700">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Datos comerciales intactos:</strong> Los nombres de platos, precios, categorías, adicionales, observaciones y pedidos se mantendrán 100% seguros y sin modificaciones.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-end gap-2.5">
+              <button
+                onClick={() => setIsApplyModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmApplyToRestaurant}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md active:scale-95 disabled:opacity-50"
+              >
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>{isSaving ? 'Aplicando cambios...' : 'Confirmar y aplicar en carta'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: GUARDAR PLANTILLA */}
+      {isSaveTemplateModalOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                  <BookmarkPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-neutral-950">Guardar como Plantilla</h3>
+                  <p className="text-xs text-neutral-500">Guarda este diseño para reutilizarlo en cualquier carta.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSaveTemplateModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Nombre de la plantilla:</label>
+                <input
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-medium text-neutral-900 focus:outline-neutral-950"
+                  placeholder="Ej: Elegancia Marina Oscura"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Descripción:</label>
+                <textarea
+                  value={newTemplateDesc}
+                  onChange={(e) => setNewTemplateDesc(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-300 text-xs font-medium text-neutral-900 focus:outline-neutral-950 resize-none"
+                  placeholder="Describe el estilo y temática de esta plantilla..."
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-end gap-2.5">
+              <button
+                onClick={() => setIsSaveTemplateModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveAsTemplate}
+                className="px-5 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md"
+              >
+                Guardar Plantilla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

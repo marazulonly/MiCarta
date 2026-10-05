@@ -281,6 +281,7 @@ export interface Restaurant {
   totalTablesCount?: number;
   cuisine?: string;
   coverImageUrl?: string;
+  currency?: string;
 }
 
 export interface User {
@@ -351,6 +352,7 @@ export interface Order {
   total: number;
   paymentStatus: PaymentStatus;
   createdAt: string;
+  updatedAt?: string;
   estimatedMinutes: number;
   waiterName?: string;
   waiterId?: string;

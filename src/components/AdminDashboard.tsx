@@ -215,6 +215,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       templateId: selectedTmplId,
       ownerId: selectedOwnerId,
       branding: templateBranding,
+      metrics: {
+        dailyRevenue: 0,
+        activeOrders: 0,
+        avgTicket: 0,
+        customerRating: 5.0,
+        totalTables: 10,
+        occupancyRate: 0
+      },
       tables: [],
       shifts: [],
       weeklySchedule: []

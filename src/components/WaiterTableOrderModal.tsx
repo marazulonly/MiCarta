@@ -427,7 +427,7 @@ export const WaiterTableOrderModal: React.FC<WaiterTableOrderModalProps> = ({
           isOpen={!!selectedItemForCustomization}
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
-          onAddToCart={(item, qty, units) => {
+          onConfirm={(item, qty, units) => {
             handleAddItemToCart(item, qty, units);
             setSelectedItemForCustomization(null);
           }}

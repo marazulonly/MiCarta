@@ -118,7 +118,7 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
       } else if (accessSettings.deliveryBgType === 'color') {
         chalkboardStyle = { backgroundColor: accessSettings.deliveryBgValue || '#141716' };
       } else if (accessSettings.deliveryBgType === 'gradient') {
-        chalkboardStyle = { background: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #1f1a14 0%, #100e0b 100%)' };
+        chalkboardStyle = { backgroundImage: accessSettings.deliveryBgValue || 'linear-gradient(180deg, #1f1a14 0%, #100e0b 100%)' };
       }
     } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgType) {
       if (accessSettings.presentialBgType === 'image' && accessSettings.presentialBgValue) {
@@ -130,12 +130,16 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
       } else if (accessSettings.presentialBgType === 'color') {
         chalkboardStyle = { backgroundColor: accessSettings.presentialBgValue || '#141716' };
       } else if (accessSettings.presentialBgType === 'gradient') {
-        chalkboardStyle = { background: accessSettings.presentialBgValue || 'linear-gradient(180deg, #1c1917 0%, #0c0a09 100%)' };
+        chalkboardStyle = { backgroundImage: accessSettings.presentialBgValue || 'linear-gradient(180deg, #1c1917 0%, #0c0a09 100%)' };
       }
     } else if (activeChannel === 'DELIVERY' && accessSettings?.deliveryBgValue) {
-      chalkboardStyle = { background: accessSettings.deliveryBgValue };
+      chalkboardStyle = accessSettings.deliveryBgValue.includes('gradient')
+        ? { backgroundImage: accessSettings.deliveryBgValue }
+        : { backgroundColor: accessSettings.deliveryBgValue };
     } else if (activeChannel === 'DINE_IN' && accessSettings?.presentialBgValue) {
-      chalkboardStyle = { background: accessSettings.presentialBgValue };
+      chalkboardStyle = accessSettings.presentialBgValue.includes('gradient')
+        ? { backgroundImage: accessSettings.presentialBgValue }
+        : { backgroundColor: accessSettings.presentialBgValue };
     }
   }
 

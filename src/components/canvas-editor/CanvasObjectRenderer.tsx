@@ -102,7 +102,8 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
     borderWidth: borderWidth ? `${borderWidth}px` : undefined,
     borderColor: borderColor || undefined,
     borderStyle: borderWidth ? borderStyle : undefined,
-    background: backgroundGradient || backgroundColor || undefined,
+    backgroundColor: backgroundColor || undefined,
+    backgroundImage: backgroundGradient || undefined,
     color: textColor,
     overflow: 'hidden',
     display: 'flex',
@@ -117,7 +118,7 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
           style={{
             ...containerStyle,
             backgroundColor: backgroundColor || '#0B0F17',
-            backgroundImage: resolvedImage ? `url("${resolvedImage}")` : undefined,
+            backgroundImage: resolvedImage ? `url("${resolvedImage}")` : (backgroundGradient || undefined),
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}

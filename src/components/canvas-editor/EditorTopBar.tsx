@@ -12,19 +12,20 @@ import {
   ShieldCheck, 
   Eye, 
   EyeOff, 
-  Save, 
-  Store, 
-  Layers, 
+  FolderOpen,
   Sparkles,
-  Download,
-  Share2
+  BookmarkPlus,
+  FilePlus2,
+  CheckCircle2
 } from 'lucide-react';
 import { Restaurant } from '../../types';
 
 interface EditorTopBarProps {
-  restaurants: Restaurant[];
-  selectedRestId: string;
-  onSelectRestaurant: (restId: string) => void;
+  loadedRestaurant: Restaurant | null;
+  onOpenLoadMenuModal: () => void;
+  onOpenApplyModal: () => void;
+  onOpenSaveTemplateModal: () => void;
+  onNewBlankCanvas: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -42,16 +43,16 @@ interface EditorTopBarProps {
   onTogglePreview: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
-  onSave: () => void;
-  onApplyToAll?: () => void;
   onClose?: () => void;
   isSaving?: boolean;
 }
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
-  restaurants,
-  selectedRestId,
-  onSelectRestaurant,
+  loadedRestaurant,
+  onOpenLoadMenuModal,
+  onOpenApplyModal,
+  onOpenSaveTemplateModal,
+  onNewBlankCanvas,
   canUndo,
   canRedo,
   onUndo,
@@ -69,67 +70,84 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onTogglePreview,
   isFullscreen,
   onToggleFullscreen,
-  onSave,
-  onApplyToAll,
   onClose,
   isSaving = false
 }) => {
-  const selectedRest = restaurants.find(r => r.id === selectedRestId) || restaurants[0];
-
   return (
-    <div className="h-16 px-3 sm:px-5 bg-[#0C1017] border-b border-neutral-800 flex items-center justify-between shrink-0 select-none z-30">
+    <header className="h-16 px-3 sm:px-5 bg-white border-b border-neutral-200 shadow-xs flex items-center justify-between shrink-0 select-none z-30 text-neutral-900">
       
-      {/* Left: Brand / Return & Restaurant Selector */}
-      <div className="flex items-center gap-3">
+      {/* Left: Brand / Return & Carta Status */}
+      <div className="flex items-center gap-2 sm:gap-3.5">
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 transition cursor-pointer"
-            title="Cerrar Editor"
+            className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-950 border border-neutral-300 transition cursor-pointer"
+            title="Cerrar editor"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
 
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-black font-black text-sm shadow-md">
-            M
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img 
+            src="/huevofrito.svg" 
+            alt="Micarta" 
+            className="w-7 h-7 object-contain shrink-0 border-0 shadow-none outline-none"
+          />
           <div>
-            <h1 className="text-xs font-bold text-white tracking-wide uppercase font-mono flex items-center gap-1.5">
-              <span>Studio Canvas</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">PRO</span>
-            </h1>
-            <p className="text-[10px] text-neutral-400">Editor Visual de Cartas Digitales</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-black tracking-tight text-neutral-950 uppercase">
+                Editor de Plantillas
+              </span>
+            </div>
+            
+            {/* Status Indicator */}
+            {loadedRestaurant ? (
+              <div className="flex items-center gap-1 text-[11px] text-amber-800 font-medium">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                  Carta: <strong className="text-neutral-900">{loadedRestaurant.name}</strong> (Borrador temporal)
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-[11px] text-neutral-500">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                <span>Lienzo nuevo / Sin carta cargada</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Restaurant Selector */}
-        <div className="flex items-center gap-1.5 bg-neutral-900/90 px-2.5 py-1.5 rounded-xl border border-neutral-800 hover:border-neutral-700 transition">
-          <Store className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <select
-            value={selectedRestId}
-            onChange={(e) => onSelectRestaurant(e.target.value)}
-            className="bg-transparent text-xs text-white font-semibold focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[200px] truncate"
-          >
-            {restaurants.map(r => (
-              <option key={r.id} value={r.id} className="bg-neutral-900 text-white">
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Action: Cargar Carta */}
+        <button
+          onClick={onOpenLoadMenuModal}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 hover:text-black border border-neutral-300 transition cursor-pointer text-xs font-bold shadow-2xs"
+          title="Cargar una carta existente como base de edición temporal"
+        >
+          <FolderOpen className="w-3.5 h-3.5 text-neutral-700" />
+          <span>Cargar carta</span>
+        </button>
+
+        {/* Action: Nuevo Lienzo */}
+        <button
+          onClick={onNewBlankCanvas}
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-black border border-neutral-200 transition cursor-pointer text-xs"
+          title="Comenzar un nuevo diseño en blanco"
+        >
+          <FilePlus2 className="w-3.5 h-3.5" />
+          <span>Lienzo nuevo</span>
+        </button>
       </div>
 
       {/* Center: Undo/Redo, Zoom & Viewport Tools */}
       <div className="flex items-center gap-1 sm:gap-2">
         {/* Undo / Redo */}
-        <div className="flex items-center bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+        <div className="flex items-center bg-neutral-100 p-1 rounded-xl border border-neutral-200">
           <button
             onClick={onUndo}
             disabled={!canUndo}
             className={`p-1.5 rounded-lg transition ${
-              canUndo ? 'text-neutral-200 hover:bg-neutral-800 cursor-pointer' : 'text-neutral-600 cursor-not-allowed'
+              canUndo ? 'text-neutral-800 hover:bg-white hover:shadow-xs cursor-pointer' : 'text-neutral-400 cursor-not-allowed'
             }`}
             title="Deshacer (Ctrl + Z)"
           >
@@ -139,7 +157,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             onClick={onRedo}
             disabled={!canRedo}
             className={`p-1.5 rounded-lg transition ${
-              canRedo ? 'text-neutral-200 hover:bg-neutral-800 cursor-pointer' : 'text-neutral-600 cursor-not-allowed'
+              canRedo ? 'text-neutral-800 hover:bg-white hover:shadow-xs cursor-pointer' : 'text-neutral-400 cursor-not-allowed'
             }`}
             title="Rehacer (Ctrl + Shift + Z)"
           >
@@ -148,10 +166,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
 
         {/* Zoom Controls */}
-        <div className="hidden md:flex items-center bg-neutral-900 p-1 rounded-xl border border-neutral-800 text-xs">
+        <div className="hidden md:flex items-center bg-neutral-100 p-1 rounded-xl border border-neutral-200 text-xs">
           <button
             onClick={() => onZoomChange(Math.max(0.25, zoom - 0.1))}
-            className="p-1.5 rounded-lg text-neutral-300 hover:bg-neutral-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-neutral-700 hover:bg-white hover:shadow-xs transition cursor-pointer"
             title="Reducir Zoom"
           >
             <ZoomOut className="w-3.5 h-3.5" />
@@ -159,7 +177,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
           <button
             onClick={onFitCanvas}
-            className="px-2 py-1 text-[11px] font-mono font-bold text-neutral-200 hover:text-white transition cursor-pointer"
+            className="px-2.5 py-1 text-[11px] font-mono font-bold text-neutral-800 hover:text-black transition cursor-pointer"
             title="Ajustar al área de trabajo"
           >
             {Math.round(zoom * 100)}%
@@ -167,7 +185,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
           <button
             onClick={() => onZoomChange(Math.min(2.5, zoom + 0.1))}
-            className="p-1.5 rounded-lg text-neutral-300 hover:bg-neutral-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-neutral-700 hover:bg-white hover:shadow-xs transition cursor-pointer"
             title="Aumentar Zoom"
           >
             <ZoomIn className="w-3.5 h-3.5" />
@@ -175,11 +193,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
 
         {/* Toggles: Grid, Magnet Snapping, Safety Margins */}
-        <div className="hidden lg:flex items-center bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+        <div className="hidden lg:flex items-center bg-neutral-100 p-1 rounded-xl border border-neutral-200">
           <button
             onClick={onToggleGrid}
             className={`p-1.5 rounded-lg transition cursor-pointer ${
-              showGrid ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'text-neutral-400 hover:text-white'
+              showGrid ? 'bg-white text-black border border-neutral-300 shadow-xs' : 'text-neutral-500 hover:text-black'
             }`}
             title="Mostrar / Ocultar Cuadrícula"
           >
@@ -188,7 +206,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             onClick={onToggleSnapGuides}
             className={`p-1.5 rounded-lg transition cursor-pointer ${
-              showSnapGuides ? 'bg-pink-500/20 text-pink-400 border border-pink-500/40' : 'text-neutral-400 hover:text-white'
+              showSnapGuides ? 'bg-white text-black border border-neutral-300 shadow-xs' : 'text-neutral-500 hover:text-black'
             }`}
             title="Guías Magnéticas de Alineación"
           >
@@ -197,7 +215,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             onClick={onToggleSafetyMargins}
             className={`p-1.5 rounded-lg transition cursor-pointer ${
-              showSafetyMargins ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'text-neutral-400 hover:text-white'
+              showSafetyMargins ? 'bg-white text-black border border-neutral-300 shadow-xs' : 'text-neutral-500 hover:text-black'
             }`}
             title="Márgenes de Seguridad Móvil"
           >
@@ -206,41 +224,53 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
       </div>
 
-      {/* Right: Preview Mode, Fullscreen & Save Actions */}
-      <div className="flex items-center gap-2">
+      {/* Right: Preview Mode, Guardar Plantilla & Aplicar en Carta */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Toggle Preview */}
         <button
           onClick={onTogglePreview}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+          className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer ${
             isPreviewMode 
-              ? 'bg-amber-400 text-black border-amber-300 shadow-md' 
-              : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-700'
+              ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm' 
+              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
           }`}
           title="Alternar entre modo Editor y Vista Previa limpia"
         >
-          {isPreviewMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-amber-400" />}
-          <span>{isPreviewMode ? 'Modo Editor' : 'Vista Previa'}</span>
+          {isPreviewMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          <span>{isPreviewMode ? 'Editor' : 'Vista Previa'}</span>
+        </button>
+
+        {/* Guardar como Plantilla */}
+        <button
+          onClick={onOpenSaveTemplateModal}
+          className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 hover:text-black border border-neutral-300 text-xs font-bold transition cursor-pointer"
+          title="Guardar este diseño como una plantilla reutilizable"
+        >
+          <BookmarkPlus className="w-3.5 h-3.5 text-neutral-600" />
+          <span>Guardar Plantilla</span>
         </button>
 
         {/* Fullscreen */}
         <button
           onClick={onToggleFullscreen}
-          className="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 transition cursor-pointer hidden sm:block"
+          className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-black border border-neutral-300 transition cursor-pointer hidden xl:block"
           title={isFullscreen ? 'Salir de Pantalla Completa' : 'Pantalla Completa'}
         >
           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Save Button */}
+        {/* Main CTA: APLICAR EN CARTA */}
         <button
-          onClick={onSave}
+          onClick={onOpenApplyModal}
           disabled={isSaving}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold transition cursor-pointer shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md active:scale-95 disabled:opacity-50"
         >
-          <Save className="w-3.5 h-3.5" />
-          <span>{isSaving ? 'Guardando...' : `Guardar en ${selectedRest?.name || 'Carta'}`}</span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <span>
+            {loadedRestaurant ? `Aplicar en ${loadedRestaurant.name}` : 'Aplicar en carta'}
+          </span>
         </button>
       </div>
-    </div>
+    </header>
   );
 };
