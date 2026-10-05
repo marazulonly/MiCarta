@@ -1654,19 +1654,17 @@
       "lastActive": "En línea"
     },
     {
-      "id": "u-1",
-      "name": "Carlos Mendoza",
-      "email": "carlos.mendoza@micarta.io",
+      "id": "u-ever-aguilar",
+      "name": "Ever Aguilar",
+      "email": "ever.aguilar@micarta.pe",
       "dni": "10203040",
       "password": "12345678",
       "role": "ADMIN",
-      "phone": "+51 980 123 456",
+      "phone": "+51 980 102 030",
       "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80",
-      "restaurantIds": [
-        "all"
-      ],
+      "restaurantIds": [],
       "status": "active",
-      "lastActive": "Hace 3 min"
+      "lastActive": "En línea"
     },
     {
       "id": "u-owner-stephanie",
