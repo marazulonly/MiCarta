@@ -278,7 +278,7 @@ function getInitialStorageState() {
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && (!Array.isArray(u.restaurantIds) || !u.restaurantIds.every(id => isMockRest(id))));
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && (!Array.isArray(u.restaurantIds) || u.restaurantIds.length === 0 || !u.restaurantIds.every(id => isMockRest(id))));
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -526,7 +526,7 @@ export default function App() {
         ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id && !isMockRest(r.id, r.name, r.slug)))
         : [];
       const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni && (!Array.isArray(u.restaurantIds) || !u.restaurantIds.every(id => isMockRest(id))))
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni && (!Array.isArray(u.restaurantIds) || u.restaurantIds.length === 0 || !u.restaurantIds.every(id => isMockRest(id))))
         : [];
       const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
         ? cloudData.categories.filter((c: any) => c && c.id && c.name && (!c.restaurantId || !isMockRest(c.restaurantId)))

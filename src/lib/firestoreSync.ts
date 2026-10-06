@@ -187,7 +187,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
         users.push(data);
       } else if (data && data.id) {
         // Only include if they don't belong solely to mock restaurants
-        const hasOnlyMockRests = Array.isArray(data.restaurantIds) && data.restaurantIds.every(id => isMockRest(id));
+        const hasOnlyMockRests = Array.isArray(data.restaurantIds) && data.restaurantIds.length > 0 && data.restaurantIds.every(id => isMockRest(id));
         if (!hasOnlyMockRests) {
           users.push(data);
         }
