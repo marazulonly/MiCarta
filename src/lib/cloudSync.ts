@@ -1,4 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
+import { saveToFirestore } from './firestoreSync';
 
 export interface CloudMenuPayload {
   restaurants: Restaurant[];
@@ -498,6 +499,11 @@ export async function saveFullCloudMenu(payload: {
 
   // 2. Secondary: Mirror to Upstash in background
   saveToUpstashDirectly(fullPayload).catch(() => {});
+
+  // 3. Mirror to Firestore Database
+  saveToFirestore(fullPayload).catch((err) => {
+    console.warn('[Firestore] Sync mirror notice:', err);
+  });
 
   // 3. Atomically persist lightweight individual snapshots per restaurant in Upstash (~2-4 KB each)
   try {

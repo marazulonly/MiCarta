@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to validate string length and sanitize
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Restaurants
+    match /restaurants/{restaurantId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Items
+    match /items/{itemId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Snapshots and system state
+    match /snapshots/{snapshotId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /system/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

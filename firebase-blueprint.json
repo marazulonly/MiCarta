@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Restaurant profile, branding, and configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "tagline": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "coverImageUrl": { "type": "string" },
+        "templateId": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user account and profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "dni": { "type": "string" },
+        "password": { "type": "string" },
+        "role": { "type": "string" },
+        "phone": { "type": "string" },
+        "avatar": { "type": "string" }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "MenuCategory": {
+      "title": "MenuCategory",
+      "description": "Menu category for dishes in a restaurant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "name": { "type": "string" },
+        "sortOrder": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "restaurantId", "name"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Dish or product in a menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "isAvailable": { "type": "boolean" }
+      },
+      "required": ["id", "restaurantId", "name", "price"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Order or comanda ticket for dine-in or delivery",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "tableNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "totalAmount": { "type": "number" }
+      },
+      "required": ["id", "restaurantId", "status"]
+    }
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": { "$ref": "#/entities/Restaurant" },
+      "description": "Collection of all restaurant documents"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of all user profiles and roles"
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/MenuCategory" },
+      "description": "Collection of all menu categories"
+    },
+    "/items/{itemId}": {
+      "schema": { "$ref": "#/entities/MenuItem" },
+      "description": "Collection of all menu dishes and items"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Collection of all active and historical orders"
+    }
+  }
+}
