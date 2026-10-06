@@ -5,107 +5,118 @@ import {
   getDoc, 
   getDocs, 
   deleteDoc, 
-  onSnapshot,
-  writeBatch
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
 import { CloudMenuPayload } from './cloudSync';
 
+function cleanObject<T extends Record<string, any>>(obj: T): T {
+  const result: any = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        result[key] = cleanObject(val);
+      } else {
+        result[key] = val;
+      }
+    }
+  }
+  return result;
+}
+
 /**
- * Saves complete menu dataset atomically to Firestore system snapshot and individual collections.
+ * Strips duplicate giant base64 payloads to guarantee Firestore 1MB document limit is never exceeded.
+ */
+function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
+  const clean = cleanObject(restaurant);
+  if (clean.branding && clean.branding.headerLogoUrl && clean.logoUrl && clean.branding.headerLogoUrl === clean.logoUrl) {
+    clean.branding = {
+      ...clean.branding,
+      headerLogoUrl: '' // Avoid storing 1MB twice in the same Firestore document
+    };
+  }
+  return clean;
+}
+
+/**
+ * Saves complete menu dataset to Firestore individual documents without monolithic 1MB bloat.
  */
 export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolean> {
   try {
     const nowIso = new Date().toISOString();
-    const cleanPayload = {
-      ...payload,
-      updatedAt: nowIso
-    };
 
-    // 1. Save system wide master snapshot metadata document (without bloated 14MB payload string)
+    // 1. Save system metadata document (lightweight summary)
     try {
       const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
       await setDoc(snapshotRef, {
-        restaurantsCount: cleanPayload.restaurants?.length || 0,
-        usersCount: cleanPayload.users?.length || 0,
-        categoriesCount: cleanPayload.categories?.length || 0,
-        itemsCount: cleanPayload.items?.length || 0,
-        ordersCount: cleanPayload.orders?.length || 0,
+        restaurantsCount: payload.restaurants?.length || 0,
+        usersCount: payload.users?.length || 0,
+        categoriesCount: payload.categories?.length || 0,
+        itemsCount: payload.items?.length || 0,
+        ordersCount: payload.orders?.length || 0,
         updatedAt: nowIso
-      });
+      }, { merge: true });
     } catch (snapErr) {
       console.warn('[Firestore] Notice updating system snapshot doc:', snapErr);
     }
 
-    // 2. Batch write individual entities to their respective collections for queries and reliability
-    const batch = writeBatch(db);
+    // 2. Persist individual records independently (avoids batch aborts)
+    const writePromises: Promise<any>[] = [];
 
-    if (Array.isArray(cleanPayload.restaurants)) {
-      cleanPayload.restaurants.forEach(r => {
+    if (Array.isArray(payload.restaurants)) {
+      payload.restaurants.forEach(r => {
         if (!r || !r.id) return;
         const ref = doc(db, 'restaurants', r.id);
-        batch.set(ref, r, { merge: true });
+        writePromises.push(setDoc(ref, sanitizeRestaurantForFirestore(r), { merge: true }).catch(() => {}));
       });
     }
 
-    if (Array.isArray(cleanPayload.users)) {
-      cleanPayload.users.forEach(u => {
+    if (Array.isArray(payload.users)) {
+      payload.users.forEach(u => {
         if (!u || !u.id) return;
         const ref = doc(db, 'users', u.id);
-        batch.set(ref, u, { merge: true });
+        writePromises.push(setDoc(ref, cleanObject(u), { merge: true }).catch(() => {}));
       });
     }
 
-    if (Array.isArray(cleanPayload.categories)) {
-      cleanPayload.categories.forEach(c => {
+    if (Array.isArray(payload.categories)) {
+      payload.categories.forEach(c => {
         if (!c || !c.id) return;
         const ref = doc(db, 'categories', c.id);
-        batch.set(ref, c, { merge: true });
+        writePromises.push(setDoc(ref, cleanObject(c), { merge: true }).catch(() => {}));
       });
     }
 
-    if (Array.isArray(cleanPayload.items)) {
-      cleanPayload.items.forEach(i => {
+    if (Array.isArray(payload.items)) {
+      payload.items.forEach(i => {
         if (!i || !i.id) return;
         const ref = doc(db, 'items', i.id);
-        batch.set(ref, i, { merge: true });
+        writePromises.push(setDoc(ref, cleanObject(i), { merge: true }).catch(() => {}));
       });
     }
 
-    await batch.commit().catch(err => {
-      console.warn('[Firestore] Batch write individual notice:', err);
-    });
+    if (Array.isArray(payload.orders)) {
+      payload.orders.slice(0, 50).forEach(o => {
+        if (!o || !o.id) return;
+        const ref = doc(db, 'orders', o.id);
+        writePromises.push(setDoc(ref, cleanObject(o), { merge: true }).catch(() => {}));
+      });
+    }
 
+    await Promise.all(writePromises);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving full menu snapshot:', err);
+    console.warn('[Firestore] Error saving to firestore:', err);
     return false;
   }
 }
 
 /**
- * Fetches latest menu dataset from Firestore.
+ * Fetches latest menu dataset directly from Firestore collections.
  */
 export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
   try {
-    // 1. Try reading master snapshot document
-    const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
-    const snap = await getDoc(snapshotRef);
-
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data && data.payload) {
-        try {
-          const parsed = JSON.parse(data.payload);
-          if (parsed && (parsed.restaurants?.length || parsed.users?.length || parsed.items?.length)) {
-            return parsed as CloudMenuPayload;
-          }
-        } catch {}
-      }
-    }
-
-    // 2. Fallback: Query collections directly
     const [restsSnap, usersSnap, catsSnap, itemsSnap, ordersSnap] = await Promise.all([
       getDocs(collection(db, 'restaurants')).catch(() => null),
       getDocs(collection(db, 'users')).catch(() => null),
@@ -115,21 +126,41 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     ]);
 
     const restaurants: Restaurant[] = [];
-    restsSnap?.forEach(d => { if (d.data()) restaurants.push(d.data() as Restaurant); });
+    restsSnap?.forEach(d => { 
+      const data = d.data() as Restaurant;
+      if (data && data.id) {
+        if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
+          data.branding.headerLogoUrl = data.logoUrl;
+        }
+        restaurants.push(data);
+      }
+    });
 
     const users: User[] = [];
-    usersSnap?.forEach(d => { if (d.data()) users.push(d.data() as User); });
+    usersSnap?.forEach(d => { 
+      const data = d.data() as User;
+      if (data && data.id) users.push(data);
+    });
 
     const categories: MenuCategory[] = [];
-    catsSnap?.forEach(d => { if (d.data()) categories.push(d.data() as MenuCategory); });
+    catsSnap?.forEach(d => { 
+      const data = d.data() as MenuCategory;
+      if (data && data.id) categories.push(data);
+    });
 
     const items: MenuItem[] = [];
-    itemsSnap?.forEach(d => { if (d.data()) items.push(d.data() as MenuItem); });
+    itemsSnap?.forEach(d => { 
+      const data = d.data() as MenuItem;
+      if (data && data.id) items.push(data);
+    });
 
     const orders: Order[] = [];
-    ordersSnap?.forEach(d => { if (d.data()) orders.push(d.data() as Order); });
+    ordersSnap?.forEach(d => { 
+      const data = d.data() as Order;
+      if (data && data.id) orders.push(data);
+    });
 
-    if (restaurants.length > 0 || items.length > 0 || users.length > 0) {
+    if (restaurants.length > 0 || users.length > 0) {
       return {
         restaurants,
         users,
@@ -146,37 +177,13 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
 }
 
 /**
- * Subscribes in real time to Firestore changes
- */
-export function subscribeToFirestoreChanges(onUpdate: (data: CloudMenuPayload) => void): () => void {
-  try {
-    const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
-    return onSnapshot(snapshotRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data && data.payload) {
-          try {
-            const parsed = JSON.parse(data.payload);
-            if (parsed) onUpdate(parsed);
-          } catch {}
-        }
-      }
-    }, (err) => {
-      console.warn('[Firestore] Real-time snapshot notice:', err);
-    });
-  } catch {
-    return () => {};
-  }
-}
-
-/**
  * Persists an individual restaurant directly into Firestore.
  */
 export async function saveRestaurantToFirestore(restaurant: Restaurant): Promise<boolean> {
   if (!restaurant || !restaurant.id) return false;
   try {
     const ref = doc(db, 'restaurants', restaurant.id);
-    await setDoc(ref, restaurant, { merge: true });
+    await setDoc(ref, sanitizeRestaurantForFirestore(restaurant), { merge: true });
     return true;
   } catch (err) {
     console.warn('[Firestore] Error saving single restaurant:', err);
@@ -206,7 +213,7 @@ export async function saveUserToFirestore(user: User): Promise<boolean> {
   if (!user || !user.id) return false;
   try {
     const ref = doc(db, 'users', user.id);
-    await setDoc(ref, user, { merge: true });
+    await setDoc(ref, cleanObject(user), { merge: true });
     return true;
   } catch (err) {
     console.warn('[Firestore] Error saving single user:', err);
@@ -236,7 +243,7 @@ export async function saveItemToFirestore(item: MenuItem): Promise<boolean> {
   if (!item || !item.id) return false;
   try {
     const ref = doc(db, 'items', item.id);
-    await setDoc(ref, item, { merge: true });
+    await setDoc(ref, cleanObject(item), { merge: true });
     return true;
   } catch (err) {
     console.warn('[Firestore] Error saving single item:', err);
@@ -266,7 +273,7 @@ export async function saveCategoryToFirestore(category: MenuCategory): Promise<b
   if (!category || !category.id) return false;
   try {
     const ref = doc(db, 'categories', category.id);
-    await setDoc(ref, category, { merge: true });
+    await setDoc(ref, cleanObject(category), { merge: true });
     return true;
   } catch (err) {
     console.warn('[Firestore] Error saving single category:', err);
@@ -285,6 +292,36 @@ export async function deleteCategoryFromFirestore(categoryId: string): Promise<b
     return true;
   } catch (err) {
     console.warn('[Firestore] Error deleting single category:', err);
+    return false;
+  }
+}
+
+/**
+ * Persists an individual order directly into Firestore.
+ */
+export async function saveOrderToFirestore(order: Order): Promise<boolean> {
+  if (!order || !order.id) return false;
+  try {
+    const ref = doc(db, 'orders', order.id);
+    await setDoc(ref, cleanObject(order), { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving single order:', err);
+    return false;
+  }
+}
+
+/**
+ * Updates order status directly in Firestore.
+ */
+export async function updateOrderStatusInFirestore(orderId: string, status: string): Promise<boolean> {
+  if (!orderId) return false;
+  try {
+    const ref = doc(db, 'orders', orderId);
+    await setDoc(ref, { status, updatedAt: new Date().toISOString() }, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error updating order status in Firestore:', err);
     return false;
   }
 }

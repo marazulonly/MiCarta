@@ -43,6 +43,17 @@ interface HomeViewProps {
   onAddCategory?: (newCategory: MenuCategory) => void;
   onUpdateCategory?: (updatedCategory: MenuCategory) => void;
   onDeleteCategory?: (categoryId: string) => void;
+  onImportBackupJSON?: (
+    data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
+    mode?: any,
+    targetRestaurantId?: string
+  ) => void;
+  onPublishMenu?: (
+    restaurantId: string,
+    restaurant: Restaurant,
+    categories: MenuCategory[],
+    items: MenuItem[]
+  ) => Promise<{ success: boolean; version?: number; publishedAt?: string } | void> | void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -72,6 +83,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onImportBackupJSON,
+  onPublishMenu,
 }) => {
   // Determine view mode based on activeRole or manual user toggle
   const [viewMode, setViewMode] = useState<'admin' | 'owner' | 'overview'>(
@@ -192,6 +205,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           onUpdateCategory={onUpdateCategory}
           onDeleteCategory={onDeleteCategory}
           onOpenCustomerPreview={onOpenCustomerPreview}
+          onImportBackupJSON={onImportBackupJSON}
+          onPublishMenu={onPublishMenu}
           onSwitchToAdminView={() => {
             setViewMode('admin');
             onRoleChange('ADMIN');

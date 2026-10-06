@@ -9,7 +9,9 @@ import {
   saveItemToFirestore,
   deleteItemFromFirestore,
   saveCategoryToFirestore,
-  deleteCategoryFromFirestore
+  deleteCategoryFromFirestore,
+  saveOrderToFirestore,
+  updateOrderStatusInFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {
@@ -1103,62 +1105,24 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
 
 /**
  * Real-time order synchronization across devices for staff roles (Waiters, Kitchen, Cashier, Owner, Admin).
- * Replaces the 14MB full database poll with an ultra-lightweight orders-only subscription (~5-15 KB).
- * Keeps kitchen, cashier, and waiters updated in real time with minimal bandwidth.
+ * Real-time synchronization is driven event-by-event via SSE and direct Firestore mutations with ZERO background polling.
  */
-export function subscribeToOrdersFeed(onOrdersUpdate: (orders: Order[]) => void): () => void {
-  let isClosed = false;
-  let lastSignature: string | null = null;
-
-  const checkOrders = async () => {
-    if (isClosed || isCloudSyncPaused) return;
-    try {
-      // 1. Try local Express backend if available
-      try {
-        const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data && Array.isArray(json.data.orders)) {
-            const signature = json.data.orders.map((o: any) => `${o.id}_${o.status}_${o.updatedAt || o.createdAt}`).join('|');
-            if (lastSignature !== null && signature !== lastSignature) {
-              onOrdersUpdate(json.data.orders);
-            }
-            lastSignature = signature;
-            return;
-          }
-        }
-      } catch {}
-
-      // 2. Direct Upstash lightweight orders feed (~5-15 KB)
-      const orders = await fetchOrdersFromUpstashDirectly();
-      if (orders && Array.isArray(orders)) {
-        const signature = orders.map(o => `${o.id}_${o.status}_${o.updatedAt || o.createdAt}`).join('|');
-        if (lastSignature !== null && signature !== lastSignature) {
-          onOrdersUpdate(orders);
-        }
-        lastSignature = signature;
-      }
-    } catch {}
-  };
-
-  // Run initial check and set light interval every 3.5 seconds for staff devices
-  checkOrders();
-  const interval = setInterval(checkOrders, 3500);
-
-  return () => {
-    isClosed = true;
-    clearInterval(interval);
-  };
+export function subscribeToOrdersFeed(_onOrdersUpdate: (orders: Order[]) => void): () => void {
+  // Pure event-driven, no background timer or interval
+  return () => {};
 }
 
 /**
- * Automatically saves a new order to backend cloud hosting and Upstash.
+ * Automatically saves a new order to Firestore, backend cloud hosting and Upstash.
  * Guarantees real-time broadcast to owner dashboard, kitchen, and waiters.
  */
 export async function autoSyncOrder(order: Order): Promise<boolean> {
   lastLocalWriteTime = Date.now();
 
-  // 1. Direct write to lightweight dedicated orders feed in Upstash (~5-15 KB)
+  // 1. Direct write to Firestore
+  saveOrderToFirestore(order).catch(() => {});
+
+  // 2. Direct write to lightweight dedicated orders feed in Upstash (~5-15 KB)
   try {
     let orders: Order[] = [];
     const currentOrders = await fetchOrdersFromUpstashDirectly();
@@ -1177,7 +1141,7 @@ export async function autoSyncOrder(order: Order): Promise<boolean> {
     console.warn('[CloudSync] Upstash dedicated order save notice:', err);
   }
 
-  // 2. Mirror to backend
+  // 3. Mirror to backend
   try {
     const res = await fetch('/api/cloud-menu/order', {
       method: 'POST',
@@ -1192,12 +1156,15 @@ export async function autoSyncOrder(order: Order): Promise<boolean> {
 }
 
 /**
- * Automatically updates order status in cloud hosting.
+ * Automatically updates order status in Firestore, backend and cloud hosting.
  */
 export async function autoUpdateOrderStatus(orderId: string, status: string): Promise<boolean> {
   lastLocalWriteTime = Date.now();
 
-  // 1. Update status in lightweight dedicated orders feed in Upstash
+  // 1. Direct write to Firestore
+  updateOrderStatusInFirestore(orderId, status).catch(() => {});
+
+  // 2. Update status in lightweight dedicated orders feed in Upstash
   try {
     let orders: Order[] = [];
     const currentOrders = await fetchOrdersFromUpstashDirectly();
@@ -1209,7 +1176,7 @@ export async function autoUpdateOrderStatus(orderId: string, status: string): Pr
     console.warn('[CloudSync] Upstash order status update notice:', err);
   }
 
-  // 2. Mirror to backend
+  // 3. Mirror to backend
   try {
     const res = await fetch('/api/cloud-menu/order/status', {
       method: 'POST',

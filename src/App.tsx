@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CEVICHITO_PLIZ_LOGO_SVG,
   VORAZ_LOGO_SVG,
@@ -290,14 +290,29 @@ export default function App() {
   const [users, setUsers] = useState<User[]>(initialState.cachedUsers);
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
+
+  // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
+  const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
+
+  // Synchronous entity refs to guarantee race-condition free multi-step saves
+  const restaurantsRef = useRef<Restaurant[]>(initialState.cachedRests);
+  const categoriesRef = useRef<MenuCategory[]>(initialState.cachedCategories);
+  const menuItemsRef = useRef<MenuItem[]>(initialState.cachedItems);
+  const usersRef = useRef<User[]>(initialState.cachedUsers);
+  const ordersRef = useRef<Order[]>(initialState.cachedOrders);
+  const currentUserRef = useRef<User | null>(initialState.cachedAuth);
+
+  useEffect(() => { restaurantsRef.current = restaurants; }, [restaurants]);
+  useEffect(() => { categoriesRef.current = categories; }, [categories]);
+  useEffect(() => { menuItemsRef.current = menuItems; }, [menuItems]);
+  useEffect(() => { usersRef.current = users; }, [users]);
+  useEffect(() => { ordersRef.current = orders; }, [orders]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
   const [ownerActiveSubTab, setOwnerActiveSubTab] = useState<string>('sales_monitor');
-  
-  // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
-  const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   // Active Role Simulator (synced with currentUser)
   const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
@@ -623,7 +638,8 @@ export default function App() {
         setCategories(prev => prev.filter(c => c.id !== event.categoryId));
       } else if (event.type === 'USER_UPDATED' && event.user) {
         setUsers(prev => deduplicateUsers(prev.map(u => (u.id === event.user!.id || (event.user!.dni && u.dni === event.user!.dni)) ? event.user! : u)));
-        if (currentUser && (currentUser.id === event.user.id || (event.user.dni && currentUser.dni === event.user.dni))) {
+        const curr = currentUserRef.current;
+        if (curr && (curr.id === event.user.id || (event.user.dni && curr.dni === event.user.dni))) {
           setCurrentUser(event.user);
         }
       } else if (event.type === 'USER_DELETED' && event.userId) {
@@ -635,29 +651,18 @@ export default function App() {
           return [event.order!, ...prev];
         });
         playNotificationSound();
-        const rest = (restaurants || []).find(r => r && r.id === event.order!.restaurantId);
+        const rest = (restaurantsRef.current || []).find(r => r && r.id === event.order!.restaurantId);
         showToast(`🔔 ¡Nueva comanda recibida en tiempo real! ${event.order!.orderNumber} (${rest?.name || 'Restaurante'})`);
       } else if (event.type === 'ORDER_UPDATED' && event.order) {
         setOrders(prev => prev.map(o => o.id === event.order!.id ? event.order! : o));
       }
     });
 
-    // Real-time order synchronization across staff devices (waiters, kitchen, cashier, owner, admin)
-    // Only active when logged in with a staff role or managing operations
-    let unsubOrders: (() => void) | null = null;
-    if (currentUser) {
-      unsubOrders = subscribeToOrdersFeed((freshOrders) => {
-        if (!isMounted) return;
-        setOrders(freshOrders);
-      });
-    }
-
     return () => {
       isMounted = false;
       unsubscribe();
-      if (unsubOrders) unsubOrders();
     };
-  }, [currentUser]);
+  }, []);
 
   // Keep previewRestaurant synchronized with restaurants array whenever restaurants update
   useEffect(() => {
@@ -785,13 +790,13 @@ export default function App() {
   const handleAddRestaurant = (newRestaurant: Restaurant) => {
     // Unique name validation
     const cleanName = newRestaurant.name.trim();
-    if (restaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+    if (restaurantsRef.current.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
       showToast(`Error: Ya existe un restaurante con el nombre "${cleanName}".`);
       return;
     }
 
     // Ensure the new restaurant has at least 1 default category
-    const hasCategory = categories.some(c => c.restaurantId === newRestaurant.id);
+    const hasCategory = categoriesRef.current.some(c => c.restaurantId === newRestaurant.id);
     const defaultCat: MenuCategory = {
       id: `cat-${newRestaurant.id}-general`,
       restaurantId: newRestaurant.id,
@@ -799,19 +804,19 @@ export default function App() {
       sortOrder: 1,
       isActive: true,
     };
-    const nextCategories = hasCategory ? categories : [...categories, defaultCat];
-    if (!hasCategory) {
-      setCategories(nextCategories);
-    }
+    const nextCategories = hasCategory ? categoriesRef.current : [...categoriesRef.current, defaultCat];
+    categoriesRef.current = nextCategories;
+    setCategories(nextCategories);
 
-    const nextRestaurants = [newRestaurant, ...restaurants];
+    const nextRestaurants = [newRestaurant, ...restaurantsRef.current.filter(r => r.id !== newRestaurant.id)];
+    restaurantsRef.current = nextRestaurants;
     setRestaurants(nextRestaurants);
 
     // If an owner created this restaurant or it's assigned, ensure owner has it
-    let nextUsers = users;
+    let nextUsers = usersRef.current;
     const targetOwnerId = newRestaurant.ownerId || (currentUser?.role === 'OWNER' ? currentUser.id : null);
     if (targetOwnerId) {
-      nextUsers = users.map(u => {
+      nextUsers = usersRef.current.map(u => {
         if (u.id === targetOwnerId || (currentUser && u.id === currentUser.id)) {
           const currentIds = u.restaurantIds || [];
           return {
@@ -821,6 +826,7 @@ export default function App() {
         }
         return u;
       });
+      usersRef.current = nextUsers;
       setUsers(nextUsers);
       if (currentUser && (currentUser.id === targetOwnerId || currentUser.role === 'OWNER')) {
         setCurrentUser(prev => prev ? {
@@ -848,9 +854,9 @@ export default function App() {
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       categories: nextCategories,
-      items: menuItems,
+      items: menuItemsRef.current,
       users: nextUsers,
-      orders
+      orders: ordersRef.current
     }).catch(() => {});
     
     triggerCloudUpdate(newRestaurant.id, newRestaurant, nextCategories.filter(c => c.restaurantId === newRestaurant.id), []);
@@ -860,18 +866,19 @@ export default function App() {
   };
 
   const handleUpdateRestaurant = (updated: Restaurant) => {
-    const prevRest = (restaurants || []).find(r => r && r.id === updated.id);
+    const prevRest = restaurantsRef.current.find(r => r && r.id === updated.id);
     const prevOwnerId = prevRest?.ownerId;
     const newOwnerId = updated.ownerId;
 
     // Unique name validation against other restaurants
     const cleanName = updated.name.trim();
-    if (restaurants.some(r => r.id !== updated.id && r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+    if (restaurantsRef.current.some(r => r.id !== updated.id && r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
       showToast(`Error: Ya existe otro restaurante con el nombre "${cleanName}".`);
       return;
     }
 
-    const nextRestaurants = restaurants.map(r => r.id === updated.id ? updated : r);
+    const nextRestaurants = restaurantsRef.current.map(r => r.id === updated.id ? updated : r);
+    restaurantsRef.current = nextRestaurants;
     setRestaurants(nextRestaurants);
     if (previewRestaurant && previewRestaurant.id === updated.id) {
       setPreviewRestaurant(updated);
@@ -880,11 +887,11 @@ export default function App() {
       setPublishedMenuData(prev => prev ? { ...prev, restaurant: updated } : null);
     }
 
-    let nextUsers = users;
+    let nextUsers = usersRef.current;
 
     // If owner was reassigned, update users state
     if (prevOwnerId && prevOwnerId !== newOwnerId) {
-      nextUsers = users.map(u => {
+      nextUsers = usersRef.current.map(u => {
         if (u.id === prevOwnerId) {
           const updatedUser: User = {
             ...u,
@@ -905,10 +912,11 @@ export default function App() {
         }
         return u;
       });
+      usersRef.current = nextUsers;
       setUsers(nextUsers);
     } else if (newOwnerId) {
       // Ensure the designated owner has this restaurant in their list
-      nextUsers = users.map(u => {
+      nextUsers = usersRef.current.map(u => {
         if (u.id === newOwnerId && !(u.restaurantIds || []).includes(updated.id)) {
           const updatedUser: User = {
             ...u,
@@ -919,6 +927,7 @@ export default function App() {
         }
         return u;
       });
+      usersRef.current = nextUsers;
       setUsers(nextUsers);
     }
 
@@ -935,22 +944,22 @@ export default function App() {
     // Direct cloud & Firestore write for restaurant
     autoSyncRestaurant(updated).catch(() => {});
 
-    const restCats = categories.filter(c => c.restaurantId === updated.id);
-    const restItems = menuItems.filter(i => i.restaurantId === updated.id);
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.id);
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updated.id);
     triggerCloudUpdate(updated.id, updated, restCats, restItems);
     saveFullCloudMenu({
       restaurants: nextRestaurants,
-      categories,
-      items: menuItems,
+      categories: categoriesRef.current,
+      items: menuItemsRef.current,
       users: nextUsers,
-      orders
+      orders: ordersRef.current
     }).catch(() => {});
 
     showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
   };
 
   const handleDeleteRestaurant = (restaurantId: string) => {
-    const targetRest = (restaurants || []).find(r => r && r.id === restaurantId);
+    const targetRest = restaurantsRef.current.find(r => r && r.id === restaurantId);
     const targetSlug = targetRest?.slug ? normalizeSlug(targetRest.slug) : '';
     const targetName = targetRest?.name ? targetRest.name.trim().toLowerCase() : '';
     const restName = targetRest ? targetRest.name : 'Restaurante';
@@ -963,8 +972,9 @@ export default function App() {
       return false;
     };
 
-    const deletedIds = (restaurants || []).filter(matchesTarget).map(r => r.id);
-    const nextRestaurants = (restaurants || []).filter(r => !matchesTarget(r));
+    const deletedIds = restaurantsRef.current.filter(matchesTarget).map(r => r.id);
+    const nextRestaurants = restaurantsRef.current.filter(r => !matchesTarget(r));
+    restaurantsRef.current = nextRestaurants;
     setRestaurants(nextRestaurants);
 
     // Delete each matching ID from Firestore and cloud storage
@@ -980,7 +990,7 @@ export default function App() {
     }
 
     // Clean user restaurant assignments
-    const nextUsers = users.map(u => {
+    const nextUsers = usersRef.current.map(u => {
       if (u.restaurantIds) {
         return {
           ...u,
@@ -989,6 +999,7 @@ export default function App() {
       }
       return u;
     });
+    usersRef.current = nextUsers;
     setUsers(nextUsers);
 
     if (currentUser && currentUser.restaurantIds) {
@@ -998,8 +1009,12 @@ export default function App() {
       } : null);
     }
 
-    const nextItems = menuItems.filter(i => !deletedIds.includes(i.restaurantId));
-    const nextCategories = categories.filter(c => !deletedIds.includes(c.restaurantId));
+    const nextItems = menuItemsRef.current.filter(i => !deletedIds.includes(i.restaurantId));
+    const nextCategories = categoriesRef.current.filter(c => !deletedIds.includes(c.restaurantId));
+    menuItemsRef.current = nextItems;
+    categoriesRef.current = nextCategories;
+    setMenuItems(nextItems);
+    setCategories(nextCategories);
 
     // Save authoritative list without deleted items
     saveFullCloudMenu({
@@ -1007,38 +1022,41 @@ export default function App() {
       items: nextItems,
       categories: nextCategories,
       users: nextUsers,
-      orders
+      orders: ordersRef.current
     }).catch(() => {});
 
     showToast(`Restaurante "${restName}" eliminado exitosamente de la base de datos.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {
-    const nextItems = menuItems.map(i => i.id === updated.id ? updated : i);
+    const nextItems = menuItemsRef.current.map(i => i.id === updated.id ? updated : i);
+    menuItemsRef.current = nextItems;
     setMenuItems(nextItems);
     autoSyncMenuItem(updated);
-    saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === updated.restaurantId);
     triggerCloudUpdate(updated.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
-    const nextItems = [newItem, ...menuItems.filter(i => i.id !== newItem.id)];
+    const nextItems = [newItem, ...menuItemsRef.current.filter(i => i.id !== newItem.id)];
+    menuItemsRef.current = nextItems;
     setMenuItems(nextItems);
     autoSyncMenuItem(newItem);
-    saveFullCloudMenu({ restaurants, categories, items: nextItems, users, orders }).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === newItem.restaurantId);
     triggerCloudUpdate(newItem.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
-    const targetItem = menuItems.find(i => i.id === itemId);
-    const updatedItems = menuItems.filter(i => i.id !== itemId);
+    const targetItem = menuItemsRef.current.find(i => i.id === itemId);
+    const updatedItems = menuItemsRef.current.filter(i => i.id !== itemId);
+    menuItemsRef.current = updatedItems;
     setMenuItems(updatedItems);
     autoDeleteMenuItem(itemId);
-    saveFullCloudMenu({ restaurants, categories, items: updatedItems, users, orders });
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: updatedItems, users: usersRef.current, orders: ordersRef.current });
     if (targetItem) {
       const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
       triggerCloudUpdate(targetItem.restaurantId, undefined, undefined, restItems);
@@ -1049,10 +1067,11 @@ export default function App() {
   const handleReorderCategories = (reorderedCats: MenuCategory[]) => {
     const restId = reorderedCats[0]?.restaurantId;
     if (!restId) return;
-    const otherCats = categories.filter(c => c.restaurantId !== restId);
+    const otherCats = categoriesRef.current.filter(c => c.restaurantId !== restId);
     const updatedList = [...otherCats, ...reorderedCats];
+    categoriesRef.current = updatedList;
     setCategories(updatedList);
-    saveFullCloudMenu({ categories: updatedList, restaurants, items: menuItems, users, orders });
+    saveFullCloudMenu({ categories: updatedList, restaurants: restaurantsRef.current, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
     const restCats = updatedList.filter(c => c.restaurantId === restId);
     triggerCloudUpdate(restId, undefined, restCats, undefined);
     showToast(`✓ Orden de categorías guardado en la nube.`);
@@ -1064,54 +1083,61 @@ export default function App() {
     const reorderedMap = new Map<string, MenuItem>();
     reorderedItems.forEach(item => reorderedMap.set(item.id, item));
 
-    const otherItems = menuItems.filter(i => i.restaurantId !== restId);
-    const existingRestItemsNotInReordered = menuItems.filter(i => i.restaurantId === restId && !reorderedMap.has(i.id));
+    const otherItems = menuItemsRef.current.filter(i => i.restaurantId !== restId);
+    const existingRestItemsNotInReordered = menuItemsRef.current.filter(i => i.restaurantId === restId && !reorderedMap.has(i.id));
 
     const updatedList = [...otherItems, ...reorderedItems, ...existingRestItemsNotInReordered];
+    menuItemsRef.current = updatedList;
     setMenuItems(updatedList);
-    saveFullCloudMenu({ items: updatedList, restaurants, categories, users, orders });
+    saveFullCloudMenu({ items: updatedList, restaurants: restaurantsRef.current, categories: categoriesRef.current, users: usersRef.current, orders: ordersRef.current });
     const restItems = updatedList.filter(i => i.restaurantId === restId);
     triggerCloudUpdate(restId, undefined, undefined, restItems);
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
 
   const handleAddCategory = (newCategory: MenuCategory) => {
-    const nextCategories = [...categories.filter(c => c.id !== newCategory.id), newCategory];
+    const nextCategories = [...categoriesRef.current.filter(c => c.id !== newCategory.id), newCategory];
+    categoriesRef.current = nextCategories;
     setCategories(nextCategories);
     autoSyncCategory(newCategory);
-    saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === newCategory.restaurantId);
     triggerCloudUpdate(newCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
 
   const handleUpdateCategory = (updatedCategory: MenuCategory) => {
-    const nextCategories = categories.map(c => c.id === updatedCategory.id ? updatedCategory : c);
+    const nextCategories = categoriesRef.current.map(c => c.id === updatedCategory.id ? updatedCategory : c);
+    categoriesRef.current = nextCategories;
     setCategories(nextCategories);
     autoSyncCategory(updatedCategory);
-    saveFullCloudMenu({ restaurants, categories: nextCategories, items: menuItems, users, orders }).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === updatedCategory.restaurantId);
     triggerCloudUpdate(updatedCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    const updatedCategories = categories.filter(c => c.id !== categoryId);
+    const updatedCategories = categoriesRef.current.filter(c => c.id !== categoryId);
+    categoriesRef.current = updatedCategories;
     setCategories(updatedCategories);
     autoDeleteCategory(categoryId);
-    saveFullCloudMenu({ restaurants, categories: updatedCategories, items: menuItems, users, orders });
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: updatedCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
     showToast(`✓ Categoría eliminada de la nube.`);
   };
 
   const handleAddUser = (newUser: User) => {
-    const nextUsers = deduplicateUsers([newUser, ...users]);
+    const nextUsers = deduplicateUsers([newUser, ...usersRef.current]);
+    usersRef.current = nextUsers;
     setUsers(nextUsers);
-    saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
+    autoSyncUser(newUser).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: menuItemsRef.current, users: nextUsers, orders: ordersRef.current });
     showToast(`✓ Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado permanentemente.`);
   };
 
   const handleUpdateUser = (updated: User) => {
-    const nextUsers = deduplicateUsers(users.map(u => (u.id === updated.id || (u.dni && u.dni === updated.dni)) ? updated : u));
+    const nextUsers = deduplicateUsers(usersRef.current.map(u => (u.id === updated.id || (u.dni && u.dni === updated.dni)) ? updated : u));
+    usersRef.current = nextUsers;
     setUsers(nextUsers);
     if (currentUser?.id === updated.id || (currentUser?.dni && currentUser.dni === updated.dni)) {
       setCurrentUser(updated);
@@ -1119,12 +1145,13 @@ export default function App() {
         localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(updated));
       } catch {}
     }
-    saveFullCloudMenu({ restaurants, categories, items: menuItems, users: nextUsers, orders });
+    autoSyncUser(updated).catch(() => {});
+    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: menuItemsRef.current, users: nextUsers, orders: ordersRef.current });
     showToast(`✓ Usuario "${updated.name}" actualizado y guardado permanentemente.`);
   };
 
   const handleDeleteUser = (userId: string) => {
-    const targetUser = users.find(u => u && (u.id === userId || (u.dni && u.dni === userId)));
+    const targetUser = usersRef.current.find(u => u && (u.id === userId || (u.dni && u.dni === userId)));
     const targetDni = targetUser?.dni;
     const targetName = targetUser?.name ? targetUser.name.trim().toLowerCase() : '';
 
@@ -1136,7 +1163,8 @@ export default function App() {
       return false;
     };
 
-    const nextUsers = users.filter(u => !matchesUser(u));
+    const nextUsers = usersRef.current.filter(u => !matchesUser(u));
+    usersRef.current = nextUsers;
     setUsers(nextUsers);
 
     if (currentUser && matchesUser(currentUser)) {
@@ -1151,11 +1179,11 @@ export default function App() {
     if (targetDni) autoDeleteUser(targetDni).catch(() => {});
 
     saveFullCloudMenu({
-      restaurants,
-      categories,
-      items: menuItems,
+      restaurants: restaurantsRef.current,
+      categories: categoriesRef.current,
+      items: menuItemsRef.current,
       users: nextUsers,
-      orders
+      orders: ordersRef.current
     }).catch(() => {});
     showToast(`✓ Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado permanentemente.`);
   };
@@ -1468,8 +1496,8 @@ export default function App() {
       );
     }
   } else {
-    // Global loading screen for staff / admin while fetching initial cloud data
-    if (!isInitialCloudFetchDone) {
+    // Global loading screen for logged-in staff / admin while fetching initial cloud data
+    if (!isInitialCloudFetchDone && currentUser) {
       return (
         <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
@@ -1904,6 +1932,8 @@ export default function App() {
                 onAddCategory={handleAddCategory}
                 onUpdateCategory={handleUpdateCategory}
                 onDeleteCategory={handleDeleteCategory}
+                onImportBackupJSON={handleImportBackupJSON}
+                onPublishMenu={handlePublishMenu}
               />
             )}
 
