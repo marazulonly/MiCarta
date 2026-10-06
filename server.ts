@@ -591,6 +591,7 @@ async function startServer() {
 
     const saved = saveCloudDataToDisk(updatedData);
     if (saved) {
+      await saveToVercelKV(updatedData);
       broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
       res.json({
         success: true,
@@ -603,13 +604,14 @@ async function startServer() {
   });
 
   // POST: Update single menu item
-  app.post('/api/cloud-menu/item', (req, res) => {
+  app.post('/api/cloud-menu/item', async (req, res) => {
     const item = req.body;
     if (!item || !item.id) {
       res.status(400).json({ success: false, message: 'Item inválido' });
       return;
     }
 
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const items = [...(current.items || [])];
     const idx = items.findIndex((i: any) => i.id === item.id);
@@ -626,13 +628,15 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'ITEM_UPDATED', item, items });
     res.json({ success: true, message: `Plato "${item.name}" guardado en la nube`, item });
   });
 
   // DELETE: Delete menu item
-  app.delete('/api/cloud-menu/item/:id', (req, res) => {
+  app.delete('/api/cloud-menu/item/:id', async (req, res) => {
     const { id } = req.params;
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const items = (current.items || []).filter((i: any) => i.id !== id);
 
@@ -643,18 +647,20 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'ITEM_DELETED', itemId: id, items });
     res.json({ success: true, message: 'Plato eliminado de la nube' });
   });
 
   // POST: Update single restaurant
-  app.post('/api/cloud-menu/restaurant', (req, res) => {
+  app.post('/api/cloud-menu/restaurant', async (req, res) => {
     const restaurant = req.body;
     if (!restaurant || !restaurant.id) {
       res.status(400).json({ success: false, message: 'Restaurante inválido' });
       return;
     }
 
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const restaurants = [...(current.restaurants || [])];
     const idx = restaurants.findIndex((r: any) => r.id === restaurant.id);
@@ -671,6 +677,21 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
+
+    // Also persist individual snapshot for immediate CDN/public access
+    if (restaurant.slug) {
+      saveIndividualToVercelKV(restaurant.slug, {
+        success: true,
+        published: true,
+        version: 1,
+        publishedAt: updatedData.updatedAt,
+        restaurant,
+        categories: (updatedData.categories || []).filter((c: any) => c.restaurantId === restaurant.id),
+        items: (updatedData.items || []).filter((i: any) => i.restaurantId === restaurant.id)
+      }).catch(() => {});
+    }
+
     broadcastMenuUpdate({ type: 'RESTAURANT_UPDATED', restaurant, restaurants });
     res.json({ success: true, message: `Restaurante "${restaurant.name}" guardado en la nube`, restaurant });
   });
@@ -693,18 +714,20 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
     res.json({ success: true, message: 'Restaurante eliminado permanentemente de la nube' });
   });
 
   // POST: Update or add category
-  app.post('/api/cloud-menu/category', (req, res) => {
+  app.post('/api/cloud-menu/category', async (req, res) => {
     const category = req.body;
     if (!category || !category.id) {
       res.status(400).json({ success: false, message: 'Categoría inválida' });
       return;
     }
 
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const categories = [...(current.categories || [])];
     const idx = categories.findIndex((c: any) => c.id === category.id);
@@ -721,13 +744,15 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'CATEGORY_UPDATED', category, categories });
     res.json({ success: true, message: `Categoría "${category.name}" guardada en la nube`, category });
   });
 
   // DELETE: Delete category
-  app.delete('/api/cloud-menu/category/:id', (req, res) => {
+  app.delete('/api/cloud-menu/category/:id', async (req, res) => {
     const { id } = req.params;
+    await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
     const categories = (current.categories || []).filter((c: any) => c.id !== id);
 
@@ -738,6 +763,7 @@ async function startServer() {
     };
 
     saveCloudDataToDisk(updatedData);
+    await saveToVercelKV(updatedData);
     broadcastMenuUpdate({ type: 'CATEGORY_DELETED', categoryId: id, categories });
     res.json({ success: true, message: 'Categoría eliminada de la nube' });
   });
