@@ -99,6 +99,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'backgrounds'>('items');
   const [isListView, setIsListView] = useState<boolean>(true);
   const dishImageInputRef = useRef<HTMLInputElement>(null);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const [hoveredOrClickedItemId, setHoveredOrClickedItemId] = useState<string | null>(null);
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -755,7 +756,36 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <input
+            type="file"
+            ref={jsonFileInputRef}
+            accept=".json"
+            onChange={handleImportJSONFile}
+            className="hidden"
+          />
+
           <button
+            type="button"
+            onClick={() => downloadRestaurantJSON(restaurant, restaurantCategories, items.filter(i => i.restaurantId === restaurant.id))}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition cursor-pointer shadow-xs"
+            title="Exportar y descargar la carta actual en formato JSON"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Guardar Carta (JSON)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => jsonFileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 text-xs font-bold transition cursor-pointer shadow-xs"
+            title="Cargar e importar la carta desde un archivo JSON"
+          >
+            <FileJson className="w-3.5 h-3.5 text-sky-700" />
+            <span>Cargar Carta (JSON)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleOpenNewCategoryModal}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 text-xs font-bold transition cursor-pointer shadow-sm"
           >

@@ -756,9 +756,7 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
  */
 export async function autoSyncUser(user: User): Promise<boolean> {
   lastLocalWriteTime = Date.now();
-  saveUserToFirestore(user).catch(err => {
-    console.warn('[Firestore] autoSyncUser notice:', err);
-  });
+  await saveUserToFirestore(user);
 
   try {
     const current = await fetchFromUpstashDirectly();
@@ -797,9 +795,7 @@ export async function autoSyncUser(user: User): Promise<boolean> {
  */
 export async function autoDeleteUser(userId: string): Promise<boolean> {
   lastLocalWriteTime = Date.now();
-  deleteUserFromFirestore(userId).catch(err => {
-    console.warn('[Firestore] autoDeleteUser notice:', err);
-  });
+  await deleteUserFromFirestore(userId);
 
   try {
     const current = await fetchFromUpstashDirectly();
@@ -829,9 +825,7 @@ export async function autoDeleteUser(userId: string): Promise<boolean> {
  * Automatically saves a menu item modification to the cloud hosting.
  */
 export async function autoSyncMenuItem(item: MenuItem): Promise<boolean> {
-  saveItemToFirestore(item).catch(err => {
-    console.warn('[Firestore] autoSyncMenuItem notice:', err);
-  });
+  await saveItemToFirestore(item);
 
   try {
     const current = await fetchFromUpstashDirectly();
@@ -868,9 +862,7 @@ export async function autoSyncMenuItem(item: MenuItem): Promise<boolean> {
  * Automatically deletes a menu item in the cloud hosting.
  */
 export async function autoDeleteMenuItem(itemId: string): Promise<boolean> {
-  deleteItemFromFirestore(itemId).catch(err => {
-    console.warn('[Firestore] autoDeleteMenuItem notice:', err);
-  });
+  await deleteItemFromFirestore(itemId);
 
   try {
     const current = await fetchFromUpstashDirectly();
@@ -903,9 +895,7 @@ export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolea
   lastLocalWriteTime = Date.now();
 
   // 1. Direct write to Firestore database
-  saveRestaurantToFirestore(restaurant).catch(err => {
-    console.warn('[Firestore] autoSyncRestaurant notice:', err);
-  });
+  await saveRestaurantToFirestore(restaurant);
 
   // 2. Save restaurant to dedicated lightweight index in Upstash
   try {
@@ -967,9 +957,7 @@ export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolea
  */
 export async function autoDeleteRestaurant(restaurantId: string): Promise<boolean> {
   // 1. Delete from Firestore database
-  deleteRestaurantFromFirestore(restaurantId).catch(err => {
-    console.warn('[Firestore] autoDeleteRestaurant notice:', err);
-  });
+  await deleteRestaurantFromFirestore(restaurantId);
 
   // 2. Remove from dedicated lightweight index in Upstash & localStorage
   try {
@@ -998,9 +986,7 @@ export async function autoDeleteRestaurant(restaurantId: string): Promise<boolea
  * Automatically saves a category modification to the cloud hosting.
  */
 export async function autoSyncCategory(category: MenuCategory): Promise<boolean> {
-  saveCategoryToFirestore(category).catch(err => {
-    console.warn('[Firestore] autoSyncCategory notice:', err);
-  });
+  await saveCategoryToFirestore(category);
 
   try {
     const current = await fetchFromUpstashDirectly();
@@ -1037,9 +1023,20 @@ export async function autoSyncCategory(category: MenuCategory): Promise<boolean>
  * Automatically deletes a category in the cloud hosting.
  */
 export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
-  deleteCategoryFromFirestore(categoryId).catch(err => {
-    console.warn('[Firestore] autoDeleteCategory notice:', err);
-  });
+  await deleteCategoryFromFirestore(categoryId);
+
+  try {
+    const current = await fetchFromUpstashDirectly();
+    if (current) {
+      const cats = (current.categories || []).filter(c => c.id !== categoryId);
+      await saveToUpstashDirectly({
+        ...current,
+        categories: cats
+      });
+    }
+  } catch (err) {
+    console.warn('[CloudSync] autoDeleteCategory error:', err);
+  }
 
   try {
     const current = await fetchFromUpstashDirectly();
