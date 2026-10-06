@@ -109,13 +109,18 @@ const getInitialUrlParams = () => {
   }
 };
 
-// Sanitization function that preserves 100% of user modifications from cloud storage without mock data injection
+// Sanitization function that preserves 100% of user modifications from cloud storage without duplicates
 function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   if (!Array.isArray(rests)) return [];
-  const map = new Map<string, Restaurant>();
+  const mapById = new Map<string, Restaurant>();
+  const mapBySlugOrName = new Map<string, Restaurant>();
+
   rests.forEach(r => {
-    if (!r || !r.id) return;
+    if (!r || !r.id || !r.name?.trim()) return;
     const cleanSlug = r.slug ? normalizeSlug(r.slug) : normalizeSlug(r.name);
+    const cleanNameKey = r.name.trim().toLowerCase();
+    const slugKey = cleanSlug || cleanNameKey;
+
     const safeMetrics: RestaurantMetrics = {
       dailyRevenue: 0,
       activeOrders: 0,
@@ -143,9 +148,26 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       weeklySchedule: Array.isArray(r.weeklySchedule) ? r.weeklySchedule : [],
       shifts: Array.isArray(r.shifts) ? r.shifts : []
     };
-    map.set(r.id, safeRest);
+
+    const existing = mapBySlugOrName.get(slugKey) || mapById.get(r.id);
+    if (!existing) {
+      mapById.set(r.id, safeRest);
+      mapBySlugOrName.set(slugKey, safeRest);
+    } else {
+      const merged: Restaurant = {
+        ...existing,
+        ...safeRest,
+        ownerId: safeRest.ownerId || existing.ownerId,
+        templateId: safeRest.templateId || existing.templateId,
+        branding: { ...existing.branding, ...safeRest.branding }
+      };
+      mapById.delete(existing.id);
+      mapById.set(merged.id, merged);
+      mapBySlugOrName.set(slugKey, merged);
+    }
   });
-  return Array.from(map.values());
+
+  return Array.from(mapById.values());
 }
 
 function sanitizeMenuItems(items: MenuItem[]): MenuItem[] {
@@ -986,56 +1008,66 @@ export default function App() {
 
   const handleDeleteRestaurant = (restaurantId: string) => {
     const targetRest = (restaurants || []).find(r => r && r.id === restaurantId);
+    const targetSlug = targetRest?.slug ? normalizeSlug(targetRest.slug) : '';
+    const targetName = targetRest?.name ? targetRest.name.trim().toLowerCase() : '';
     const restName = targetRest ? targetRest.name : 'Restaurante';
 
-    // Direct cloud & Firestore deletion
-    autoDeleteRestaurant(restaurantId).catch(() => {});
+    const matchesTarget = (r: Restaurant) => {
+      if (!r) return false;
+      if (r.id === restaurantId) return true;
+      if (targetSlug && normalizeSlug(r.slug) === targetSlug) return true;
+      if (targetName && r.name.trim().toLowerCase() === targetName) return true;
+      return false;
+    };
 
-    // 1. Remove from restaurants state
-    const nextRestaurants = (restaurants || []).filter(r => r && r.id !== restaurantId);
+    const deletedIds = (restaurants || []).filter(matchesTarget).map(r => r.id);
+    const nextRestaurants = (restaurants || []).filter(r => !matchesTarget(r));
     setRestaurants(nextRestaurants);
 
-    // 2. If previewing or selected, reset
-    if (selectedRestaurantId === restaurantId) {
+    // Delete each matching ID from Firestore and cloud storage
+    deletedIds.forEach(id => {
+      autoDeleteRestaurant(id).catch(() => {});
+    });
+
+    if (selectedRestaurantId === restaurantId || deletedIds.includes(selectedRestaurantId)) {
       setSelectedRestaurantId(nextRestaurants[0]?.id || '');
     }
-    if (previewRestaurant && previewRestaurant.id === restaurantId) {
+    if (previewRestaurant && matchesTarget(previewRestaurant)) {
       setPreviewRestaurant(null);
     }
 
-    // 3. Clean user restaurant assignments
+    // Clean user restaurant assignments
     const nextUsers = users.map(u => {
-      if (u.restaurantIds && u.restaurantIds.includes(restaurantId)) {
+      if (u.restaurantIds) {
         return {
           ...u,
-          restaurantIds: u.restaurantIds.filter(id => id !== restaurantId)
+          restaurantIds: u.restaurantIds.filter(id => !deletedIds.includes(id))
         };
       }
       return u;
     });
     setUsers(nextUsers);
 
-    if (currentUser && currentUser.restaurantIds && currentUser.restaurantIds.includes(restaurantId)) {
+    if (currentUser && currentUser.restaurantIds) {
       setCurrentUser(prev => prev ? {
         ...prev,
-        restaurantIds: prev.restaurantIds.filter(id => id !== restaurantId)
+        restaurantIds: prev.restaurantIds.filter(id => !deletedIds.includes(id))
       } : null);
     }
 
-    const nextItems = menuItems.filter(i => i.restaurantId !== restaurantId);
-    const nextCategories = categories.filter(c => c.restaurantId !== restaurantId);
+    const nextItems = menuItems.filter(i => !deletedIds.includes(i.restaurantId));
+    const nextCategories = categories.filter(c => !deletedIds.includes(c.restaurantId));
 
-    // 4. Delete from Cloud
-    autoDeleteRestaurant(restaurantId).catch(() => {});
+    // Save authoritative list without deleted items
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       items: nextItems,
       categories: nextCategories,
       users: nextUsers,
       orders
-    });
+    }).catch(() => {});
 
-    showToast(`Restaurante "${restName}" eliminado exitosamente.`);
+    showToast(`Restaurante "${restName}" eliminado exitosamente de la base de datos.`);
   };
 
   const handleUpdateMenuItem = (updated: MenuItem) => {

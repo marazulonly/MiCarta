@@ -544,7 +544,42 @@ async function startServer() {
     res.json({ success: true, message: '¡Todos los slugs normalizados y cartas republicadas exitosamente!' });
   });
 
-  // POST: Full save or update of cloud menu (with robust anti-erasure protection)
+  // Helper to deduplicate restaurants by ID, slug, and name
+  function deduplicateServerRestaurants(rests: any[]): any[] {
+    if (!Array.isArray(rests)) return [];
+    const mapById = new Map<string, any>();
+    const mapBySlugOrName = new Map<string, any>();
+
+    rests.forEach((r: any) => {
+      if (!r || !r.id || !r.name) return;
+      const cleanSlug = normalizeSlug(r.slug || r.name);
+      const cleanName = r.name.trim().toLowerCase();
+      const slugKey = cleanSlug || cleanName;
+
+      const existing = mapBySlugOrName.get(slugKey) || mapById.get(r.id);
+      if (!existing) {
+        const item = { ...r, slug: cleanSlug };
+        mapById.set(r.id, item);
+        mapBySlugOrName.set(slugKey, item);
+      } else {
+        // Merge towards the most complete record
+        const merged = {
+          ...existing,
+          ...r,
+          ownerId: r.ownerId || existing.ownerId,
+          templateId: r.templateId || existing.templateId,
+          branding: { ...(existing.branding || {}), ...(r.branding || {}) }
+        };
+        mapById.delete(existing.id);
+        mapById.set(merged.id, merged);
+        mapBySlugOrName.set(slugKey, merged);
+      }
+    });
+
+    return Array.from(mapById.values());
+  }
+
+  // POST: Full save or update of cloud menu
   app.post('/api/cloud-menu', async (req, res) => {
     const { restaurants, items, categories, users, orders } = req.body;
     if (!restaurants && !items && !categories) {
@@ -555,34 +590,32 @@ async function startServer() {
     await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
 
-    // Intelligent additive merge: preserve existing entities unless explicitly deleted via DELETE endpoints
-    const restMap = new Map<string, any>();
-    (current.restaurants || []).forEach((r: any) => { if (r?.id) restMap.set(r.id, r); });
-    (restaurants || []).forEach((r: any) => { if (r?.id) restMap.set(r.id, { ...(restMap.get(r.id) || {}), ...r }); });
+    // Explicit authoritative arrays provided by the client (sanitized and deduplicated)
+    const nextRestaurants = Array.isArray(restaurants) 
+      ? deduplicateServerRestaurants(restaurants) 
+      : (current.restaurants || []);
 
     const userMap = new Map<string, any>();
-    (current.users || []).forEach((u: any) => {
-      const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
-      if (key) userMap.set(key, u);
-    });
-    (users || []).forEach((u: any) => {
-      const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
-      if (key) userMap.set(key, { ...(userMap.get(key) || {}), ...u });
-    });
+    if (Array.isArray(users) && users.length > 0) {
+      users.forEach((u: any) => {
+        const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+        if (key) userMap.set(key, u);
+      });
+    } else {
+      (current.users || []).forEach((u: any) => {
+        const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+        if (key) userMap.set(key, u);
+      });
+    }
 
-    const catMap = new Map<string, any>();
-    (current.categories || []).forEach((c: any) => { if (c?.id) catMap.set(c.id, c); });
-    (categories || []).forEach((c: any) => { if (c?.id) catMap.set(c.id, { ...(catMap.get(c.id) || {}), ...c }); });
-
-    const itemMap = new Map<string, any>();
-    (current.items || []).forEach((i: any) => { if (i?.id) itemMap.set(i.id, i); });
-    (items || []).forEach((i: any) => { if (i?.id) itemMap.set(i.id, { ...(itemMap.get(i.id) || {}), ...i }); });
+    const nextCategories = Array.isArray(categories) ? categories : (current.categories || []);
+    const nextItems = Array.isArray(items) ? items : (current.items || []);
 
     const updatedData = {
       ...current,
-      restaurants: Array.from(restMap.values()),
-      categories: Array.from(catMap.values()),
-      items: Array.from(itemMap.values()),
+      restaurants: nextRestaurants,
+      categories: nextCategories,
+      items: nextItems,
       users: Array.from(userMap.values()),
       orders: orders || current.orders || [],
       publishedMenus: current.publishedMenus || {},
