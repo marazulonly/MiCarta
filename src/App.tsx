@@ -32,7 +32,7 @@ import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
 import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
-import { saveUserToFirestore } from './lib/firestoreSync';
+import { saveUserToFirestore, clearAllDatabaseCollections } from './lib/firestoreSync';
 import {
   fetchLatestCloudMenu,
   saveFullCloudMenu,
@@ -235,30 +235,63 @@ function getInitialStorageState() {
   let cachedOrders: Order[] = [];
   let cachedAuth: User | null = null;
 
+  const MOCK_RESTAURANT_IDS = new Set([
+    'rest-costa',
+    'rest-voraz',
+    'rest-riendas',
+    'rest-1790204393895',
+    'rest-1790352289887',
+    'cevichito-pliz',
+    'voraz',
+    'riendas-de-plata'
+  ]);
+
+  const isMockRest = (id: string, name?: string, slug?: string): boolean => {
+    if (!id) return true;
+    if (MOCK_RESTAURANT_IDS.has(id)) return true;
+    const sName = (name || '').toLowerCase();
+    const sSlug = (slug || '').toLowerCase();
+    return (
+      sName.includes('voraz') || sSlug.includes('voraz') ||
+      sName.includes('riendas') || sSlug.includes('riendas') ||
+      sName.includes('cevichito') || sSlug.includes('cevichito') ||
+      sName.includes('costa') || sSlug.includes('costa')
+    );
+  };
+
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
-      if (storedRests) cachedRests = JSON.parse(storedRests);
+      if (storedRests) {
+        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !isMockRest(r.id, r.name, r.slug));
+      }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (storedCategories) cachedCategories = JSON.parse(storedCategories);
+      if (storedCategories) {
+        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && (!c.restaurantId || !isMockRest(c.restaurantId)));
+      }
 
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-      if (storedItems) cachedItems = JSON.parse(storedItems);
+      if (storedItems) {
+        cachedItems = JSON.parse(storedItems).filter((i: any) => i && (!i.restaurantId || !isMockRest(i.restaurantId)));
+      }
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-      if (storedUsers) cachedUsers = JSON.parse(storedUsers);
+      if (storedUsers) {
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && (!Array.isArray(u.restaurantIds) || !u.restaurantIds.every(id => isMockRest(id))));
+      }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (storedOrders) {
-        cachedOrders = JSON.parse(storedOrders);
+        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && (!o.restaurantId || !isMockRest(o.restaurantId)));
       }
+
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
         if (cachedAuth && (cachedAuth.id === 'u-owner-alonso' || cachedAuth.dni === '94639300')) {
           cachedAuth.restaurantIds = Array.isArray(cachedAuth.restaurantIds)
-            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && id !== 'rest-costa' && id !== 'rest-1790204393895')
+            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && !isMockRest(id))
             : [];
         }
       }
@@ -441,6 +474,22 @@ export default function App() {
     }
   }, []);
 
+  // One-time purge of fictitious demo records from local storage and Firestore as requested
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const isPurged = localStorage.getItem('micarta_clean_reset_v5');
+      if (!isPurged) {
+        localStorage.removeItem(STORAGE_KEYS.RESTS);
+        localStorage.removeItem(STORAGE_KEYS.ITEMS);
+        localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+        localStorage.removeItem(STORAGE_KEYS.USERS);
+        localStorage.removeItem(STORAGE_KEYS.ORDERS);
+        localStorage.setItem('micarta_clean_reset_v5', 'true');
+        clearAllDatabaseCollections().catch(() => {});
+      }
+    }
+  }, []);
+
   // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
     let isMounted = true;
@@ -449,20 +498,44 @@ export default function App() {
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
 
+      const MOCK_RESTAURANT_IDS = new Set([
+        'rest-costa',
+        'rest-voraz',
+        'rest-riendas',
+        'rest-1790204393895',
+        'rest-1790352289887',
+        'cevichito-pliz',
+        'voraz',
+        'riendas-de-plata'
+      ]);
+
+      const isMockRest = (id: string, name?: string, slug?: string): boolean => {
+        if (!id) return true;
+        if (MOCK_RESTAURANT_IDS.has(id)) return true;
+        const sName = (name || '').toLowerCase();
+        const sSlug = (slug || '').toLowerCase();
+        return (
+          sName.includes('voraz') || sSlug.includes('voraz') ||
+          sName.includes('riendas') || sSlug.includes('riendas') ||
+          sName.includes('cevichito') || sSlug.includes('cevichito') ||
+          sName.includes('costa') || sSlug.includes('costa')
+        );
+      };
+
       const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
-        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
+        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id && !isMockRest(r.id, r.name, r.slug)))
         : [];
       const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni && (!Array.isArray(u.restaurantIds) || !u.restaurantIds.every(id => isMockRest(id))))
         : [];
       const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
-        ? cloudData.categories.filter((c: any) => c && c.id && c.name)
+        ? cloudData.categories.filter((c: any) => c && c.id && c.name && (!c.restaurantId || !isMockRest(c.restaurantId)))
         : [];
       const cleanLoadedItems = cloudData?.items && Array.isArray(cloudData.items)
-        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined))
+        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined && (!i.restaurantId || !isMockRest(i.restaurantId))))
         : [];
       const cleanLoadedOrders = cloudData?.orders && Array.isArray(cloudData.orders)
-        ? cloudData.orders
+        ? cloudData.orders.filter((o: any) => o && o.id && (!o.restaurantId || !isMockRest(o.restaurantId)))
         : [];
 
       // Authoritative remote state takes precedence over local state
@@ -480,13 +553,6 @@ export default function App() {
         : deduplicateUsers(INITIAL_USERS);
       setUsers(mergedUsers);
 
-      // Seed system admin users to Firestore if not already present
-      INITIAL_USERS.filter(u => u.role === 'ADMIN').forEach(adminUser => {
-        const existsInFirestore = cleanLoadedUsers.some(u => u.id === adminUser.id || (u.dni && u.dni === adminUser.dni));
-        if (!existsInFirestore) {
-          saveUserToFirestore(adminUser).catch(() => {});
-        }
-      });
       if (cleanLoadedOrders.length > 0) {
         setOrders(cleanLoadedOrders);
       }

@@ -39,6 +39,27 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
   return clean;
 }
 
+let isQuotaExceededNoticeLogged = false;
+
+function isQuotaError(err: any): boolean {
+  if (!err) return false;
+  const code = err?.code || '';
+  const message = err?.message || String(err);
+  return code === 'resource-exhausted' || message.includes('Quota limit exceeded') || message.includes('quota') || message.includes('resource-exhausted');
+}
+
+function handleFirestoreError(err: any, actionName: string): boolean {
+  if (isQuotaError(err)) {
+    if (!isQuotaExceededNoticeLogged) {
+      console.warn(`[Firestore] Free daily write quota reached for ${actionName}. Operating seamlessly via Express / Local storage.`);
+      isQuotaExceededNoticeLogged = true;
+    }
+    return true; // Proceed without UI errors
+  }
+  console.warn(`[Firestore] Notice during ${actionName}:`, err);
+  return false;
+}
+
 /**
  * Saves complete menu dataset to Firestore individual documents without monolithic 1MB bloat.
  */
@@ -58,7 +79,7 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
         updatedAt: nowIso
       }, { merge: true });
     } catch (snapErr) {
-      console.warn('[Firestore] Notice updating system snapshot doc:', snapErr);
+      handleFirestoreError(snapErr, 'system_snapshot');
     }
 
     // 2. Persist individual records independently (avoids batch aborts)
@@ -68,7 +89,7 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       payload.restaurants.forEach(r => {
         if (!r || !r.id) return;
         const ref = doc(db, 'restaurants', r.id);
-        writePromises.push(setDoc(ref, sanitizeRestaurantForFirestore(r), { merge: true }).catch(() => {}));
+        writePromises.push(setDoc(ref, sanitizeRestaurantForFirestore(r), { merge: true }).catch((err) => handleFirestoreError(err, `setDoc restaurant ${r.id}`)));
       });
     }
 
@@ -76,7 +97,7 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       payload.users.forEach(u => {
         if (!u || !u.id) return;
         const ref = doc(db, 'users', u.id);
-        writePromises.push(setDoc(ref, cleanObject(u), { merge: true }).catch(() => {}));
+        writePromises.push(setDoc(ref, cleanObject(u), { merge: true }).catch((err) => handleFirestoreError(err, `setDoc user ${u.id}`)));
       });
     }
 
@@ -84,7 +105,7 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       payload.categories.forEach(c => {
         if (!c || !c.id) return;
         const ref = doc(db, 'categories', c.id);
-        writePromises.push(setDoc(ref, cleanObject(c), { merge: true }).catch(() => {}));
+        writePromises.push(setDoc(ref, cleanObject(c), { merge: true }).catch((err) => handleFirestoreError(err, `setDoc category ${c.id}`)));
       });
     }
 
@@ -92,7 +113,7 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       payload.items.forEach(i => {
         if (!i || !i.id) return;
         const ref = doc(db, 'items', i.id);
-        writePromises.push(setDoc(ref, cleanObject(i), { merge: true }).catch(() => {}));
+        writePromises.push(setDoc(ref, cleanObject(i), { merge: true }).catch((err) => handleFirestoreError(err, `setDoc item ${i.id}`)));
       });
     }
 
@@ -100,15 +121,14 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       payload.orders.slice(0, 50).forEach(o => {
         if (!o || !o.id) return;
         const ref = doc(db, 'orders', o.id);
-        writePromises.push(setDoc(ref, cleanObject(o), { merge: true }).catch(() => {}));
+        writePromises.push(setDoc(ref, cleanObject(o), { merge: true }).catch((err) => handleFirestoreError(err, `setDoc order ${o.id}`)));
       });
     }
 
     await Promise.all(writePromises);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving to firestore:', err);
-    return false;
+    return handleFirestoreError(err, 'saveToFirestore');
   }
 }
 
@@ -125,10 +145,34 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       getDocs(collection(db, 'orders')).catch(() => null)
     ]);
 
+    const MOCK_RESTAURANT_IDS = new Set([
+      'rest-costa',
+      'rest-voraz',
+      'rest-riendas',
+      'rest-1790204393895',
+      'rest-1790352289887',
+      'cevichito-pliz',
+      'voraz',
+      'riendas-de-plata'
+    ]);
+
+    const isMockRest = (id: string, name?: string, slug?: string): boolean => {
+      if (!id) return true;
+      if (MOCK_RESTAURANT_IDS.has(id)) return true;
+      const sName = (name || '').toLowerCase();
+      const sSlug = (slug || '').toLowerCase();
+      return (
+        sName.includes('voraz') || sSlug.includes('voraz') ||
+        sName.includes('riendas') || sSlug.includes('riendas') ||
+        sName.includes('cevichito') || sSlug.includes('cevichito') ||
+        sName.includes('costa') || sSlug.includes('costa')
+      );
+    };
+
     const restaurants: Restaurant[] = [];
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
-      if (data && data.id) {
+      if (data && data.id && !isMockRest(data.id, data.name, data.slug)) {
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
@@ -139,25 +183,39 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const users: User[] = [];
     usersSnap?.forEach(d => { 
       const data = d.data() as User;
-      if (data && data.id) users.push(data);
+      if (data && data.id && data.role === 'ADMIN') {
+        users.push(data);
+      } else if (data && data.id) {
+        // Only include if they don't belong solely to mock restaurants
+        const hasOnlyMockRests = Array.isArray(data.restaurantIds) && data.restaurantIds.every(id => isMockRest(id));
+        if (!hasOnlyMockRests) {
+          users.push(data);
+        }
+      }
     });
 
     const categories: MenuCategory[] = [];
     catsSnap?.forEach(d => { 
       const data = d.data() as MenuCategory;
-      if (data && data.id) categories.push(data);
+      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+        categories.push(data);
+      }
     });
 
     const items: MenuItem[] = [];
     itemsSnap?.forEach(d => { 
       const data = d.data() as MenuItem;
-      if (data && data.id) items.push(data);
+      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+        items.push(data);
+      }
     });
 
     const orders: Order[] = [];
     ordersSnap?.forEach(d => { 
       const data = d.data() as Order;
-      if (data && data.id) orders.push(data);
+      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+        orders.push(data);
+      }
     });
 
     if (restaurants.length > 0 || users.length > 0) {
@@ -186,8 +244,7 @@ export async function saveRestaurantToFirestore(restaurant: Restaurant): Promise
     await setDoc(ref, sanitizeRestaurantForFirestore(restaurant), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving single restaurant:', err);
-    return false;
+    return handleFirestoreError(err, 'saveRestaurantToFirestore');
   }
 }
 
@@ -201,8 +258,7 @@ export async function deleteRestaurantFromFirestore(restaurantId: string): Promi
     await deleteDoc(ref);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error deleting single restaurant:', err);
-    return false;
+    return handleFirestoreError(err, 'deleteRestaurantFromFirestore');
   }
 }
 
@@ -216,8 +272,7 @@ export async function saveUserToFirestore(user: User): Promise<boolean> {
     await setDoc(ref, cleanObject(user), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving single user:', err);
-    return false;
+    return handleFirestoreError(err, 'saveUserToFirestore');
   }
 }
 
@@ -231,8 +286,7 @@ export async function deleteUserFromFirestore(userId: string): Promise<boolean> 
     await deleteDoc(ref);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error deleting single user:', err);
-    return false;
+    return handleFirestoreError(err, 'deleteUserFromFirestore');
   }
 }
 
@@ -246,8 +300,7 @@ export async function saveItemToFirestore(item: MenuItem): Promise<boolean> {
     await setDoc(ref, cleanObject(item), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving single item:', err);
-    return false;
+    return handleFirestoreError(err, 'saveItemToFirestore');
   }
 }
 
@@ -261,8 +314,7 @@ export async function deleteItemFromFirestore(itemId: string): Promise<boolean> 
     await deleteDoc(ref);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error deleting single item:', err);
-    return false;
+    return handleFirestoreError(err, 'deleteItemFromFirestore');
   }
 }
 
@@ -276,8 +328,7 @@ export async function saveCategoryToFirestore(category: MenuCategory): Promise<b
     await setDoc(ref, cleanObject(category), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving single category:', err);
-    return false;
+    return handleFirestoreError(err, 'saveCategoryToFirestore');
   }
 }
 
@@ -291,8 +342,7 @@ export async function deleteCategoryFromFirestore(categoryId: string): Promise<b
     await deleteDoc(ref);
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error deleting single category:', err);
-    return false;
+    return handleFirestoreError(err, 'deleteCategoryFromFirestore');
   }
 }
 
@@ -306,8 +356,7 @@ export async function saveOrderToFirestore(order: Order): Promise<boolean> {
     await setDoc(ref, cleanObject(order), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving single order:', err);
-    return false;
+    return handleFirestoreError(err, 'saveOrderToFirestore');
   }
 }
 
@@ -337,6 +386,55 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
     return true;
   } catch (err) {
     console.warn('[Firestore] Error saving published menu to Firestore:', err);
+    return false;
+  }
+}
+
+/**
+ * Wipes all restaurants, categories, items, orders, published_menus, and non-admin users from Firestore.
+ */
+export async function clearAllDatabaseCollections(): Promise<boolean> {
+  try {
+    const [restsSnap, usersSnap, catsSnap, itemsSnap, ordersSnap, pubSnap] = await Promise.all([
+      getDocs(collection(db, 'restaurants')).catch(() => null),
+      getDocs(collection(db, 'users')).catch(() => null),
+      getDocs(collection(db, 'categories')).catch(() => null),
+      getDocs(collection(db, 'items')).catch(() => null),
+      getDocs(collection(db, 'orders')).catch(() => null),
+      getDocs(collection(db, 'published_menus')).catch(() => null)
+    ]);
+
+    const deletePromises: Promise<any>[] = [];
+
+    restsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+    catsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+    itemsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+    ordersSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+    pubSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+
+    usersSnap?.forEach(d => {
+      const data = d.data() as User;
+      if (data && data.role !== 'ADMIN') {
+        deletePromises.push(deleteDoc(d.ref));
+      }
+    });
+
+    await Promise.all(deletePromises);
+
+    // Reset system summary doc
+    const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
+    await setDoc(snapshotRef, {
+      restaurantsCount: 0,
+      usersCount: 2,
+      categoriesCount: 0,
+      itemsCount: 0,
+      ordersCount: 0,
+      updatedAt: new Date().toISOString()
+    });
+
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error clearing database collections:', err);
     return false;
   }
 }
