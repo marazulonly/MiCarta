@@ -1135,6 +1135,10 @@ export default function App() {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
       } catch {}
     }
+
+    // Call direct Cloud & Firestore deletion
+    autoDeleteUser(userId).catch(() => {});
+
     saveFullCloudMenu({
       restaurants,
       categories,
