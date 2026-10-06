@@ -56,6 +56,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenLoginModal,
 }) => {
   const currentRestaurant = getSafeActiveRestaurant(restaurants, selectedRestaurantId);
+  const [isBypassing, setIsBypassing] = React.useState(() => typeof window !== 'undefined' && localStorage.getItem('bypass_firestore') === 'true');
+
+  const toggleBypassFirestore = () => {
+    const nextBypass = !isBypassing;
+    localStorage.setItem('bypass_firestore', String(nextBypass));
+    setIsBypassing(nextBypass);
+    window.location.reload();
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-neutral-200/80 shadow-sm">
@@ -79,10 +87,19 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <span className="text-[11px] text-neutral-500">
                   4 Restaurantes Conectados
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] text-neutral-700 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-800" />
-                  Auto-sync Nube ✓
-                </span>
+                <button
+                  type="button"
+                  onClick={toggleBypassFirestore}
+                  className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded transition cursor-pointer border ${
+                    isBypassing
+                      ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                      : 'bg-neutral-100 text-neutral-700 border-neutral-300 hover:bg-neutral-200'
+                  }`}
+                  title={isBypassing ? "Usando Servidor Local (Modo Pruebas) - Haz clic para reactivar Firestore" : "Usando Firestore en Vivo - Haz clic para activar el Modo Pruebas"}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isBypassing ? 'bg-amber-600 animate-pulse' : 'bg-green-600'}`} />
+                  {isBypassing ? 'Modo Pruebas (Local) ⚠' : 'Firestore en Vivo ✓'}
+                </button>
               </div>
             </div>
           </div>

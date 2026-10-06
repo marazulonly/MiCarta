@@ -60,10 +60,23 @@ function handleFirestoreError(err: any, actionName: string): boolean {
   return false;
 }
 
+export function isBypassingFirestore(): boolean {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('bypass_firestore') === 'true';
+    }
+  } catch {}
+  return false;
+}
+
 /**
  * Saves complete menu dataset to Firestore individual documents without monolithic 1MB bloat.
  */
 export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolean> {
+  if (isBypassingFirestore()) {
+    console.log('[Firestore] Bypassing saveToFirestore write (Local Test Mode is Active)');
+    return true;
+  }
   try {
     const nowIso = new Date().toISOString();
 
@@ -136,6 +149,10 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
  * Fetches latest menu dataset directly from Firestore collections.
  */
 export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
+  if (isBypassingFirestore()) {
+    console.log('[Firestore] Bypassing fetchFromFirestore read (Local Test Mode is Active)');
+    return null;
+  }
   try {
     const [restsSnap, usersSnap, catsSnap, itemsSnap, ordersSnap] = await Promise.all([
       getDocs(collection(db, 'restaurants')).catch(() => null),
@@ -208,6 +225,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
  * Persists an individual restaurant directly into Firestore.
  */
 export async function saveRestaurantToFirestore(restaurant: Restaurant): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!restaurant || !restaurant.id) return false;
   try {
     const ref = doc(db, 'restaurants', restaurant.id);
@@ -222,6 +240,7 @@ export async function saveRestaurantToFirestore(restaurant: Restaurant): Promise
  * Deletes an individual restaurant directly from Firestore.
  */
 export async function deleteRestaurantFromFirestore(restaurantId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!restaurantId) return false;
   try {
     const ref = doc(db, 'restaurants', restaurantId);
@@ -236,6 +255,7 @@ export async function deleteRestaurantFromFirestore(restaurantId: string): Promi
  * Persists an individual user directly into Firestore.
  */
 export async function saveUserToFirestore(user: User): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!user || !user.id) return false;
   try {
     const ref = doc(db, 'users', user.id);
@@ -250,6 +270,7 @@ export async function saveUserToFirestore(user: User): Promise<boolean> {
  * Deletes an individual user directly from Firestore.
  */
 export async function deleteUserFromFirestore(userId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!userId) return false;
   try {
     const ref = doc(db, 'users', userId);
@@ -264,6 +285,7 @@ export async function deleteUserFromFirestore(userId: string): Promise<boolean> 
  * Persists an individual menu item directly into Firestore.
  */
 export async function saveItemToFirestore(item: MenuItem): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!item || !item.id) return false;
   try {
     const ref = doc(db, 'items', item.id);
@@ -278,6 +300,7 @@ export async function saveItemToFirestore(item: MenuItem): Promise<boolean> {
  * Deletes an individual menu item directly from Firestore.
  */
 export async function deleteItemFromFirestore(itemId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!itemId) return false;
   try {
     const ref = doc(db, 'items', itemId);
@@ -292,6 +315,7 @@ export async function deleteItemFromFirestore(itemId: string): Promise<boolean> 
  * Persists an individual category directly into Firestore.
  */
 export async function saveCategoryToFirestore(category: MenuCategory): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!category || !category.id) return false;
   try {
     const ref = doc(db, 'categories', category.id);
@@ -306,6 +330,7 @@ export async function saveCategoryToFirestore(category: MenuCategory): Promise<b
  * Deletes an individual category directly from Firestore.
  */
 export async function deleteCategoryFromFirestore(categoryId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!categoryId) return false;
   try {
     const ref = doc(db, 'categories', categoryId);
@@ -320,6 +345,7 @@ export async function deleteCategoryFromFirestore(categoryId: string): Promise<b
  * Persists an individual order directly into Firestore.
  */
 export async function saveOrderToFirestore(order: Order): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!order || !order.id) return false;
   try {
     const ref = doc(db, 'orders', order.id);
@@ -334,6 +360,7 @@ export async function saveOrderToFirestore(order: Order): Promise<boolean> {
  * Updates order status directly in Firestore.
  */
 export async function updateOrderStatusInFirestore(orderId: string, status: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!orderId) return false;
   try {
     const ref = doc(db, 'orders', orderId);
@@ -349,6 +376,7 @@ export async function updateOrderStatusInFirestore(orderId: string, status: stri
  * Persists an official published menu snapshot directly into Firestore.
  */
 export async function savePublishedMenuToFirestore(restaurantId: string, snapshot: any): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   if (!restaurantId || !snapshot) return false;
   try {
     const ref = doc(db, 'published_menus', restaurantId);
@@ -364,6 +392,7 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
  * Wipes all restaurants, categories, items, orders, published_menus, and non-admin users from Firestore.
  */
 export async function clearAllDatabaseCollections(): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
   try {
     const [restsSnap, usersSnap, catsSnap, itemsSnap, ordersSnap, pubSnap] = await Promise.all([
       getDocs(collection(db, 'restaurants')).catch(() => null),
@@ -413,6 +442,7 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
  * Fetches an official published menu snapshot directly from Firestore.
  */
 export async function fetchPublishedMenuFromFirestore(restaurantId: string): Promise<any | null> {
+  if (isBypassingFirestore()) return null;
   if (!restaurantId) return null;
   try {
     const ref = doc(db, 'published_menus', restaurantId);
