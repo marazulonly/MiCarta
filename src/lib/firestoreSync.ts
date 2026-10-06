@@ -156,23 +156,20 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       'riendas-de-plata'
     ]);
 
-    const isMockRest = (id: string, name?: string, slug?: string): boolean => {
-      if (!id) return true;
-      if (MOCK_RESTAURANT_IDS.has(id)) return true;
-      const sName = (name || '').toLowerCase();
-      const sSlug = (slug || '').toLowerCase();
-      return (
-        sName.includes('voraz') || sSlug.includes('voraz') ||
-        sName.includes('riendas') || sSlug.includes('riendas') ||
-        sName.includes('cevichito') || sSlug.includes('cevichito') ||
-        sName.includes('costa') || sSlug.includes('costa')
-      );
-    };
+    const MOCK_USER_IDS = new Set([
+      'u-1790352263608',
+      'u-owner-alonso',
+      'u-owner-stephanie',
+      'u-5c',
+      'u-7c',
+      'u-k2',
+      'u-8b'
+    ]);
 
     const restaurants: Restaurant[] = [];
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
-      if (data && data.id && !isMockRest(data.id, data.name, data.slug)) {
+      if (data && data.id && !MOCK_RESTAURANT_IDS.has(data.id)) {
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
@@ -185,19 +182,15 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       const data = d.data() as User;
       if (data && data.id && data.role === 'ADMIN') {
         users.push(data);
-      } else if (data && data.id) {
-        // Only include if they don't belong solely to mock restaurants
-        const hasOnlyMockRests = Array.isArray(data.restaurantIds) && data.restaurantIds.length > 0 && data.restaurantIds.every(id => isMockRest(id));
-        if (!hasOnlyMockRests) {
-          users.push(data);
-        }
+      } else if (data && data.id && !MOCK_USER_IDS.has(data.id)) {
+        users.push(data);
       }
     });
 
     const categories: MenuCategory[] = [];
     catsSnap?.forEach(d => { 
       const data = d.data() as MenuCategory;
-      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
         categories.push(data);
       }
     });
@@ -205,7 +198,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const items: MenuItem[] = [];
     itemsSnap?.forEach(d => { 
       const data = d.data() as MenuItem;
-      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
         items.push(data);
       }
     });
@@ -213,7 +206,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const orders: Order[] = [];
     ordersSnap?.forEach(d => { 
       const data = d.data() as Order;
-      if (data && data.id && (!data.restaurantId || !isMockRest(data.restaurantId))) {
+      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
         orders.push(data);
       }
     });

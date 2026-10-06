@@ -246,44 +246,41 @@ function getInitialStorageState() {
     'riendas-de-plata'
   ]);
 
-  const isMockRest = (id: string, name?: string, slug?: string): boolean => {
-    if (!id) return true;
-    if (MOCK_RESTAURANT_IDS.has(id)) return true;
-    const sName = (name || '').toLowerCase();
-    const sSlug = (slug || '').toLowerCase();
-    return (
-      sName.includes('voraz') || sSlug.includes('voraz') ||
-      sName.includes('riendas') || sSlug.includes('riendas') ||
-      sName.includes('cevichito') || sSlug.includes('cevichito') ||
-      sName.includes('costa') || sSlug.includes('costa')
-    );
-  };
+  const MOCK_USER_IDS = new Set([
+    'u-1790352263608',
+    'u-owner-alonso',
+    'u-owner-stephanie',
+    'u-5c',
+    'u-7c',
+    'u-k2',
+    'u-8b'
+  ]);
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
       if (storedRests) {
-        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !isMockRest(r.id, r.name, r.slug));
+        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !MOCK_RESTAURANT_IDS.has(r.id));
       }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (storedCategories) {
-        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && (!c.restaurantId || !isMockRest(c.restaurantId)));
+        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && (!c.restaurantId || !MOCK_RESTAURANT_IDS.has(c.restaurantId)));
       }
 
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
       if (storedItems) {
-        cachedItems = JSON.parse(storedItems).filter((i: any) => i && (!i.restaurantId || !isMockRest(i.restaurantId)));
+        cachedItems = JSON.parse(storedItems).filter((i: any) => i && (!i.restaurantId || !MOCK_RESTAURANT_IDS.has(i.restaurantId)));
       }
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && (!Array.isArray(u.restaurantIds) || u.restaurantIds.length === 0 || !u.restaurantIds.every(id => isMockRest(id))));
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && !MOCK_USER_IDS.has(u.id));
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (storedOrders) {
-        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && (!o.restaurantId || !isMockRest(o.restaurantId)));
+        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && (!o.restaurantId || !MOCK_RESTAURANT_IDS.has(o.restaurantId)));
       }
 
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
@@ -291,7 +288,7 @@ function getInitialStorageState() {
         cachedAuth = JSON.parse(storedAuth);
         if (cachedAuth && (cachedAuth.id === 'u-owner-alonso' || cachedAuth.dni === '94639300')) {
           cachedAuth.restaurantIds = Array.isArray(cachedAuth.restaurantIds)
-            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && !isMockRest(id))
+            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && !MOCK_RESTAURANT_IDS.has(id))
             : [];
         }
       }
@@ -509,33 +506,30 @@ export default function App() {
         'riendas-de-plata'
       ]);
 
-      const isMockRest = (id: string, name?: string, slug?: string): boolean => {
-        if (!id) return true;
-        if (MOCK_RESTAURANT_IDS.has(id)) return true;
-        const sName = (name || '').toLowerCase();
-        const sSlug = (slug || '').toLowerCase();
-        return (
-          sName.includes('voraz') || sSlug.includes('voraz') ||
-          sName.includes('riendas') || sSlug.includes('riendas') ||
-          sName.includes('cevichito') || sSlug.includes('cevichito') ||
-          sName.includes('costa') || sSlug.includes('costa')
-        );
-      };
+      const MOCK_USER_IDS = new Set([
+        'u-1790352263608',
+        'u-owner-alonso',
+        'u-owner-stephanie',
+        'u-5c',
+        'u-7c',
+        'u-k2',
+        'u-8b'
+      ]);
 
       const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
-        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id && !isMockRest(r.id, r.name, r.slug)))
+        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id && !MOCK_RESTAURANT_IDS.has(r.id)))
         : [];
       const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni && (!Array.isArray(u.restaurantIds) || u.restaurantIds.length === 0 || !u.restaurantIds.every(id => isMockRest(id))))
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni && !MOCK_USER_IDS.has(u.id))
         : [];
       const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
-        ? cloudData.categories.filter((c: any) => c && c.id && c.name && (!c.restaurantId || !isMockRest(c.restaurantId)))
+        ? cloudData.categories.filter((c: any) => c && c.id && c.name && (!c.restaurantId || !MOCK_RESTAURANT_IDS.has(c.restaurantId)))
         : [];
       const cleanLoadedItems = cloudData?.items && Array.isArray(cloudData.items)
-        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined && (!i.restaurantId || !isMockRest(i.restaurantId))))
+        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined && (!i.restaurantId || !MOCK_RESTAURANT_IDS.has(i.restaurantId))))
         : [];
       const cleanLoadedOrders = cloudData?.orders && Array.isArray(cloudData.orders)
-        ? cloudData.orders.filter((o: any) => o && o.id && (!o.restaurantId || !isMockRest(o.restaurantId)))
+        ? cloudData.orders.filter((o: any) => o && o.id && (!o.restaurantId || !MOCK_RESTAURANT_IDS.has(o.restaurantId)))
         : [];
 
       // Authoritative remote state takes precedence over local state
