@@ -165,3 +165,123 @@ export function subscribeToFirestoreChanges(onUpdate: (data: CloudMenuPayload) =
     return () => {};
   }
 }
+
+/**
+ * Persists an individual restaurant directly into Firestore.
+ */
+export async function saveRestaurantToFirestore(restaurant: Restaurant): Promise<boolean> {
+  if (!restaurant || !restaurant.id) return false;
+  try {
+    const ref = doc(db, 'restaurants', restaurant.id);
+    await setDoc(ref, restaurant, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving single restaurant:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes an individual restaurant directly from Firestore.
+ */
+export async function deleteRestaurantFromFirestore(restaurantId: string): Promise<boolean> {
+  if (!restaurantId) return false;
+  try {
+    const ref = doc(db, 'restaurants', restaurantId);
+    await deleteDoc(ref);
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error deleting single restaurant:', err);
+    return false;
+  }
+}
+
+/**
+ * Persists an individual user directly into Firestore.
+ */
+export async function saveUserToFirestore(user: User): Promise<boolean> {
+  if (!user || !user.id) return false;
+  try {
+    const ref = doc(db, 'users', user.id);
+    await setDoc(ref, user, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving single user:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes an individual user directly from Firestore.
+ */
+export async function deleteUserFromFirestore(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    const ref = doc(db, 'users', userId);
+    await deleteDoc(ref);
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error deleting single user:', err);
+    return false;
+  }
+}
+
+/**
+ * Persists an individual menu item directly into Firestore.
+ */
+export async function saveItemToFirestore(item: MenuItem): Promise<boolean> {
+  if (!item || !item.id) return false;
+  try {
+    const ref = doc(db, 'items', item.id);
+    await setDoc(ref, item, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving single item:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes an individual menu item directly from Firestore.
+ */
+export async function deleteItemFromFirestore(itemId: string): Promise<boolean> {
+  if (!itemId) return false;
+  try {
+    const ref = doc(db, 'items', itemId);
+    await deleteDoc(ref);
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error deleting single item:', err);
+    return false;
+  }
+}
+
+/**
+ * Persists an individual category directly into Firestore.
+ */
+export async function saveCategoryToFirestore(category: MenuCategory): Promise<boolean> {
+  if (!category || !category.id) return false;
+  try {
+    const ref = doc(db, 'categories', category.id);
+    await setDoc(ref, category, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving single category:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes an individual category directly from Firestore.
+ */
+export async function deleteCategoryFromFirestore(categoryId: string): Promise<boolean> {
+  if (!categoryId) return false;
+  try {
+    const ref = doc(db, 'categories', categoryId);
+    await deleteDoc(ref);
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error deleting single category:', err);
+    return false;
+  }
+}

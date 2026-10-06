@@ -865,6 +865,20 @@ export default function App() {
       }
     }
 
+    // Direct cloud & Firestore write for the new restaurant
+    autoSyncRestaurant(newRestaurant).catch(() => {});
+
+    // If a default category was created, direct cloud write
+    if (!hasCategory) {
+      autoSyncCategory(defaultCat).catch(() => {});
+    }
+
+    // Direct cloud write for owner update if assigned
+    if (targetOwnerId) {
+      const targetUser = nextUsers.find(u => u.id === targetOwnerId || (currentUser && u.id === currentUser.id));
+      if (targetUser) autoSyncUser(targetUser).catch(() => {});
+    }
+
     // Full atomic persistence to server disk and remote backup
     saveFullCloudMenu({
       restaurants: nextRestaurants,
@@ -874,7 +888,7 @@ export default function App() {
       orders
     }).catch(() => {});
     
-    triggerCloudUpdate(newRestaurant.id);
+    triggerCloudUpdate(newRestaurant.id, newRestaurant, nextCategories.filter(c => c.restaurantId === newRestaurant.id), []);
 
     setSelectedRestaurantId(newRestaurant.id);
     showToast(`Restaurante "${newRestaurant.name}" creado y guardado permanentemente.`);
@@ -911,6 +925,7 @@ export default function App() {
             ...u,
             restaurantIds: (u.restaurantIds || []).filter(id => id !== updated.id)
           };
+          autoSyncUser(updatedUser).catch(() => {});
           return updatedUser;
         }
         if (u.id === newOwnerId) {
@@ -920,6 +935,7 @@ export default function App() {
               ? u.restaurantIds
               : [...(u.restaurantIds || []), updated.id]
           };
+          autoSyncUser(updatedUser).catch(() => {});
           return updatedUser;
         }
         return u;
@@ -933,6 +949,7 @@ export default function App() {
             ...u,
             restaurantIds: [...(u.restaurantIds || []), updated.id]
           };
+          autoSyncUser(updatedUser).catch(() => {});
           return updatedUser;
         }
         return u;
@@ -949,6 +966,10 @@ export default function App() {
         restaurant: updated
       });
     }
+
+    // Direct cloud & Firestore write for restaurant
+    autoSyncRestaurant(updated).catch(() => {});
+
     const restCats = categories.filter(c => c.restaurantId === updated.id);
     const restItems = menuItems.filter(i => i.restaurantId === updated.id);
     triggerCloudUpdate(updated.id, updated, restCats, restItems);
@@ -966,6 +987,9 @@ export default function App() {
   const handleDeleteRestaurant = (restaurantId: string) => {
     const targetRest = (restaurants || []).find(r => r && r.id === restaurantId);
     const restName = targetRest ? targetRest.name : 'Restaurante';
+
+    // Direct cloud & Firestore deletion
+    autoDeleteRestaurant(restaurantId).catch(() => {});
 
     // 1. Remove from restaurants state
     const nextRestaurants = (restaurants || []).filter(r => r && r.id !== restaurantId);
