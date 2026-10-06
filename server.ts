@@ -41,6 +41,13 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // In-memory cache
 let cachedCloudData: any = null;
+let cloudDataLock: Promise<any> = Promise.resolve();
+
+function withCloudDataLock<T>(fn: () => Promise<T>): Promise<T> {
+  const result = cloudDataLock.then(() => fn(), () => fn());
+  cloudDataLock = result.then(() => {}, () => {});
+  return result;
+}
 
 // Upstash Redis / Vercel KV configuration
 let kvRestUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || 'https://tough-raccoon-293580.upstash.io';
@@ -574,274 +581,292 @@ async function startServer() {
 
   // POST: Full save or update of cloud menu
   app.post('/api/cloud-menu', async (req, res) => {
-    const { restaurants, items, categories, users, orders } = req.body;
-    if (!restaurants && !items && !categories) {
-      res.status(400).json({ success: false, message: 'Faltan datos de la carta' });
-      return;
-    }
+    return withCloudDataLock(async () => {
+      const { restaurants, items, categories, users, orders } = req.body;
+      if (!restaurants && !items && !categories) {
+        res.status(400).json({ success: false, message: 'Faltan datos de la carta' });
+        return;
+      }
 
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
 
-    // Explicit authoritative arrays provided by the client (sanitized and deduplicated)
-    const nextRestaurants = Array.isArray(restaurants) 
-      ? deduplicateServerRestaurants(restaurants) 
-      : (current.restaurants || []);
+      // Explicit authoritative arrays provided by the client (sanitized and deduplicated)
+      const nextRestaurants = Array.isArray(restaurants) 
+        ? deduplicateServerRestaurants(restaurants) 
+        : (current.restaurants || []);
 
-    const userMap = new Map<string, any>();
-    if (Array.isArray(users) && users.length > 0) {
-      users.forEach((u: any) => {
-        const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
-        if (key) userMap.set(key, u);
-      });
-    } else {
-      (current.users || []).forEach((u: any) => {
-        const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
-        if (key) userMap.set(key, u);
-      });
-    }
+      const userMap = new Map<string, any>();
+      if (Array.isArray(users) && users.length > 0) {
+        users.forEach((u: any) => {
+          const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+          if (key) userMap.set(key, u);
+        });
+      } else {
+        (current.users || []).forEach((u: any) => {
+          const key = u?.id || (u?.dni ? `dni-${u.dni}` : null);
+          if (key) userMap.set(key, u);
+        });
+      }
 
-    const nextCategories = Array.isArray(categories) ? categories : (current.categories || []);
-    const nextItems = Array.isArray(items) ? items : (current.items || []);
+      const nextCategories = Array.isArray(categories) ? categories : (current.categories || []);
+      const nextItems = Array.isArray(items) ? items : (current.items || []);
 
-    const updatedData = {
-      ...current,
-      restaurants: nextRestaurants,
-      categories: nextCategories,
-      items: nextItems,
-      users: Array.from(userMap.values()),
-      orders: orders || current.orders || [],
-      publishedMenus: current.publishedMenus || {},
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        restaurants: nextRestaurants,
+        categories: nextCategories,
+        items: nextItems,
+        users: Array.from(userMap.values()),
+        orders: orders || current.orders || [],
+        publishedMenus: current.publishedMenus || {},
+        updatedAt: new Date().toISOString()
+      };
 
-    const saved = saveCloudDataToDisk(updatedData);
-    if (saved) {
-      await saveToVercelKV(updatedData);
-      broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
-      res.json({
-        success: true,
-        message: 'Carta guardada permanentemente en la nube',
-        updatedAt: updatedData.updatedAt
-      });
-    } else {
-      res.status(500).json({ success: false, message: 'Error al persistir en disco' });
-    }
+      const saved = saveCloudDataToDisk(updatedData);
+      if (saved) {
+        await saveToVercelKV(updatedData);
+        broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
+        res.json({
+          success: true,
+          message: 'Carta guardada permanentemente en la nube',
+          updatedAt: updatedData.updatedAt
+        });
+      } else {
+        res.status(500).json({ success: false, message: 'Error al persistir en disco' });
+      }
+    });
   });
 
   // POST: Update single menu item
   app.post('/api/cloud-menu/item', async (req, res) => {
-    const item = req.body;
-    if (!item || !item.id) {
-      res.status(400).json({ success: false, message: 'Item inválido' });
-      return;
-    }
+    return withCloudDataLock(async () => {
+      const item = req.body;
+      if (!item || !item.id) {
+        res.status(400).json({ success: false, message: 'Item inválido' });
+        return;
+      }
 
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const items = [...(current.items || [])];
-    const idx = items.findIndex((i: any) => i.id === item.id);
-    if (idx >= 0) {
-      items[idx] = { ...items[idx], ...item };
-    } else {
-      items.unshift(item);
-    }
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const items = [...(current.items || [])];
+      const idx = items.findIndex((i: any) => i.id === item.id);
+      if (idx >= 0) {
+        items[idx] = { ...items[idx], ...item };
+      } else {
+        items.unshift(item);
+      }
 
-    const updatedData = {
-      ...current,
-      items,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        items,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'ITEM_UPDATED', item, items });
-    res.json({ success: true, message: `Plato "${item.name}" guardado en la nube`, item });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'ITEM_UPDATED', item, items });
+      res.json({ success: true, message: `Plato "${item.name}" guardado en la nube`, item });
+    });
   });
 
   // DELETE: Delete menu item
   app.delete('/api/cloud-menu/item/:id', async (req, res) => {
-    const { id } = req.params;
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const items = (current.items || []).filter((i: any) => i.id !== id);
+    return withCloudDataLock(async () => {
+      const { id } = req.params;
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const items = (current.items || []).filter((i: any) => i.id !== id);
 
-    const updatedData = {
-      ...current,
-      items,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        items,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'ITEM_DELETED', itemId: id, items });
-    res.json({ success: true, message: 'Plato eliminado de la nube' });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'ITEM_DELETED', itemId: id, items });
+      res.json({ success: true, message: 'Plato eliminado de la nube' });
+    });
   });
 
   // POST: Update single restaurant
   app.post('/api/cloud-menu/restaurant', async (req, res) => {
-    const restaurant = req.body;
-    if (!restaurant || !restaurant.id) {
-      res.status(400).json({ success: false, message: 'Restaurante inválido' });
-      return;
-    }
+    return withCloudDataLock(async () => {
+      const restaurant = req.body;
+      if (!restaurant || !restaurant.id) {
+        res.status(400).json({ success: false, message: 'Restaurante inválido' });
+        return;
+      }
 
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const restaurants = [...(current.restaurants || [])];
-    const idx = restaurants.findIndex((r: any) => r.id === restaurant.id);
-    if (idx >= 0) {
-      restaurants[idx] = { ...restaurants[idx], ...restaurant };
-    } else {
-      restaurants.push(restaurant);
-    }
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const restaurants = [...(current.restaurants || [])];
+      const idx = restaurants.findIndex((r: any) => r.id === restaurant.id);
+      if (idx >= 0) {
+        restaurants[idx] = { ...restaurants[idx], ...restaurant };
+      } else {
+        restaurants.push(restaurant);
+      }
 
-    const updatedData = {
-      ...current,
-      restaurants,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        restaurants,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
 
-    // Also persist individual snapshot for immediate CDN/public access
-    if (restaurant.slug) {
-      saveIndividualToVercelKV(restaurant.slug, {
-        success: true,
-        published: true,
-        version: 1,
-        publishedAt: updatedData.updatedAt,
-        restaurant,
-        categories: (updatedData.categories || []).filter((c: any) => c.restaurantId === restaurant.id),
-        items: (updatedData.items || []).filter((i: any) => i.restaurantId === restaurant.id)
-      }).catch(() => {});
-    }
+      // Also persist individual snapshot for immediate CDN/public access
+      if (restaurant.slug) {
+        saveIndividualToVercelKV(restaurant.slug, {
+          success: true,
+          published: true,
+          version: 1,
+          publishedAt: updatedData.updatedAt,
+          restaurant,
+          categories: (updatedData.categories || []).filter((c: any) => c.restaurantId === restaurant.id),
+          items: (updatedData.items || []).filter((i: any) => i.restaurantId === restaurant.id)
+        }).catch(() => {});
+      }
 
-    broadcastMenuUpdate({ type: 'RESTAURANT_UPDATED', restaurant, restaurants });
-    res.json({ success: true, message: `Restaurante "${restaurant.name}" guardado en la nube`, restaurant });
+      broadcastMenuUpdate({ type: 'RESTAURANT_UPDATED', restaurant, restaurants });
+      res.json({ success: true, message: `Restaurante "${restaurant.name}" guardado en la nube`, restaurant });
+    });
   });
 
   // DELETE: Delete restaurant
   app.delete('/api/cloud-menu/restaurant/:id', async (req, res) => {
-    const { id } = req.params;
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const restaurants = (current.restaurants || []).filter((r: any) => r.id !== id);
-    const categories = (current.categories || []).filter((c: any) => c.restaurantId !== id);
-    const items = (current.items || []).filter((i: any) => i.restaurantId !== id);
+    return withCloudDataLock(async () => {
+      const { id } = req.params;
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const restaurants = (current.restaurants || []).filter((r: any) => r.id !== id);
+      const categories = (current.categories || []).filter((c: any) => c.restaurantId !== id);
+      const items = (current.items || []).filter((i: any) => i.restaurantId !== id);
 
-    const updatedData = {
-      ...current,
-      restaurants,
-      categories,
-      items,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        restaurants,
+        categories,
+        items,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
-    res.json({ success: true, message: 'Restaurante eliminado permanentemente de la nube' });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'FULL_SYNC', data: updatedData });
+      res.json({ success: true, message: 'Restaurante eliminado permanentemente de la nube' });
+    });
   });
 
   // POST: Update or add category
   app.post('/api/cloud-menu/category', async (req, res) => {
-    const category = req.body;
-    if (!category || !category.id) {
-      res.status(400).json({ success: false, message: 'Categoría inválida' });
-      return;
-    }
+    return withCloudDataLock(async () => {
+      const category = req.body;
+      if (!category || !category.id) {
+        res.status(400).json({ success: false, message: 'Categoría inválida' });
+        return;
+      }
 
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const categories = [...(current.categories || [])];
-    const idx = categories.findIndex((c: any) => c.id === category.id);
-    if (idx >= 0) {
-      categories[idx] = { ...categories[idx], ...category };
-    } else {
-      categories.push(category);
-    }
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const categories = [...(current.categories || [])];
+      const idx = categories.findIndex((c: any) => c.id === category.id);
+      if (idx >= 0) {
+        categories[idx] = { ...categories[idx], ...category };
+      } else {
+        categories.push(category);
+      }
 
-    const updatedData = {
-      ...current,
-      categories,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        categories,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'CATEGORY_UPDATED', category, categories });
-    res.json({ success: true, message: `Categoría "${category.name}" guardada en la nube`, category });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'CATEGORY_UPDATED', category, categories });
+      res.json({ success: true, message: `Categoría "${category.name}" guardada en la nube`, category });
+    });
   });
 
   // DELETE: Delete category
   app.delete('/api/cloud-menu/category/:id', async (req, res) => {
-    const { id } = req.params;
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const categories = (current.categories || []).filter((c: any) => c.id !== id);
+    return withCloudDataLock(async () => {
+      const { id } = req.params;
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const categories = (current.categories || []).filter((c: any) => c.id !== id);
 
-    const updatedData = {
-      ...current,
-      categories,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        categories,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'CATEGORY_DELETED', categoryId: id, categories });
-    res.json({ success: true, message: 'Categoría eliminada de la nube' });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'CATEGORY_DELETED', categoryId: id, categories });
+      res.json({ success: true, message: 'Categoría eliminada de la nube' });
+    });
   });
 
   // POST: Update or create user (guarantees photo and restaurant assignment persistence)
   app.post('/api/cloud-menu/user', async (req, res) => {
-    const user = req.body;
-    if (!user || (!user.id && !user.dni)) {
-      res.status(400).json({ success: false, message: 'Usuario inválido' });
-      return;
-    }
+    return withCloudDataLock(async () => {
+      const user = req.body;
+      if (!user || (!user.id && !user.dni)) {
+        res.status(400).json({ success: false, message: 'Usuario inválido' });
+        return;
+      }
 
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const users = [...(current.users || [])];
-    const idx = users.findIndex((u: any) => u.id === user.id || (user.dni && u.dni === user.dni));
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const users = [...(current.users || [])];
+      const idx = users.findIndex((u: any) => u.id === user.id || (user.dni && u.dni === user.dni));
 
-    if (idx >= 0) {
-      users[idx] = { ...users[idx], ...user };
-    } else {
-      users.unshift(user);
-    }
+      if (idx >= 0) {
+        users[idx] = { ...users[idx], ...user };
+      } else {
+        users.unshift(user);
+      }
 
-    const updatedData = {
-      ...current,
-      users,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        users,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'USER_UPDATED', user, users });
-    res.json({ success: true, message: `Usuario "${user.name}" guardado permanentemente en la nube`, user });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'USER_UPDATED', user, users });
+      res.json({ success: true, message: `Usuario "${user.name}" guardado permanentemente en la nube`, user });
+    });
   });
 
   // DELETE: Delete user
   app.delete('/api/cloud-menu/user/:id', async (req, res) => {
-    const { id } = req.params;
-    await ensureCloudDataHydrated();
-    const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-    const users = (current.users || []).filter((u: any) => u.id !== id);
+    return withCloudDataLock(async () => {
+      const { id } = req.params;
+      await ensureCloudDataHydrated();
+      const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
+      const users = (current.users || []).filter((u: any) => u.id !== id);
 
-    const updatedData = {
-      ...current,
-      users,
-      updatedAt: new Date().toISOString()
-    };
+      const updatedData = {
+        ...current,
+        users,
+        updatedAt: new Date().toISOString()
+      };
 
-    saveCloudDataToDisk(updatedData);
-    await saveToVercelKV(updatedData);
-    broadcastMenuUpdate({ type: 'USER_DELETED', userId: id, users });
-    res.json({ success: true, message: 'Usuario eliminado permanentemente de la nube' });
+      saveCloudDataToDisk(updatedData);
+      await saveToVercelKV(updatedData);
+      broadcastMenuUpdate({ type: 'USER_DELETED', userId: id, users });
+      res.json({ success: true, message: 'Usuario eliminado permanentemente de la nube' });
+    });
   });
 
   // POST: Create or sync new order (instant cloud save and real-time SSE broadcast)

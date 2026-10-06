@@ -316,6 +316,48 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     currentRestaurant?.tables || (currentRestaurant ? generateTablesForRestaurant(currentRestaurant.id) : [])
   );
 
+  // Sync states when active restaurant changes (prevents returning to stale tables or old permissions!)
+  useEffect(() => {
+    if (currentRestaurant) {
+      setShiftsState(currentRestaurant.shifts || (currentRestaurant ? generateShiftsForRestaurant(currentRestaurant.id) : []));
+      setTablesState(currentRestaurant.tables || (currentRestaurant ? generateTablesForRestaurant(currentRestaurant.id) : []));
+      setKitchenPerms(currentRestaurant.kitchenPermissions || {
+        canMarkReady: true,
+        canRejectItems: true,
+        canManageStockOut: true,
+        canReorderQueue: true,
+        autoPrintTickets: true,
+        soundAlerts: true,
+        stationFilter: 'Todas las estaciones'
+      });
+      setWaiterPerms(currentRestaurant.waiterPermissions || {
+        canCancelOrders: false,
+        canApplyDiscounts: true,
+        canAssignTables: true,
+        canSplitBills: true,
+        requireSupervisorPin: true,
+        maxActiveTables: 6
+      });
+      setDeliveryPerms(currentRestaurant.deliveryPermissions || {
+        canAcceptCash: true,
+        maxActiveOrders: 3,
+        autoAssignZone: true,
+        gpsSpeedTracking: true,
+        allowedZones: ['San Isidro', 'Miraflores']
+      });
+      setCustomerSettings(currentRestaurant.customerAccessSettings || {
+        qrOrderingEnabled: true,
+        guestCheckout: true,
+        allowCashAtTable: true,
+        vipDiscountPercent: 10,
+        maxOrderAmount: 500,
+        welcomeMessage: '¡Bienvenidos!',
+        wifiPassword: 'WifiPassword123'
+      });
+      setScheduleState(currentRestaurant.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
+    }
+  }, [selectedRestId, currentRestaurant?.id]);
+
   // Modals for Tables & QR & Shifts
   const [selectedTableForQr, setSelectedTableForQr] = useState<RestaurantTable | null>(null);
   const [editingTable, setEditingTable] = useState<RestaurantTable | null>(null);
