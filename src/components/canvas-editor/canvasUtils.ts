@@ -1052,6 +1052,7 @@ export function sanitizeCanvasElement(el: Partial<CanvasElement>, index: number 
     id: el.id || `elem-${el.type || 'custom'}-${Date.now()}-${index}`,
     name: el.name || 'Objeto de Diseño',
     type: el.type || 'text_custom',
+    zone: el.zone,
     x: Number(el.x) || 0,
     y: Number(el.y) || 0,
     width: Math.max(10, Number(el.width) || 100),

@@ -18,12 +18,17 @@ export type CanvasElementType =
   | 'separator_line'
   | 'image_custom'
   | 'order_button'
-  | 'category_pill';
+  | 'category_pill'
+  | 'footer_text'
+  | 'contact_info';
+
+export type CanvasZone = 'header' | 'body' | 'footer';
 
 export interface CanvasElement {
   id: string;
   name: string;
   type: CanvasElementType;
+  zone?: CanvasZone;       // Design zone categorization: header (static), body (items), footer (bottom)
   x: number;               // Absolute coordinate X in canvas pixels (e.g. 0 to 1080)
   y: number;               // Absolute coordinate Y in canvas pixels (e.g. 0 to 1920)
   width: number;           // Width in canvas pixels
@@ -65,7 +70,7 @@ export interface CanvasElement {
 
 export interface CanvasConfig {
   width: number;          // Canonical canvas width (default 800)
-  height: number;         // Canonical canvas height (default 1200)
+  height: number;         // Canonical canvas height (default 1500)
   backgroundColor: string;
   backgroundImage?: string;
   showGrid?: boolean;
@@ -73,6 +78,9 @@ export interface CanvasConfig {
   showSnapGuides?: boolean;
   showSafetyMargins?: boolean;
   safetyMarginPadding?: number; // e.g. 40px
+  showZoneGuides?: boolean;     // Visual dividers for Header, Body and Footer zones
+  headerZoneHeight?: number;    // Height allocated for static header (default 260px)
+  footerZoneHeight?: number;    // Height allocated for footer (default 180px)
 }
 
 export interface SnapGuide {

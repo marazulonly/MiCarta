@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Layers, 
   PlusCircle, 
+  Plus,
   LayoutTemplate, 
   Palette, 
   Type, 
@@ -332,11 +333,264 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'insert' && (
           <div className="space-y-4">
-            
-            {/* 1. Elementos Dinámicos del Restaurante y Plato */}
-            <div className="space-y-2">
+
+            {/* ===================================================================== */}
+            {/* ZONA 1: CABECERA DE CARTA (ESTÁTICA)                                  */}
+            {/* ===================================================================== */}
+            <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono text-blue-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                  1. Cabecera (Estática)
+                </span>
+                <span className="text-[9px] font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                  Fija en superior
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onAddElement({
+                    name: 'Logo del Restaurante',
+                    type: 'restaurant_logo',
+                    zone: 'header',
+                    x: Math.round((config.width - 160) / 2),
+                    y: 35,
+                    width: 160,
+                    height: 80,
+                    isDynamic: true,
+                    dynamicField: 'restaurant_logo',
+                    objectFit: 'contain'
+                  })}
+                  className="p-2.5 rounded-xl bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-left transition cursor-pointer shadow-xs group col-span-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-100 text-blue-700">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-neutral-900 group-hover:text-blue-900">🖼️ Logo de Restaurante</p>
+                      <p className="text-[10px] text-neutral-500 font-mono">Zona estática de cabecera</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => onAddElement({
+                    name: 'Nombre del Restaurante',
+                    type: 'restaurant_name',
+                    zone: 'header',
+                    x: 40,
+                    y: 125,
+                    width: config.width - 80,
+                    height: 48,
+                    fontSize: 28,
+                    fontWeight: 800,
+                    fontFamily: "'Cinzel', serif",
+                    textAlign: 'center',
+                    textColor: '#111827',
+                    isDynamic: true,
+                    dynamicField: 'restaurant_name'
+                  })}
+                  className="p-2 rounded-xl bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-left transition cursor-pointer shadow-xs group"
+                >
+                  <p className="text-xs font-bold text-neutral-900 group-hover:text-blue-900">Nombre Marca</p>
+                  <p className="text-[10px] text-neutral-500 font-mono">{`{{nombre}}`}</p>
+                </button>
+
+                <button
+                  onClick={() => onAddElement({
+                    name: 'Eslogan / Tagline',
+                    type: 'restaurant_tagline',
+                    zone: 'header',
+                    x: 40,
+                    y: 175,
+                    width: config.width - 80,
+                    height: 32,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    textAlign: 'center',
+                    textColor: '#64748B',
+                    isDynamic: true,
+                    dynamicField: 'restaurant_tagline'
+                  })}
+                  className="p-2 rounded-xl bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-left transition cursor-pointer shadow-xs group"
+                >
+                  <p className="text-xs font-bold text-neutral-900 group-hover:text-blue-900">Eslogan / Tagline</p>
+                  <p className="text-[10px] text-neutral-500 font-mono">{`{{eslogan}}`}</p>
+                </button>
+              </div>
+            </div>
+
+            {/* ===================================================================== */}
+            {/* ZONA 2: CUERPO DE LA CARTA (PLATOS DINÁMICOS)                        */}
+            {/* ===================================================================== */}
+            <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono text-amber-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                  <Utensils className="w-3.5 h-3.5 text-amber-600" />
+                  2. Cuerpo de Carta (Platos)
+                </span>
+                <span className="text-[9px] font-mono text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                  Dinámico
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    const headerHeight = config.headerZoneHeight || 260;
+                    const footerHeight = config.footerZoneHeight || 180;
+                    const bodyElems = elements.filter(el => el.y >= headerHeight && el.y < (config.height - footerHeight));
+                    const maxY = bodyElems.length > 0 
+                      ? Math.max(...bodyElems.map(el => el.y + el.height))
+                      : headerHeight + 20;
+                    const nextY = Math.min(maxY + 20, config.height - footerHeight - 160);
+
+                    onAddElement({
+                      name: 'Tarjeta de Plato Completa',
+                      type: 'shape_rect',
+                      zone: 'body',
+                      x: 40,
+                      y: nextY,
+                      width: config.width - 80,
+                      height: 140,
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: 16,
+                      borderColor: '#E2E8F0',
+                      borderWidth: 1,
+                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)'
+                    });
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-left transition cursor-pointer shadow-sm group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-amber-200" />
+                    <div>
+                      <p className="text-xs font-bold text-white">+ Añadir Tarjeta de Plato</p>
+                      <p className="text-[10px] text-amber-100">Se añade automáticamente al cuerpo</p>
+                    </div>
+                  </div>
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => onAddElement({
+                      name: 'Categoría {{nombre_categoria}}',
+                      type: 'category_pill',
+                      zone: 'body',
+                      text: 'ENTRADAS & CEVICHES',
+                      width: 280,
+                      height: 40,
+                      fontSize: 16,
+                      fontWeight: 800,
+                      fontFamily: "'Cinzel', serif",
+                      backgroundColor: '#FEF3C7',
+                      textColor: '#92400E',
+                      borderRadius: 10,
+                      textAlign: 'center'
+                    })}
+                    className="p-2 rounded-xl bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50 text-left transition cursor-pointer shadow-xs"
+                  >
+                    <p className="text-xs font-bold text-neutral-900">Píldora Categoría</p>
+                    <p className="text-[10px] text-neutral-500 font-mono">Separador sección</p>
+                  </button>
+
+                  <button
+                    onClick={() => onAddElement({
+                      name: 'Botón Pedir Plato',
+                      type: 'order_button',
+                      zone: 'body',
+                      text: 'Pedir',
+                      width: 110,
+                      height: 38,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      backgroundColor: '#D97706',
+                      textColor: '#FFFFFF',
+                      borderRadius: 10
+                    })}
+                    className="p-2 rounded-xl bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50 text-left transition cursor-pointer shadow-xs"
+                  >
+                    <p className="text-xs font-bold text-neutral-900">Botón de Pedido</p>
+                    <p className="text-[10px] text-neutral-500 font-mono">Acción interactiva</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ===================================================================== */}
+            {/* ZONA 3: PIE DE CARTA (FINAL DEL CANVA)                                */}
+            {/* ===================================================================== */}
+            <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono text-purple-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-purple-600" />
+                  3. Pie de Carta (Final)
+                </span>
+                <span className="text-[9px] font-mono text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">
+                  Inferior
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const footerHeight = config.footerZoneHeight || 180;
+                    const footerTop = config.height - footerHeight;
+                    onAddElement({
+                      name: 'Información & Contacto',
+                      type: 'contact_info',
+                      zone: 'footer',
+                      text: '📍 Av. Principal 123 · 📞 +51 987 654 321 · ⏰ 12:00pm - 11:00pm',
+                      x: 40,
+                      y: footerTop + 25,
+                      width: config.width - 80,
+                      height: 50,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textAlign: 'center',
+                      textColor: '#64748B'
+                    });
+                  }}
+                  className="p-2.5 rounded-xl bg-white border border-purple-200 hover:border-purple-400 hover:bg-purple-50 text-left transition cursor-pointer shadow-xs col-span-2 group"
+                >
+                  <p className="text-xs font-bold text-neutral-900 group-hover:text-purple-900">📍 Contacto, Dirección & Horario</p>
+                  <p className="text-[10px] text-neutral-500 font-mono">Pie de página con datos del local</p>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const footerHeight = config.footerZoneHeight || 180;
+                    const footerTop = config.height - footerHeight;
+                    onAddElement({
+                      name: 'Mensaje de Despedida',
+                      type: 'footer_text',
+                      zone: 'footer',
+                      text: '¡Gracias por su visita! Todos los precios incluyen IGV.',
+                      x: 40,
+                      y: footerTop + 85,
+                      width: config.width - 80,
+                      height: 35,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      textAlign: 'center',
+                      textColor: '#94A3B8'
+                    });
+                  }}
+                  className="p-2 rounded-xl bg-white border border-purple-200 hover:border-purple-400 hover:bg-purple-50 text-left transition cursor-pointer shadow-xs col-span-2"
+                >
+                  <p className="text-xs font-bold text-neutral-900">💬 Mensaje de Despedida & IGV</p>
+                  <p className="text-[10px] text-neutral-500 font-mono">Agradecimiento al comensal</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Otros elementos individuales */}
+            <div className="space-y-2 pt-2 border-t border-neutral-200">
               <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
-                🍽️ Datos del Plato & Restaurante
+                🍽️ Elementos de Plato Individuales
               </span>
 
               <div className="grid grid-cols-2 gap-2">

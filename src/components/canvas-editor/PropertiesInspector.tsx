@@ -255,7 +255,88 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
             />
           </div>
         </div>
+
+        {/* Zona Asignada en el Canva */}
+        <div className="pt-2 border-t border-neutral-200">
+          <label className="text-[10px] text-neutral-600 font-mono block mb-1">Zona de Carta</label>
+          <div className="grid grid-cols-3 gap-1">
+            {(['header', 'body', 'footer'] as const).map(z => (
+              <button
+                key={z}
+                onClick={() => onUpdateElement({ ...selectedElement, zone: z })}
+                className={`py-1 text-[10px] font-bold rounded-lg border transition cursor-pointer ${
+                  selectedElement.zone === z 
+                    ? (z === 'header' ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : z === 'body' ? 'bg-amber-600 text-white border-amber-600 shadow-xs' : 'bg-purple-600 text-white border-purple-600 shadow-xs')
+                    : 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-200'
+                }`}
+              >
+                {z === 'header' ? '1. Cabecera' : z === 'body' ? '2. Cuerpo' : '3. Pie'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Selector / Subir Imagen & Logotipo */}
+      {(selectedElement.type === 'restaurant_logo' || selectedElement.type === 'dish_image_container' || selectedElement.type === 'image_custom' || selectedElement.dynamicField === 'restaurant_logo') && (
+        <div className="space-y-2.5 p-3 bg-blue-50/60 rounded-xl border border-blue-200">
+          <span className="text-[11px] font-mono text-blue-900 uppercase tracking-widest block font-bold">
+            🖼️ Logotipo / Imagen
+          </span>
+
+          <div>
+            <label className="text-[10px] text-neutral-600 font-mono block mb-1">URL de la Imagen o Logo</label>
+            <input
+              type="text"
+              value={selectedElement.backgroundImage || ''}
+              placeholder="https://... o sube un archivo"
+              onChange={(e) => onUpdateElement({ ...selectedElement, backgroundImage: e.target.value })}
+              className="w-full bg-white px-2.5 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] text-neutral-600 font-mono block mb-1">Cargar Imagen Local (JPG, PNG, SVG)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const base64 = event.target?.result as string;
+                    if (base64) {
+                      onUpdateElement({
+                        ...selectedElement,
+                        backgroundImage: base64
+                      });
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="w-full text-[11px] text-neutral-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-1 pt-1">
+            {(['contain', 'cover', 'fill'] as const).map(fit => (
+              <button
+                key={fit}
+                onClick={() => onUpdateElement({ ...selectedElement, objectFit: fit })}
+                className={`py-1 text-[10px] font-mono font-bold rounded-lg border transition cursor-pointer ${
+                  (selectedElement.objectFit || 'cover') === fit
+                    ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
+                    : 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-200'
+                }`}
+              >
+                {fit}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 2. Alineación Rápida */}
       <div className="space-y-2 p-3 bg-neutral-50 rounded-xl border border-neutral-200">

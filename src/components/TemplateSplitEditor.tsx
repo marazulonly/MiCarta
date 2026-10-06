@@ -647,6 +647,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             sampleItem={sampleItem}
             onSelectElement={setSelectedId}
             onUpdateElement={handleUpdateElement}
+            onAddElement={handleAddElement}
             onCommitHistory={commitHistory}
             onPanChange={setPan}
           />

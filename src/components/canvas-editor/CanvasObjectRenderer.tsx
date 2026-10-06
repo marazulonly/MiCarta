@@ -157,7 +157,8 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
 
     case 'dish_name':
     case 'restaurant_name':
-    case 'text_custom': {
+    case 'text_custom':
+    case 'footer_text': {
       return (
         <div 
           style={{
@@ -185,6 +186,35 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
           >
             {resolvedText || element.name}
           </span>
+        </div>
+      );
+    }
+
+    case 'contact_info': {
+      return (
+        <div 
+          style={{
+            ...containerStyle,
+            justifyContent: 'center',
+            alignItems: textAlign === 'center' ? 'center' : textAlign === 'right' ? 'flex-end' : 'flex-start',
+            padding: '6px 12px',
+            gap: '4px'
+          }}
+          className="select-none"
+        >
+          <div className="flex items-center gap-2">
+            <span
+              style={{
+                fontFamily,
+                fontSize: `${fontSize}px`,
+                fontWeight,
+                color: textColor,
+                textAlign
+              }}
+            >
+              {resolvedText || '📍 Av. Principal 123 · 📞 +51 987 654 321'}
+            </span>
+          </div>
         </div>
       );
     }
