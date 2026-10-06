@@ -1124,13 +1124,23 @@ export default function App() {
   };
 
   const handleDeleteUser = (userId: string) => {
-    const targetUser = users.find(u => u.id === userId);
-    const nextUsers = users.filter(u => u.id !== userId);
+    const targetUser = users.find(u => u && (u.id === userId || (u.dni && u.dni === userId)));
+    const targetDni = targetUser?.dni;
+    const targetName = targetUser?.name ? targetUser.name.trim().toLowerCase() : '';
+
+    const matchesUser = (u: User) => {
+      if (!u) return false;
+      if (u.id === userId) return true;
+      if (targetDni && u.dni === targetDni) return true;
+      if (targetName && u.name.trim().toLowerCase() === targetName) return true;
+      return false;
+    };
+
+    const nextUsers = users.filter(u => !matchesUser(u));
     setUsers(nextUsers);
-    if (currentUser?.id === userId) {
+
+    if (currentUser && matchesUser(currentUser)) {
       setCurrentUser(null);
-    }
-    if (currentUser?.id === userId) {
       try {
         localStorage.removeItem(STORAGE_KEYS.AUTH);
       } catch {}
@@ -1138,6 +1148,7 @@ export default function App() {
 
     // Call direct Cloud & Firestore deletion
     autoDeleteUser(userId).catch(() => {});
+    if (targetDni) autoDeleteUser(targetDni).catch(() => {});
 
     saveFullCloudMenu({
       restaurants,
@@ -1146,7 +1157,7 @@ export default function App() {
       users: nextUsers,
       orders
     }).catch(() => {});
-    showToast(`✓ Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado.`);
+    showToast(`✓ Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado permanentemente.`);
   };
 
   const handlePublishMenu = async (

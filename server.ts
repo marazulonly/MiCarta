@@ -854,7 +854,14 @@ async function startServer() {
       const { id } = req.params;
       await ensureCloudDataHydrated();
       const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [] };
-      const users = (current.users || []).filter((u: any) => u.id !== id);
+      const target = id.trim().toLowerCase();
+      const users = (current.users || []).filter((u: any) => {
+        if (!u) return false;
+        if (u.id && u.id.toLowerCase() === target) return false;
+        if (u.dni && u.dni.toLowerCase() === target) return false;
+        if (u.name && u.name.trim().toLowerCase() === target) return false;
+        return true;
+      });
 
       const updatedData = {
         ...current,
