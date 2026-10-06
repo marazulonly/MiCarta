@@ -1167,6 +1167,18 @@ export default function App() {
     usersRef.current = nextUsers;
     setUsers(nextUsers);
 
+    // If any restaurant was owned by this user, preserve the restaurant and detach ownerId
+    const nextRestaurants = restaurantsRef.current.map(r => {
+      if (r && (r.ownerId === userId || (targetDni && r.ownerId === targetDni))) {
+        const detached = { ...r, ownerId: '' };
+        autoSyncRestaurant(detached).catch(() => {});
+        return detached;
+      }
+      return r;
+    });
+    restaurantsRef.current = nextRestaurants;
+    setRestaurants(nextRestaurants);
+
     if (currentUser && matchesUser(currentUser)) {
       setCurrentUser(null);
       try {
@@ -1179,7 +1191,7 @@ export default function App() {
     if (targetDni) autoDeleteUser(targetDni).catch(() => {});
 
     saveFullCloudMenu({
-      restaurants: restaurantsRef.current,
+      restaurants: nextRestaurants,
       categories: categoriesRef.current,
       items: menuItemsRef.current,
       users: nextUsers,

@@ -402,12 +402,21 @@ export async function saveToUpstashDirectly(payload: CloudMenuPayload): Promise<
 }
 
 /**
- * Fetch latest menu from backend cloud hosting.
- * Prioritizes the Express backend (with persistent disk storage and 50MB limits),
- * then Upstash, and finally static /menus/cloud-snapshot.json so Vercel never fails even if Upstash is over quota.
+ * Fetch latest menu directly from Firestore persistent database.
+ * Firestore is the primary, direct source of truth without intermediary local cache overwrites.
  */
 export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
-  // 1. Primary: Express backend local persistent disk endpoint
+  // 1. Primary: Direct Firestore persistent database
+  try {
+    const firestoreData = await fetchFromFirestore();
+    if (firestoreData && (firestoreData.restaurants?.length || firestoreData.users?.length || firestoreData.items?.length)) {
+      return firestoreData;
+    }
+  } catch (err) {
+    console.warn('[Firestore] Notice during direct Firestore fetch:', err);
+  }
+
+  // 2. Secondary fallback: Express backend endpoint if Firestore is not yet populated
   try {
     const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { 
       cache: 'no-store',
@@ -427,16 +436,10 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
     }
   } catch {}
 
-  // 2. Secondary: Direct Firestore persistent database
-  const firestoreData = await fetchFromFirestore().catch(() => null);
-  if (firestoreData && (firestoreData.restaurants?.length || firestoreData.users?.length || firestoreData.items?.length)) {
-    return firestoreData;
-  }
-
   // 3. Tertiary: Direct Upstash Cloud Hosting
   let cloudData = await fetchFromUpstashDirectly();
 
-  // 4. Quaternary (Camino 2): Static bundled snapshot in /menus/cloud-snapshot.json (100% immune to Upstash plan limits on Vercel)
+  // 4. Quaternary (Camino 2): Static bundled snapshot in /menus/cloud-snapshot.json
   if (!cloudData) {
     try {
       const staticRes = await fetch(`/menus/cloud-snapshot.json?_t=${Date.now()}`, { cache: 'no-store' });
@@ -453,27 +456,6 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
   }
 
   if (cloudData) {
-    // Merge dedicated restaurant index (from Upstash or local override)
-    try {
-      let indexedRests = await fetchRestaurantsIndexFromUpstash();
-      if (!indexedRests && typeof window !== 'undefined' && window.localStorage) {
-        const localRestsRaw = window.localStorage.getItem('applet_restaurants_index_local');
-        if (localRestsRaw) indexedRests = JSON.parse(localRestsRaw);
-      }
-      if (indexedRests && Array.isArray(indexedRests) && indexedRests.length > 0) {
-        const restMap = new Map(indexedRests.map(r => [r.id, r]));
-        cloudData.restaurants = (cloudData.restaurants || []).map(r => restMap.get(r.id) || r);
-      }
-    } catch {}
-
-    // Merge dedicated orders feed
-    try {
-      const ordersFeed = await fetchOrdersFromUpstashDirectly();
-      if (ordersFeed && Array.isArray(ordersFeed) && ordersFeed.length > 0) {
-        cloudData.orders = ordersFeed;
-      }
-    } catch {}
-
     return cloudData;
   }
 
