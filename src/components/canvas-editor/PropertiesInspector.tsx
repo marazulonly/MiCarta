@@ -137,6 +137,84 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
           </div>
         </div>
 
+        {/* ESTRUCTURA DE 3 ZONAS DE LA CARTA */}
+        <div className="space-y-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-200">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-neutral-900 uppercase tracking-widest block font-bold">
+              📐 3 Zonas de la Carta
+            </span>
+            <span className="text-[9px] font-mono text-neutral-500">
+              Distribución
+            </span>
+          </div>
+
+          {/* Zona 1: Cabecera */}
+          <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-600" />
+                1. Cabecera (Estática)
+              </span>
+              <span className="text-[10px] font-mono text-blue-700 font-bold">
+                {config.headerZoneHeight || 380}px
+              </span>
+            </div>
+            <p className="text-[10px] text-blue-800 leading-tight">
+              Logo, nombre del local, eslogan y selector de categorías.
+            </p>
+            <div className="pt-1 flex items-center gap-2">
+              <label className="text-[9px] font-mono text-blue-900 font-bold">Altura (px):</label>
+              <input
+                type="number"
+                value={config.headerZoneHeight || 380}
+                onChange={(e) => onUpdateConfig({ headerZoneHeight: Math.max(160, parseInt(e.target.value) || 380) })}
+                className="w-20 bg-white px-2 py-0.5 rounded border border-blue-300 text-xs font-mono text-neutral-900 font-bold"
+              />
+            </div>
+          </div>
+
+          {/* Zona 2: Cuerpo de Carta */}
+          <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-600" />
+                2. Cuerpo (Platos Dinámicos)
+              </span>
+              <span className="text-[10px] font-mono text-amber-800 font-bold">
+                Auto-adaptable
+              </span>
+            </div>
+            <p className="text-[10px] text-amber-800 leading-tight">
+              Cuadrícula y lista de platos, fotos, descripciones, precios y botones de pedido.
+            </p>
+          </div>
+
+          {/* Zona 3: Pie de Carta */}
+          <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-600" />
+                3. Pie de Carta (Final)
+              </span>
+              <span className="text-[10px] font-mono text-purple-700 font-bold">
+                {config.footerZoneHeight || 180}px
+              </span>
+            </div>
+            <p className="text-[10px] text-purple-800 leading-tight">
+              Información de contacto, teléfono de pedidos, redes y mensaje de agradecimiento.
+            </p>
+            <div className="pt-1 flex items-center gap-2">
+              <label className="text-[9px] font-mono text-purple-900 font-bold">Altura (px):</label>
+              <input
+                type="number"
+                value={config.footerZoneHeight || 180}
+                onChange={(e) => onUpdateConfig({ footerZoneHeight: Math.max(100, parseInt(e.target.value) || 180) })}
+                className="w-20 bg-white px-2 py-0.5 rounded border border-purple-300 text-xs font-mono text-neutral-900 font-bold"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Instructions Card */}
         <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-[11px] text-neutral-600 space-y-1.5">
           <p className="font-bold text-neutral-900 flex items-center gap-1.5">

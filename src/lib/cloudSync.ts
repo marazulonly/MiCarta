@@ -11,7 +11,9 @@ import {
   saveCategoryToFirestore,
   deleteCategoryFromFirestore,
   saveOrderToFirestore,
-  updateOrderStatusInFirestore
+  updateOrderStatusInFirestore,
+  savePublishedMenuToFirestore,
+  fetchPublishedMenuFromFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {
@@ -403,20 +405,20 @@ export async function saveToUpstashDirectly(payload: CloudMenuPayload): Promise<
 
 /**
  * Fetch latest menu directly from Firestore persistent database.
- * Firestore is the primary, direct source of truth without intermediary local cache overwrites.
+ * Firestore is the primary, direct single source of truth.
  */
 export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
   // 1. Primary: Direct Firestore persistent database
   try {
     const firestoreData = await fetchFromFirestore();
-    if (firestoreData && (firestoreData.restaurants?.length || firestoreData.users?.length || firestoreData.items?.length)) {
+    if (firestoreData) {
       return firestoreData;
     }
   } catch (err) {
     console.warn('[Firestore] Notice during direct Firestore fetch:', err);
   }
 
-  // 2. Secondary fallback: Express backend endpoint if Firestore is not yet populated
+  // 2. Fallback only if Firestore is completely unreachable
   try {
     const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { 
       cache: 'no-store',
@@ -436,35 +438,12 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
     }
   } catch {}
 
-  // 3. Tertiary: Direct Upstash Cloud Hosting
-  let cloudData = await fetchFromUpstashDirectly();
-
-  // 4. Quaternary (Camino 2): Static bundled snapshot in /menus/cloud-snapshot.json
-  if (!cloudData) {
-    try {
-      const staticRes = await fetch(`/menus/cloud-snapshot.json?_t=${Date.now()}`, { cache: 'no-store' });
-      if (staticRes.ok) {
-        const contentType = staticRes.headers.get('content-type') || '';
-        if (contentType.includes('application/json') || contentType.includes('text/plain')) {
-          const parsed = await staticRes.json();
-          if (parsed && (parsed.restaurants?.length || parsed.items?.length)) {
-            cloudData = parsed as CloudMenuPayload;
-          }
-        }
-      }
-    } catch {}
-  }
-
-  if (cloudData) {
-    return cloudData;
-  }
-
   return null;
 }
 
 /**
  * Save complete menu data to cloud hosting.
- * Saves to Express backend disk first, and mirrors to Upstash in background.
+ * Direct write to Firestore as primary action with await confirmation.
  */
 export async function saveFullCloudMenu(payload: {
   restaurants?: Restaurant[];
@@ -482,54 +461,18 @@ export async function saveFullCloudMenu(payload: {
     updatedAt: new Date().toISOString()
   };
 
-  let backendOk = false;
+  // 1. Primary & Mandatory: Direct write to Firestore persistent database with real await confirmation
+  const firestoreOk = await saveToFirestore(fullPayload);
 
-  // 1. Primary: Save to Express backend (persists safely to disk without payload size limits)
-  try {
-    const res = await fetch('/api/cloud-menu', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fullPayload)
-    });
-    if (res.ok) {
-      backendOk = true;
-    }
-  } catch (err) {
-    console.warn('[CloudSync] Express backend save error:', err);
-  }
-
-  // 2. Secondary: Mirror to Upstash in background
+  // 2. Non-blocking secondary mirrors (Upstash & Express server disk)
   saveToUpstashDirectly(fullPayload).catch(() => {});
+  fetch('/api/cloud-menu', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fullPayload)
+  }).catch(() => {});
 
-  // 3. Mirror to Firestore Database
-  saveToFirestore(fullPayload).catch((err) => {
-    console.warn('[Firestore] Sync mirror notice:', err);
-  });
-
-  // 3. Atomically persist lightweight individual snapshots per restaurant in Upstash (~2-4 KB each)
-  try {
-    const rests = payload.restaurants || [];
-    const allCats = payload.categories || [];
-    const allItems = payload.items || [];
-    rests.forEach(r => {
-      if (!r || !r.id) return;
-      const rCats = allCats.filter(c => c && c.restaurantId === r.id);
-      const rItems = allItems.filter(i => i && i.restaurantId === r.id);
-      const snap = {
-        success: true,
-        published: true,
-        version: 1,
-        publishedAt: fullPayload.updatedAt,
-        restaurant: r,
-        categories: rCats,
-        items: rItems
-      };
-      if (r.slug) saveIndividualRestaurantSnapshotToUpstash(r.slug, snap).catch(() => {});
-      if (r.id) saveIndividualRestaurantSnapshotToUpstash(r.id, snap).catch(() => {});
-    });
-  } catch {}
-
-  return backendOk;
+  return firestoreOk;
 }
 
 /**
@@ -555,10 +498,21 @@ export async function publishRestaurantMenu(
     items: items || []
   };
 
-  // Asynchronously save individual keys directly in Upstash (guarantees immediate availability in Vercel)
+  // 1. Direct write to Firestore database (Single Source of Truth)
+  const [restOk, menuOk] = await Promise.all([
+    saveRestaurantToFirestore(restaurant),
+    savePublishedMenuToFirestore(restaurantId, snap)
+  ]);
+
+  if (!restOk || !menuOk) {
+    console.warn('[Firestore] Notice during publishRestaurantMenu to Firestore:', { restOk, menuOk });
+  }
+
+  // 2. Mirror to Upstash Redis
   if (restaurant.slug) saveIndividualRestaurantSnapshotToUpstash(restaurant.slug, snap).catch(() => {});
   if (restaurant.id) saveIndividualRestaurantSnapshotToUpstash(restaurant.id, snap).catch(() => {});
 
+  // 3. Mirror to Express server disk
   try {
     const res = await fetch('/api/menu/publish', {
       method: 'POST',
@@ -577,14 +531,19 @@ export async function publishRestaurantMenu(
         success: true,
         version: data.version,
         publishedAt: data.publishedAt,
-        message: data.message
+        message: '✓ Carta publicada y guardada correctamente en Firestore.'
       };
     }
-    const err = await res.json().catch(() => ({}));
-    return { success: true, version: 1, publishedAt: nowIso, message: err.message || 'Publicado correctamente' };
   } catch (err: any) {
-    return { success: true, version: 1, publishedAt: nowIso, message: 'Publicado correctamente en la nube' };
+    console.warn('[CloudSync] Server mirror notice:', err);
   }
+
+  return { 
+    success: restOk && menuOk, 
+    version: 1, 
+    publishedAt: nowIso, 
+    message: restOk && menuOk ? '✓ Carta publicada y guardada correctamente en Firestore.' : '⚠️ Error al guardar la carta en Firestore.' 
+  };
 }
 
 /**
@@ -602,6 +561,24 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
 } | null> {
   const norm = normalizeSlug(slugOrId);
   if (!norm) return null;
+
+  // 1. Direct fetch from Firestore database (Single Source of Truth)
+  try {
+    const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
+    if (firestoreSnap && firestoreSnap.restaurant) {
+      return {
+        success: true,
+        published: true,
+        version: firestoreSnap.version || 1,
+        publishedAt: firestoreSnap.publishedAt || new Date().toISOString(),
+        restaurant: firestoreSnap.restaurant,
+        categories: firestoreSnap.categories || [],
+        items: firestoreSnap.items || []
+      };
+    }
+  } catch (err) {
+    console.warn('[Firestore] Notice fetching public menu from Firestore:', err);
+  }
 
   // Helper to apply any newer local branding override if present
   const applyLatestBranding = (snap: any) => {
@@ -736,313 +713,128 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
 }
 
 /**
- * Automatically saves a user modification (including photo and assigned restaurants) to the backend and Upstash.
+ * Automatically saves a user modification directly to Firestore persistent database.
  */
 export async function autoSyncUser(user: User): Promise<boolean> {
   lastLocalWriteTime = Date.now();
-  await saveUserToFirestore(user);
+  const firestoreOk = await saveUserToFirestore(user);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const users = [...(current.users || [])];
-      const idx = users.findIndex(u => u.id === user.id || (user.dni && u.dni === user.dni));
-      if (idx >= 0) {
-        users[idx] = { ...users[idx], ...user };
-      } else {
-        users.unshift(user);
-      }
-      await saveToUpstashDirectly({
-        ...current,
-        users
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncUser Upstash error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch('/api/cloud-menu/user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(user)
+  }).catch(() => {});
 
-  try {
-    const res = await fetch('/api/cloud-menu/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    });
-    return res.ok;
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncUser server error:', err);
-    return false;
-  }
+  return firestoreOk;
 }
 
 /**
- * Automatically deletes a user from the backend and Upstash.
+ * Automatically deletes a user directly from Firestore.
  */
 export async function autoDeleteUser(userId: string): Promise<boolean> {
   lastLocalWriteTime = Date.now();
-  await deleteUserFromFirestore(userId);
+  const firestoreOk = await deleteUserFromFirestore(userId);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const users = (current.users || []).filter(u => u.id !== userId);
-      await saveToUpstashDirectly({
-        ...current,
-        users
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteUser Upstash error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch(`/api/cloud-menu/user/${encodeURIComponent(userId)}`, {
+    method: 'DELETE'
+  }).catch(() => {});
 
-  try {
-    const res = await fetch(`/api/cloud-menu/user/${encodeURIComponent(userId)}`, {
-      method: 'DELETE'
-    });
-    return res.ok;
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteUser server error:', err);
-    return false;
-  }
+  return firestoreOk;
 }
 
 /**
- * Automatically saves a menu item modification to the cloud hosting.
+ * Automatically saves a menu item modification directly to Firestore.
  */
 export async function autoSyncMenuItem(item: MenuItem): Promise<boolean> {
-  await saveItemToFirestore(item);
+  const firestoreOk = await saveItemToFirestore(item);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const items = [...(current.items || [])];
-      const idx = items.findIndex(i => i.id === item.id);
-      if (idx >= 0) {
-        items[idx] = { ...items[idx], ...item };
-      } else {
-        items.unshift(item);
-      }
-      await saveToUpstashDirectly({
-        ...current,
-        items
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncMenuItem error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch('/api/cloud-menu/item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item)
+  }).catch(() => {});
 
-  try {
-    const res = await fetch('/api/cloud-menu/item', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item)
-    });
-    return res.ok;
-  } catch {}
-
-  return true;
+  return firestoreOk;
 }
 
 /**
- * Automatically deletes a menu item in the cloud hosting.
+ * Automatically deletes a menu item directly from Firestore.
  */
 export async function autoDeleteMenuItem(itemId: string): Promise<boolean> {
-  await deleteItemFromFirestore(itemId);
+  const firestoreOk = await deleteItemFromFirestore(itemId);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const items = (current.items || []).filter(i => i.id !== itemId);
-      await saveToUpstashDirectly({
-        ...current,
-        items
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteMenuItem error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch(`/api/cloud-menu/item/${encodeURIComponent(itemId)}`, {
+    method: 'DELETE'
+  }).catch(() => {});
 
-  try {
-    const res = await fetch(`/api/cloud-menu/item/${encodeURIComponent(itemId)}`, {
-      method: 'DELETE'
-    });
-    return res.ok;
-  } catch {}
-
-  return true;
+  return firestoreOk;
 }
 
 /**
- * Automatically saves a restaurant modification (branding, header, logo, name) to the cloud hosting.
- * Saves directly to lightweight isolated restaurant index, Firestore, and individual restaurant public snapshot in Upstash.
+ * Automatically saves a restaurant modification directly to Firestore persistent database.
  */
 export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolean> {
   lastLocalWriteTime = Date.now();
 
-  // 1. Direct write to Firestore database
-  await saveRestaurantToFirestore(restaurant);
+  // 1. Direct write to Firestore persistent database
+  const firestoreOk = await saveRestaurantToFirestore(restaurant);
 
-  // 2. Save restaurant to dedicated lightweight index in Upstash
-  try {
-    let rests: Restaurant[] = [];
-    const existingIndex = await fetchRestaurantsIndexFromUpstash();
-    if (existingIndex && Array.isArray(existingIndex) && existingIndex.length > 0) {
-      rests = existingIndex;
-    } else {
-      const full = await fetchFromUpstashDirectly();
-      if (full && full.restaurants) rests = full.restaurants;
-    }
+  // 2. Non-blocking secondary mirrors
+  fetch('/api/cloud-menu/restaurant', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(restaurant)
+  }).catch(() => {});
 
-    const idx = rests.findIndex(r => r.id === restaurant.id);
-    if (idx >= 0) {
-      rests[idx] = restaurant;
-    } else {
-      rests.push(restaurant);
-    }
-    await saveRestaurantsIndexToUpstash(rests);
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncRestaurant index notice:', err);
-  }
-
-  // 3. Also update this restaurant's individual public snapshot
-  try {
-    const normSlug = normalizeSlug(restaurant.slug);
-    const normId = normalizeSlug(restaurant.id);
-    const existingSnap = (normSlug ? await fetchIndividualRestaurantSnapshotFromUpstash(normSlug) : null)
-      || (normId ? await fetchIndividualRestaurantSnapshotFromUpstash(normId) : null);
-
-    const updatedSnap = {
-      ...(existingSnap || { success: true, published: true, version: 1, categories: [], items: [] }),
-      restaurant,
-      publishedAt: new Date().toISOString()
-    };
-    if (restaurant.slug) saveIndividualRestaurantSnapshotToUpstash(restaurant.slug, updatedSnap).catch(() => {});
-    if (restaurant.id) saveIndividualRestaurantSnapshotToUpstash(restaurant.id, updatedSnap).catch(() => {});
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncRestaurant individual snapshot notice:', err);
-  }
-
-  // 4. Mirror to backend disk
-  try {
-    const res = await fetch('/api/cloud-menu/restaurant', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(restaurant)
-    });
-    return res.ok;
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncRestaurant server notice:', err);
-  }
-
-  return true;
+  return firestoreOk;
 }
 
 /**
- * Automatically deletes a restaurant in the cloud hosting and all caches.
+ * Automatically deletes a restaurant directly from Firestore.
  */
 export async function autoDeleteRestaurant(restaurantId: string): Promise<boolean> {
-  // 1. Delete from Firestore database
-  await deleteRestaurantFromFirestore(restaurantId);
+  const firestoreOk = await deleteRestaurantFromFirestore(restaurantId);
 
-  // 2. Remove from dedicated lightweight index in Upstash & localStorage
-  try {
-    const existingIndex = await fetchRestaurantsIndexFromUpstash();
-    if (existingIndex && Array.isArray(existingIndex)) {
-      const filtered = existingIndex.filter(r => r && r.id !== restaurantId);
-      await saveRestaurantsIndexToUpstash(filtered);
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteRestaurant index notice:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch(`/api/cloud-menu/restaurant/${encodeURIComponent(restaurantId)}`, {
+    method: 'DELETE'
+  }).catch(() => {});
 
-  // 3. Delete from backend disk & memory
-  try {
-    const res = await fetch(`/api/cloud-menu/restaurant/${encodeURIComponent(restaurantId)}`, {
-      method: 'DELETE'
-    });
-    return res.ok;
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteRestaurant error:', err);
-    return false;
-  }
+  return firestoreOk;
 }
 
 /**
- * Automatically saves a category modification to the cloud hosting.
+ * Automatically saves a category modification directly to Firestore.
  */
 export async function autoSyncCategory(category: MenuCategory): Promise<boolean> {
-  await saveCategoryToFirestore(category);
+  const firestoreOk = await saveCategoryToFirestore(category);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const cats = [...(current.categories || [])];
-      const idx = cats.findIndex(c => c.id === category.id);
-      if (idx >= 0) {
-        cats[idx] = category;
-      } else {
-        cats.push(category);
-      }
-      await saveToUpstashDirectly({
-        ...current,
-        categories: cats
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoSyncCategory error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch('/api/cloud-menu/category', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(category)
+  }).catch(() => {});
 
-  try {
-    const res = await fetch('/api/cloud-menu/category', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(category)
-    });
-    return res.ok;
-  } catch {}
-
-  return true;
+  return firestoreOk;
 }
 
 /**
- * Automatically deletes a category in the cloud hosting.
+ * Automatically deletes a category directly from Firestore.
  */
 export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
-  await deleteCategoryFromFirestore(categoryId);
+  const firestoreOk = await deleteCategoryFromFirestore(categoryId);
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const cats = (current.categories || []).filter(c => c.id !== categoryId);
-      await saveToUpstashDirectly({
-        ...current,
-        categories: cats
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteCategory error:', err);
-  }
+  // Non-blocking secondary mirrors
+  fetch(`/api/cloud-menu/category/${encodeURIComponent(categoryId)}`, {
+    method: 'DELETE'
+  }).catch(() => {});
 
-  try {
-    const current = await fetchFromUpstashDirectly();
-    if (current) {
-      const cats = (current.categories || []).filter(c => c.id !== categoryId);
-      await saveToUpstashDirectly({
-        ...current,
-        categories: cats
-      });
-    }
-  } catch (err) {
-    console.warn('[CloudSync] autoDeleteCategory error:', err);
-  }
-
-  try {
-    const res = await fetch(`/api/cloud-menu/category/${encodeURIComponent(categoryId)}`, {
-      method: 'DELETE'
-    });
-    return res.ok;
-  } catch {}
-
-  return true;
+  return firestoreOk;
 }
 
 /**

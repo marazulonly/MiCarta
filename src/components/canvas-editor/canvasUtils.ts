@@ -1044,15 +1044,64 @@ export function createInitialCanvasElements(
   return importCardToEditorModel(restaurant, branding, sampleItem, allItems, allCategories);
 }
 
+export function getZoneForElement(
+  el: Partial<CanvasElement>,
+  headerHeight: number = 380,
+  footerTop: number = 1300
+): 'header' | 'body' | 'footer' {
+  if (el.zone) return el.zone;
+  const y = Number(el.y) || 0;
+  const type = el.type || '';
+  const dyn = el.dynamicField || '';
+  const name = (el.name || '').toLowerCase();
+
+  if (
+    type === 'restaurant_logo' || 
+    type === 'restaurant_name' || 
+    type === 'restaurant_tagline' || 
+    dyn === 'restaurant_logo' || 
+    dyn === 'restaurant_name' || 
+    dyn === 'restaurant_tagline' ||
+    name.includes('logo') ||
+    name.includes('slogan') ||
+    name.includes('tagline') ||
+    (y < headerHeight && !type.includes('dish'))
+  ) {
+    return 'header';
+  }
+
+  if (
+    type === 'contact_info' ||
+    type === 'footer_text' ||
+    name.includes('pie') ||
+    name.includes('contacto') ||
+    name.includes('despedida') ||
+    name.includes('horario') ||
+    name.includes('igv') ||
+    y >= footerTop
+  ) {
+    return 'footer';
+  }
+
+  return 'body';
+}
+
 /**
  * Validates and ensures every required property is present on a canvas element.
  */
-export function sanitizeCanvasElement(el: Partial<CanvasElement>, index: number = 0): CanvasElement {
+export function sanitizeCanvasElement(
+  el: Partial<CanvasElement>, 
+  index: number = 0,
+  headerHeight: number = 380,
+  footerTop: number = 1300
+): CanvasElement {
+  const resolvedZone = el.zone || getZoneForElement(el, headerHeight, footerTop);
+
   return {
     id: el.id || `elem-${el.type || 'custom'}-${Date.now()}-${index}`,
     name: el.name || 'Objeto de Diseño',
     type: el.type || 'text_custom',
-    zone: el.zone,
+    zone: resolvedZone,
     x: Number(el.x) || 0,
     y: Number(el.y) || 0,
     width: Math.max(10, Number(el.width) || 100),

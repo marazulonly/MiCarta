@@ -325,3 +325,35 @@ export async function updateOrderStatusInFirestore(orderId: string, status: stri
     return false;
   }
 }
+
+/**
+ * Persists an official published menu snapshot directly into Firestore.
+ */
+export async function savePublishedMenuToFirestore(restaurantId: string, snapshot: any): Promise<boolean> {
+  if (!restaurantId || !snapshot) return false;
+  try {
+    const ref = doc(db, 'published_menus', restaurantId);
+    await setDoc(ref, cleanObject(snapshot), { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('[Firestore] Error saving published menu to Firestore:', err);
+    return false;
+  }
+}
+
+/**
+ * Fetches an official published menu snapshot directly from Firestore.
+ */
+export async function fetchPublishedMenuFromFirestore(restaurantId: string): Promise<any | null> {
+  if (!restaurantId) return null;
+  try {
+    const ref = doc(db, 'published_menus', restaurantId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (err) {
+    console.warn('[Firestore] Error fetching published menu from Firestore:', err);
+  }
+  return null;
+}

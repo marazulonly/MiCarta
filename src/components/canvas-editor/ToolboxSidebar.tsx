@@ -25,10 +25,13 @@ import {
   FileText,
   BadgePercent,
   Sliders,
-  Check
+  Check,
+  MapPin,
+  FolderOpen
 } from 'lucide-react';
 import { CanvasElement, CanvasConfig, CANVAS_FONTS } from './types';
 import { MenuTemplate, Restaurant } from '../../types';
+import { getZoneForElement } from './canvasUtils';
 
 interface ToolboxSidebarProps {
   elements: CanvasElement[];
@@ -195,138 +198,240 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
       <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-neutral-50/50">
         
         {/* ========================================================================= */}
-        {/* TAB 1: LAYERS TREE                                                        */}
+        {/* TAB 1: LAYERS TREE (GROUPED BY THE 3 ZONES)                               */}
         {/* ========================================================================= */}
-        {activeTab === 'layers' && (
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between px-1 mb-2">
-              <span className="text-[11px] font-mono text-neutral-600 uppercase tracking-widest font-bold">
-                Jerarquía de Capas
-              </span>
-              <span className="text-[10px] text-neutral-500 font-mono">
-                Arriba = Frente
-              </span>
-            </div>
+        {activeTab === 'layers' && (() => {
+          const headerElems = layerList.filter(e => (e.zone === 'header' || getZoneForElement(e) === 'header') && e.type !== 'background');
+          const bodyElems = layerList.filter(e => (e.zone === 'body' || (!e.zone && getZoneForElement(e) === 'body')) && e.type !== 'background');
+          const footerElems = layerList.filter(e => (e.zone === 'footer' || getZoneForElement(e) === 'footer') && e.type !== 'background');
+          const bgElem = layerList.find(e => e.type === 'background');
 
-            {layerList.map((el, idx) => {
-              const isSelected = selectedId === el.id;
-
-              return (
-                <div
-                  key={el.id}
-                  onClick={() => onSelectElement(el.id)}
-                  className={`flex items-center gap-2 p-2 rounded-xl border transition-all cursor-pointer group shadow-xs ${
-                    isSelected 
-                      ? 'bg-neutral-900 border-neutral-900 shadow-md text-white ring-2 ring-neutral-400/40' 
-                      : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-100 hover:border-neutral-300'
-                  }`}
-                >
-                  {/* Layer Type Icon */}
-                  <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'bg-neutral-800 text-white' : 'bg-neutral-100 text-neutral-700'}`}>
-                    {el.type.includes('dish') ? (
-                      <Utensils className="w-3.5 h-3.5 text-amber-500" />
-                    ) : el.type.includes('image') || el.type.includes('logo') ? (
-                      <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
-                    ) : el.type.includes('text') || el.type.includes('name') ? (
-                      <Type className="w-3.5 h-3.5 text-purple-600" />
-                    ) : el.type.includes('badge') || el.type.includes('button') ? (
-                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Square className="w-3.5 h-3.5 text-neutral-500" />
-                    )}
-                  </div>
-
-                  {/* Name & Coordinates summary */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-neutral-900'}`}>
-                      {el.name}
-                    </p>
-                    <p className={`text-[10px] font-mono ${isSelected ? 'text-neutral-300' : 'text-neutral-500'}`}>
-                      {el.width}×{el.height}px · ({el.x}, {el.y})
-                    </p>
-                  </div>
-
-                  {/* Layer Action Icons */}
-                  <div className="flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                    {/* Move Up in layer */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onReorderElement(el.id, 'up');
-                      }}
-                      disabled={idx === 0}
-                      className={`p-1 rounded transition disabled:opacity-20 cursor-pointer ${
-                        isSelected ? 'text-neutral-300 hover:text-white hover:bg-neutral-800' : 'text-neutral-500 hover:text-black hover:bg-neutral-200'
-                      }`}
-                      title="Mover capa hacia el frente"
-                    >
-                      <ChevronUp className="w-3 h-3" />
-                    </button>
-
-                    {/* Move Down in layer */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onReorderElement(el.id, 'down');
-                      }}
-                      disabled={idx === layerList.length - 1}
-                      className={`p-1 rounded transition disabled:opacity-20 cursor-pointer ${
-                        isSelected ? 'text-neutral-300 hover:text-white hover:bg-neutral-800' : 'text-neutral-500 hover:text-black hover:bg-neutral-200'
-                      }`}
-                      title="Mover capa hacia atrás"
-                    >
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-
-                    {/* Visibility Toggle */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onUpdateElement({ ...el, visible: !el.visible });
-                      }}
-                      className={`p-1 rounded transition cursor-pointer ${
-                        isSelected 
-                          ? (el.visible ? 'text-white' : 'text-neutral-500') 
-                          : (el.visible ? 'text-neutral-700 hover:text-black' : 'text-neutral-400')
-                      }`}
-                      title={el.visible ? 'Ocultar elemento' : 'Mostrar elemento'}
-                    >
-                      {el.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
-
-                    {/* Lock Toggle */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onUpdateElement({ ...el, locked: !el.locked });
-                      }}
-                      className={`p-1 rounded transition cursor-pointer ${
-                        el.locked ? 'text-amber-500' : (isSelected ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-black')
-                      }`}
-                      title={el.locked ? 'Desbloquear elemento' : 'Bloquear elemento'}
-                    >
-                      {el.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                    </button>
-
-                    {/* Delete */}
-                    {el.type !== 'background' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteElement(el.id);
-                        }}
-                        className="p-1 text-rose-500 hover:text-rose-700 rounded transition cursor-pointer"
-                        title="Eliminar objeto"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+          const renderLayerItem = (el: CanvasElement, idx: number) => {
+            const isSelected = selectedId === el.id;
+            return (
+              <div
+                key={el.id}
+                onClick={() => onSelectElement(el.id)}
+                className={`flex items-center gap-2 p-2 rounded-xl border transition-all cursor-pointer group shadow-xs ${
+                  isSelected 
+                    ? 'bg-neutral-900 border-neutral-900 shadow-md text-white ring-2 ring-neutral-400/40' 
+                    : 'bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-100 hover:border-neutral-300'
+                }`}
+              >
+                {/* Layer Type Icon */}
+                <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'bg-neutral-800 text-white' : 'bg-neutral-100 text-neutral-700'}`}>
+                  {el.type.includes('dish') ? (
+                    <Utensils className="w-3.5 h-3.5 text-amber-500" />
+                  ) : el.type.includes('image') || el.type.includes('logo') ? (
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                  ) : el.type.includes('text') || el.type.includes('name') ? (
+                    <Type className="w-3.5 h-3.5 text-purple-600" />
+                  ) : el.type.includes('badge') || el.type.includes('button') ? (
+                    <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5 text-neutral-500" />
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        )}
+
+                {/* Name & Coordinates summary */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-neutral-900'}`}>
+                    {el.name}
+                  </p>
+                  <p className={`text-[10px] font-mono ${isSelected ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                    {el.width}×{el.height}px · ({el.x}, {el.y})
+                  </p>
+                </div>
+
+                {/* Layer Action Icons */}
+                <div className="flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                  {/* Visibility Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdateElement({ ...el, visible: !el.visible });
+                    }}
+                    className={`p-1 rounded transition cursor-pointer ${
+                      isSelected 
+                        ? (el.visible ? 'text-white' : 'text-neutral-500') 
+                        : (el.visible ? 'text-neutral-700 hover:text-black' : 'text-neutral-400')
+                    }`}
+                    title={el.visible ? 'Ocultar elemento' : 'Mostrar elemento'}
+                  >
+                    {el.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Lock Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdateElement({ ...el, locked: !el.locked });
+                    }}
+                    className={`p-1 rounded transition cursor-pointer ${
+                      el.locked ? 'text-amber-500' : (isSelected ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-black')
+                    }`}
+                    title={el.locked ? 'Desbloquear elemento' : 'Bloquear elemento'}
+                  >
+                    {el.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Delete */}
+                  {el.type !== 'background' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteElement(el.id);
+                      }}
+                      className="p-1 text-rose-500 hover:text-rose-700 rounded transition cursor-pointer"
+                      title="Eliminar objeto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div className="space-y-4">
+              
+              {/* SECTION 1: CABECERA DE CARTA (ESTÁTICA) */}
+              <div className="space-y-1.5 p-2.5 rounded-2xl bg-blue-50/50 border border-blue-200/70">
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <span className="text-[11px] font-mono text-blue-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600" />
+                    1. Cabecera (Estática)
+                  </span>
+                  <span className="text-[10px] text-blue-700 font-mono font-bold bg-blue-100 px-1.5 py-0.5 rounded">
+                    {headerElems.length} capas
+                  </span>
+                </div>
+                {headerElems.length === 0 ? (
+                  <p className="text-[11px] text-blue-600/80 italic px-2 py-1">Sin elementos en la cabecera.</p>
+                ) : (
+                  headerElems.map((el, i) => renderLayerItem(el, i))
+                )}
+                <button
+                  onClick={() => onAddElement({
+                    name: 'Logo del Restaurante',
+                    type: 'restaurant_logo',
+                    zone: 'header',
+                    x: Math.round((config.width - 160) / 2),
+                    y: 35,
+                    width: 160,
+                    height: 80,
+                    isDynamic: true,
+                    dynamicField: 'restaurant_logo',
+                    objectFit: 'contain'
+                  })}
+                  className="w-full mt-1 py-1.5 px-2 rounded-xl bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-[10px] font-bold text-blue-800 transition flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-blue-600" />
+                  <span>Insertar Logo / Elemento</span>
+                </button>
+              </div>
+
+              {/* SECTION 2: CUERPO DE LA CARTA (PLATOS DINÁMICOS) */}
+              <div className="space-y-1.5 p-2.5 rounded-2xl bg-amber-50/50 border border-amber-200/70">
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <span className="text-[11px] font-mono text-amber-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                    <Utensils className="w-3 h-3 text-amber-600" />
+                    2. Cuerpo de Carta (Platos)
+                  </span>
+                  <span className="text-[10px] text-amber-800 font-mono font-bold bg-amber-100 px-1.5 py-0.5 rounded">
+                    {bodyElems.length} capas
+                  </span>
+                </div>
+                {bodyElems.length === 0 ? (
+                  <p className="text-[11px] text-amber-700/80 italic px-2 py-1">Sin platos en el cuerpo.</p>
+                ) : (
+                  bodyElems.map((el, i) => renderLayerItem(el, i))
+                )}
+                <button
+                  onClick={() => {
+                    const headerHeight = config.headerZoneHeight || 380;
+                    const footerHeight = config.footerZoneHeight || 180;
+                    const bElems = elements.filter(el => el.y >= headerHeight && el.y < (config.height - footerHeight));
+                    const maxY = bElems.length > 0 ? Math.max(...bElems.map(el => el.y + el.height)) : headerHeight + 20;
+                    const nextY = Math.min(maxY + 20, config.height - footerHeight - 160);
+
+                    onAddElement({
+                      name: 'Ficha de Plato Nuevo',
+                      type: 'shape_rect',
+                      zone: 'body',
+                      x: 40,
+                      y: nextY,
+                      width: config.width - 80,
+                      height: 140,
+                      backgroundColor: '#1E293B',
+                      borderRadius: 16,
+                      borderColor: '#334155',
+                      borderWidth: 1,
+                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)'
+                    });
+                  }}
+                  className="w-full mt-1 py-1.5 px-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-3 h-3 text-amber-200" />
+                  <span>+ Añadir Plato al Cuerpo</span>
+                </button>
+              </div>
+
+              {/* SECTION 3: PIE DE CARTA (FINAL) */}
+              <div className="space-y-1.5 p-2.5 rounded-2xl bg-purple-50/50 border border-purple-200/70">
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <span className="text-[11px] font-mono text-purple-900 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-purple-600" />
+                    3. Pie de Carta (Final)
+                  </span>
+                  <span className="text-[10px] text-purple-800 font-mono font-bold bg-purple-100 px-1.5 py-0.5 rounded">
+                    {footerElems.length} capas
+                  </span>
+                </div>
+                {footerElems.length === 0 ? (
+                  <p className="text-[11px] text-purple-700/80 italic px-2 py-1">Sin elementos en pie de carta.</p>
+                ) : (
+                  footerElems.map((el, i) => renderLayerItem(el, i))
+                )}
+                <button
+                  onClick={() => {
+                    const footerHeight = config.footerZoneHeight || 180;
+                    const footerTop = config.height - footerHeight;
+                    onAddElement({
+                      name: 'Información & Contacto',
+                      type: 'contact_info',
+                      zone: 'footer',
+                      text: '📍 Av. Principal 123 · 📞 +51 987 654 321 · Horario: 12:00pm - 11:00pm',
+                      x: 40,
+                      y: footerTop + 25,
+                      width: config.width - 80,
+                      height: 50,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textAlign: 'center',
+                      textColor: '#94A3B8'
+                    });
+                  }}
+                  className="w-full mt-1 py-1.5 px-2 rounded-xl bg-white border border-purple-200 hover:border-purple-400 hover:bg-purple-50 text-[10px] font-bold text-purple-800 transition flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-purple-600" />
+                  <span>Insertar Pie de Carta</span>
+                </button>
+              </div>
+
+              {/* SECTION 4: FONDO DEL LIENZO */}
+              {bgElem && (
+                <div className="pt-2 border-t border-neutral-200">
+                  <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block font-bold mb-1 px-1">
+                    Fondo Base
+                  </span>
+                  {renderLayerItem(bgElem, 0)}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* TAB 2: INSERT TOOLBOX                                                     */}

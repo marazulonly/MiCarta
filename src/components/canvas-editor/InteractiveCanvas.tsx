@@ -357,154 +357,172 @@ export const InteractiveCanvas: React.FC<InteractiveCanvasProps> = ({
         {/* RENDER THE 3 DESIGNATED CANVA ZONES (Cabecera, Cuerpo, Pie)              */}
         {/* ========================================================================= */}
         {!isPreviewMode && (
-          <div className="absolute inset-0 pointer-events-none z-[980]">
-            {/* ZONE 1: CABECERA DE CARTA (ESTÁTICA) */}
+          <div className="absolute inset-0 pointer-events-none z-[995]">
             {(() => {
-              const headerHeight = config.headerZoneHeight || 260;
-              const hasLogo = elements.some(e => e.type === 'restaurant_logo' || e.dynamicField === 'restaurant_logo');
-
-              return (
-                <div 
-                  className="absolute left-0 right-0 top-0 border-b-2 border-dashed border-blue-500/50 bg-blue-500/[0.02]"
-                  style={{ height: `${headerHeight}px` }}
-                >
-                  <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
-                    <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-1 rounded-md bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-200 animate-pulse" />
-                      1. Cabecera de Carta (Estática)
-                    </span>
-                    {!hasLogo && onAddElement && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddElement({
-                            name: 'Logo del Restaurante',
-                            type: 'restaurant_logo',
-                            zone: 'header',
-                            x: Math.round((config.width - 160) / 2),
-                            y: 35,
-                            width: 160,
-                            height: 80,
-                            isDynamic: true,
-                            dynamicField: 'restaurant_logo',
-                            objectFit: 'contain'
-                          });
-                        }}
-                        className="text-[10px] font-sans font-bold px-2.5 py-1 rounded-md bg-white border border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-500 transition shadow-xs flex items-center gap-1 cursor-pointer"
-                        title="Insertar logotipo en la cabecera"
-                      >
-                        <ImageIcon className="w-3 h-3 text-blue-600" />
-                        <span>+ Insertar Logo</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ZONE 2: CUERPO DE LA CARTA (PLATOS DINÁMICOS) */}
-            {(() => {
-              const headerHeight = config.headerZoneHeight || 260;
-              const footerHeight = config.footerZoneHeight || 180;
-              const bodyHeight = Math.max(200, config.height - headerHeight - footerHeight);
-
-              return (
-                <div 
-                  className="absolute left-0 right-0 border-b-2 border-dashed border-amber-500/50 bg-amber-500/[0.01]"
-                  style={{ 
-                    top: `${headerHeight}px`,
-                    height: `${bodyHeight}px` 
-                  }}
-                >
-                  <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
-                    <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-1 rounded-md bg-amber-600 text-white shadow-sm flex items-center gap-1.5">
-                      <Utensils className="w-3 h-3 text-amber-200" />
-                      2. Cuerpo de Carta (Platos Dinámicos)
-                    </span>
-                    {onAddElement && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Compute next Y inside body area
-                          const bodyElems = elements.filter(el => el.y >= headerHeight && el.y < (config.height - footerHeight));
-                          const maxY = bodyElems.length > 0 
-                            ? Math.max(...bodyElems.map(el => el.y + el.height))
-                            : headerHeight + 20;
-                          const nextY = Math.min(maxY + 20, config.height - footerHeight - 160);
-
-                          onAddElement({
-                            name: 'Tarjeta de Plato Completa',
-                            type: 'shape_rect',
-                            zone: 'body',
-                            x: 40,
-                            y: nextY,
-                            width: config.width - 80,
-                            height: 140,
-                            backgroundColor: '#1E293B',
-                            borderRadius: 16,
-                            borderColor: '#334155',
-                            borderWidth: 1,
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)'
-                          });
-                        }}
-                        className="text-[10px] font-sans font-bold px-2.5 py-1 rounded-md bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 hover:border-amber-500 transition shadow-xs flex items-center gap-1 cursor-pointer"
-                        title="Añadir tarjeta de plato al cuerpo"
-                      >
-                        <Plus className="w-3 h-3 text-amber-600" />
-                        <span>+ Añadir Plato al Cuerpo</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ZONE 3: PIE DE CARTA (FINAL DEL CANVA) */}
-            {(() => {
+              const headerHeight = config.headerZoneHeight || 380;
               const footerHeight = config.footerZoneHeight || 180;
               const footerTop = config.height - footerHeight;
+              const bodyHeight = Math.max(200, footerTop - headerHeight);
+              const hasLogo = elements.some(e => e.type === 'restaurant_logo' || e.dynamicField === 'restaurant_logo');
+              const dishCount = elements.filter(e => e.type.includes('dish') || (e.name && e.name.toLowerCase().includes('plato'))).length;
 
               return (
-                <div 
-                  className="absolute left-0 right-0 bottom-0 bg-purple-500/[0.02]"
-                  style={{ 
-                    top: `${footerTop}px`,
-                    height: `${footerHeight}px` 
-                  }}
-                >
-                  <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
-                    <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-1 rounded-md bg-purple-600 text-white shadow-sm flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-purple-200" />
-                      3. Pie de Carta (Final del Canva)
-                    </span>
-                    {onAddElement && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddElement({
-                            name: 'Información y Contacto',
-                            type: 'contact_info',
-                            zone: 'footer',
-                            text: restaurant ? `📍 ${restaurant.address} · 📞 ${restaurant.phone}` : '📍 Av. Principal 123 · 📞 +51 987 654 321 · Horario: 12:00pm - 11:00pm',
-                            x: 40,
-                            y: footerTop + 30,
-                            width: config.width - 80,
-                            height: 60,
-                            fontSize: 14,
-                            fontWeight: 600,
-                            textAlign: 'center',
-                            textColor: '#94A3B8'
-                          });
-                        }}
-                        className="text-[10px] font-sans font-bold px-2.5 py-1 rounded-md bg-white border border-purple-300 text-purple-800 hover:bg-purple-50 hover:border-purple-500 transition shadow-xs flex items-center gap-1 cursor-pointer"
-                        title="Insertar pie de página de contacto"
-                      >
-                        <Plus className="w-3 h-3 text-purple-600" />
-                        <span>+ Insertar Pie de Carta</span>
-                      </button>
-                    )}
+                <>
+                  {/* ZONE 1: CABECERA DE CARTA (ESTÁTICA) */}
+                  <div 
+                    className="absolute left-0 right-0 top-0 border-b-2 border-dashed border-blue-400 bg-blue-500/[0.04] transition-all"
+                    style={{ height: `${headerHeight}px` }}
+                  >
+                    {/* Left Rail Badge */}
+                    <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-blue-500" />
+
+                    <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
+                      <div className="px-3 py-1.5 rounded-xl bg-blue-600/95 text-white shadow-lg backdrop-blur-md flex items-center gap-2 border border-blue-400">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-200 animate-pulse" />
+                        <span className="text-[11px] font-mono font-black uppercase tracking-wider">
+                          1. Cabecera de Carta (Estática)
+                        </span>
+                      </div>
+
+                      {onAddElement && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddElement({
+                              name: 'Logo del Restaurante',
+                              type: 'restaurant_logo',
+                              zone: 'header',
+                              x: Math.round((config.width - 180) / 2),
+                              y: 40,
+                              width: 180,
+                              height: 100,
+                              isDynamic: true,
+                              dynamicField: 'restaurant_logo',
+                              objectFit: 'contain'
+                            });
+                          }}
+                          className="text-[11px] font-sans font-bold px-3 py-1.5 rounded-xl bg-white border border-blue-300 text-blue-800 hover:bg-blue-50 hover:border-blue-500 transition shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
+                          title="Insertar o cambiar logotipo en la cabecera"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{hasLogo ? 'Cambiar Logo' : '+ Insertar Logo'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Zone Bottom Divider Label */}
+                    <div className="absolute -bottom-3 right-4 px-2 py-0.5 rounded bg-blue-600 text-white text-[9px] font-mono font-bold tracking-widest uppercase shadow">
+                      Límite Cabecera ({headerHeight}px)
+                    </div>
                   </div>
-                </div>
+
+                  {/* ZONE 2: CUERPO DE LA CARTA (PLATOS DINÁMICOS) */}
+                  <div 
+                    className="absolute left-0 right-0 border-b-2 border-dashed border-amber-400 bg-amber-500/[0.03] transition-all"
+                    style={{ 
+                      top: `${headerHeight}px`,
+                      height: `${bodyHeight}px` 
+                    }}
+                  >
+                    {/* Left Rail Badge */}
+                    <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-amber-500" />
+
+                    <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-600/95 text-white shadow-lg backdrop-blur-md flex items-center gap-2 border border-amber-400">
+                        <Utensils className="w-3.5 h-3.5 text-amber-200" />
+                        <span className="text-[11px] font-mono font-black uppercase tracking-wider">
+                          2. Cuerpo de Carta (Platos Dinámicos)
+                        </span>
+                      </div>
+
+                      {onAddElement && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const bElems = elements.filter(el => el.y >= headerHeight && el.y < footerTop);
+                            const maxY = bElems.length > 0 
+                              ? Math.max(...bElems.map(el => el.y + el.height))
+                              : headerHeight + 20;
+                            const nextY = Math.min(maxY + 20, footerTop - 160);
+
+                            onAddElement({
+                              name: 'Tarjeta de Plato Completa',
+                              type: 'shape_rect',
+                              zone: 'body',
+                              x: 40,
+                              y: nextY,
+                              width: config.width - 80,
+                              height: 150,
+                              backgroundColor: '#1E293B',
+                              borderRadius: 18,
+                              borderColor: '#334155',
+                              borderWidth: 1,
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)'
+                            });
+                          }}
+                          className="text-[11px] font-sans font-bold px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 border border-amber-300"
+                          title="Añadir tarjeta de plato al cuerpo"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-white" />
+                          <span>+ Agregar Plato a la Carta</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Zone Bottom Divider Label */}
+                    <div className="absolute -bottom-3 right-4 px-2 py-0.5 rounded bg-amber-600 text-white text-[9px] font-mono font-bold tracking-widest uppercase shadow">
+                      Límite Cuerpo de Platos
+                    </div>
+                  </div>
+
+                  {/* ZONE 3: PIE DE CARTA (FINAL DEL CANVA) */}
+                  <div 
+                    className="absolute left-0 right-0 bottom-0 bg-purple-500/[0.04] transition-all"
+                    style={{ 
+                      top: `${footerTop}px`,
+                      height: `${footerHeight}px` 
+                    }}
+                  >
+                    {/* Left Rail Badge */}
+                    <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-purple-500" />
+
+                    <div className="absolute top-3 left-4 flex items-center gap-2 pointer-events-auto">
+                      <div className="px-3 py-1.5 rounded-xl bg-purple-600/95 text-white shadow-lg backdrop-blur-md flex items-center gap-2 border border-purple-400">
+                        <MapPin className="w-3.5 h-3.5 text-purple-200" />
+                        <span className="text-[11px] font-mono font-black uppercase tracking-wider">
+                          3. Pie de Carta (Final del Canva)
+                        </span>
+                      </div>
+
+                      {onAddElement && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddElement({
+                              name: 'Información y Contacto',
+                              type: 'contact_info',
+                              zone: 'footer',
+                              text: restaurant ? `📍 ${restaurant.address} · 📞 ${restaurant.phone}` : '📍 Av. Principal 123 · 📞 +51 987 654 321 · Horario: 12:00pm - 11:00pm',
+                              x: 40,
+                              y: footerTop + 30,
+                              width: config.width - 80,
+                              height: 60,
+                              fontSize: 14,
+                              fontWeight: 600,
+                              textAlign: 'center',
+                              textColor: '#94A3B8'
+                            });
+                          }}
+                          className="text-[11px] font-sans font-bold px-3 py-1.5 rounded-xl bg-white border border-purple-300 text-purple-800 hover:bg-purple-50 hover:border-purple-500 transition shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
+                          title="Insertar pie de página de contacto"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-purple-600" />
+                          <span>+ Insertar Pie de Carta</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               );
             })()}
           </div>
