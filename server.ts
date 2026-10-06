@@ -219,19 +219,25 @@ function saveCloudDataToDisk(data: any) {
 }
 
 async function ensureCloudDataHydrated() {
-  if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length)) {
+  if (cachedCloudData) {
     syncAllPublishedMenus(cachedCloudData);
     return cachedCloudData;
   }
 
   // 1. Primary: Load persistent local disk file
-  loadCloudDataFromDisk();
+  if (fs.existsSync(CLOUD_STORAGE_FILE)) {
+    loadCloudDataFromDisk();
+    if (cachedCloudData) {
+      syncAllPublishedMenus(cachedCloudData);
+      return cachedCloudData;
+    }
+  }
 
-  // 2. Secondary: If disk is empty, try Vercel KV / Upstash
-  if ((!cachedCloudData || !cachedCloudData.restaurants || cachedCloudData.restaurants.length === 0) && kvRestUrl && kvRestToken) {
+  // 2. Secondary: If disk is completely empty or missing, try Vercel KV / Upstash
+  if (kvRestUrl && kvRestToken) {
     try {
       const remoteData = await fetchFromVercelKV();
-      if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
+      if (remoteData) {
         cachedCloudData = remoteData;
         syncAllPublishedMenus(cachedCloudData);
         console.log('[Server] Successfully hydrated cachedCloudData from Vercel KV / Upstash');
