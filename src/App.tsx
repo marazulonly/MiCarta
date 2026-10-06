@@ -293,7 +293,7 @@ export default function App() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialState.cachedRests);
   const [categories, setCategories] = useState<MenuCategory[]>(initialState.cachedCategories);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
-  const [users, setUsers] = useState<User[]>(initialState.cachedUsers);
+  const [users, setUsers] = useState<User[]>(() => deduplicateUsers([...initialState.cachedUsers, ...INITIAL_USERS]));
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
 
@@ -305,7 +305,7 @@ export default function App() {
   const restaurantsRef = useRef<Restaurant[]>(initialState.cachedRests);
   const categoriesRef = useRef<MenuCategory[]>(initialState.cachedCategories);
   const menuItemsRef = useRef<MenuItem[]>(initialState.cachedItems);
-  const usersRef = useRef<User[]>(initialState.cachedUsers);
+  const usersRef = useRef<User[]>(deduplicateUsers([...initialState.cachedUsers, ...INITIAL_USERS]));
   const ordersRef = useRef<Order[]>(initialState.cachedOrders);
   const currentUserRef = useRef<User | null>(initialState.cachedAuth);
 
