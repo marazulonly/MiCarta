@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   CEVICHITO_PLIZ_LOGO_SVG,
   VORAZ_LOGO_SVG,
-  RIENDAS_DE_PLATA_LOGO_SVG
+  RIENDAS_DE_PLATA_LOGO_SVG,
+  INITIAL_USERS
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
 import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
@@ -31,6 +32,7 @@ import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
 import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
+import { saveUserToFirestore } from './lib/firestoreSync';
 import {
   fetchLatestCloudMenu,
   saveFullCloudMenu,
@@ -473,9 +475,18 @@ export default function App() {
       if (cleanLoadedItems.length > 0) {
         setMenuItems(cleanLoadedItems);
       }
-      if (cleanLoadedUsers.length > 0) {
-        setUsers(deduplicateUsers(cleanLoadedUsers));
-      }
+      const mergedUsers = cleanLoadedUsers.length > 0 
+        ? deduplicateUsers([...cleanLoadedUsers, ...INITIAL_USERS])
+        : deduplicateUsers(INITIAL_USERS);
+      setUsers(mergedUsers);
+
+      // Seed system admin users to Firestore if not already present
+      INITIAL_USERS.filter(u => u.role === 'ADMIN').forEach(adminUser => {
+        const existsInFirestore = cleanLoadedUsers.some(u => u.id === adminUser.id || (u.dni && u.dni === adminUser.dni));
+        if (!existsInFirestore) {
+          saveUserToFirestore(adminUser).catch(() => {});
+        }
+      });
       if (cleanLoadedOrders.length > 0) {
         setOrders(cleanLoadedOrders);
       }
