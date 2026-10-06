@@ -145,31 +145,10 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       getDocs(collection(db, 'orders')).catch(() => null)
     ]);
 
-    const MOCK_RESTAURANT_IDS = new Set([
-      'rest-costa',
-      'rest-voraz',
-      'rest-riendas',
-      'rest-1790204393895',
-      'rest-1790352289887',
-      'cevichito-pliz',
-      'voraz',
-      'riendas-de-plata'
-    ]);
-
-    const MOCK_USER_IDS = new Set([
-      'u-1790352263608',
-      'u-owner-alonso',
-      'u-owner-stephanie',
-      'u-5c',
-      'u-7c',
-      'u-k2',
-      'u-8b'
-    ]);
-
     const restaurants: Restaurant[] = [];
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
-      if (data && data.id && !MOCK_RESTAURANT_IDS.has(data.id)) {
+      if (data && data.id) {
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
@@ -180,9 +159,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const users: User[] = [];
     usersSnap?.forEach(d => { 
       const data = d.data() as User;
-      if (data && data.id && data.role === 'ADMIN') {
-        users.push(data);
-      } else if (data && data.id && !MOCK_USER_IDS.has(data.id)) {
+      if (data && data.id) {
         users.push(data);
       }
     });
@@ -190,7 +167,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const categories: MenuCategory[] = [];
     catsSnap?.forEach(d => { 
       const data = d.data() as MenuCategory;
-      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
+      if (data && data.id) {
         categories.push(data);
       }
     });
@@ -198,7 +175,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const items: MenuItem[] = [];
     itemsSnap?.forEach(d => { 
       const data = d.data() as MenuItem;
-      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
+      if (data && data.id) {
         items.push(data);
       }
     });
@@ -206,7 +183,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const orders: Order[] = [];
     ordersSnap?.forEach(d => { 
       const data = d.data() as Order;
-      if (data && data.id && (!data.restaurantId || !MOCK_RESTAURANT_IDS.has(data.restaurantId))) {
+      if (data && data.id) {
         orders.push(data);
       }
     });

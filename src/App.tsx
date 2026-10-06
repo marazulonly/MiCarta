@@ -235,62 +235,36 @@ function getInitialStorageState() {
   let cachedOrders: Order[] = [];
   let cachedAuth: User | null = null;
 
-  const MOCK_RESTAURANT_IDS = new Set([
-    'rest-costa',
-    'rest-voraz',
-    'rest-riendas',
-    'rest-1790204393895',
-    'rest-1790352289887',
-    'cevichito-pliz',
-    'voraz',
-    'riendas-de-plata'
-  ]);
-
-  const MOCK_USER_IDS = new Set([
-    'u-1790352263608',
-    'u-owner-alonso',
-    'u-owner-stephanie',
-    'u-5c',
-    'u-7c',
-    'u-k2',
-    'u-8b'
-  ]);
-
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
       if (storedRests) {
-        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !MOCK_RESTAURANT_IDS.has(r.id));
+        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
       }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (storedCategories) {
-        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && (!c.restaurantId || !MOCK_RESTAURANT_IDS.has(c.restaurantId)));
+        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && c.id);
       }
 
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
       if (storedItems) {
-        cachedItems = JSON.parse(storedItems).filter((i: any) => i && (!i.restaurantId || !MOCK_RESTAURANT_IDS.has(i.restaurantId)));
+        cachedItems = JSON.parse(storedItems).filter((i: any) => i && i.id);
       }
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && !MOCK_USER_IDS.has(u.id));
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id);
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (storedOrders) {
-        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && (!o.restaurantId || !MOCK_RESTAURANT_IDS.has(o.restaurantId)));
+        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && o.id);
       }
 
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         cachedAuth = JSON.parse(storedAuth);
-        if (cachedAuth && (cachedAuth.id === 'u-owner-alonso' || cachedAuth.dni === '94639300')) {
-          cachedAuth.restaurantIds = Array.isArray(cachedAuth.restaurantIds)
-            ? cachedAuth.restaurantIds.filter(id => id !== 'all' && !MOCK_RESTAURANT_IDS.has(id))
-            : [];
-        }
       }
     } catch (e) {
       console.warn('[Storage] Error reading initial cache:', e);
@@ -494,62 +468,33 @@ export default function App() {
     // 1. Initial Cloud Fetch from authoritative backend
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
+      if (!cloudData) return;
 
-      const MOCK_RESTAURANT_IDS = new Set([
-        'rest-costa',
-        'rest-voraz',
-        'rest-riendas',
-        'rest-1790204393895',
-        'rest-1790352289887',
-        'cevichito-pliz',
-        'voraz',
-        'riendas-de-plata'
-      ]);
-
-      const MOCK_USER_IDS = new Set([
-        'u-1790352263608',
-        'u-owner-alonso',
-        'u-owner-stephanie',
-        'u-5c',
-        'u-7c',
-        'u-k2',
-        'u-8b'
-      ]);
-
-      const cleanLoadedRests = cloudData?.restaurants && Array.isArray(cloudData.restaurants)
-        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id && !MOCK_RESTAURANT_IDS.has(r.id)))
+      const cleanLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
+        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
         : [];
-      const cleanLoadedUsers = cloudData?.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni && !MOCK_USER_IDS.has(u.id))
+      const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
         : [];
-      const cleanLoadedCategories = cloudData?.categories && Array.isArray(cloudData.categories)
-        ? cloudData.categories.filter((c: any) => c && c.id && c.name && (!c.restaurantId || !MOCK_RESTAURANT_IDS.has(c.restaurantId)))
+      const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
+        ? cloudData.categories.filter((c: any) => c && c.id && c.name)
         : [];
-      const cleanLoadedItems = cloudData?.items && Array.isArray(cloudData.items)
-        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined && (!i.restaurantId || !MOCK_RESTAURANT_IDS.has(i.restaurantId))))
+      const cleanLoadedItems = cloudData.items && Array.isArray(cloudData.items)
+        ? sanitizeMenuItems(cloudData.items.filter((i: any) => i && i.id && i.name && i.price !== undefined))
         : [];
-      const cleanLoadedOrders = cloudData?.orders && Array.isArray(cloudData.orders)
-        ? cloudData.orders.filter((o: any) => o && o.id && (!o.restaurantId || !MOCK_RESTAURANT_IDS.has(o.restaurantId)))
+      const cleanLoadedOrders = cloudData.orders && Array.isArray(cloudData.orders)
+        ? cloudData.orders.filter((o: any) => o && o.id)
         : [];
 
       // Authoritative remote state takes precedence over local state
-      if (cleanLoadedRests.length > 0) {
-        setRestaurants(cleanLoadedRests);
-      }
-      if (cleanLoadedCategories.length > 0) {
-        setCategories(cleanLoadedCategories);
-      }
-      if (cleanLoadedItems.length > 0) {
-        setMenuItems(cleanLoadedItems);
-      }
-      const mergedUsers = cleanLoadedUsers.length > 0 
-        ? deduplicateUsers([...cleanLoadedUsers, ...INITIAL_USERS])
-        : deduplicateUsers(INITIAL_USERS);
+      setRestaurants(cleanLoadedRests);
+      setCategories(cleanLoadedCategories);
+      setMenuItems(cleanLoadedItems);
+      
+      const mergedUsers = deduplicateUsers([...cleanLoadedUsers, ...INITIAL_USERS]);
       setUsers(mergedUsers);
 
-      if (cleanLoadedOrders.length > 0) {
-        setOrders(cleanLoadedOrders);
-      }
+      setOrders(cleanLoadedOrders);
 
       // Silently ensure all active restaurants have their individual lightweight snapshot ready in Upstash
       try {
