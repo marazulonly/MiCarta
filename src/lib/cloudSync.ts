@@ -963,13 +963,26 @@ export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolea
 }
 
 /**
- * Automatically deletes a restaurant in the cloud hosting.
+ * Automatically deletes a restaurant in the cloud hosting and all caches.
  */
 export async function autoDeleteRestaurant(restaurantId: string): Promise<boolean> {
+  // 1. Delete from Firestore database
   deleteRestaurantFromFirestore(restaurantId).catch(err => {
     console.warn('[Firestore] autoDeleteRestaurant notice:', err);
   });
 
+  // 2. Remove from dedicated lightweight index in Upstash & localStorage
+  try {
+    const existingIndex = await fetchRestaurantsIndexFromUpstash();
+    if (existingIndex && Array.isArray(existingIndex)) {
+      const filtered = existingIndex.filter(r => r && r.id !== restaurantId);
+      await saveRestaurantsIndexToUpstash(filtered);
+    }
+  } catch (err) {
+    console.warn('[CloudSync] autoDeleteRestaurant index notice:', err);
+  }
+
+  // 3. Delete from backend disk & memory
   try {
     const res = await fetch(`/api/cloud-menu/restaurant/${encodeURIComponent(restaurantId)}`, {
       method: 'DELETE'

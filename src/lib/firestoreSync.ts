@@ -23,17 +23,20 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
       updatedAt: nowIso
     };
 
-    // 1. Save system wide master snapshot document
-    const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
-    await setDoc(snapshotRef, {
-      restaurantsCount: cleanPayload.restaurants?.length || 0,
-      usersCount: cleanPayload.users?.length || 0,
-      categoriesCount: cleanPayload.categories?.length || 0,
-      itemsCount: cleanPayload.items?.length || 0,
-      ordersCount: cleanPayload.orders?.length || 0,
-      updatedAt: nowIso,
-      payload: JSON.stringify(cleanPayload)
-    });
+    // 1. Save system wide master snapshot metadata document (without bloated 14MB payload string)
+    try {
+      const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
+      await setDoc(snapshotRef, {
+        restaurantsCount: cleanPayload.restaurants?.length || 0,
+        usersCount: cleanPayload.users?.length || 0,
+        categoriesCount: cleanPayload.categories?.length || 0,
+        itemsCount: cleanPayload.items?.length || 0,
+        ordersCount: cleanPayload.orders?.length || 0,
+        updatedAt: nowIso
+      });
+    } catch (snapErr) {
+      console.warn('[Firestore] Notice updating system snapshot doc:', snapErr);
+    }
 
     // 2. Batch write individual entities to their respective collections for queries and reliability
     const batch = writeBatch(db);

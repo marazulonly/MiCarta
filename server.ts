@@ -217,8 +217,11 @@ async function ensureCloudDataHydrated() {
     return cachedCloudData;
   }
 
-  // 1. Try Vercel KV / Upstash as primary source of truth
-  if (kvRestUrl && kvRestToken) {
+  // 1. Primary: Load persistent local disk file
+  loadCloudDataFromDisk();
+
+  // 2. Secondary: If disk is empty, try Vercel KV / Upstash
+  if ((!cachedCloudData || !cachedCloudData.restaurants || cachedCloudData.restaurants.length === 0) && kvRestUrl && kvRestToken) {
     try {
       const remoteData = await fetchFromVercelKV();
       if (remoteData && (remoteData.restaurants?.length || remoteData.items?.length)) {
@@ -232,18 +235,8 @@ async function ensureCloudDataHydrated() {
     }
   }
 
-  // 2. Fallback to local disk file if remote KV is empty or unavailable
-  loadCloudDataFromDisk();
-
   if (cachedCloudData) {
     syncAllPublishedMenus(cachedCloudData);
-  }
-
-  // If local disk has data but Vercel KV is empty/newly configured, seed the remote KV with local data
-  if (cachedCloudData && (cachedCloudData.restaurants?.length || cachedCloudData.items?.length) && kvRestUrl && kvRestToken) {
-    saveToVercelKV(cachedCloudData).then(() => {
-      console.log('[Server] Initialized remote Vercel KV / Upstash with local seed data');
-    }).catch(() => {});
   }
 
   return cachedCloudData;
