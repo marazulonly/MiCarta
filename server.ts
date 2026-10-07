@@ -237,7 +237,9 @@ async function ensureCloudDataHydrated() {
   if (kvRestUrl && kvRestToken) {
     try {
       const remoteData = await fetchFromVercelKV();
-      if (remoteData) {
+      if (remoteData && Array.isArray(remoteData.users)) {
+        // Strip non-admin demo records
+        remoteData.users = remoteData.users.filter((u: any) => u && u.role === 'ADMIN');
         cachedCloudData = remoteData;
         syncAllPublishedMenus(cachedCloudData);
         console.log('[Server] Successfully hydrated cachedCloudData from Vercel KV / Upstash');
@@ -641,6 +643,52 @@ async function startServer() {
       } else {
         res.status(500).json({ success: false, message: 'Error al persistir en disco' });
       }
+    });
+  });
+
+  // POST: Complete clean wipe
+  app.post('/api/admin/clean-all', async (req, res) => {
+    return withCloudDataLock(async () => {
+      const cleanData = {
+        restaurants: [],
+        categories: [],
+        items: [],
+        orders: [],
+        users: [
+          {
+            id: 'u-admin-herly',
+            name: 'Herly Lizarazo',
+            email: 'herly.lizarazo@micarta.pe',
+            dni: '00448157',
+            password: 'password',
+            role: 'ADMIN',
+            phone: '952341165',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+            restaurantIds: [],
+            status: 'active',
+            lastActive: 'En línea'
+          },
+          {
+            id: 'u-ever-aguilar',
+            name: 'Ever Aguilar',
+            email: 'ever.aguilar@micarta.pe',
+            dni: '10203040',
+            password: '12345678',
+            role: 'ADMIN',
+            phone: '+51 980 102 030',
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
+            restaurantIds: [],
+            status: 'active',
+            lastActive: 'En línea'
+          }
+        ],
+        publishedMenus: {},
+        updatedAt: new Date().toISOString()
+      };
+      saveCloudDataToDisk(cleanData);
+      await saveToVercelKV(cleanData);
+      broadcastMenuUpdate({ type: 'FULL_SYNC', data: cleanData });
+      res.json({ success: true, message: 'Database wiped clean' });
     });
   });
 

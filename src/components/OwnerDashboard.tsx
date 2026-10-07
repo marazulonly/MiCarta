@@ -149,7 +149,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   // Find available owners
   const ownersList = (users || []).filter(u => u && u.role === 'OWNER');
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>(
-    currentUser?.role === 'OWNER' ? currentUser.id : (ownersList[0]?.id || 'u-2')
+    currentUser?.role === 'OWNER' ? currentUser.id : (ownersList[0]?.id || '')
   );
 
   const currentOwner = isOwnerLogged ? currentUser! : (ownersList.find(o => o && o.id === selectedOwnerId) || ownersList[0]);

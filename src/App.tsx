@@ -219,12 +219,12 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
 
 // Storage cache keys for instant offline-first persistence across all reloads
 const STORAGE_KEYS = {
-  RESTS: 'micarta_restaurants_v2',
-  ITEMS: 'micarta_menu_items_v2',
-  CATEGORIES: 'micarta_categories_v2',
-  USERS: 'micarta_users_v2',
-  ORDERS: 'micarta_orders_v2',
-  AUTH: 'micarta_logged_user_v2'
+  RESTS: 'micarta_restaurants_v5',
+  ITEMS: 'micarta_menu_items_v5',
+  CATEGORIES: 'micarta_categories_v5',
+  USERS: 'micarta_users_v5',
+  ORDERS: 'micarta_orders_v5',
+  AUTH: 'micarta_logged_user_v5'
 };
 
 function getInitialStorageState() {
@@ -237,6 +237,17 @@ function getInitialStorageState() {
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
+      // Purge legacy storage versions
+      const legacyKeys = [
+        'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
+        'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
+        'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
+        'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
+        'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
+        'applet_restaurants_index_local', 'applet_menu_snapshot'
+      ];
+      legacyKeys.forEach(k => localStorage.removeItem(k));
+
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
       if (storedRests) {
         cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
@@ -254,7 +265,7 @@ function getInitialStorageState() {
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id);
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && u.role === 'ADMIN');
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -264,7 +275,10 @@ function getInitialStorageState() {
 
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
-        cachedAuth = JSON.parse(storedAuth);
+        const parsed = JSON.parse(storedAuth);
+        if (parsed && parsed.role === 'ADMIN') {
+          cachedAuth = parsed;
+        }
       }
     } catch (e) {
       console.warn('[Storage] Error reading initial cache:', e);
@@ -445,18 +459,19 @@ export default function App() {
     }
   }, []);
 
-  // One-time purge of fictitious demo records from local storage and Firestore as requested
+  // One-time purge of fictitious demo records from local storage, server, and Firestore as requested
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const isPurged = localStorage.getItem('micarta_clean_reset_v8');
+      const isPurged = localStorage.getItem('micarta_clean_reset_v9');
       if (!isPurged) {
         localStorage.removeItem(STORAGE_KEYS.RESTS);
         localStorage.removeItem(STORAGE_KEYS.ITEMS);
         localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
         localStorage.removeItem(STORAGE_KEYS.USERS);
         localStorage.removeItem(STORAGE_KEYS.ORDERS);
-        localStorage.setItem('micarta_clean_reset_v8', 'true');
+        localStorage.setItem('micarta_clean_reset_v9', 'true');
         clearAllDatabaseCollections().catch(() => {});
+        fetch('/api/admin/clean-all', { method: 'POST' }).catch(() => {});
       }
     }
   }, []);
@@ -474,7 +489,7 @@ export default function App() {
         ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
         : [];
       const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni && u.role === 'ADMIN')
         : [];
       const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
         ? cloudData.categories.filter((c: any) => c && c.id && c.name)

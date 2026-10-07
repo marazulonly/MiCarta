@@ -85,7 +85,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               </div>
               <div className="flex items-center gap-2 -mt-0.5 flex-wrap">
                 <span className="text-[11px] text-neutral-500">
-                  4 Restaurantes Conectados
+                  {restaurants.length} {restaurants.length === 1 ? 'Restaurante' : 'Restaurantes'}
                 </span>
                 <button
                   type="button"
