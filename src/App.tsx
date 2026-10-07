@@ -448,14 +448,14 @@ export default function App() {
   // One-time purge of fictitious demo records from local storage and Firestore as requested
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const isPurged = localStorage.getItem('micarta_clean_reset_v5');
+      const isPurged = localStorage.getItem('micarta_clean_reset_v8');
       if (!isPurged) {
         localStorage.removeItem(STORAGE_KEYS.RESTS);
         localStorage.removeItem(STORAGE_KEYS.ITEMS);
         localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
         localStorage.removeItem(STORAGE_KEYS.USERS);
         localStorage.removeItem(STORAGE_KEYS.ORDERS);
-        localStorage.setItem('micarta_clean_reset_v5', 'true');
+        localStorage.setItem('micarta_clean_reset_v8', 'true');
         clearAllDatabaseCollections().catch(() => {});
       }
     }

@@ -13,7 +13,7 @@ export const DEFAULT_WEEKLY_SCHEDULE: DaySchedule[] = [
 export const generateTablesForRestaurant = (
   restaurantId: string, 
   count: number = 22,
-  waiterIds: string[] = ['u-5c']
+  waiterIds: string[] = []
 ): RestaurantTable[] => {
   return Array.from({ length: count }, (_, idx) => {
     const num = idx + 1;
@@ -28,9 +28,9 @@ export const generateTablesForRestaurant = (
       name: `Mesa ${num < 10 ? '0' + num : num}`,
       zone,
       capacity,
-      status: num === 2 ? 'OCCUPIED' : 'AVAILABLE',
+      status: 'AVAILABLE',
       assignedWaiterIds: assignedWaiter,
-      currentOrderId: num === 2 ? 'ord-104' : undefined,
+      currentOrderId: undefined,
       qrCodeParam: `${num}`,
       notes: zone === 'TERRAZA' ? 'Zona exterior con vista' : zone === 'VIP' ? 'Box privado climatizado' : undefined
     };
@@ -39,8 +39,8 @@ export const generateTablesForRestaurant = (
 
 export const generateShiftsForRestaurant = (
   restaurantId: string,
-  waiterIds: string[] = ['u-5c'],
-  riderIds: string[] = ['u-7c']
+  waiterIds: string[] = [],
+  riderIds: string[] = []
 ): StaffShift[] => [
   {
     id: `shift-${restaurantId}-1`,
@@ -83,7 +83,7 @@ export const generateShiftsForRestaurant = (
     endTime: '23:30',
     applicableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
     roleTarget: 'KITCHEN',
-    assignedUserIds: ['u-k2'],
+    assignedUserIds: [],
     colorBadge: '#F97316'
   }
 ];

@@ -40,6 +40,29 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
 }
 
 let isQuotaExceededNoticeLogged = false;
+let isFirestoreQuotaExceeded = false;
+let lastQuotaExceededTime = 0;
+const QUOTA_COOLDOWN_MS = 5 * 60 * 1000; // 5 minute backoff before re-probing Firestore writes
+
+export function isQuotaExceededActive(): boolean {
+  if (isFirestoreQuotaExceeded) {
+    if (Date.now() - lastQuotaExceededTime > QUOTA_COOLDOWN_MS) {
+      isFirestoreQuotaExceeded = false;
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+export function markQuotaExceeded() {
+  isFirestoreQuotaExceeded = true;
+  lastQuotaExceededTime = Date.now();
+  if (!isQuotaExceededNoticeLogged) {
+    console.warn('[Firestore] Free daily write quota reached. System operating seamlessly via persistent mirror.');
+    isQuotaExceededNoticeLogged = true;
+  }
+}
 
 function isQuotaError(err: any): boolean {
   if (!err) return false;
@@ -50,23 +73,15 @@ function isQuotaError(err: any): boolean {
 
 function handleFirestoreError(err: any, actionName: string): boolean {
   if (isQuotaError(err)) {
-    if (!isQuotaExceededNoticeLogged) {
-      console.warn(`[Firestore] Free daily write quota reached for ${actionName}. Operating seamlessly via Express / Local storage.`);
-      isQuotaExceededNoticeLogged = true;
-    }
-    return true; // Proceed without UI errors
+    markQuotaExceeded();
+    return true; // Handled gracefully without throwing UI exceptions
   }
   console.warn(`[Firestore] Notice during ${actionName}:`, err);
   return false;
 }
 
 export function isBypassingFirestore(): boolean {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem('bypass_firestore') === 'true';
-    }
-  } catch {}
-  return false;
+  return isQuotaExceededActive();
 }
 
 /**
@@ -419,6 +434,39 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
     });
 
     await Promise.all(deletePromises);
+
+    // Explicitly guarantee Admin users are saved in Firestore
+    const adminHerly: User = {
+      id: 'u-admin-herly',
+      name: 'Herly Lizarazo',
+      email: 'herly.lizarazo@micarta.pe',
+      dni: '00448157',
+      password: 'password',
+      role: 'ADMIN',
+      phone: '952341165',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      restaurantIds: [],
+      status: 'active',
+      lastActive: 'En línea'
+    };
+    const adminEver: User = {
+      id: 'u-ever-aguilar',
+      name: 'Ever Aguilar',
+      email: 'ever.aguilar@micarta.pe',
+      dni: '10203040',
+      password: 'password',
+      role: 'ADMIN',
+      phone: '+51 980 102 030',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
+      restaurantIds: [],
+      status: 'active',
+      lastActive: 'En línea'
+    };
+
+    await Promise.all([
+      setDoc(doc(db, 'users', adminHerly.id), cleanObject(adminHerly), { merge: true }),
+      setDoc(doc(db, 'users', adminEver.id), cleanObject(adminEver), { merge: true })
+    ]);
 
     // Reset system summary doc
     const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
