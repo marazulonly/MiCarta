@@ -1159,8 +1159,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Yellow/Orange Accent Circle */}
                 <div className="absolute inset-2 rounded-full bg-gradient-to-tr from-[#FFA048] to-[#F26522] shadow-xl overflow-hidden flex items-end justify-center">
                   <img 
-                    src="https://images.unsplash.com/photo-1583394293214-28ded15ee548?w=600&q=80" 
-                    alt="Chef Mi Carta" 
+                    src="/src/assets/images/alexis_gonzales_1791411246485.jpg" 
+                    alt="Chef Alexis Gonzales - Mi Carta" 
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.endsWith('/AlexisGonzales.jpg')) {
+                        target.src = '/AlexisGonzales.jpg';
+                      }
+                    }}
                     className="w-full h-full object-cover object-top"
                   />
                 </div>

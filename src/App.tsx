@@ -226,69 +226,33 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
   return Array.from(map.values());
 }
 
-// Storage cache keys for instant offline-first persistence across all reloads
+// Storage cache keys for session auth only (all menu/restaurant data lives strictly in Firestore)
 const STORAGE_KEYS = {
-  RESTS: 'micarta_restaurants_v6',
-  ITEMS: 'micarta_menu_items_v6',
-  CATEGORIES: 'micarta_categories_v6',
-  USERS: 'micarta_users_v6',
-  ORDERS: 'micarta_orders_v6',
   AUTH: 'micarta_logged_user_v6'
 };
 
 function getInitialStorageState() {
-  let cachedRests: Restaurant[] = [];
-  let cachedCategories: MenuCategory[] = [];
-  let cachedItems: MenuItem[] = [];
-  let cachedUsers: User[] = [];
-  let cachedOrders: Order[] = [];
   let cachedAuth: User | null = null;
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      // Purge legacy storage versions
+      // Purge all legacy and menu localStorage keys so stale data never overrides Firestore
       const legacyKeys = [
-        'micarta_restaurants_v5', 'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
-        'micarta_menu_items_v5', 'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
-        'micarta_categories_v5', 'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
-        'micarta_users_v5', 'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
-        'micarta_orders_v5', 'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
-        'applet_restaurants_index_local', 'applet_menu_snapshot'
+        'micarta_restaurants_v6', 'micarta_restaurants_v5', 'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
+        'micarta_menu_items_v6', 'micarta_menu_items_v5', 'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
+        'micarta_categories_v6', 'micarta_categories_v5', 'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
+        'micarta_users_v6', 'micarta_users_v5', 'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
+        'micarta_orders_v6', 'micarta_orders_v5', 'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
+        'applet_restaurants_index_local', 'applet_categories_index_local', 'applet_items_index_local', 'applet_menu_snapshot'
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
-      let hasRestStorage = false;
-      let hasCatStorage = false;
-      let hasItemStorage = false;
-      let hasUserStorage = false;
-
-      const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
-      if (storedRests !== null) {
-        hasRestStorage = true;
-        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
-      }
-
-      const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (storedCategories !== null) {
-        hasCatStorage = true;
-        cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && c.id);
-      }
-
-      const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-      if (storedItems !== null) {
-        hasItemStorage = true;
-        cachedItems = JSON.parse(storedItems).filter((i: any) => i && i.id);
-      }
-
-      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-      if (storedUsers !== null) {
-        hasUserStorage = true;
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id);
-      }
-
-      const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      if (storedOrders !== null) {
-        cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && o.id);
+      // Also purge any pub_menu_override_* keys
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('pub_menu_override_')) {
+          localStorage.removeItem(k);
+        }
       }
 
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
@@ -298,27 +262,18 @@ function getInitialStorageState() {
           cachedAuth = parsed;
         }
       }
-
-      return {
-        cachedRests: hasRestStorage ? cachedRests : INITIAL_RESTAURANTS,
-        cachedCategories: hasCatStorage ? cachedCategories : INITIAL_CATEGORIES,
-        cachedItems: hasItemStorage ? cachedItems : INITIAL_MENU_ITEMS,
-        cachedUsers: hasUserStorage ? cachedUsers : INITIAL_USERS,
-        cachedOrders,
-        cachedAuth
-      };
     } catch (e) {
-      console.warn('[Storage] Error reading initial cache:', e);
+      console.warn('[Storage] Error reading initial session:', e);
     }
   }
 
   return {
-    cachedRests: INITIAL_RESTAURANTS,
-    cachedCategories: INITIAL_CATEGORIES,
-    cachedItems: INITIAL_MENU_ITEMS,
-    cachedUsers: INITIAL_USERS,
-    cachedOrders: [],
-    cachedAuth: null
+    cachedRests: [] as Restaurant[],
+    cachedCategories: [] as MenuCategory[],
+    cachedItems: [] as MenuItem[],
+    cachedUsers: INITIAL_USERS.filter(u => u.role === 'ADMIN'),
+    cachedOrders: [] as Order[],
+    cachedAuth
   };
 }
 
@@ -421,41 +376,6 @@ export default function App() {
     } catch {}
   }, [currentUser]);
 
-  // Keep restaurants synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.RESTS, JSON.stringify(restaurants));
-    } catch {}
-  }, [restaurants]);
-
-  // Keep categories synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-    } catch {}
-  }, [categories]);
-
-  // Keep menuItems synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(menuItems));
-    } catch {}
-  }, [menuItems]);
-
-  // Keep users synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    } catch {}
-  }, [users]);
-
-  // Keep orders synced to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
-    } catch {}
-  }, [orders]);
-
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -464,7 +384,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Check URL search parameters on initial mount or when restaurants change for QR scanning
+  // Check URL search parameters on initial mount for QR scanning / direct link access directly from Firestore
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -483,30 +403,25 @@ export default function App() {
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
           } else {
-            // Synchronous fallback match against INITIAL_RESTAURANTS
-            const localMatch = INITIAL_RESTAURANTS.find(r => 
-              normalizeSlug(r.slug) === normalizeSlug(restaurantSlug) || 
-              normalizeSlug(r.id) === normalizeSlug(restaurantSlug) || 
-              normalizeSlug(r.name) === normalizeSlug(restaurantSlug)
-            );
-            if (localMatch) {
-              const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === localMatch.id);
-              const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === localMatch.id);
-              const fallbackSnap = {
+            // Check if already loaded in Firestore state
+            const match = findRestaurantBySlug(restaurantsRef.current, restaurantSlug);
+            if (match) {
+              const restCats = categoriesRef.current.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === normalizeSlug(match.slug)));
+              const restItems = menuItemsRef.current.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === normalizeSlug(match.slug)));
+              const snap = {
                 published: true,
                 version: 1,
                 publishedAt: new Date().toISOString(),
-                restaurant: localMatch,
+                restaurant: match,
                 categories: restCats,
                 items: restItems
               };
-              setPublishedMenuData(fallbackSnap);
-              setPreviewRestaurant(localMatch);
+              setPublishedMenuData(snap);
+              setPreviewRestaurant(match);
               setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
               if (table) setPreviewTableNumber(table);
               setIsCustomerModalOpen(true);
               setNotFoundSlugError(null);
-              publishRestaurantMenu(localMatch.id, localMatch, restCats, restItems).catch(() => {});
             } else {
               setPreviewRestaurant(null);
               setPublishedMenuData(null);
@@ -515,34 +430,10 @@ export default function App() {
             }
           }
         }).catch(() => {
-          const localMatch = INITIAL_RESTAURANTS.find(r => 
-            normalizeSlug(r.slug) === normalizeSlug(restaurantSlug) || 
-            normalizeSlug(r.id) === normalizeSlug(restaurantSlug) || 
-            normalizeSlug(r.name) === normalizeSlug(restaurantSlug)
-          );
-          if (localMatch) {
-            const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === localMatch.id);
-            const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === localMatch.id);
-            const fallbackSnap = {
-              published: true,
-              version: 1,
-              publishedAt: new Date().toISOString(),
-              restaurant: localMatch,
-              categories: restCats,
-              items: restItems
-            };
-            setPublishedMenuData(fallbackSnap);
-            setPreviewRestaurant(localMatch);
-            setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
-            if (table) setPreviewTableNumber(table);
-            setIsCustomerModalOpen(true);
-            setNotFoundSlugError(null);
-          } else {
-            setPreviewRestaurant(null);
-            setPublishedMenuData(null);
-            setIsCustomerModalOpen(false);
-            setNotFoundSlugError(restaurantSlug);
-          }
+          setPreviewRestaurant(null);
+          setPublishedMenuData(null);
+          setIsCustomerModalOpen(false);
+          setNotFoundSlugError(restaurantSlug);
         }).finally(() => {
           setIsLoadingPublishedMenu(false);
         });
@@ -552,19 +443,17 @@ export default function App() {
     }
   }, []);
 
-  // Persistent database sync initialized
-
-  // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
+  // Direct Firestore fetch & Real-time Firestore onSnapshot subscription (Single Source of Truth)
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Initial Cloud Fetch from authoritative backend
+    // 1. Initial Fetch strictly from Firestore
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
       if (!cloudData) return;
 
       const cleanLoadedRests = cloudData.restaurants && Array.isArray(cloudData.restaurants)
-        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
+        ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && (r.slug || r.id)))
         : [];
       const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
         ? cloudData.users.filter((u: any) => u && u.id)
@@ -579,86 +468,50 @@ export default function App() {
         ? cloudData.orders.filter((o: any) => o && o.id)
         : [];
 
-      // Merge remote cloud data with active state without re-injecting static seed data
-      setRestaurants(prev => {
-        const map = new Map<string, Restaurant>();
-        prev.forEach(r => { if (r && r.id) map.set(r.id, r); });
-        cleanLoadedRests.forEach(r => {
-          if (r && r.id) {
-            const existing = map.get(r.id);
-            map.set(r.id, existing ? { ...existing, ...r } : r);
-          }
-        });
-        const result = Array.from(map.values());
-        restaurantsRef.current = result;
-        return result;
-      });
+      // Replace state with authoritative Firestore data
+      restaurantsRef.current = cleanLoadedRests;
+      setRestaurants(cleanLoadedRests);
 
-      setCategories(prev => {
-        const map = new Map<string, MenuCategory>();
-        prev.forEach(c => { if (c && c.id) map.set(c.id, c); });
-        cleanLoadedCategories.forEach(c => { if (c && c.id) map.set(c.id, c); });
-        const result = Array.from(map.values());
-        categoriesRef.current = result;
-        return result;
-      });
+      categoriesRef.current = cleanLoadedCategories;
+      setCategories(cleanLoadedCategories);
 
-      setMenuItems(prev => {
-        const map = new Map<string, MenuItem>();
-        prev.forEach(i => { if (i && i.id) map.set(i.id, i); });
-        cleanLoadedItems.forEach(i => { if (i && i.id) map.set(i.id, i); });
-        const result = Array.from(map.values());
-        menuItemsRef.current = result;
-        return result;
-      });
+      menuItemsRef.current = cleanLoadedItems;
+      setMenuItems(cleanLoadedItems);
 
-      setUsers(prev => {
-        const map = new Map<string, User>();
-        prev.forEach(u => { if (u && u.id) map.set(u.id, u); });
-        cleanLoadedUsers.forEach(u => { if (u && u.id) map.set(u.id, u); });
-        const result = deduplicateUsers(Array.from(map.values()));
-        usersRef.current = result;
-        return result;
-      });
+      const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
+      const combinedUsers = deduplicateUsers([...cleanLoadedUsers, ...adminFallbacks]);
+      usersRef.current = combinedUsers;
+      setUsers(combinedUsers);
 
-      if (cleanLoadedOrders.length > 0) {
-        setOrders(prev => {
-          const map = new Map<string, Order>();
-          prev.forEach(o => { if (o && o.id) map.set(o.id, o); });
-          cleanLoadedOrders.forEach(o => { if (o && o.id) map.set(o.id, o); });
-          return Array.from(map.values());
-        });
-      }
+      ordersRef.current = cleanLoadedOrders;
+      setOrders(cleanLoadedOrders);
 
-      // Silently ensure all active restaurants have their published menu snapshot persisted in Firestore & Upstash
+      // Ensure published_menus in Firestore has the latest live snapshot for each restaurant
       try {
-        const currentRests = restaurantsRef.current;
-        const currentCats = categoriesRef.current;
-        const currentItems = menuItemsRef.current;
-        currentRests.forEach((r: any) => {
-          if (!r || !r.id) return;
-          const rCats = currentCats.filter((c: any) => c && c.restaurantId === r.id);
-          const rItems = currentItems.filter((i: any) => i && i.restaurantId === r.id);
-          publishRestaurantMenu(r.id, r, rCats, rItems).catch(() => {});
+        cleanLoadedRests.forEach((r: Restaurant) => {
+          if (!r || (!r.slug && !r.id)) return;
+          const rSlug = normalizeSlug(r.slug || r.name || r.id);
+          const rCats = cleanLoadedCategories.filter((c: MenuCategory) => c && (c.restaurantId === r.id || normalizeSlug(c.restaurantId) === rSlug));
+          const rItems = cleanLoadedItems.filter((i: MenuItem) => i && (i.restaurantId === r.id || normalizeSlug(i.restaurantId) === rSlug));
+          publishRestaurantMenu(rSlug, r, rCats, rItems).catch(() => {});
         });
       } catch {}
 
-      // Keep currentUser logged in, updating fields if updated version found
       if (currentUser) {
-        const fresh = cleanLoadedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
+        const fresh = combinedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
         if (fresh) {
           setCurrentUser(fresh);
         }
       }
 
-      // If accessing via link/slug, locate the restaurant in all active restaurants
+      // If accessing via link/slug, locate the restaurant in Firestore restaurants and sync live categories/items
       if (initialRequestedSlug) {
-        const allRests = restaurantsRef.current;
-        const match = findRestaurantBySlug(allRests, initialRequestedSlug);
+        const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
         if (match) {
+          const mSlug = normalizeSlug(match.slug || match.name || match.id);
           setPreviewRestaurant(match);
-          const restCats = categoriesRef.current.filter(c => c && c.restaurantId === match.id);
-          const restItems = menuItemsRef.current.filter(i => i && i.restaurantId === match.id);
+          const restCats = cleanLoadedCategories.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === mSlug));
+          const restItems = cleanLoadedItems.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === mSlug));
           setPublishedMenuData({
             published: true,
             version: 1,
@@ -667,78 +520,86 @@ export default function App() {
             categories: restCats,
             items: restItems
           });
+          setIsCustomerModalOpen(true);
           setNotFoundSlugError(null);
         }
       }
       
       setIsInitialCloudFetchDone(true);
     }).catch(err => {
-      console.warn('[CloudSync] Notice during initial remote fetch:', err);
+      console.warn('[Firestore] Notice during initial fetch:', err);
     }).finally(() => {
       if (isMounted) {
         setIsInitialCloudFetchDone(true);
       }
     });
 
-    // 2. Real-time Subscription: updates all sessions and incognito windows instantly when any change occurs
+    // 2. Real-time Firestore Subscription: updates state directly when Firestore collections change
     const unsubscribe = subscribeToCloudUpdates((event) => {
       if (!isMounted) return;
       if (event.type === 'FULL_SYNC' && event.data) {
         const d = event.data;
         if (d.restaurants && Array.isArray(d.restaurants)) {
           const cleanR = sanitizeRestaurants(d.restaurants);
-          setRestaurants(prev => {
-            const map = new Map<string, Restaurant>();
-            prev.forEach(r => { if (r && r.id && !isLegacyRestaurant(r)) map.set(r.id, r); });
-            cleanR.forEach(r => {
-              if (r && r.id && !isLegacyRestaurant(r)) {
-                const existing = map.get(r.id);
-                map.set(r.id, existing ? { ...existing, ...r } : r);
-              }
-            });
-            return Array.from(map.values());
-          });
+          restaurantsRef.current = cleanR;
+          setRestaurants(cleanR);
           setPreviewRestaurant(p => {
             if (initialRequestedSlug) {
               const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
-              if (match) return match;
+              if (match) {
+                setNotFoundSlugError(null);
+                return match;
+              }
               return p;
             }
-            return p ? (cleanR.find(r => r.id === p.id) || null) : null;
+            return p ? (cleanR.find(r => r.id === p.id || normalizeSlug(r.slug) === normalizeSlug(p.slug)) || null) : null;
           });
+          if (initialRequestedSlug) {
+            const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
+            if (match) {
+              const mSlug = normalizeSlug(match.slug || match.name || match.id);
+              const rCats = categoriesRef.current.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === mSlug));
+              const rItems = menuItemsRef.current.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === mSlug));
+              setPublishedMenuData(prev => ({
+                published: true,
+                version: prev?.version || 1,
+                publishedAt: new Date().toISOString(),
+                restaurant: match,
+                categories: rCats.length > 0 ? rCats : (prev?.categories || []),
+                items: rItems.length > 0 ? rItems : (prev?.items || [])
+              }));
+            }
+          }
         }
         if (d.categories && Array.isArray(d.categories)) {
-          setCategories(prev => {
-            const map = new Map<string, MenuCategory>();
-            d.categories.forEach((c: MenuCategory) => { if (c?.id) map.set(c.id, c); });
-            prev.forEach(c => { if (c?.id && !map.has(c.id)) map.set(c.id, c); });
-            return Array.from(map.values());
+          categoriesRef.current = d.categories;
+          setCategories(d.categories);
+          setPublishedMenuData(prev => {
+            if (!prev || !prev.restaurant) return prev;
+            const mSlug = normalizeSlug(prev.restaurant.slug || prev.restaurant.name || prev.restaurant.id);
+            const rCats = d.categories.filter((c: MenuCategory) => c && (c.restaurantId === prev.restaurant.id || normalizeSlug(c.restaurantId) === mSlug));
+            return rCats.length > 0 ? { ...prev, categories: rCats } : prev;
           });
         }
         if (d.items && Array.isArray(d.items)) {
           const cleanItems = sanitizeMenuItems(d.items);
-          setMenuItems(prev => {
-            const map = new Map<string, MenuItem>();
-            cleanItems.forEach((i: MenuItem) => { if (i?.id) map.set(i.id, i); });
-            prev.forEach(i => { if (i?.id && !map.has(i.id)) map.set(i.id, i); });
-            return Array.from(map.values());
+          menuItemsRef.current = cleanItems;
+          setMenuItems(cleanItems);
+          setPublishedMenuData(prev => {
+            if (!prev || !prev.restaurant) return prev;
+            const mSlug = normalizeSlug(prev.restaurant.slug || prev.restaurant.name || prev.restaurant.id);
+            const rItems = cleanItems.filter((i: MenuItem) => i && (i.restaurantId === prev.restaurant.id || normalizeSlug(i.restaurantId) === mSlug));
+            return rItems.length > 0 ? { ...prev, items: rItems } : prev;
           });
         }
         if (d.users && Array.isArray(d.users)) {
-          setUsers(prev => {
-            const map = new Map<string, User>();
-            d.users.forEach((u: User) => {
-              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-              if (key) map.set(key, u);
-            });
-            prev.forEach(u => {
-              const key = u.id || (u.dni ? `dni-${u.dni}` : null);
-              if (key && !map.has(key)) map.set(key, u);
-            });
-            return deduplicateUsers(Array.from(map.values()));
-          });
+          const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
+          const nextU = deduplicateUsers([...d.users, ...adminFallbacks]);
+          usersRef.current = nextU;
+          setUsers(nextU);
         }
         if (d.orders && Array.isArray(d.orders)) {
+          ordersRef.current = d.orders;
           setOrders(d.orders);
         }
       } else if (event.type === 'MENU_PUBLISHED') {
@@ -1867,19 +1728,23 @@ export default function App() {
       );
     }
 
-    // Direct standalone full-screen digital menu for QR scan / public visitors (authoritative published snapshot)
+    // Direct standalone full-screen digital menu for QR scan / public visitors (authoritative Firestore snapshot)
+    const targetSlug = normalizeSlug(targetRest.slug || targetRest.name || targetRest.id);
+    const liveCategories = categories.filter(c => c && (c.restaurantId === targetRest.id || normalizeSlug(c.restaurantId) === targetSlug));
+    const liveItems = menuItems.filter(i => i && (i.restaurantId === targetRest.id || normalizeSlug(i.restaurantId) === targetSlug));
+
     const isTargetPublished = Boolean(
       publishedMenuData && (
         normalizeSlug(publishedMenuData.restaurant?.id) === normalizeSlug(targetRest.id) ||
-        normalizeSlug(publishedMenuData.restaurant?.slug) === normalizeSlug(targetRest.slug)
+        normalizeSlug(publishedMenuData.restaurant?.slug) === targetSlug
       )
     );
-    const targetCategories = isTargetPublished && publishedMenuData 
-      ? publishedMenuData.categories 
-      : categories.filter(c => c.restaurantId === targetRest.id);
-    const targetItems = isTargetPublished && publishedMenuData 
-      ? publishedMenuData.items 
-      : menuItems.filter(i => i.restaurantId === targetRest.id);
+    const targetCategories = liveCategories.length > 0
+      ? liveCategories
+      : (isTargetPublished && publishedMenuData ? publishedMenuData.categories : []);
+    const targetItems = liveItems.length > 0
+      ? liveItems
+      : (isTargetPublished && publishedMenuData ? publishedMenuData.items : []);
 
     return (
       <div 

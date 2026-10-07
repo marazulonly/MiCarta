@@ -96,7 +96,7 @@ export const RIENDAS_DE_PLATA_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxu
 
 export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
-    id: 'rest-picanteria-mar',
+    id: 'cevichito-pliz',
     name: 'Cevichito Pliz',
     tagline: 'Sazón Norteña & Pescados Frescos del Día',
     cuisineType: 'Cevichería & Mariscos',
@@ -129,8 +129,8 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       totalTables: 12,
       occupancyRate: 75
     },
-    tables: generateTablesForRestaurant('rest-picanteria-mar', 12, ['u-waiter-mateo', 'u-waiter-camila']),
-    shifts: generateShiftsForRestaurant('rest-picanteria-mar', ['u-waiter-mateo'], ['u-delivery-diego']),
+    tables: generateTablesForRestaurant('cevichito-pliz', 12, ['u-waiter-mateo', 'u-waiter-camila']),
+    shifts: generateShiftsForRestaurant('cevichito-pliz', ['u-waiter-mateo'], ['u-delivery-diego']),
     weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
     menuAccessSettings: {
       menuMode: 'SAME',
@@ -143,7 +143,7 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     }
   },
   {
-    id: 'rest-fuego-criollo',
+    id: 'fuego-criollo',
     name: 'El Fuego Criollo',
     tagline: 'Pollo a la Brasa & Parrillas a la Leña',
     cuisineType: 'Pollería & Parrillas',
@@ -176,8 +176,8 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
       totalTables: 16,
       occupancyRate: 82
     },
-    tables: generateTablesForRestaurant('rest-fuego-criollo', 16, ['u-waiter-camila']),
-    shifts: generateShiftsForRestaurant('rest-fuego-criollo', ['u-waiter-camila'], ['u-delivery-sofia']),
+    tables: generateTablesForRestaurant('fuego-criollo', 16, ['u-waiter-camila']),
+    shifts: generateShiftsForRestaurant('fuego-criollo', ['u-waiter-camila'], ['u-delivery-sofia']),
     weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
     menuAccessSettings: {
       menuMode: 'SAME',
@@ -192,10 +192,10 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
 ];
 
 export const INITIAL_CATEGORIES: MenuCategory[] = [
-  // Categorías La Picantería del Mar
+  // Categorías Cevichito Pliz
   {
     id: 'cat-mar-1',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     name: 'Ceviches & Entradas Marinas',
     description: 'Pescados frescos del día con ají limo, camote glaseado y choclo desgranado',
     sortOrder: 1,
@@ -203,7 +203,7 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   },
   {
     id: 'cat-mar-2',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     name: 'Platos de Fondo & Arroces',
     description: 'Especialidades calientes salteadas al wok y guisos marinos',
     sortOrder: 2,
@@ -211,7 +211,7 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   },
   {
     id: 'cat-mar-3',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     name: 'Bebidas & Cocteles',
     description: 'Refrescos naturales y cocteles de autor',
     sortOrder: 3,
@@ -221,7 +221,7 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   // Categorías El Fuego Criollo
   {
     id: 'cat-fuego-1',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     name: 'Pollos a la Brasa & Combos',
     description: 'Sabor tradicional a la leña acompañado de papas crocantes y ensalada',
     sortOrder: 1,
@@ -229,7 +229,7 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   },
   {
     id: 'cat-fuego-2',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     name: 'Cortes a la Parrilla',
     description: 'Cortes selectos al término de su preferencia con chimichurri de la casa',
     sortOrder: 2,
@@ -237,7 +237,7 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
   },
   {
     id: 'cat-fuego-3',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     name: 'Guarniciones & Bebidas',
     description: 'Papas, ensaladas extras y gaseosas frías',
     sortOrder: 3,
@@ -246,10 +246,10 @@ export const INITIAL_CATEGORIES: MenuCategory[] = [
 ];
 
 export const INITIAL_MENU_ITEMS: MenuItem[] = [
-  // Platos La Picantería del Mar
+  // Platos Cevichito Pliz
   {
     id: 'item-mar-1',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     categoryId: 'cat-mar-1',
     name: 'Ceviche Clásico Mixto',
     description: 'Pesca del día, calamar, langostino y pulpo con leche de tigre tradicional, cancha y camote',
@@ -264,7 +264,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-mar-2',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     categoryId: 'cat-mar-1',
     name: 'Chicharrón de Calamar Crocante',
     description: 'Aros de calamar crujientes acompañados de yuca frita y salsa tártara de la casa',
@@ -278,7 +278,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-mar-3',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     categoryId: 'cat-mar-2',
     name: 'Arroz con Mariscos a la Norteña',
     description: 'Arroz criollo ahumado al wok con mariscos seleccionados, sarza criolla y toque de ají amarillo',
@@ -292,7 +292,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-mar-4',
-    restaurantId: 'rest-picanteria-mar',
+    restaurantId: 'cevichito-pliz',
     categoryId: 'cat-mar-3',
     name: 'Chicha Morada Artesanal 1L',
     description: 'Elaborada diariamente con maíz morado, piña, membrillo, manzana y especias',
@@ -308,7 +308,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   // Platos El Fuego Criollo
   {
     id: 'item-fuego-1',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     categoryId: 'cat-fuego-1',
     name: '1/2 Pollo a la Brasa + Papas + Ensalada',
     description: 'Medio pollo dorado a la leña, papas amarillas crocantes, ensalada fresca y cremas artesanales',
@@ -322,7 +322,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-fuego-2',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     categoryId: 'cat-fuego-1',
     name: 'Pollo Entero Familiar + Papas Grandes',
     description: '1 pollo entero a la brasa, porción familiar de papas crocantes, ensalada familiar y cremas',
@@ -336,7 +336,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-fuego-3',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     categoryId: 'cat-fuego-2',
     name: 'Bife de Ancho 350g a la Leña',
     description: 'Corte jugoso de res madurada, sazonada con sal marina y chimichurri artesanal de hierbas',
@@ -350,7 +350,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'item-fuego-4',
-    restaurantId: 'rest-fuego-criollo',
+    restaurantId: 'fuego-criollo',
     categoryId: 'cat-fuego-3',
     name: 'Inca Kola 1.5L',
     description: 'Gaseosa helada en botella familiar',
@@ -403,7 +403,7 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 987 654 321',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-picanteria-mar'],
+    restaurantIds: ['cevichito-pliz'],
     status: 'active',
     lastActive: 'Recién registrado'
   },
@@ -416,7 +416,7 @@ export const INITIAL_USERS: User[] = [
     role: 'OWNER',
     phone: '+51 987 654 322',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
-    restaurantIds: ['rest-fuego-criollo'],
+    restaurantIds: ['fuego-criollo'],
     status: 'active',
     lastActive: 'Recién registrado'
   },

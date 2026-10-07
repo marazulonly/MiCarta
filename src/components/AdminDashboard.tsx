@@ -189,12 +189,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     const cleanSlug = generateSlug(newRestSlug || newRestName);
-    if (restaurants.some(r => r.slug === cleanSlug)) {
+    if (restaurants.some(r => r.slug === cleanSlug || r.id === cleanSlug)) {
       setNewRestError(`Ya existe un restaurante con el slug /${cleanSlug}. Por favor elige otro.`);
       return;
     }
 
-    const newId = `rest-${Date.now()}`;
+    const newId = cleanSlug;
     const selectedOwnerId = newRestOwnerId || (ownersList[0]?.id || '');
     const selectedTmplId = newRestTemplateId || (templates[0]?.id || 'tmpl-luxury');
     const templateBranding = getTemplateDefaultBranding(selectedTmplId);

@@ -698,12 +698,12 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
     const cleanSlug = generateSlug(newRestSlug || newRestName);
 
-    if (restaurants.some(r => r.slug === cleanSlug)) {
+    if (restaurants.some(r => r.slug === cleanSlug || r.id === cleanSlug)) {
       setRestError(`Ya existe un restaurante con el slug /${cleanSlug}. Por favor elige otro.`);
       return;
     }
 
-    const newId = `rest-${Date.now()}`;
+    const newId = cleanSlug;
     const selectedTmplId = newRestTemplateId || 'tmpl-luxury';
     const templateBranding = getTemplateDefaultBranding(selectedTmplId);
 
