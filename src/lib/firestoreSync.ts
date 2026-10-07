@@ -382,16 +382,37 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
   if (isBypassingFirestore()) return true;
   if (!restaurantId || !snapshot) return false;
   try {
-    const cleanSnap = cleanObject(snapshot);
+    const targetId = snapshot.restaurant?.id || restaurantId;
+    const cleanRest = snapshot.restaurant ? sanitizeRestaurantForFirestore(snapshot.restaurant) : null;
+    
+    // Filter categories and items strictly belonging to this restaurant only
+    const cleanCats = Array.isArray(snapshot.categories) 
+      ? snapshot.categories.filter((c: any) => c && (c.restaurantId === targetId || c.restaurantId === restaurantId))
+      : [];
+    const cleanItems = Array.isArray(snapshot.items)
+      ? snapshot.items.filter((i: any) => i && (i.restaurantId === targetId || i.restaurantId === restaurantId))
+      : [];
+
+    const optimizedSnapshot = cleanObject({
+      published: true,
+      version: snapshot.version || 1,
+      publishedAt: snapshot.publishedAt || new Date().toISOString(),
+      publishedBy: snapshot.publishedBy || 'Admin / Owner',
+      restaurant: cleanRest,
+      categories: cleanCats,
+      items: cleanItems
+    });
+
+    const normRestId = targetId.toLowerCase().trim();
     const writePromises = [
-      setDoc(doc(db, 'published_menus', restaurantId), cleanSnap, { merge: true }),
-      setDoc(doc(db, 'published_menus', restaurantId.toLowerCase().trim()), cleanSnap, { merge: true })
+      setDoc(doc(db, 'published_menus', targetId), optimizedSnapshot, { merge: true }),
+      setDoc(doc(db, 'published_menus', normRestId), optimizedSnapshot, { merge: true })
     ];
     
-    if (snapshot.restaurant && snapshot.restaurant.slug) {
-      const normSlug = snapshot.restaurant.slug.toLowerCase().trim();
-      if (normSlug && normSlug !== restaurantId) {
-        writePromises.push(setDoc(doc(db, 'published_menus', normSlug), cleanSnap, { merge: true }));
+    if (cleanRest && cleanRest.slug) {
+      const normSlug = cleanRest.slug.toLowerCase().trim();
+      if (normSlug && normSlug !== targetId && normSlug !== normRestId) {
+        writePromises.push(setDoc(doc(db, 'published_menus', normSlug), optimizedSnapshot, { merge: true }));
       }
     }
     await Promise.all(writePromises);
@@ -490,14 +511,16 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
 export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string): Promise<any | null> {
   if (isBypassingFirestore()) return null;
   if (!restaurantIdOrSlug) return null;
+  const normKey = restaurantIdOrSlug.toLowerCase().trim();
+
   try {
+    // 1. Direct point-lookup in published_menus collection (O(1) indexing)
     const rawRef = doc(db, 'published_menus', restaurantIdOrSlug);
     const snap = await getDoc(rawRef);
     if (snap.exists()) {
       return snap.data();
     }
 
-    const normKey = restaurantIdOrSlug.toLowerCase().trim();
     if (normKey !== restaurantIdOrSlug) {
       const normSnap = await getDoc(doc(db, 'published_menus', normKey));
       if (normSnap.exists()) {
@@ -505,27 +528,46 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       }
     }
 
-    // Fallback: Query all restaurants in Firestore to find exact match by slug or ID
-    const cloud = await fetchFromFirestore();
-    if (cloud && cloud.restaurants) {
-      const match = cloud.restaurants.find(r => {
-        if (!r) return false;
-        const sSlug = (r.slug || '').toLowerCase().trim();
-        const sId = (r.id || '').toLowerCase().trim();
-        const sName = (r.name || '').toLowerCase().trim();
-        return sId === normKey || sSlug === normKey || sName === normKey;
-      });
-      if (match) {
-        const categories = (cloud.categories || []).filter(c => c && c.restaurantId === match.id);
-        const items = (cloud.items || []).filter(i => i && i.restaurantId === match.id);
-        return {
+    // 2. Direct point-lookup in main restaurants collection
+    const restRef = doc(db, 'restaurants', restaurantIdOrSlug);
+    let restSnap = await getDoc(restRef);
+    if (!restSnap.exists() && normKey !== restaurantIdOrSlug) {
+      restSnap = await getDoc(doc(db, 'restaurants', normKey));
+    }
+
+    if (restSnap.exists()) {
+      const restData = restSnap.data() as Restaurant;
+      if (restData && restData.id) {
+        // Fetch categories and items for this specific restaurant
+        const [catsSnap, itemsSnap] = await Promise.all([
+          getDocs(collection(db, 'categories')).catch(() => null),
+          getDocs(collection(db, 'items')).catch(() => null)
+        ]);
+
+        const categories: MenuCategory[] = [];
+        catsSnap?.forEach(d => {
+          const c = d.data() as MenuCategory;
+          if (c && c.restaurantId === restData.id) categories.push(c);
+        });
+
+        const items: MenuItem[] = [];
+        itemsSnap?.forEach(d => {
+          const i = d.data() as MenuItem;
+          if (i && i.restaurantId === restData.id) items.push(i);
+        });
+
+        const generatedSnap = {
           published: true,
           version: 1,
-          publishedAt: cloud.updatedAt || new Date().toISOString(),
-          restaurant: match,
+          publishedAt: new Date().toISOString(),
+          restaurant: restData,
           categories,
           items
         };
+
+        // Cache this generated snapshot into published_menus in Firestore for instant future reads
+        savePublishedMenuToFirestore(restData.id, generatedSnap).catch(() => {});
+        return generatedSnap;
       }
     }
   } catch (err) {

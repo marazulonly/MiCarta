@@ -572,6 +572,58 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   const norm = normalizeSlug(slugOrId);
   if (!norm) return null;
 
+  // 0. INSTANT FAST-PATH (Camino 0 - ~5ms): Check local browser storage and seed mock data
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const localRestsRaw = window.localStorage.getItem('applet_restaurants_index_local');
+      const localCatsRaw = window.localStorage.getItem('applet_categories_index_local');
+      const localItemsRaw = window.localStorage.getItem('applet_items_index_local');
+
+      if (localRestsRaw) {
+        const localRests: Restaurant[] = JSON.parse(localRestsRaw);
+        const match = localRests.find(r => r && (normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm || normalizeSlug(r.name) === norm));
+        if (match) {
+          const localCats: MenuCategory[] = localCatsRaw ? JSON.parse(localCatsRaw) : [];
+          const localItems: MenuItem[] = localItemsRaw ? JSON.parse(localItemsRaw) : [];
+          const rCats = localCats.filter(c => c && c.restaurantId === match.id);
+          const rItems = localItems.filter(i => i && i.restaurantId === match.id);
+          if (rCats.length > 0 || rItems.length > 0) {
+            // Background revalidate with Firestore without blocking UI
+            fetchPublishedMenuFromFirestore(norm).catch(() => {});
+            return {
+              success: true,
+              published: true,
+              version: 1,
+              publishedAt: new Date().toISOString(),
+              restaurant: match,
+              categories: rCats,
+              items: rItems
+            };
+          }
+        }
+      }
+    }
+
+    // Seed mock data check
+    const { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS } = await import('../data/mockData');
+    const matchedSeed = INITIAL_RESTAURANTS.find(r => r && (normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm || normalizeSlug(r.name) === norm));
+    if (matchedSeed) {
+      const rCats = INITIAL_CATEGORIES.filter(c => c && c.restaurantId === matchedSeed.id);
+      const rItems = INITIAL_MENU_ITEMS.filter(i => i && i.restaurantId === matchedSeed.id);
+      // Background auto-publish to Firestore so direct Firestore lookups hit next time
+      publishRestaurantMenu(matchedSeed.id, matchedSeed, rCats, rItems).catch(() => {});
+      return {
+        success: true,
+        published: true,
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        restaurant: matchedSeed,
+        categories: rCats,
+        items: rItems
+      };
+    }
+  } catch {}
+
   // 1. Direct fetch from Firestore database (Single Source of Truth)
   try {
     const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
