@@ -180,7 +180,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const users: User[] = [];
     usersSnap?.forEach(d => { 
       const data = d.data() as User;
-      if (data && data.id && data.dni) {
+      if (data && data.id) {
         users.push(data);
       }
     });

@@ -1419,7 +1419,10 @@ export default function App() {
       }
     }
 
-    // 4. Update local state
+    // 4. Update local state and sync refs
+    restaurantsRef.current = nextRestaurants;
+    categoriesRef.current = nextCategories;
+    menuItemsRef.current = nextItems;
     setRestaurants(nextRestaurants);
     setCategories(nextCategories);
     setMenuItems(nextItems);
