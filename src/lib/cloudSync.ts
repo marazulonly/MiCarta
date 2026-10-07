@@ -13,7 +13,8 @@ import {
   saveOrderToFirestore,
   updateOrderStatusInFirestore,
   savePublishedMenuToFirestore,
-  fetchPublishedMenuFromFirestore
+  fetchPublishedMenuFromFirestore,
+  deletePublishedMenuFromFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {
@@ -887,8 +888,12 @@ export async function autoSyncRestaurant(restaurant: Restaurant): Promise<boolea
 /**
  * Automatically deletes a restaurant directly from Firestore.
  */
-export async function autoDeleteRestaurant(restaurantId: string): Promise<boolean> {
-  const firestoreOk = await deleteRestaurantFromFirestore(restaurantId);
+export async function autoDeleteRestaurant(restaurantId: string, slug?: string): Promise<boolean> {
+  const [firestoreOk] = await Promise.all([
+    deleteRestaurantFromFirestore(restaurantId),
+    deletePublishedMenuFromFirestore(restaurantId),
+    slug ? deletePublishedMenuFromFirestore(slug) : Promise.resolve(true)
+  ]);
 
   // Non-blocking secondary mirrors
   fetch(`/api/cloud-menu/restaurant/${encodeURIComponent(restaurantId)}`, {

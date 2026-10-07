@@ -44,7 +44,7 @@ import {
   MenuAccessSettings,
   MenuTemplate
 } from '../types';
-import { getSafeBranding, getSafeMenuAccessSettings } from '../utils/restaurantUtils';
+import { getSafeBranding, getSafeMenuAccessSettings, generateSlug } from '../utils/restaurantUtils';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
@@ -596,9 +596,12 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const handleSaveCustomization = () => {
     const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
+    const cleanNewName = brandName.trim() || restaurant.name;
+    const nameChanged = cleanNewName.toLowerCase() !== (restaurant.name || '').trim().toLowerCase();
     const updatedRest: Restaurant = {
       ...restaurant,
-      name: brandName.trim() || restaurant.name,
+      name: cleanNewName,
+      slug: nameChanged ? generateSlug(cleanNewName) : restaurant.slug,
       tagline: brandTagline.trim(),
       logoUrl: safeLogo,
       coverUrl: safeCover,

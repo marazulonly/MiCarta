@@ -101,6 +101,12 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRestId, setCopiedRestId] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (currentRestaurant?.slug) {
+      setEditableSlug(currentRestaurant.slug);
+    }
+  }, [currentRestaurant?.slug, currentRestaurant?.id]);
+
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';
   const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug || ''}`;
 

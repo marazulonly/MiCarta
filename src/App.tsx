@@ -36,7 +36,7 @@ import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
 import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
-import { saveUserToFirestore, clearAllDatabaseCollections } from './lib/firestoreSync';
+import { saveUserToFirestore, clearAllDatabaseCollections, deletePublishedMenuFromFirestore } from './lib/firestoreSync';
 import {
   fetchLatestCloudMenu,
   saveFullCloudMenu,
@@ -1027,30 +1027,72 @@ export default function App() {
   const handleUpdateRestaurant = (updated: Restaurant) => {
     const prevRest = restaurantsRef.current.find(r => r && r.id === updated.id);
     const prevOwnerId = prevRest?.ownerId;
+    const prevSlug = prevRest?.slug ? normalizeSlug(prevRest.slug) : '';
+    const prevName = prevRest?.name ? prevRest.name.trim() : '';
     const newOwnerId = updated.ownerId;
 
     // Unique name validation against other restaurants
     const cleanName = updated.name.trim();
-    if (restaurantsRef.current.some(r => r.id !== updated.id && r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
+    const otherRestaurants = restaurantsRef.current.filter(r => r && r.id !== updated.id);
+    if (otherRestaurants.some(r => r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
       showToast(`Error: Ya existe otro restaurante con el nombre "${cleanName}".`);
       return;
     }
 
-    // Unique slug validation against other restaurants
-    const cleanSlug = normalizeSlug(updated.slug || updated.name);
-    if (restaurantsRef.current.some(r => r.id !== updated.id && normalizeSlug(r.slug) === cleanSlug)) {
-      showToast(`Error: Ya existe otro restaurante con el slug /${cleanSlug}.`);
-      return;
+    // If commercial name changed, automatically generate new slug from the new commercial name (if unique)
+    const nameChanged = Boolean(prevRest && prevName.toLowerCase() !== cleanName.toLowerCase());
+    const nameGeneratedSlug = normalizeSlug(cleanName);
+    let cleanSlug = '';
+
+    if (nameChanged) {
+      const isNameSlugDuplicate = otherRestaurants.some(r => normalizeSlug(r.slug) === nameGeneratedSlug);
+      if (isNameSlugDuplicate) {
+        showToast(`Error: El slug /${nameGeneratedSlug} generado para "${cleanName}" ya está en uso por otro restaurante. Debe ser único.`);
+        return;
+      }
+      cleanSlug = nameGeneratedSlug;
+    } else {
+      cleanSlug = normalizeSlug(updated.slug || prevRest?.slug || cleanName);
+      if (otherRestaurants.some(r => normalizeSlug(r.slug) === cleanSlug)) {
+        showToast(`Error: Ya existe otro restaurante con el slug /${cleanSlug}.`);
+        return;
+      }
     }
 
-    const nextRestaurants = restaurantsRef.current.map(r => r.id === updated.id ? updated : r);
+    // Clean up old slug document in Firestore if slug changed
+    if (prevSlug && prevSlug !== cleanSlug) {
+      deletePublishedMenuFromFirestore(prevSlug).catch(() => {});
+      // If current URL has ?r=prevSlug, update browser address bar to new slug
+      try {
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          const rParam = url.searchParams.get('r') || url.searchParams.get('rest') || url.searchParams.get('slug');
+          if (rParam && normalizeSlug(rParam) === prevSlug) {
+            url.searchParams.set('r', cleanSlug);
+            window.history.replaceState({}, '', url.toString());
+          }
+        }
+      } catch {}
+    }
+
+    const updatedWithCleanSlug: Restaurant = {
+      ...updated,
+      name: cleanName,
+      slug: cleanSlug
+    };
+
+    const nextRestaurants = restaurantsRef.current.map(r => r.id === updated.id ? updatedWithCleanSlug : r);
     restaurantsRef.current = nextRestaurants;
     setRestaurants(nextRestaurants);
     if (previewRestaurant && previewRestaurant.id === updated.id) {
-      setPreviewRestaurant(updated);
+      setPreviewRestaurant(updatedWithCleanSlug);
     }
-    if (publishedMenuData && publishedMenuData.restaurant && (publishedMenuData.restaurant.id === updated.id || publishedMenuData.restaurant.slug === updated.slug)) {
-      setPublishedMenuData(prev => prev ? { ...prev, restaurant: updated } : null);
+    if (publishedMenuData && publishedMenuData.restaurant && (
+      publishedMenuData.restaurant.id === updated.id ||
+      normalizeSlug(publishedMenuData.restaurant.slug) === prevSlug ||
+      normalizeSlug(publishedMenuData.restaurant.slug) === cleanSlug
+    )) {
+      setPublishedMenuData(prev => prev ? { ...prev, restaurant: updatedWithCleanSlug } : null);
     }
 
     let nextUsers = usersRef.current;
@@ -1097,23 +1139,13 @@ export default function App() {
       setUsers(nextUsers);
     }
 
-    if (previewRestaurant && previewRestaurant.id === updated.id) {
-      setPreviewRestaurant(updated);
-    }
-    if (publishedMenuData && (publishedMenuData.restaurant?.id === updated.id || publishedMenuData.restaurant?.slug === updated.slug)) {
-      setPublishedMenuData({
-        ...publishedMenuData,
-        restaurant: updated
-      });
-    }
-
     // Direct cloud & Firestore write for restaurant
-    autoSyncRestaurant(updated).catch(() => {});
+    autoSyncRestaurant(updatedWithCleanSlug).catch(() => {});
 
-    const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.id);
-    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updated.id);
-    publishRestaurantMenu(updated.id, updated, restCats, restItems).catch(() => {});
-    triggerCloudUpdate(updated.id, updated, restCats, restItems);
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === updatedWithCleanSlug.id);
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedWithCleanSlug.id);
+    publishRestaurantMenu(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems).catch(() => {});
+    triggerCloudUpdate(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems);
     saveFullCloudMenu({
       restaurants: nextRestaurants,
       categories: categoriesRef.current,
@@ -1144,10 +1176,13 @@ export default function App() {
     restaurantsRef.current = nextRestaurants;
     setRestaurants(nextRestaurants);
 
-    // Delete each matching ID from Firestore and cloud storage
+    // Delete each matching ID and its slug from Firestore and cloud storage
     deletedIds.forEach(id => {
-      autoDeleteRestaurant(id).catch(() => {});
+      autoDeleteRestaurant(id, targetSlug).catch(() => {});
     });
+    if (targetSlug) {
+      deletePublishedMenuFromFirestore(targetSlug).catch(() => {});
+    }
 
     if (selectedRestaurantId === restaurantId || deletedIds.includes(selectedRestaurantId)) {
       setSelectedRestaurantId(nextRestaurants[0]?.id || '');
@@ -1660,7 +1695,8 @@ export default function App() {
   };
 
   const handleOpenCustomerPreview = (restaurant?: Restaurant, mode?: 'DINE_IN' | 'DELIVERY', tableNumber?: string) => {
-    const target = restaurant || (restaurants || []).find(r => r && r.id === selectedRestaurantId) || (restaurants || []).filter(Boolean)[0];
+    const rawTarget = restaurant || (restaurantsRef.current || []).find(r => r && r.id === selectedRestaurantId) || (restaurantsRef.current || []).filter(Boolean)[0];
+    const target = rawTarget ? ((restaurantsRef.current || []).find(r => r && r.id === rawTarget.id) || rawTarget) : undefined;
     if (target) {
       const targetCats = categories.filter(c => c.restaurantId === target.id);
       const targetItems = menuItems.filter(i => i.restaurantId === target.id);
@@ -1708,6 +1744,9 @@ export default function App() {
   // Current active restaurant branding for dynamic theme accent
   const currentSelectedRest = getSafeActiveRestaurant(userAccessibleRestaurants, selectedRestaurantId) ?? 
     (userAccessibleRestaurants[0] || (currentUser?.role === 'ADMIN' ? getSafeActiveRestaurant(safeRestaurants, null) : null));
+  const activePreviewRest = previewRestaurant
+    ? (safeRestaurants.find(r => r && r.id === previewRestaurant.id) || previewRestaurant)
+    : currentSelectedRest;
   const pendingOrdersCount = safeOrders.filter(o => o && o.status === 'PENDING').length;
 
   // Is this a direct public link access via QR or URL slug (and not explicitly requesting staff login)?
@@ -2067,7 +2106,7 @@ export default function App() {
         <CustomerMenuModal
           isOpen={isCustomerModalOpen}
           onClose={() => setIsCustomerModalOpen(false)}
-          restaurant={previewRestaurant || currentSelectedRest}
+          restaurant={activePreviewRest}
           categories={safeCategories}
           items={safeMenuItems}
           onOrderCreated={handleCreateOrder}
@@ -2264,7 +2303,7 @@ export default function App() {
       <CustomerMenuModal
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
-        restaurant={previewRestaurant || currentSelectedRest}
+        restaurant={activePreviewRest}
         categories={safeCategories}
         items={safeMenuItems}
         onOrderCreated={handleCreateOrder}

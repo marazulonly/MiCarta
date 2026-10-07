@@ -406,21 +406,39 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
     });
 
     const normRestId = targetId.toLowerCase().trim();
-    const writePromises = [
-      setDoc(doc(db, 'published_menus', targetId), optimizedSnapshot, { merge: true }),
-      setDoc(doc(db, 'published_menus', normRestId), optimizedSnapshot, { merge: true })
-    ];
+    const keysToPublish = new Set<string>([targetId, normRestId]);
     
     if (cleanRest && cleanRest.slug) {
-      const normSlug = cleanRest.slug.toLowerCase().trim();
-      if (normSlug && normSlug !== targetId && normSlug !== normRestId) {
-        writePromises.push(setDoc(doc(db, 'published_menus', normSlug), optimizedSnapshot, { merge: true }));
-      }
+      keysToPublish.add(cleanRest.slug.toLowerCase().trim());
     }
+
+    const writePromises = Array.from(keysToPublish)
+      .filter(Boolean)
+      .map(k => setDoc(doc(db, 'published_menus', k), optimizedSnapshot, { merge: true }));
+
     await Promise.all(writePromises);
     return true;
   } catch (err) {
     return handleFirestoreError(err, 'savePublishedMenuToFirestore');
+  }
+}
+
+/**
+ * Deletes an official published menu document directly from Firestore by key (slug or id).
+ */
+export async function deletePublishedMenuFromFirestore(slugOrId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
+  if (!slugOrId) return false;
+  try {
+    const rawKey = slugOrId.trim();
+    const normKey = slugOrId.toLowerCase().trim();
+    await Promise.all([
+      deleteDoc(doc(db, 'published_menus', rawKey)).catch(() => {}),
+      deleteDoc(doc(db, 'published_menus', normKey)).catch(() => {})
+    ]);
+    return true;
+  } catch (err) {
+    return handleFirestoreError(err, 'deletePublishedMenuFromFirestore');
   }
 }
 

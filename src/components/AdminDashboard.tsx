@@ -290,7 +290,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
 
-    const cleanSlug = generateSlug(editingRestaurant.slug || cleanName);
+    const previousRest = restaurants.find(r => r.id === editingRestaurant.id);
+    const nameChanged = Boolean(previousRest && previousRest.name.trim().toLowerCase() !== cleanName.toLowerCase());
+    const cleanSlug = nameChanged
+      ? generateSlug(cleanName)
+      : generateSlug(editingRestaurant.slug || cleanName);
     const isSlugDuplicate = restaurants.some(
       r => r.id !== editingRestaurant.id && (r.slug === cleanSlug || generateSlug(r.slug) === cleanSlug)
     );
@@ -299,7 +303,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
 
-    const previousRest = restaurants.find(r => r.id === editingRestaurant.id);
     const prevOwnerId = previousRest?.ownerId;
     const newOwnerId = editingRestaurant.ownerId;
     const templateChanged = previousRest && previousRest.templateId !== editingRestaurant.templateId;
@@ -1732,7 +1735,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <input
                     type="text"
                     value={editingRestaurant.name}
-                    onChange={(e) => setEditingRestaurant({ ...editingRestaurant, name: e.target.value })}
+                    onChange={(e) => {
+                      const nextName = e.target.value;
+                      const autoSlug = generateSlug(nextName);
+                      const isTaken = restaurants.some(
+                        r => r.id !== editingRestaurant.id && (r.slug === autoSlug || generateSlug(r.slug) === autoSlug)
+                      );
+                      setEditingRestaurant({
+                        ...editingRestaurant,
+                        name: nextName,
+                        slug: (!isTaken && autoSlug) ? autoSlug : editingRestaurant.slug
+                      });
+                    }}
                     className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
                     required
                   />

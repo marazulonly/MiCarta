@@ -14,6 +14,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Restaurant, RestaurantBranding } from '../types';
+import { generateSlug } from '../utils/restaurantUtils';
 
 interface HeaderEditorModalProps {
   isOpen: boolean;
@@ -179,9 +180,13 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       headerBannerHeight,
     };
 
+    const cleanNewName = restaurantName.trim() || restaurant.name;
+    const nameChanged = cleanNewName.toLowerCase() !== (restaurant.name || '').trim().toLowerCase();
+
     const updatedRestaurant: Restaurant = {
       ...restaurant,
-      name: restaurantName.trim() || restaurant.name,
+      name: cleanNewName,
+      slug: nameChanged ? generateSlug(cleanNewName) : restaurant.slug,
       tagline: restaurantTagline.trim(),
       logoUrl: headerLogoUrl.trim() || restaurant.logoUrl,
       branding: updatedBranding,

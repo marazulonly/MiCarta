@@ -97,10 +97,10 @@ export const RIENDAS_DE_PLATA_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxu
 export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
     id: 'rest-picanteria-mar',
-    name: 'La Picantería del Mar',
+    name: 'Cevichito Pliz',
     tagline: 'Sazón Norteña & Pescados Frescos del Día',
     cuisineType: 'Cevichería & Mariscos',
-    slug: 'picanteria-mar',
+    slug: 'cevichito-pliz',
     address: 'Av. La Marina 1420, San Miguel, Lima',
     phone: '+51 987 111 222',
     rating: 4.9,

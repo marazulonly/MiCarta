@@ -17,7 +17,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
-import { getSafeBranding } from '../utils/restaurantUtils';
+import { getSafeBranding, generateSlug } from '../utils/restaurantUtils';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
@@ -425,9 +425,13 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.cardBgColor || brandDarkBgColor;
 
+    const cleanNewName = brandName.trim() || restaurant.name;
+    const nameChanged = cleanNewName.toLowerCase() !== (restaurant.name || '').trim().toLowerCase();
+
     const updatedRest: Restaurant = {
       ...restaurant,
-      name: brandName.trim() || restaurant.name,
+      name: cleanNewName,
+      slug: nameChanged ? generateSlug(cleanNewName) : restaurant.slug,
       tagline: brandTagline.trim(),
       logoUrl: safeLogo,
       coverUrl: safeCover,
