@@ -59,7 +59,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
   const qrUrl = activeRest 
     ? `${origin}/?r=${activeRest.slug}&mesa=${selectedTableNum}&mode=${selectedChannel}`
-    : `${origin}/?r=cevichito-pliz&mesa=01&mode=DINE_IN`;
+    : `${origin}/`;
 
   const handleCopyQrLink = () => {
     navigator.clipboard?.writeText(qrUrl);

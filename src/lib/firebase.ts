@@ -8,8 +8,11 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefi
 // Validate Connection safely
 async function testConnection() {
   try {
+    if (typeof window !== 'undefined' && window.localStorage?.getItem('firestore_quota_exceeded_time')) {
+      return;
+    }
     await getDocFromServer(doc(db, 'system', 'connection_test'));
-  } catch (error: any) {
+  } catch {
     // Client offline or quota limit check - silently handle
   }
 }

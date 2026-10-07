@@ -10,6 +10,7 @@ import {
 import { db } from './firebase';
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
 import { CloudMenuPayload } from './cloudSync';
+import { isLegacyRestaurant } from '../utils/restaurantUtils';
 
 function cleanObject<T extends Record<string, any>>(obj: T): T {
   const result: any = {};
@@ -42,9 +43,21 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
 let isQuotaExceededNoticeLogged = false;
 let isFirestoreQuotaExceeded = false;
 let lastQuotaExceededTime = 0;
-const QUOTA_COOLDOWN_MS = 5 * 60 * 1000; // 5 minute backoff before re-probing Firestore writes
+const QUOTA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour backoff before re-probing Firestore writes
 
 export function isQuotaExceededActive(): boolean {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = localStorage.getItem('firestore_quota_exceeded_time');
+      if (stored) {
+        const time = parseInt(stored, 10);
+        if (Date.now() - time < QUOTA_COOLDOWN_MS) {
+          isFirestoreQuotaExceeded = true;
+          return true;
+        }
+      }
+    }
+  } catch {}
   if (isFirestoreQuotaExceeded) {
     if (Date.now() - lastQuotaExceededTime > QUOTA_COOLDOWN_MS) {
       isFirestoreQuotaExceeded = false;
@@ -58,6 +71,11 @@ export function isQuotaExceededActive(): boolean {
 export function markQuotaExceeded() {
   isFirestoreQuotaExceeded = true;
   lastQuotaExceededTime = Date.now();
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('firestore_quota_exceeded_time', String(Date.now()));
+    }
+  } catch {}
   if (!isQuotaExceededNoticeLogged) {
     console.warn('[Firestore] Free daily write quota reached. System operating seamlessly via persistent mirror.');
     isQuotaExceededNoticeLogged = true;
@@ -180,7 +198,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const restaurants: Restaurant[] = [];
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
-      if (data && data.id) {
+      if (data && data.id && !isLegacyRestaurant(data)) {
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
@@ -191,7 +209,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const users: User[] = [];
     usersSnap?.forEach(d => { 
       const data = d.data() as User;
-      if (data && data.id) {
+      if (data && data.id && data.role === 'ADMIN') {
         users.push(data);
       }
     });
@@ -420,16 +438,16 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
 
     const deletePromises: Promise<any>[] = [];
 
-    restsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
-    catsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
-    itemsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
-    ordersSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
-    pubSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+    restsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc restaurant'))));
+    catsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc category'))));
+    itemsSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc item'))));
+    ordersSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc order'))));
+    pubSnap?.forEach(d => deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc published_menu'))));
 
     usersSnap?.forEach(d => {
       const data = d.data() as User;
       if (data && data.role !== 'ADMIN') {
-        deletePromises.push(deleteDoc(d.ref));
+        deletePromises.push(deleteDoc(d.ref).catch(err => handleFirestoreError(err, 'deleteDoc user')));
       }
     });
 
@@ -464,8 +482,8 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
     };
 
     await Promise.all([
-      setDoc(doc(db, 'users', adminHerly.id), cleanObject(adminHerly), { merge: true }),
-      setDoc(doc(db, 'users', adminEver.id), cleanObject(adminEver), { merge: true })
+      setDoc(doc(db, 'users', adminHerly.id), cleanObject(adminHerly), { merge: true }).catch(err => handleFirestoreError(err, 'setDoc adminHerly')),
+      setDoc(doc(db, 'users', adminEver.id), cleanObject(adminEver), { merge: true }).catch(err => handleFirestoreError(err, 'setDoc adminEver'))
     ]);
 
     // Reset system summary doc
@@ -477,12 +495,11 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
       itemsCount: 0,
       ordersCount: 0,
       updatedAt: new Date().toISOString()
-    });
+    }).catch(err => handleFirestoreError(err, 'setDoc snapshotRef'));
 
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error clearing database collections:', err);
-    return false;
+    return handleFirestoreError(err, 'clearAllDatabaseCollections');
   }
 }
 

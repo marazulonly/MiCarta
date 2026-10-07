@@ -1313,7 +1313,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. Cevichito Pliz - Sede Miraflores"
+                  placeholder="Ej. Sabor Criollo - Sede Central"
                   value={newRestName}
                   onChange={(e) => {
                     setNewRestName(e.target.value);

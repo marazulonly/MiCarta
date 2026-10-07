@@ -30,7 +30,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
-import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS } from './utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { saveUserToFirestore, clearAllDatabaseCollections } from './lib/firestoreSync';
 import {
@@ -118,7 +118,7 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   const mapBySlugOrName = new Map<string, Restaurant>();
 
   rests.forEach(r => {
-    if (!r || !r.id || !r.name?.trim()) return;
+    if (!r || !r.id || !r.name?.trim() || isLegacyRestaurant(r)) return;
     const cleanSlug = r.slug ? normalizeSlug(r.slug) : normalizeSlug(r.name);
     const cleanNameKey = r.name.trim().toLowerCase();
     const slugKey = cleanSlug || cleanNameKey;
@@ -219,12 +219,12 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
 
 // Storage cache keys for instant offline-first persistence across all reloads
 const STORAGE_KEYS = {
-  RESTS: 'micarta_restaurants_v5',
-  ITEMS: 'micarta_menu_items_v5',
-  CATEGORIES: 'micarta_categories_v5',
-  USERS: 'micarta_users_v5',
-  ORDERS: 'micarta_orders_v5',
-  AUTH: 'micarta_logged_user_v5'
+  RESTS: 'micarta_restaurants_v6',
+  ITEMS: 'micarta_menu_items_v6',
+  CATEGORIES: 'micarta_categories_v6',
+  USERS: 'micarta_users_v6',
+  ORDERS: 'micarta_orders_v6',
+  AUTH: 'micarta_logged_user_v6'
 };
 
 function getInitialStorageState() {
@@ -239,18 +239,18 @@ function getInitialStorageState() {
     try {
       // Purge legacy storage versions
       const legacyKeys = [
-        'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
-        'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
-        'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
-        'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
-        'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
+        'micarta_restaurants_v5', 'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
+        'micarta_menu_items_v5', 'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
+        'micarta_categories_v5', 'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
+        'micarta_users_v5', 'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
+        'micarta_orders_v5', 'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
         'applet_restaurants_index_local', 'applet_menu_snapshot'
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
       if (storedRests) {
-        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
+        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !isLegacyRestaurant(r));
       }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
@@ -462,14 +462,22 @@ export default function App() {
   // One-time purge of fictitious demo records from local storage, server, and Firestore as requested
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const isPurged = localStorage.getItem('micarta_clean_reset_v9');
+      const isPurged = localStorage.getItem('micarta_clean_reset_v10');
       if (!isPurged) {
         localStorage.removeItem(STORAGE_KEYS.RESTS);
         localStorage.removeItem(STORAGE_KEYS.ITEMS);
         localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
         localStorage.removeItem(STORAGE_KEYS.USERS);
         localStorage.removeItem(STORAGE_KEYS.ORDERS);
-        localStorage.setItem('micarta_clean_reset_v9', 'true');
+        localStorage.setItem('micarta_clean_reset_v10', 'true');
+        setRestaurants([]);
+        restaurantsRef.current = [];
+        setCategories([]);
+        categoriesRef.current = [];
+        setMenuItems([]);
+        menuItemsRef.current = [];
+        setOrders([]);
+        ordersRef.current = [];
         clearAllDatabaseCollections().catch(() => {});
         fetch('/api/admin/clean-all', { method: 'POST' }).catch(() => {});
       }
