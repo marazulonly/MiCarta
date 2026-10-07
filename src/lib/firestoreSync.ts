@@ -383,10 +383,13 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
   if (!restaurantId || !snapshot) return false;
   try {
     const cleanSnap = cleanObject(snapshot);
-    const writePromises = [setDoc(doc(db, 'published_menus', restaurantId), cleanSnap, { merge: true })];
+    const writePromises = [
+      setDoc(doc(db, 'published_menus', restaurantId), cleanSnap, { merge: true }),
+      setDoc(doc(db, 'published_menus', restaurantId.toLowerCase().trim()), cleanSnap, { merge: true })
+    ];
     
     if (snapshot.restaurant && snapshot.restaurant.slug) {
-      const normSlug = isLegacyRestaurant(snapshot.restaurant) ? '' : snapshot.restaurant.slug.toLowerCase().trim();
+      const normSlug = snapshot.restaurant.slug.toLowerCase().trim();
       if (normSlug && normSlug !== restaurantId) {
         writePromises.push(setDoc(doc(db, 'published_menus', normSlug), cleanSnap, { merge: true }));
       }
@@ -506,7 +509,7 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
     const cloud = await fetchFromFirestore();
     if (cloud && cloud.restaurants) {
       const match = cloud.restaurants.find(r => 
-        r && !isLegacyRestaurant(r) && (
+        r && (
           r.id === restaurantIdOrSlug || 
           r.slug === restaurantIdOrSlug || 
           r.slug?.toLowerCase() === normKey ||

@@ -573,23 +573,16 @@ export default function App() {
         });
       }
 
-      // Silently ensure all active restaurants have their individual lightweight snapshot ready in Upstash
+      // Silently ensure all active restaurants have their published menu snapshot persisted in Firestore & Upstash
       try {
-        cleanLoadedRests.forEach((r: any) => {
+        const currentRests = restaurantsRef.current;
+        const currentCats = categoriesRef.current;
+        const currentItems = menuItemsRef.current;
+        currentRests.forEach((r: any) => {
           if (!r || !r.id) return;
-          const rCats = cleanLoadedCategories.filter((c: any) => c && c.restaurantId === r.id);
-          const rItems = cleanLoadedItems.filter((i: any) => i && i.restaurantId === r.id);
-          const snap = {
-            success: true,
-            published: true,
-            version: 1,
-            publishedAt: cloudData?.updatedAt || new Date().toISOString(),
-            restaurant: r,
-            categories: rCats,
-            items: rItems
-          };
-          if (r.slug) saveIndividualRestaurantSnapshotToUpstash(r.slug, snap).catch(() => {});
-          if (r.id) saveIndividualRestaurantSnapshotToUpstash(r.id, snap).catch(() => {});
+          const rCats = currentCats.filter((c: any) => c && c.restaurantId === r.id);
+          const rItems = currentItems.filter((i: any) => i && i.restaurantId === r.id);
+          publishRestaurantMenu(r.id, r, rCats, rItems).catch(() => {});
         });
       } catch {}
 
@@ -601,13 +594,14 @@ export default function App() {
         }
       }
 
-      // If accessing via link/slug, locate the restaurant in verified cloud data
-      if (initialRequestedSlug && cleanLoadedRests.length > 0) {
-        const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
+      // If accessing via link/slug, locate the restaurant in all active restaurants
+      if (initialRequestedSlug) {
+        const allRests = restaurantsRef.current;
+        const match = findRestaurantBySlug(allRests, initialRequestedSlug);
         if (match) {
           setPreviewRestaurant(match);
-          const restCats = cleanLoadedCategories.filter(c => c && c.restaurantId === match.id);
-          const restItems = cleanLoadedItems.filter(i => i && i.restaurantId === match.id);
+          const restCats = categoriesRef.current.filter(c => c && c.restaurantId === match.id);
+          const restItems = menuItemsRef.current.filter(i => i && i.restaurantId === match.id);
           setPublishedMenuData({
             published: true,
             version: 1,
