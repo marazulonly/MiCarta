@@ -26,6 +26,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { RoleHeader } from './components/RoleHeader';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { TemplateSplitEditor } from './components/TemplateSplitEditor';
+import { LandingPage } from './components/LandingPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
@@ -85,7 +86,7 @@ export const findRestaurantBySlug = (restaurantsList: Restaurant[], querySlug?: 
 
 // Parse initial URL search parameters synchronously before first render
 const getInitialUrlParams = () => {
-  if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false };
+  if (typeof window === 'undefined') return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false, isLandingPage: false };
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const rSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
@@ -99,15 +100,22 @@ const getInitialUrlParams = () => {
       window.location.pathname.startsWith('/admin') ||
       window.location.pathname.startsWith('/login')
     );
+    const isLandingPage = Boolean(
+      window.location.pathname === '/carta' ||
+      window.location.pathname.startsWith('/carta') ||
+      urlParams.get('page') === 'carta' ||
+      urlParams.get('landing') === 'true'
+    );
     return {
       isQr: Boolean(rSlug),
       restSlug: rSlug,
       table,
       mode,
-      isStaffLogin
+      isStaffLogin,
+      isLandingPage
     };
   } catch {
-    return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false };
+    return { isQr: false, restSlug: null, table: undefined, mode: 'DINE_IN' as const, isStaffLogin: false, isLandingPage: false };
   }
 };
 
@@ -366,6 +374,22 @@ export default function App() {
     return null;
   });
   const [isCustomerActiveOrderModalOpen, setIsCustomerActiveOrderModalOpen] = useState<boolean>(false);
+
+  // Commercial Landing Page (/carta) state
+  const [isViewingLanding, setIsViewingLanding] = useState<boolean>(initParams.isLandingPage);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const isLanding = typeof window !== 'undefined' && (
+        window.location.pathname === '/carta' ||
+        window.location.pathname.startsWith('/carta') ||
+        new URLSearchParams(window.location.search).get('page') === 'carta'
+      );
+      setIsViewingLanding(isLanding);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Keep user authentication session synced
   useEffect(() => {
@@ -834,6 +858,13 @@ export default function App() {
       return;
     }
 
+    // Unique slug validation
+    const cleanSlug = normalizeSlug(newRestaurant.slug || newRestaurant.name);
+    if (restaurantsRef.current.some(r => normalizeSlug(r.slug) === cleanSlug)) {
+      showToast(`Error: Ya existe un restaurante con el slug /${cleanSlug}.`);
+      return;
+    }
+
     // Ensure the new restaurant has at least 1 default category
     const hasCategory = categoriesRef.current.some(c => c.restaurantId === newRestaurant.id);
     const defaultCat: MenuCategory = {
@@ -913,6 +944,13 @@ export default function App() {
     const cleanName = updated.name.trim();
     if (restaurantsRef.current.some(r => r.id !== updated.id && r.name.trim().toLowerCase() === cleanName.toLowerCase())) {
       showToast(`Error: Ya existe otro restaurante con el nombre "${cleanName}".`);
+      return;
+    }
+
+    // Unique slug validation against other restaurants
+    const cleanSlug = normalizeSlug(updated.slug || updated.name);
+    if (restaurantsRef.current.some(r => r.id !== updated.id && normalizeSlug(r.slug) === cleanSlug)) {
+      showToast(`Error: Ya existe otro restaurante con el slug /${cleanSlug}.`);
       return;
     }
 
@@ -1697,6 +1735,52 @@ export default function App() {
           } : undefined}
         />
 
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-6 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-xs font-medium shadow-2xl flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>{toastMessage}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Commercial Landing Page (/carta)
+  if (isViewingLanding && !isCustomerModalOpen) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col selection:bg-amber-500 selection:text-neutral-950">
+        <LandingPage
+          onGoToLogin={() => {
+            setIsViewingLanding(false);
+            try {
+              window.history.pushState(null, '', '/login');
+            } catch {}
+          }}
+          onGoToLiveDemo={(demoRole) => {
+            setIsViewingLanding(false);
+            if (demoRole === 'ADMIN') {
+              const adminUser = safeUsers.find(u => u.role === 'ADMIN') || INITIAL_USERS[0];
+              if (adminUser) handleLogin(adminUser);
+            } else if (demoRole) {
+              const matched = safeUsers.find(u => u.role === demoRole);
+              if (matched) {
+                handleLogin(matched);
+              } else {
+                const adminUser = safeUsers.find(u => u.role === 'ADMIN') || INITIAL_USERS[0];
+                if (adminUser) handleLogin(adminUser);
+              }
+            } else {
+              try {
+                window.history.pushState(null, '', '/login');
+              } catch {}
+            }
+          }}
+          restaurants={safeRestaurants}
+          users={safeUsers}
+        />
         {/* Floating Toast Notification */}
         {toastMessage && (
           <div className="fixed top-6 right-4 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">

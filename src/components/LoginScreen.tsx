@@ -277,6 +277,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </button>
             </form>
 
+            <div className="mt-4 pt-3 border-t border-neutral-100 text-center">
+              <a 
+                href="/carta" 
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-950 transition-colors"
+              >
+                <span>Conoce la plataforma</span>
+                <span className="text-amber-600 font-bold hover:underline">Ver Landing Comercial (/carta) →</span>
+              </a>
+            </div>
+
           </div>
 
         </div>

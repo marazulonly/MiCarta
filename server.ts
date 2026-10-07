@@ -198,6 +198,14 @@ function saveCloudDataToDisk(data: any) {
     };
     fs.writeFileSync(CLOUD_STORAGE_FILE, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
     
+    // Keep public static backup snapshot in sync
+    const staticSnapshotPath = path.resolve(__dirname, 'public/menus/cloud-snapshot.json');
+    if (fs.existsSync(path.dirname(staticSnapshotPath))) {
+      try {
+        fs.writeFileSync(staticSnapshotPath, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
+      } catch {}
+    }
+    
     // Asynchronously push to Vercel KV if configured (do not let Upstash errors fail the operation)
     if (kvRestUrl && kvRestToken) {
       saveToVercelKV(cachedCloudData).catch(err => {
@@ -1198,6 +1206,14 @@ async function startServer() {
           }).end(template);
           return;
         }
+      }
+
+      if (url.startsWith('/carta')) {
+        template = template.replace('<title>Carta Digital</title>', '<title>Mi Carta | Sistema de pedidos para restaurantes</title>');
+        template = template.replace(
+          '<meta name="description" content="Carta digital" />',
+          '<meta name="description" content="Recibe pedidos desde el celular de tus clientes, gestiona mesas, cocina, delivery y controla tu restaurante desde un solo lugar." />'
+        );
       }
 
       // Default HTML response (for /, /admin, etc.)

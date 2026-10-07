@@ -43,7 +43,7 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
 let isQuotaExceededNoticeLogged = false;
 let isFirestoreQuotaExceeded = false;
 let lastQuotaExceededTime = 0;
-const QUOTA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour backoff before re-probing Firestore writes
+const QUOTA_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hour backoff to respect daily quota resets
 
 export function isQuotaExceededActive(): boolean {
   try {
@@ -400,8 +400,7 @@ export async function updateOrderStatusInFirestore(orderId: string, status: stri
     await setDoc(ref, { status, updatedAt: new Date().toISOString() }, { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error updating order status in Firestore:', err);
-    return false;
+    return handleFirestoreError(err, 'updateOrderStatusInFirestore');
   }
 }
 
@@ -416,8 +415,7 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
     await setDoc(ref, cleanObject(snapshot), { merge: true });
     return true;
   } catch (err) {
-    console.warn('[Firestore] Error saving published menu to Firestore:', err);
-    return false;
+    return handleFirestoreError(err, 'savePublishedMenuToFirestore');
   }
 }
 
