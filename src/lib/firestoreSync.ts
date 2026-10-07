@@ -169,7 +169,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const restaurants: Restaurant[] = [];
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
-      if (data && data.id && !isLegacyRestaurant(data)) {
+      if (data && data.id) {
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
@@ -382,8 +382,16 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
   if (isBypassingFirestore()) return true;
   if (!restaurantId || !snapshot) return false;
   try {
-    const ref = doc(db, 'published_menus', restaurantId);
-    await setDoc(ref, cleanObject(snapshot), { merge: true });
+    const cleanSnap = cleanObject(snapshot);
+    const writePromises = [setDoc(doc(db, 'published_menus', restaurantId), cleanSnap, { merge: true })];
+    
+    if (snapshot.restaurant && snapshot.restaurant.slug) {
+      const normSlug = isLegacyRestaurant(snapshot.restaurant) ? '' : snapshot.restaurant.slug.toLowerCase().trim();
+      if (normSlug && normSlug !== restaurantId) {
+        writePromises.push(setDoc(doc(db, 'published_menus', normSlug), cleanSnap, { merge: true }));
+      }
+    }
+    await Promise.all(writePromises);
     return true;
   } catch (err) {
     return handleFirestoreError(err, 'savePublishedMenuToFirestore');
@@ -474,15 +482,49 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
 
 /**
  * Fetches an official published menu snapshot directly from Firestore.
+ * Supports direct lookup by restaurant ID, slug, or search in main restaurants collection.
  */
-export async function fetchPublishedMenuFromFirestore(restaurantId: string): Promise<any | null> {
+export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string): Promise<any | null> {
   if (isBypassingFirestore()) return null;
-  if (!restaurantId) return null;
+  if (!restaurantIdOrSlug) return null;
   try {
-    const ref = doc(db, 'published_menus', restaurantId);
-    const snap = await getDoc(ref);
+    const rawRef = doc(db, 'published_menus', restaurantIdOrSlug);
+    const snap = await getDoc(rawRef);
     if (snap.exists()) {
       return snap.data();
+    }
+
+    const normKey = restaurantIdOrSlug.toLowerCase().trim();
+    if (normKey !== restaurantIdOrSlug) {
+      const normSnap = await getDoc(doc(db, 'published_menus', normKey));
+      if (normSnap.exists()) {
+        return normSnap.data();
+      }
+    }
+
+    // Fallback: Query all restaurants in Firestore to find match by slug or ID
+    const cloud = await fetchFromFirestore();
+    if (cloud && cloud.restaurants) {
+      const match = cloud.restaurants.find(r => 
+        r && !isLegacyRestaurant(r) && (
+          r.id === restaurantIdOrSlug || 
+          r.slug === restaurantIdOrSlug || 
+          r.slug?.toLowerCase() === normKey ||
+          r.id?.toLowerCase() === normKey
+        )
+      );
+      if (match) {
+        const categories = (cloud.categories || []).filter(c => c && c.restaurantId === match.id);
+        const items = (cloud.items || []).filter(i => i && i.restaurantId === match.id);
+        return {
+          published: true,
+          version: 1,
+          publishedAt: cloud.updatedAt || new Date().toISOString(),
+          restaurant: match,
+          categories,
+          items
+        };
+      }
     }
   } catch (err) {
     console.warn('[Firestore] Error fetching published menu from Firestore:', err);

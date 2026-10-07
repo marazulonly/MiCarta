@@ -1,31 +1,13 @@
 import { Restaurant, RestaurantBranding, MenuAccessSettings } from '../types';
 
-export function isLegacyRestaurant(r: any): boolean {
-  if (!r) return true;
-  const id = String(r.id || '').toLowerCase();
-  const slug = String(r.slug || '').toLowerCase();
-  const name = String(r.name || '').toLowerCase();
-  return (
-    id === 'rest-riendas-de-plata' ||
-    id === 'rest-cevichito-pliz' ||
-    id === 'rest-voraz' ||
-    id === 'rest-1' ||
-    id === 'rest-2' ||
-    id === 'rest-3' ||
-    id === 'rest-fallback' ||
-    slug === 'riendas-de-plata' ||
-    slug === 'cevichito-pliz' ||
-    slug === 'voraz' ||
-    name.includes('riendas de plata') ||
-    name.includes('cevichito pliz') ||
-    name.includes('fuego voraz') ||
-    name.includes('voraz')
-  );
+export function isLegacyRestaurant(_r: any): boolean {
+  // Never treat any restaurant as legacy or delete/filter it out.
+  return false;
 }
 
 export function sanitizeRestaurantsList(list: any[]): Restaurant[] {
   if (!Array.isArray(list)) return [];
-  return list.filter(r => r && r.id && !isLegacyRestaurant(r));
+  return list.filter(r => r && r.id);
 }
 
 export const DEFAULT_BRANDING: RestaurantBranding = {

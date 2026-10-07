@@ -22,10 +22,20 @@ export function deduplicateUsers(users: User[]): User[] {
   const grouped = new Map<string, User[]>();
 
   users.forEach(u => {
-    if (!u) return;
+    if (!u || !u.id) return;
     const rawDni = u.dni ? u.dni.trim() : '';
     const rawEmail = u.email ? u.email.trim().toLowerCase() : '';
-    const key = rawDni.length === 8 ? `dni-${rawDni}` : rawEmail ? `email-${rawEmail}` : `id-${u.id}`;
+    
+    // Group primarily by ID. DNI or Email merging only occurs if not placeholder/default and role matches
+    const isSpecialPlaceholderDni = !rawDni || rawDni === '00000000' || rawDni === '12345678';
+    const isSpecialPlaceholderEmail = !rawEmail || rawEmail.includes('placeholder') || rawEmail === 'owner@micarta.pe' || rawEmail === 'admin@micarta.pe';
+
+    let key = `id-${u.id}`;
+    if (!isSpecialPlaceholderDni && rawDni.length === 8) {
+      key = `dni-${rawDni}-${u.role}`;
+    } else if (!isSpecialPlaceholderEmail) {
+      key = `email-${rawEmail}-${u.role}`;
+    }
 
     if (!grouped.has(key)) {
       grouped.set(key, []);

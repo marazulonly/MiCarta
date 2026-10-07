@@ -126,7 +126,7 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
   const mapBySlugOrName = new Map<string, Restaurant>();
 
   rests.forEach(r => {
-    if (!r || !r.id || !r.name?.trim() || isLegacyRestaurant(r)) return;
+    if (!r || !r.id || !r.name?.trim()) return;
     const cleanSlug = r.slug ? normalizeSlug(r.slug) : normalizeSlug(r.name);
     const cleanNameKey = r.name.trim().toLowerCase();
     const slugKey = cleanSlug || cleanNameKey;
@@ -258,7 +258,7 @@ function getInitialStorageState() {
 
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
       if (storedRests) {
-        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id && !isLegacyRestaurant(r));
+        cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
       }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
@@ -273,7 +273,7 @@ function getInitialStorageState() {
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && u.dni);
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id);
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -284,7 +284,7 @@ function getInitialStorageState() {
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         const parsed = JSON.parse(storedAuth);
-        if (parsed && parsed.id && parsed.dni) {
+        if (parsed && parsed.id) {
           cachedAuth = parsed;
         }
       }
@@ -498,7 +498,7 @@ export default function App() {
         ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
         : [];
       const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
+        ? cloudData.users.filter((u: any) => u && u.id)
         : [];
       const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
         ? cloudData.categories.filter((c: any) => c && c.id && c.name)
@@ -513,9 +513,9 @@ export default function App() {
       // Merge remote cloud data with local state so created records are NEVER overwritten or lost
       setRestaurants(prev => {
         const map = new Map<string, Restaurant>();
-        prev.forEach(r => { if (r && r.id && !isLegacyRestaurant(r)) map.set(r.id, r); });
+        prev.forEach(r => { if (r && r.id) map.set(r.id, r); });
         cleanLoadedRests.forEach(r => {
-          if (r && r.id && !isLegacyRestaurant(r)) {
+          if (r && r.id) {
             const existing = map.get(r.id);
             map.set(r.id, existing ? { ...existing, ...r } : r);
           }
@@ -1437,8 +1437,8 @@ export default function App() {
       restaurants: nextRestaurants,
       categories: nextCategories,
       items: nextItems,
-      users,
-      orders,
+      users: usersRef.current,
+      orders: ordersRef.current,
     }).catch(err => {
       console.error('[Import] Error saving to cloud:', err);
     });
