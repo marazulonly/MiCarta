@@ -1343,12 +1343,12 @@ export default function App() {
       preparedRestaurants.forEach(impRest => {
         const existing = restMap.get(impRest.id);
         const mergedRest: Restaurant = {
-          ...(existing || {}),
           ...impRest,
+          ...(existing || {}), // newly created restaurant identity strictly takes precedence
           ownerId: existing?.ownerId || impRest.ownerId,
           branding: {
-            ...(existing ? existing.branding : {}),
-            ...(impRest.branding || {})
+            ...(impRest.branding || {}),
+            ...(existing ? existing.branding : {})
           } as RestaurantBranding
         };
         restMap.set(impRest.id, mergedRest);
