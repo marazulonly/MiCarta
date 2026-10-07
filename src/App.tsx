@@ -257,28 +257,37 @@ function getInitialStorageState() {
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
+      let hasRestStorage = false;
+      let hasCatStorage = false;
+      let hasItemStorage = false;
+      let hasUserStorage = false;
+
       const storedRests = localStorage.getItem(STORAGE_KEYS.RESTS);
-      if (storedRests) {
+      if (storedRests !== null) {
+        hasRestStorage = true;
         cachedRests = JSON.parse(storedRests).filter((r: any) => r && r.id);
       }
 
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (storedCategories) {
+      if (storedCategories !== null) {
+        hasCatStorage = true;
         cachedCategories = JSON.parse(storedCategories).filter((c: any) => c && c.id);
       }
 
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-      if (storedItems) {
+      if (storedItems !== null) {
+        hasItemStorage = true;
         cachedItems = JSON.parse(storedItems).filter((i: any) => i && i.id);
       }
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-      if (storedUsers) {
+      if (storedUsers !== null) {
+        hasUserStorage = true;
         cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id);
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      if (storedOrders) {
+      if (storedOrders !== null) {
         cachedOrders = JSON.parse(storedOrders).filter((o: any) => o && o.id);
       }
 
@@ -289,18 +298,27 @@ function getInitialStorageState() {
           cachedAuth = parsed;
         }
       }
+
+      return {
+        cachedRests: hasRestStorage ? cachedRests : INITIAL_RESTAURANTS,
+        cachedCategories: hasCatStorage ? cachedCategories : INITIAL_CATEGORIES,
+        cachedItems: hasItemStorage ? cachedItems : INITIAL_MENU_ITEMS,
+        cachedUsers: hasUserStorage ? cachedUsers : INITIAL_USERS,
+        cachedOrders,
+        cachedAuth
+      };
     } catch (e) {
       console.warn('[Storage] Error reading initial cache:', e);
     }
   }
 
   return {
-    cachedRests,
-    cachedCategories,
-    cachedItems,
-    cachedUsers,
-    cachedOrders,
-    cachedAuth
+    cachedRests: INITIAL_RESTAURANTS,
+    cachedCategories: INITIAL_CATEGORIES,
+    cachedItems: INITIAL_MENU_ITEMS,
+    cachedUsers: INITIAL_USERS,
+    cachedOrders: [],
+    cachedAuth: null
   };
 }
 
@@ -313,10 +331,10 @@ const initialFoundRest = null;
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(() => initialState.cachedRests.length ? initialState.cachedRests : INITIAL_RESTAURANTS);
-  const [categories, setCategories] = useState<MenuCategory[]>(() => initialState.cachedCategories.length ? initialState.cachedCategories : INITIAL_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => initialState.cachedItems.length ? initialState.cachedItems : INITIAL_MENU_ITEMS);
-  const [users, setUsers] = useState<User[]>(() => deduplicateUsers([...initialState.cachedUsers, ...INITIAL_USERS]));
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialState.cachedRests);
+  const [categories, setCategories] = useState<MenuCategory[]>(initialState.cachedCategories);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
+  const [users, setUsers] = useState<User[]>(() => deduplicateUsers(initialState.cachedUsers));
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
   const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
 
@@ -328,7 +346,7 @@ export default function App() {
   const restaurantsRef = useRef<Restaurant[]>(initialState.cachedRests);
   const categoriesRef = useRef<MenuCategory[]>(initialState.cachedCategories);
   const menuItemsRef = useRef<MenuItem[]>(initialState.cachedItems);
-  const usersRef = useRef<User[]>(deduplicateUsers([...initialState.cachedUsers, ...INITIAL_USERS]));
+  const usersRef = useRef<User[]>(deduplicateUsers(initialState.cachedUsers));
   const ordersRef = useRef<Order[]>(initialState.cachedOrders);
   const currentUserRef = useRef<User | null>(initialState.cachedAuth);
 
@@ -561,10 +579,9 @@ export default function App() {
         ? cloudData.orders.filter((o: any) => o && o.id)
         : [];
 
-      // Merge remote cloud data with local state & initial test data
+      // Merge remote cloud data with active state without re-injecting static seed data
       setRestaurants(prev => {
         const map = new Map<string, Restaurant>();
-        INITIAL_RESTAURANTS.forEach(r => { if (r && r.id) map.set(r.id, r); });
         prev.forEach(r => { if (r && r.id) map.set(r.id, r); });
         cleanLoadedRests.forEach(r => {
           if (r && r.id) {
@@ -574,42 +591,34 @@ export default function App() {
         });
         const result = Array.from(map.values());
         restaurantsRef.current = result;
-        result.forEach(r => autoSyncRestaurant(r).catch(() => {}));
         return result;
       });
 
       setCategories(prev => {
         const map = new Map<string, MenuCategory>();
-        INITIAL_CATEGORIES.forEach(c => { if (c && c.id) map.set(c.id, c); });
         prev.forEach(c => { if (c && c.id) map.set(c.id, c); });
         cleanLoadedCategories.forEach(c => { if (c && c.id) map.set(c.id, c); });
         const result = Array.from(map.values());
         categoriesRef.current = result;
-        result.forEach(c => autoSyncCategory(c).catch(() => {}));
         return result;
       });
 
       setMenuItems(prev => {
         const map = new Map<string, MenuItem>();
-        INITIAL_MENU_ITEMS.forEach(i => { if (i && i.id) map.set(i.id, i); });
         prev.forEach(i => { if (i && i.id) map.set(i.id, i); });
         cleanLoadedItems.forEach(i => { if (i && i.id) map.set(i.id, i); });
         const result = Array.from(map.values());
         menuItemsRef.current = result;
-        result.forEach(i => autoSyncMenuItem(i).catch(() => {}));
         return result;
       });
 
-      const mergedUsers = deduplicateUsers([...cleanLoadedUsers, ...INITIAL_USERS]);
       setUsers(prev => {
-        const result = deduplicateUsers([...prev, ...mergedUsers]);
+        const map = new Map<string, User>();
+        prev.forEach(u => { if (u && u.id) map.set(u.id, u); });
+        cleanLoadedUsers.forEach(u => { if (u && u.id) map.set(u.id, u); });
+        const result = deduplicateUsers(Array.from(map.values()));
         usersRef.current = result;
         return result;
-      });
-
-      // Ensure all initial users are persisted in Firestore
-      mergedUsers.forEach(u => {
-        autoSyncUser(u).catch(() => {});
       });
 
       if (cleanLoadedOrders.length > 0) {
