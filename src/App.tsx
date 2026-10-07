@@ -1440,11 +1440,10 @@ export default function App() {
     let preparedItems = [...imported.items];
     let preparedRestaurants = [...imported.restaurants];
 
-    // If targetRestaurantId was explicitly selected and imported data has 1 restaurant,
-    // remap categories and items to target restaurant ID
-    if (targetRestaurantId && imported.restaurants.length === 1) {
-      const singleRest = imported.restaurants[0];
-      if (singleRest.id !== targetRestaurantId) {
+    // If targetRestaurantId was explicitly selected, keep the target restaurant's exact slug, name, and identity 100% untouched
+    if (targetRestaurantId) {
+      const existingTargetRest = restaurants.find(r => r.id === targetRestaurantId);
+      if (existingTargetRest) {
         preparedCategories = imported.categories.map(c => ({
           ...c,
           restaurantId: targetRestaurantId
@@ -1453,10 +1452,7 @@ export default function App() {
           ...i,
           restaurantId: targetRestaurantId
         }));
-        preparedRestaurants = [{
-          ...singleRest,
-          id: targetRestaurantId
-        }];
+        preparedRestaurants = [existingTargetRest];
       }
     }
 
@@ -1467,23 +1463,34 @@ export default function App() {
       preparedRestaurants.forEach(r => targetRestIds.add(r.id));
     }
 
-    // 1. Calculate merged restaurants while preserving ALL existing restaurants in system
+    // 1. Calculate merged restaurants while strictly preserving ALL existing restaurant slugs and names
     let nextRestaurants = [...restaurants];
     if (preparedRestaurants && preparedRestaurants.length > 0) {
       const restMap = new Map<string, Restaurant>();
       restaurants.forEach(r => restMap.set(r.id, r));
       preparedRestaurants.forEach(impRest => {
         const existing = restMap.get(impRest.id);
-        const mergedRest: Restaurant = {
-          ...impRest,
-          ...(existing || {}), // newly created restaurant identity strictly takes precedence
-          ownerId: existing?.ownerId || impRest.ownerId,
-          branding: {
-            ...(impRest.branding || {}),
-            ...(existing ? existing.branding : {})
-          } as RestaurantBranding
-        };
-        restMap.set(impRest.id, mergedRest);
+        if (existing) {
+          // STRICT RULE: Existing slug, name, id, ownerId, and branding are 100% preserved. JSON import ONLY loads menu data.
+          const mergedRest: Restaurant = {
+            ...impRest,
+            ...existing,
+            slug: existing.slug, // Explicit shield: slug is NEVER replaced or overwritten by JSON import
+            name: existing.name,
+            ownerId: existing.ownerId,
+            branding: existing.branding || impRest.branding
+          };
+          restMap.set(impRest.id, mergedRest);
+        } else {
+          // Check for slug collision before adding any new restaurant from JSON
+          const impSlug = normalizeSlug(impRest.slug || impRest.name);
+          const slugExists = restaurants.some(r => normalizeSlug(r.slug) === impSlug);
+          if (!slugExists) {
+            restMap.set(impRest.id, impRest);
+          } else {
+            console.warn(`[JSON Import] Notice: Skipping creation of imported restaurant with duplicate slug /${impSlug}`);
+          }
+        }
       });
       nextRestaurants = sanitizeRestaurants(Array.from(restMap.values()));
     }

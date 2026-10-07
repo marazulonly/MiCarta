@@ -290,6 +290,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
 
+    const cleanSlug = generateSlug(editingRestaurant.slug || cleanName);
+    const isSlugDuplicate = restaurants.some(
+      r => r.id !== editingRestaurant.id && (r.slug === cleanSlug || generateSlug(r.slug) === cleanSlug)
+    );
+    if (isSlugDuplicate) {
+      setEditRestaurantError(`⚠️ Error: El slug /${cleanSlug} ya pertenece a otro restaurante registrado. Debe ser único y no se permite fusión de restaurantes. Modifícalo antes de guardar.`);
+      return;
+    }
+
     const previousRest = restaurants.find(r => r.id === editingRestaurant.id);
     const prevOwnerId = previousRest?.ownerId;
     const newOwnerId = editingRestaurant.ownerId;
@@ -299,6 +308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const updatedRest: Restaurant = {
       ...editingRestaurant,
       name: cleanName,
+      slug: cleanSlug,
       branding: templateChanged 
         ? { ...templateBranding, ...editingRestaurant.branding, darkBgColor: templateBranding.darkBgColor, cardBgColor: templateBranding.cardBgColor, textColor: templateBranding.textColor, buttonColor: templateBranding.buttonColor }
         : (editingRestaurant.branding || templateBranding)

@@ -5,7 +5,9 @@ import {
   getDoc, 
   getDocs, 
   deleteDoc, 
-  onSnapshot
+  onSnapshot,
+  query,
+  where
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
@@ -538,10 +540,13 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
     if (restSnap.exists()) {
       const restData = restSnap.data() as Restaurant;
       if (restData && restData.id) {
-        // Fetch categories and items for this specific restaurant
+        // Fetch categories and items strictly scoped to this specific restaurant only
+        const catsQuery = query(collection(db, 'categories'), where('restaurantId', '==', restData.id));
+        const itemsQuery = query(collection(db, 'items'), where('restaurantId', '==', restData.id));
+
         const [catsSnap, itemsSnap] = await Promise.all([
-          getDocs(collection(db, 'categories')).catch(() => null),
-          getDocs(collection(db, 'items')).catch(() => null)
+          getDocs(catsQuery).catch(() => null),
+          getDocs(itemsQuery).catch(() => null)
         ]);
 
         const categories: MenuCategory[] = [];
