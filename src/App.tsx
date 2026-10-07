@@ -273,7 +273,7 @@ function getInitialStorageState() {
 
       const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsers) {
-        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && u.role === 'ADMIN');
+        cachedUsers = JSON.parse(storedUsers).filter((u: any) => u && u.id && u.dni);
       }
 
       const storedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -284,7 +284,7 @@ function getInitialStorageState() {
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         const parsed = JSON.parse(storedAuth);
-        if (parsed && parsed.role === 'ADMIN') {
+        if (parsed && parsed.id && parsed.dni) {
           cachedAuth = parsed;
         }
       }
@@ -483,30 +483,7 @@ export default function App() {
     }
   }, []);
 
-  // One-time purge of fictitious demo records from local storage, server, and Firestore as requested
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const isPurged = localStorage.getItem('micarta_clean_reset_v10');
-      if (!isPurged) {
-        localStorage.removeItem(STORAGE_KEYS.RESTS);
-        localStorage.removeItem(STORAGE_KEYS.ITEMS);
-        localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
-        localStorage.removeItem(STORAGE_KEYS.USERS);
-        localStorage.removeItem(STORAGE_KEYS.ORDERS);
-        localStorage.setItem('micarta_clean_reset_v10', 'true');
-        setRestaurants([]);
-        restaurantsRef.current = [];
-        setCategories([]);
-        categoriesRef.current = [];
-        setMenuItems([]);
-        menuItemsRef.current = [];
-        setOrders([]);
-        ordersRef.current = [];
-        clearAllDatabaseCollections().catch(() => {});
-        fetch('/api/admin/clean-all', { method: 'POST' }).catch(() => {});
-      }
-    }
-  }, []);
+  // Persistent database sync initialized
 
   // Direct cloud fetch (combining Server cloud storage & Firestore) and Real-time SSE subscription
   useEffect(() => {
@@ -521,7 +498,7 @@ export default function App() {
         ? sanitizeRestaurants(cloudData.restaurants.filter((r: any) => r && r.id))
         : [];
       const cleanLoadedUsers = cloudData.users && Array.isArray(cloudData.users)
-        ? cloudData.users.filter((u: any) => u && u.id && u.dni && u.role === 'ADMIN')
+        ? cloudData.users.filter((u: any) => u && u.id && u.dni)
         : [];
       const cleanLoadedCategories = cloudData.categories && Array.isArray(cloudData.categories)
         ? cloudData.categories.filter((c: any) => c && c.id && c.name)

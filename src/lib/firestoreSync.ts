@@ -41,43 +41,14 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
 }
 
 let isQuotaExceededNoticeLogged = false;
-let isFirestoreQuotaExceeded = false;
-let lastQuotaExceededTime = 0;
-const QUOTA_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hour backoff to respect daily quota resets
 
 export function isQuotaExceededActive(): boolean {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const stored = localStorage.getItem('firestore_quota_exceeded_time');
-      if (stored) {
-        const time = parseInt(stored, 10);
-        if (Date.now() - time < QUOTA_COOLDOWN_MS) {
-          isFirestoreQuotaExceeded = true;
-          return true;
-        }
-      }
-    }
-  } catch {}
-  if (isFirestoreQuotaExceeded) {
-    if (Date.now() - lastQuotaExceededTime > QUOTA_COOLDOWN_MS) {
-      isFirestoreQuotaExceeded = false;
-      return false;
-    }
-    return true;
-  }
   return false;
 }
 
 export function markQuotaExceeded() {
-  isFirestoreQuotaExceeded = true;
-  lastQuotaExceededTime = Date.now();
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem('firestore_quota_exceeded_time', String(Date.now()));
-    }
-  } catch {}
   if (!isQuotaExceededNoticeLogged) {
-    console.warn('[Firestore] Free daily write quota reached. System operating seamlessly via persistent mirror.');
+    console.warn('[Firestore] Notice: Rate limit or quota limit reached on Firestore API.');
     isQuotaExceededNoticeLogged = true;
   }
 }
@@ -92,14 +63,14 @@ function isQuotaError(err: any): boolean {
 function handleFirestoreError(err: any, actionName: string): boolean {
   if (isQuotaError(err)) {
     markQuotaExceeded();
-    return true; // Handled gracefully without throwing UI exceptions
+    return true; // Handled gracefully without crashing
   }
   console.warn(`[Firestore] Notice during ${actionName}:`, err);
   return false;
 }
 
 export function isBypassingFirestore(): boolean {
-  return isQuotaExceededActive();
+  return false;
 }
 
 /**
@@ -209,7 +180,7 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
     const users: User[] = [];
     usersSnap?.forEach(d => { 
       const data = d.data() as User;
-      if (data && data.id && data.role === 'ADMIN') {
+      if (data && data.id && data.dni) {
         users.push(data);
       }
     });

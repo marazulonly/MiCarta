@@ -245,9 +245,7 @@ async function ensureCloudDataHydrated() {
   if (kvRestUrl && kvRestToken) {
     try {
       const remoteData = await fetchFromVercelKV();
-      if (remoteData && Array.isArray(remoteData.users)) {
-        // Strip non-admin demo records
-        remoteData.users = remoteData.users.filter((u: any) => u && u.role === 'ADMIN');
+      if (remoteData) {
         cachedCloudData = remoteData;
         syncAllPublishedMenus(cachedCloudData);
         console.log('[Server] Successfully hydrated cachedCloudData from Vercel KV / Upstash');
