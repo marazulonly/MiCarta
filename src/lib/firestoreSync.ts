@@ -505,17 +505,16 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       }
     }
 
-    // Fallback: Query all restaurants in Firestore to find match by slug or ID
+    // Fallback: Query all restaurants in Firestore to find exact match by slug or ID
     const cloud = await fetchFromFirestore();
     if (cloud && cloud.restaurants) {
-      const match = cloud.restaurants.find(r => 
-        r && (
-          r.id === restaurantIdOrSlug || 
-          r.slug === restaurantIdOrSlug || 
-          r.slug?.toLowerCase() === normKey ||
-          r.id?.toLowerCase() === normKey
-        )
-      );
+      const match = cloud.restaurants.find(r => {
+        if (!r) return false;
+        const sSlug = (r.slug || '').toLowerCase().trim();
+        const sId = (r.id || '').toLowerCase().trim();
+        const sName = (r.name || '').toLowerCase().trim();
+        return sId === normKey || sSlug === normKey || sName === normKey;
+      });
       if (match) {
         const categories = (cloud.categories || []).filter(c => c && c.restaurantId === match.id);
         const items = (cloud.items || []).filter(i => i && i.restaurantId === match.id);

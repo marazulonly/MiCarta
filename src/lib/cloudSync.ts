@@ -719,6 +719,35 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
     }
   } catch {}
 
+  // 5. Final Guaranteed Static Fallback: Match against INITIAL_RESTAURANTS in seed data
+  try {
+    const { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS } = await import('../data/mockData');
+    const matched = INITIAL_RESTAURANTS.find(r => {
+      if (!r) return false;
+      const sSlug = normalizeSlug(r.slug);
+      const sId = normalizeSlug(r.id);
+      const sName = normalizeSlug(r.name);
+      return sSlug === norm || sId === norm || sName === norm;
+    });
+
+    if (matched) {
+      const restCats = INITIAL_CATEGORIES.filter(c => c && c.restaurantId === matched.id);
+      const restItems = INITIAL_MENU_ITEMS.filter(i => i && i.restaurantId === matched.id);
+      const snap = {
+        success: true,
+        published: true,
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        restaurant: matched,
+        categories: restCats,
+        items: restItems
+      };
+      // Self-heal: persist this published snapshot to Firestore & Upstash in background
+      publishRestaurantMenu(matched.id, matched, restCats, restItems).catch(() => {});
+      return applyLatestBranding(snap);
+    }
+  } catch {}
+
   return null;
 }
 

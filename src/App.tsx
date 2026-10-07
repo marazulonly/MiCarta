@@ -77,14 +77,12 @@ export const findRestaurantBySlug = (restaurantsList: Restaurant[], querySlug?: 
   const target = normalizeSlug(querySlug);
   if (!target) return null;
 
-  // Strict exact match by slug, id, or normalized name
-  const exact = restaurantsList.find(r => 
+  // Strict exact match by slug, id, or normalized name ONLY
+  return restaurantsList.find(r => 
     normalizeSlug(r.slug) === target || 
     normalizeSlug(r.id) === target || 
     normalizeSlug(r.name) === target
-  );
-
-  return exact || null;
+  ) || null;
 };
 
 // Parse initial URL search parameters synchronously before first render
@@ -467,16 +465,66 @@ export default function App() {
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
           } else {
+            // Synchronous fallback match against INITIAL_RESTAURANTS
+            const localMatch = INITIAL_RESTAURANTS.find(r => 
+              normalizeSlug(r.slug) === normalizeSlug(restaurantSlug) || 
+              normalizeSlug(r.id) === normalizeSlug(restaurantSlug) || 
+              normalizeSlug(r.name) === normalizeSlug(restaurantSlug)
+            );
+            if (localMatch) {
+              const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === localMatch.id);
+              const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === localMatch.id);
+              const fallbackSnap = {
+                published: true,
+                version: 1,
+                publishedAt: new Date().toISOString(),
+                restaurant: localMatch,
+                categories: restCats,
+                items: restItems
+              };
+              setPublishedMenuData(fallbackSnap);
+              setPreviewRestaurant(localMatch);
+              setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+              if (table) setPreviewTableNumber(table);
+              setIsCustomerModalOpen(true);
+              setNotFoundSlugError(null);
+              publishRestaurantMenu(localMatch.id, localMatch, restCats, restItems).catch(() => {});
+            } else {
+              setPreviewRestaurant(null);
+              setPublishedMenuData(null);
+              setIsCustomerModalOpen(false);
+              setNotFoundSlugError(restaurantSlug);
+            }
+          }
+        }).catch(() => {
+          const localMatch = INITIAL_RESTAURANTS.find(r => 
+            normalizeSlug(r.slug) === normalizeSlug(restaurantSlug) || 
+            normalizeSlug(r.id) === normalizeSlug(restaurantSlug) || 
+            normalizeSlug(r.name) === normalizeSlug(restaurantSlug)
+          );
+          if (localMatch) {
+            const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === localMatch.id);
+            const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === localMatch.id);
+            const fallbackSnap = {
+              published: true,
+              version: 1,
+              publishedAt: new Date().toISOString(),
+              restaurant: localMatch,
+              categories: restCats,
+              items: restItems
+            };
+            setPublishedMenuData(fallbackSnap);
+            setPreviewRestaurant(localMatch);
+            setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+            if (table) setPreviewTableNumber(table);
+            setIsCustomerModalOpen(true);
+            setNotFoundSlugError(null);
+          } else {
             setPreviewRestaurant(null);
             setPublishedMenuData(null);
             setIsCustomerModalOpen(false);
             setNotFoundSlugError(restaurantSlug);
           }
-        }).catch(() => {
-          setPreviewRestaurant(null);
-          setPublishedMenuData(null);
-          setIsCustomerModalOpen(false);
-          setNotFoundSlugError(restaurantSlug);
         }).finally(() => {
           setIsLoadingPublishedMenu(false);
         });
@@ -1055,6 +1103,7 @@ export default function App() {
 
     const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.id);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === updated.id);
+    publishRestaurantMenu(updated.id, updated, restCats, restItems).catch(() => {});
     triggerCloudUpdate(updated.id, updated, restCats, restItems);
     saveFullCloudMenu({
       restaurants: nextRestaurants,
@@ -1144,6 +1193,9 @@ export default function App() {
     autoSyncMenuItem(updated);
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === updated.restaurantId);
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.restaurantId);
+    const rest = restaurantsRef.current.find(r => r.id === updated.restaurantId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(updated.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
@@ -1155,6 +1207,9 @@ export default function App() {
     autoSyncMenuItem(newItem);
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === newItem.restaurantId);
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === newItem.restaurantId);
+    const rest = restaurantsRef.current.find(r => r.id === newItem.restaurantId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(newItem.restaurantId, undefined, undefined, restItems);
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
@@ -1168,6 +1223,9 @@ export default function App() {
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: updatedItems, users: usersRef.current, orders: ordersRef.current });
     if (targetItem) {
       const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
+      const restCats = categoriesRef.current.filter(c => c.restaurantId === targetItem.restaurantId);
+      const rest = restaurantsRef.current.find(r => r.id === targetItem.restaurantId);
+      if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
       triggerCloudUpdate(targetItem.restaurantId, undefined, undefined, restItems);
     }
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
@@ -1182,6 +1240,9 @@ export default function App() {
     setCategories(updatedList);
     saveFullCloudMenu({ categories: updatedList, restaurants: restaurantsRef.current, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
     const restCats = updatedList.filter(c => c.restaurantId === restId);
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === restId);
+    const rest = restaurantsRef.current.find(r => r.id === restId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(restId, undefined, restCats, undefined);
     showToast(`✓ Orden de categorías guardado en la nube.`);
   };
@@ -1200,6 +1261,9 @@ export default function App() {
     setMenuItems(updatedList);
     saveFullCloudMenu({ items: updatedList, restaurants: restaurantsRef.current, categories: categoriesRef.current, users: usersRef.current, orders: ordersRef.current });
     const restItems = updatedList.filter(i => i.restaurantId === restId);
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === restId);
+    const rest = restaurantsRef.current.find(r => r.id === restId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(restId, undefined, undefined, restItems);
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
@@ -1211,6 +1275,9 @@ export default function App() {
     autoSyncCategory(newCategory);
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === newCategory.restaurantId);
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === newCategory.restaurantId);
+    const rest = restaurantsRef.current.find(r => r.id === newCategory.restaurantId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(newCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
@@ -1222,16 +1289,26 @@ export default function App() {
     autoSyncCategory(updatedCategory);
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === updatedCategory.restaurantId);
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedCategory.restaurantId);
+    const rest = restaurantsRef.current.find(r => r.id === updatedCategory.restaurantId);
+    if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
     triggerCloudUpdate(updatedCategory.restaurantId, undefined, restCats, undefined);
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
+    const targetCat = categoriesRef.current.find(c => c.id === categoryId);
     const updatedCategories = categoriesRef.current.filter(c => c.id !== categoryId);
     categoriesRef.current = updatedCategories;
     setCategories(updatedCategories);
     autoDeleteCategory(categoryId);
     saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: updatedCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
+    if (targetCat) {
+      const restCats = updatedCategories.filter(c => c.restaurantId === targetCat.restaurantId);
+      const restItems = menuItemsRef.current.filter(i => i.restaurantId === targetCat.restaurantId);
+      const rest = restaurantsRef.current.find(r => r.id === targetCat.restaurantId);
+      if (rest) publishRestaurantMenu(rest.id, rest, restCats, restItems).catch(() => {});
+    }
     showToast(`✓ Categoría eliminada de la nube.`);
   };
 
@@ -1458,6 +1535,16 @@ export default function App() {
       orders: ordersRef.current,
     }).catch(err => {
       console.error('[Import] Error saving to cloud:', err);
+    });
+
+    // 6. Automatically publish official menu snapshot for all imported/modified restaurants to Firestore & Upstash
+    nextRestaurants.forEach(r => {
+      if (!r || !r.id) return;
+      if (targetRestIds.has(r.id) || mode === 'REPLACE' || preparedRestaurants.some(pr => pr.id === r.id)) {
+        const rCats = nextCategories.filter(c => c && c.restaurantId === r.id);
+        const rItems = nextItems.filter(i => i && i.restaurantId === r.id);
+        publishRestaurantMenu(r.id, r, rCats, rItems).catch(() => {});
+      }
     });
 
     const modeText = mode === 'REPLACE' ? 'reemplazada completamente' : 'añadida / fusionada';
