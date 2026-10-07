@@ -510,15 +510,45 @@ export default function App() {
         ? cloudData.orders.filter((o: any) => o && o.id)
         : [];
 
-      // Authoritative remote state takes precedence over local state
-      setRestaurants(cleanLoadedRests);
-      setCategories(cleanLoadedCategories);
-      setMenuItems(cleanLoadedItems);
-      
-      const mergedUsers = deduplicateUsers([...cleanLoadedUsers, ...INITIAL_USERS]);
-      setUsers(mergedUsers);
+      // Merge remote cloud data with local state so created records are NEVER overwritten or lost
+      setRestaurants(prev => {
+        const map = new Map<string, Restaurant>();
+        prev.forEach(r => { if (r && r.id && !isLegacyRestaurant(r)) map.set(r.id, r); });
+        cleanLoadedRests.forEach(r => {
+          if (r && r.id && !isLegacyRestaurant(r)) {
+            const existing = map.get(r.id);
+            map.set(r.id, existing ? { ...existing, ...r } : r);
+          }
+        });
+        return Array.from(map.values());
+      });
 
-      setOrders(cleanLoadedOrders);
+      setCategories(prev => {
+        const map = new Map<string, MenuCategory>();
+        prev.forEach(c => { if (c && c.id) map.set(c.id, c); });
+        cleanLoadedCategories.forEach(c => { if (c && c.id) map.set(c.id, c); });
+        return Array.from(map.values());
+      });
+
+      setMenuItems(prev => {
+        const map = new Map<string, MenuItem>();
+        prev.forEach(i => { if (i && i.id) map.set(i.id, i); });
+        cleanLoadedItems.forEach(i => { if (i && i.id) map.set(i.id, i); });
+        return Array.from(map.values());
+      });
+
+      setUsers(prev => {
+        return deduplicateUsers([...prev, ...cleanLoadedUsers, ...INITIAL_USERS]);
+      });
+
+      if (cleanLoadedOrders.length > 0) {
+        setOrders(prev => {
+          const map = new Map<string, Order>();
+          prev.forEach(o => { if (o && o.id) map.set(o.id, o); });
+          cleanLoadedOrders.forEach(o => { if (o && o.id) map.set(o.id, o); });
+          return Array.from(map.values());
+        });
+      }
 
       // Silently ensure all active restaurants have their individual lightweight snapshot ready in Upstash
       try {
@@ -540,13 +570,11 @@ export default function App() {
         });
       } catch {}
 
-      // Verify and synchronize currentUser with verified cloud users
+      // Keep currentUser logged in, updating fields if updated version found
       if (currentUser) {
         const fresh = cleanLoadedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
         if (fresh) {
           setCurrentUser(fresh);
-        } else {
-          setCurrentUser(null);
         }
       }
 
@@ -585,7 +613,17 @@ export default function App() {
         const d = event.data;
         if (d.restaurants && Array.isArray(d.restaurants)) {
           const cleanR = sanitizeRestaurants(d.restaurants);
-          setRestaurants(cleanR);
+          setRestaurants(prev => {
+            const map = new Map<string, Restaurant>();
+            prev.forEach(r => { if (r && r.id && !isLegacyRestaurant(r)) map.set(r.id, r); });
+            cleanR.forEach(r => {
+              if (r && r.id && !isLegacyRestaurant(r)) {
+                const existing = map.get(r.id);
+                map.set(r.id, existing ? { ...existing, ...r } : r);
+              }
+            });
+            return Array.from(map.values());
+          });
           setPreviewRestaurant(p => {
             if (initialRequestedSlug) {
               const match = findRestaurantBySlug(cleanR, initialRequestedSlug);

@@ -411,14 +411,24 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
   // 1. Primary: Direct Firestore persistent database
   try {
     const firestoreData = await fetchFromFirestore();
-    if (firestoreData) {
+    if (firestoreData && (firestoreData.restaurants?.length || firestoreData.users?.length)) {
       return firestoreData;
     }
   } catch (err) {
     console.warn('[Firestore] Notice during direct Firestore fetch:', err);
   }
 
-  // 2. Fallback only if Firestore is completely unreachable
+  // 2. Direct Upstash Redis fetch from client (Universal single source of truth backup)
+  try {
+    const upstashData = await fetchFromUpstashDirectly();
+    if (upstashData && (upstashData.restaurants?.length || upstashData.users?.length)) {
+      return upstashData;
+    }
+  } catch (err) {
+    console.warn('[CloudSync] Notice during Upstash fetch:', err);
+  }
+
+  // 3. Fallback: Express server API
   try {
     const res = await fetch('/api/cloud-menu?_t=' + Date.now(), { 
       cache: 'no-store',
