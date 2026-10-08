@@ -905,7 +905,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="space-y-3 pt-4 border-t border-neutral-100 text-xs font-semibold text-neutral-700">
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Carta digital interactiva</span>
+                    <span>Carta interactiva solo texto</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -917,7 +917,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Recepción de pedidos en línea</span>
+                    <span>Recepción de pedidos por Whatsapp</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -925,7 +925,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Platos, fotos y adicionales ilimitados</span>
+                    <span>25 Platos y adicionales ilimitados</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -939,7 +939,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={() => openLeadModal('FREE_TRIAL')}
                   className="w-full py-3.5 rounded-full bg-neutral-100 hover:bg-[#4F2D7F] hover:text-white text-[#4F2D7F] font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                 >
-                  Elegir Emprende
+                  ELEGIR EMPRENDE
                 </button>
               </div>
             </div>
@@ -986,7 +986,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#F26522] shrink-0" />
-                    <span>Pantalla KDS directa para Cocina</span>
+                    <span>60 Platos, fotos y adicionales ilimitados</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#F26522] shrink-0" />
@@ -1025,12 +1025,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="py-2">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black text-neutral-900">
-                      {billingCycle === 'MONTHLY' ? 'S/ 149' : 'S/ 119'}
+                      {billingCycle === 'MONTHLY' ? 'S/ 129' : 'S/ 107'}
                     </span>
                     <span className="text-xs font-bold text-neutral-500">/ mes</span>
                   </div>
                   {billingCycle === 'ANNUAL' && (
-                    <span className="text-[11px] text-emerald-600 font-bold">Facturado anualmente (S/ 1,428/año)</span>
+                    <span className="text-[11px] text-emerald-600 font-bold">Facturado anualmente (S/ 1,290/año)</span>
                   )}
                 </div>
 
@@ -1067,7 +1067,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={() => openLeadModal('FREE_TRIAL')}
                   className="w-full py-3.5 rounded-full bg-neutral-100 hover:bg-[#4F2D7F] hover:text-white text-[#4F2D7F] font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                 >
-                  Elegir Profesional
+                  ELEGIR PROFESIONAL
                 </button>
               </div>
             </div>
@@ -1105,7 +1105,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {/* 6 Fundadores Benefits Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                 {[
-                  'Primer mes completamente gratis',
+                  'Primer mes a mitad de precio',
                   'Configuración inicial asistida por expertos',
                   'Códigos QR personalizados en alta definición',
                   'Capacitación guiada para todo tu equipo',

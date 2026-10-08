@@ -2222,7 +2222,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
                       placeholder="Ej: Lomo Saltado Especial al Wok"
-                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-amber-500 transition font-bold"
                     />
                   </div>
 
@@ -2233,7 +2233,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     <select
                       value={formCategoryId}
                       onChange={(e) => setFormCategoryId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                      className="w-full px-3 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-amber-500 transition font-bold"
                     >
                       {restaurantCategories.map(cat => (
                         <option key={cat.id} value={cat.id}>
@@ -2256,7 +2256,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Ej: Lomo fino flambeado con cebolla morada, tomate en gajos, ají amarillo y papas nativas."
-                  className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-amber-500 transition resize-none font-bold"
                 />
               </div>
 
@@ -2273,7 +2273,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     required
                     value={formPrice}
                     onChange={(e) => setFormPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs font-mono font-bold text-amber-400 focus:border-amber-400 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs font-mono font-bold text-neutral-800 focus:bg-white focus:border-amber-500 transition"
                   />
                 </div>
 
@@ -2286,7 +2286,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     min="1"
                     value={formPrepTime}
                     onChange={(e) => setFormPrepTime(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-amber-500 transition font-bold"
                   />
                 </div>
 
@@ -2297,7 +2297,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <select
                     value={formTargetScope}
                     onChange={(e) => setFormTargetScope(e.target.value as any)}
-                    className="w-full px-2 py-2 rounded-xl bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    className="w-full px-2 py-2 rounded-xl bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-amber-500 transition font-bold"
                   >
                     <option value="ALL">Salón y Delivery</option>
                     <option value="DINE_IN">Solo Salón</option>
@@ -2306,14 +2306,14 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                 </div>
 
                 <div className="flex flex-col justify-end">
-                  <label className="flex items-center gap-2 p-2 rounded-xl bg-black border border-neutral-800 cursor-pointer">
+                  <label className="flex items-center gap-2 p-2 rounded-xl bg-neutral-100/90 border border-neutral-300 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formIsAvailable}
                       onChange={(e) => setFormIsAvailable(e.target.checked)}
                       className="rounded accent-amber-400"
                     />
-                    <span className="text-xs font-bold text-white">Disponible</span>
+                    <span className="text-xs font-bold text-neutral-800">Disponible</span>
                   </label>
                 </div>
               </div>
@@ -2358,7 +2358,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     placeholder="Nombre del adicional (ej: Queso extra)"
                     value={newAddonName}
                     onChange={(e) => setNewAddonName(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-amber-500 transition font-bold"
                   />
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-neutral-400">S/</span>
@@ -2368,7 +2368,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                       min="0"
                       value={newAddonPrice}
                       onChange={(e) => setNewAddonPrice(Number(e.target.value))}
-                      className="w-16 px-2 py-1.5 rounded-lg bg-black border border-neutral-800 text-xs font-mono text-amber-400 focus:border-amber-400 transition"
+                      className="w-16 px-2 py-1.5 rounded-lg bg-neutral-100/90 border border-neutral-300 text-xs font-mono text-neutral-800 focus:bg-white focus:border-amber-500 transition font-bold"
                     />
                   </div>
                   <button
@@ -2424,7 +2424,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                     placeholder="Añadir opción rápida (ej: Sin cebolla, Salsa aparte, Término 3/4)"
                     value={newObsText}
                     onChange={(e) => setNewObsText(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:border-amber-400 transition"
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-neutral-100/90 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-amber-500 transition font-bold"
                   />
                   <button
                     type="button"

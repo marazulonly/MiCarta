@@ -200,6 +200,13 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       getDocs(collection(db, 'orders')).catch((err) => { handleFirestoreError(err, 'fetch orders'); return null; })
     ]);
 
+    // If any of the essential collections (restaurants, users, categories, items) failed to fetch, 
+    // do NOT return a half-empty payload as it will cause data loss on subsequent syncs.
+    if (restsSnap === null || usersSnap === null || catsSnap === null || itemsSnap === null) {
+      console.warn('[Firestore] Fetch failed for one or more core collections. Aborting to prevent data loss.');
+      return null;
+    }
+
     const restMapBySlug = new Map<string, Restaurant>();
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
