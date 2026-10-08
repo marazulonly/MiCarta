@@ -58,13 +58,30 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
   return clean;
 }
 
+let quotaExceededState = false;
 let isQuotaExceededNoticeLogged = false;
 
+const quotaListeners = new Set<(active: boolean) => void>();
+
 export function isQuotaExceededActive(): boolean {
-  return false;
+  return quotaExceededState;
+}
+
+export function subscribeToQuotaChanges(listener: (active: boolean) => void): () => void {
+  quotaListeners.add(listener);
+  listener(quotaExceededState);
+  return () => {
+    quotaListeners.delete(listener);
+  };
 }
 
 export function markQuotaExceeded() {
+  if (!quotaExceededState) {
+    quotaExceededState = true;
+    quotaListeners.forEach(l => {
+      try { l(true); } catch {}
+    });
+  }
   if (!isQuotaExceededNoticeLogged) {
     console.warn('[Firestore] Notice: Rate limit or quota limit reached on Firestore API.');
     isQuotaExceededNoticeLogged = true;
@@ -176,11 +193,11 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
   if (isBypassingFirestore()) return null;
   try {
     const [restsSnap, usersSnap, catsSnap, itemsSnap, ordersSnap] = await Promise.all([
-      getDocs(collection(db, 'restaurants')).catch(() => null),
-      getDocs(collection(db, 'users')).catch(() => null),
-      getDocs(collection(db, 'categories')).catch(() => null),
-      getDocs(collection(db, 'items')).catch(() => null),
-      getDocs(collection(db, 'orders')).catch(() => null)
+      getDocs(collection(db, 'restaurants')).catch((err) => { handleFirestoreError(err, 'fetch restaurants'); return null; }),
+      getDocs(collection(db, 'users')).catch((err) => { handleFirestoreError(err, 'fetch users'); return null; }),
+      getDocs(collection(db, 'categories')).catch((err) => { handleFirestoreError(err, 'fetch categories'); return null; }),
+      getDocs(collection(db, 'items')).catch((err) => { handleFirestoreError(err, 'fetch items'); return null; }),
+      getDocs(collection(db, 'orders')).catch((err) => { handleFirestoreError(err, 'fetch orders'); return null; })
     ]);
 
     const restMapBySlug = new Map<string, Restaurant>();

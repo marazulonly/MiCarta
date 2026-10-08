@@ -1,4 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
+import { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, INITIAL_USERS } from '../data/mockData';
 import { 
   saveToFirestore,
   fetchFromFirestore,
@@ -90,17 +91,43 @@ export async function saveIndividualRestaurantSnapshotToUpstash(slugOrId: string
 /**
  * Fetch latest menu directly and exclusively from Firestore persistent database.
  * Firestore is the sole source of truth.
+ * Falls back to read-only LocalStorage cache ("datos de descarga") or default mock data on Firestore failure/quota limit.
  */
 export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
   try {
     const firestoreData = await fetchFromFirestore();
     if (firestoreData) {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem('micarta_download_cache_v1', JSON.stringify(firestoreData));
+        } catch {}
+      }
       return firestoreData;
     }
   } catch (err) {
     console.warn('[Firestore] Notice during direct Firestore fetch:', err);
   }
-  return null;
+
+  // Fallback to downloaded cache (datos de descarga)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const cached = window.localStorage.getItem('micarta_download_cache_v1');
+      if (cached) {
+        console.log('[Firestore Sync] Using downloaded cache due to rate limit/quota');
+        return JSON.parse(cached);
+      }
+    } catch {}
+  }
+
+  // Fallback to mock data if there is absolutely no cache, to avoid a completely empty screen
+  console.log('[Firestore Sync] Using default mock data fallback due to rate limit/quota');
+  return {
+    restaurants: INITIAL_RESTAURANTS,
+    categories: INITIAL_CATEGORIES,
+    items: INITIAL_MENU_ITEMS,
+    users: INITIAL_USERS,
+    orders: []
+  };
 }
 
 /**
@@ -168,7 +195,7 @@ export async function publishRestaurantMenu(
 
 /**
  * Retrieves the published menu snapshot for public anonymous visitors and QR scanners
- * strictly from Firestore (Single Source of Truth), without localStorage or mockData overrides.
+ * strictly from Firestore (Single Source of Truth), with robust fallback to "datos de descarga" cache or mockData.
  */
 export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   success: boolean;
@@ -185,6 +212,11 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   try {
     const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
     if (firestoreSnap && firestoreSnap.restaurant) {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(`micarta_pub_download_cache_${norm}`, JSON.stringify(firestoreSnap));
+        } catch {}
+      }
       return {
         success: true,
         published: true,
@@ -197,6 +229,44 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
     }
   } catch (err) {
     console.warn('[Firestore] Notice fetching public menu from Firestore:', err);
+  }
+
+  // Fallback to public downloaded cache
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const cached = window.localStorage.getItem(`micarta_pub_download_cache_${norm}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.restaurant) {
+          return {
+            success: true,
+            published: true,
+            version: parsed.version || 1,
+            publishedAt: parsed.publishedAt || new Date().toISOString(),
+            restaurant: parsed.restaurant,
+            categories: parsed.categories || [],
+            items: parsed.items || []
+          };
+        }
+      }
+    } catch {}
+  }
+
+  // Fallback to mock data for specific slug
+  const fallbackRest = INITIAL_RESTAURANTS.find(r => normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm);
+  if (fallbackRest) {
+    const mSlug = normalizeSlug(fallbackRest.slug || fallbackRest.name || fallbackRest.id);
+    const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === fallbackRest.id || normalizeSlug(c.restaurantId) === mSlug);
+    const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === fallbackRest.id || normalizeSlug(i.restaurantId) === mSlug);
+    return {
+      success: true,
+      published: true,
+      version: 1,
+      publishedAt: new Date().toISOString(),
+      restaurant: fallbackRest,
+      categories: restCats,
+      items: restItems
+    };
   }
 
   return null;

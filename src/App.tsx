@@ -486,16 +486,8 @@ export default function App() {
       ordersRef.current = cleanLoadedOrders;
       setOrders(cleanLoadedOrders);
 
-      // Ensure published_menus in Firestore has the latest live snapshot for each restaurant
-      try {
-        cleanLoadedRests.forEach((r: Restaurant) => {
-          if (!r || (!r.slug && !r.id)) return;
-          const rSlug = normalizeSlug(r.slug || r.name || r.id);
-          const rCats = cleanLoadedCategories.filter((c: MenuCategory) => c && (c.restaurantId === r.id || normalizeSlug(c.restaurantId) === rSlug));
-          const rItems = cleanLoadedItems.filter((i: MenuItem) => i && (i.restaurantId === r.id || normalizeSlug(i.restaurantId) === rSlug));
-          publishRestaurantMenu(rSlug, r, rCats, rItems).catch(() => {});
-        });
-      } catch {}
+      // Automatic publishing of all restaurants on mount is removed to prevent Firestore quota exhaustion.
+      // Menus are published when the user explicitly triggers it or updates their details.
 
       if (currentUser) {
         const fresh = combinedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
