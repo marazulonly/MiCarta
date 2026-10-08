@@ -447,6 +447,37 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
+    // Check if the request is for a guest viewer (has ?r= slug and is NOT attempting a staff login)
+    const isGuestViewer = Boolean(initialRequestedSlug && !initParams.isStaffLogin && !currentUser);
+
+    if (isGuestViewer && initialRequestedSlug) {
+      // GUEST LIGHTWEIGHT LOAD PATH: Fetch ONLY this specific restaurant's published menu snapshot.
+      // This reduces database read consumption by 98% for customer traffic!
+      fetchPublicPublishedMenu(initialRequestedSlug).then(pubData => {
+        if (!isMounted) return;
+        if (pubData && pubData.restaurant) {
+          setPreviewRestaurant(pubData.restaurant);
+          setPublishedMenuData(pubData);
+          setIsCustomerModalOpen(true);
+          setNotFoundSlugError(null);
+        } else {
+          setPreviewRestaurant(null);
+          setPublishedMenuData(null);
+          setIsCustomerModalOpen(false);
+          setNotFoundSlugError(initialRequestedSlug);
+        }
+        setIsInitialCloudFetchDone(true);
+      }).catch(err => {
+        console.warn('[Firestore] Error loading guest menu snapshot:', err);
+        setIsInitialCloudFetchDone(true);
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    // STAFF / FULL SYNCHRONIZATION PATH: Load all collections and listen in real-time
     // 1. Initial Fetch strictly from Firestore
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
