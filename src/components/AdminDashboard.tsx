@@ -1177,7 +1177,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="Ej. Mateo Santisteban"
                   value={newOwnerName}
                   onChange={(e) => setNewOwnerName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   required
                 />
               </div>
@@ -1194,7 +1194,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Ej. 10203040"
                     value={newOwnerDni}
                     onChange={(e) => setNewOwnerDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     required
                   />
                   <span className="text-[10px] text-neutral-500 font-mono mt-0.5 block">{newOwnerDni.length}/8 dígitos</span>
@@ -1207,7 +1207,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={newOwnerPassword}
                     onChange={(e) => setNewOwnerPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     required
                   />
                   <span className="text-[10px] text-neutral-500 mt-0.5 block">Por defecto: 12345678</span>
@@ -1222,7 +1222,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="mateo@costamarina.com"
                     value={newOwnerEmail}
                     onChange={(e) => setNewOwnerEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                     required
                   />
                 </div>
@@ -1233,7 +1233,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="+51 987 654 321"
                     value={newOwnerPhone}
                     onChange={(e) => setNewOwnerPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
               </div>
@@ -1242,11 +1242,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
                   Asignar Restaurantes para Gestión
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-2.5 rounded-lg bg-black border border-neutral-800">
+                <div className="space-y-2 max-h-40 overflow-y-auto p-2.5 rounded-lg bg-neutral-100 border border-neutral-300">
                   {restaurants.map(rest => {
                     const isChecked = newOwnerRests.includes(rest.id);
                     return (
-                      <label key={rest.id} className="flex items-center gap-2 text-xs text-neutral-300 cursor-pointer hover:text-white">
+                      <label key={rest.id} className="flex items-center gap-2 text-xs text-neutral-700 cursor-pointer hover:text-neutral-900 font-bold">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -1256,7 +1256,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               : newOwnerRests.filter(id => id !== rest.id);
                             setNewOwnerRests(updated);
                           }}
-                          className="rounded border-neutral-700 text-white focus:ring-0"
+                          className="rounded border-neutral-400 text-neutral-800 focus:ring-0"
                         />
                         <span>{rest.name}</span>
                         <span className="text-[10px] text-neutral-500 font-mono">({rest.slug})</span>
@@ -1334,7 +1334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       setNewRestSlug(generateSlug(e.target.value));
                     }
                   }}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   required
                 />
               </div>
@@ -1351,7 +1351,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       placeholder="cevichito-miraflores"
                       value={newRestSlug}
                       onChange={(e) => setNewRestSlug(generateSlug(e.target.value))}
-                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     />
                   </div>
                 </div>
@@ -1362,7 +1362,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Ej. Cevichería & Mariscos"
                     value={newRestCuisine}
                     onChange={(e) => setNewRestCuisine(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
               </div>
@@ -1374,7 +1374,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={newRestOwnerId}
                     onChange={(e) => setNewRestOwnerId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-neutral-500 cursor-pointer font-semibold"
                   >
                     <option value="">-- Seleccionar Dueño --</option>
                     {ownersList.map(o => (
@@ -1387,7 +1387,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={newRestTemplateId}
                     onChange={(e) => setNewRestTemplateId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-neutral-500 cursor-pointer font-semibold"
                   >
                     {templates.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
@@ -1404,7 +1404,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="Ej. Cevichería Contemporánea & Pesca Artesanal del Día"
                   value={newRestTagline}
                   onChange={(e) => setNewRestTagline(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                 />
               </div>
 
@@ -1417,7 +1417,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Av. Larco 456, Miraflores"
                     value={newRestAddress}
                     onChange={(e) => setNewRestAddress(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
                 <div>
@@ -1427,7 +1427,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="+51 987 654 321"
                     value={newRestPhone}
                     onChange={(e) => setNewRestPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
               </div>
@@ -1441,7 +1441,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="https://..."
                     value={newRestLogoUrl}
                     onChange={(e) => setNewRestLogoUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-mono"
                   />
                 </div>
                 <div>
@@ -1451,7 +1451,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="https://..."
                     value={newRestCoverUrl}
                     onChange={(e) => setNewRestCoverUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-mono"
                   />
                 </div>
               </div>
@@ -1515,7 +1515,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   type="text"
                   value={editingOwner.name}
                   onChange={(e) => setEditingOwner({ ...editingOwner, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   required
                 />
               </div>
@@ -1530,7 +1530,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     maxLength={8}
                     value={editingOwner.dni || ''}
                     onChange={(e) => setEditingOwner({ ...editingOwner, dni: e.target.value.replace(/\D/g, '').slice(0, 8) })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     required
                   />
                   <span className="text-[10px] text-neutral-500 font-mono mt-0.5 block">{editingOwner.dni?.length || 0}/8 dígitos</span>
@@ -1543,7 +1543,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingOwner.password || '12345678'}
                     onChange={(e) => setEditingOwner({ ...editingOwner, password: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     required
                   />
                 </div>
@@ -1556,7 +1556,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="email"
                     value={editingOwner.email}
                     onChange={(e) => setEditingOwner({ ...editingOwner, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                     required
                   />
                 </div>
@@ -1566,7 +1566,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingOwner.phone}
                     onChange={(e) => setEditingOwner({ ...editingOwner, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
               </div>
@@ -1576,7 +1576,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <select
                   value={editingOwner.status}
                   onChange={(e) => setEditingOwner({ ...editingOwner, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600 cursor-pointer"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-neutral-500 cursor-pointer font-semibold"
                 >
                   <option value="active">Activo - Acceso Total Permitido</option>
                   <option value="inactive">Inactivo - Acceso Temporalmente Suspendido</option>
@@ -1587,7 +1587,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
                   Restaurantes / Franquicias Asignadas
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-2 rounded-lg bg-black border border-neutral-800">
+                <div className="space-y-2 max-h-40 overflow-y-auto p-2 rounded-lg bg-neutral-100 border border-neutral-300 text-neutral-800">
                   {restaurants.map(rest => {
                     const isChecked = editingOwner.restaurantIds.includes(rest.id);
                     return (
@@ -1678,7 +1678,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={editingRestaurant.ownerId || (ownersList[0]?.id || '')}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, ownerId: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-950 border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-medium"
+                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:outline-none focus:border-amber-400 cursor-pointer font-semibold"
                   >
                     {ownersList.map(owner => (
                       <option key={owner.id} value={owner.id}>
@@ -1747,7 +1747,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         slug: (!isTaken && autoSlug) ? autoSlug : editingRestaurant.slug
                       });
                     }}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                     required
                   />
                 </div>
@@ -1757,7 +1757,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingRestaurant.slug}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, slug: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500 font-bold"
                     required
                   />
                 </div>
@@ -1769,7 +1769,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   type="text"
                   value={editingRestaurant.tagline}
                   onChange={(e) => setEditingRestaurant({ ...editingRestaurant, tagline: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                 />
               </div>
 
@@ -1780,7 +1780,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingRestaurant.cuisineType}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, cuisineType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
                 <div>
@@ -1789,7 +1789,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingRestaurant.phone}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                   />
                 </div>
               </div>
@@ -1800,7 +1800,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   type="text"
                   value={editingRestaurant.address}
                   onChange={(e) => setEditingRestaurant({ ...editingRestaurant, address: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 focus:bg-white focus:border-neutral-500 font-semibold"
                 />
               </div>
 
@@ -1811,7 +1811,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingRestaurant.logoUrl || ''}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, logoUrl: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500"
                     placeholder="https://images.unsplash.com/..."
                   />
                 </div>
@@ -1821,7 +1821,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editingRestaurant.coverUrl || ''}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, coverUrl: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-600"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 placeholder-neutral-500 font-mono focus:bg-white focus:border-neutral-500"
                     placeholder="https://images.unsplash.com/..."
                   />
                 </div>
@@ -1833,7 +1833,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={editingRestaurant.templateId || 'tmpl-luxury'}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, templateId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600 cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-neutral-500 cursor-pointer font-semibold"
                   >
                     {templates.map(t => (
                       <option key={t.id} value={t.id}>{t.name} ({t.badge})</option>
@@ -1845,7 +1845,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={editingRestaurant.isOpen ? 'open' : 'closed'}
                     onChange={(e) => setEditingRestaurant({ ...editingRestaurant, isOpen: e.target.value === 'open' })}
-                    className="w-full px-3 py-2 rounded-lg bg-black border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-600 cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-100 border border-neutral-300 text-xs text-neutral-800 focus:bg-white focus:border-neutral-500 cursor-pointer font-semibold"
                   >
                     <option value="open">Abierto (Recibiendo pedidos)</option>
                     <option value="closed">Cerrado (Fuera de horario)</option>
