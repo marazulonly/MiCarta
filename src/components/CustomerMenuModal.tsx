@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Check, 
@@ -153,6 +153,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant?.branding?.dishPriceFont || 'monospace');
   const [enableDineIn, setEnableDineIn] = useState(restaurant?.menuAccessSettings?.enableDineIn !== false);
   const [enableDelivery, setEnableDelivery] = useState(restaurant?.menuAccessSettings?.enableDelivery !== false);
+  const uploadPromiseRef = useRef<Promise<string> | null>(null);
 
   const compressAndOptimizeImage = (file: File, maxDim: number, callback: (url: string) => void) => {
     const reader = new FileReader();
@@ -204,24 +205,33 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
     const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
     if (isSvg) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setBrandLogoUrl(reader.result);
-          showToast('✓ Logotipo SVG vectorial guardado');
-        }
-      };
-      reader.readAsDataURL(file);
+      uploadPromiseRef.current = new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setBrandLogoUrl(reader.result);
+            showToast('✓ Logotipo SVG vectorial guardado');
+            resolve(reader.result);
+          } else {
+            resolve('');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
       e.target.value = '';
       return;
     }
 
-    processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
+    uploadPromiseRef.current = processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
       .then(res => {
         setBrandLogoUrl(res.url);
         showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP.');
+        return res.url;
       })
-      .catch(() => showToast('✓ Logotipo asignado'));
+      .catch(() => {
+        showToast('✓ Logotipo asignado');
+        return tempUrl;
+      });
     e.target.value = '';
   };
 
@@ -443,10 +453,25 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setIsBrandingModalOpen(true);
   };
 
-  const handleSaveBranding = (e: React.FormEvent) => {
+  const handleSaveBranding = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!onUpdateRestaurant) return;
-    const safeLogo = brandLogoUrl.trim();
+
+    if (uploadPromiseRef.current) {
+      try {
+        const resolvedLogo = await uploadPromiseRef.current;
+        if (resolvedLogo && !resolvedLogo.startsWith('blob:')) {
+          setBrandLogoUrl(resolvedLogo);
+        }
+      } catch (err) {
+        console.warn('Upload wait error in branding modal:', err);
+      }
+    }
+
+    let safeLogo = brandLogoUrl.trim();
+    if (safeLogo.startsWith('blob:')) {
+      safeLogo = '';
+    }
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.cardBgColor || brandDarkBgColor;
 

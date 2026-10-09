@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Upload, 
@@ -59,6 +59,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
   const [showGuideOutline, setShowGuideOutline] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const uploadPromiseRef = useRef<Promise<string> | null>(null);
 
   // Sync state whenever the restaurant prop changes or modal opens
   React.useEffect(() => {
@@ -73,6 +74,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       setHeaderBannerHeight(cb.headerBannerHeight || 100);
       setRestaurantName(restaurant.name);
       setRestaurantTagline(restaurant.tagline || '');
+      uploadPromiseRef.current = null;
     }
   }, [restaurant.id, isOpen]);
 
@@ -108,32 +110,41 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
     setHeaderLogoUrl(tempUrl);
     showToast('Cargando y optimizando logotipo...');
 
-    try {
-      if (isSvg) {
+    if (isSvg) {
+      uploadPromiseRef.current = new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
           if (typeof reader.result === 'string') {
             setHeaderLogoUrl(reader.result);
             setIsUploading(false);
             showToast('✓ Logotipo SVG vectorial asignado');
+            resolve(reader.result);
+          } else {
+            setIsUploading(false);
+            resolve('');
           }
         };
         reader.readAsDataURL(file);
-        e.target.value = '';
-        return;
-      }
-
-      const res = await processAndUploadImage(file, 'logo', restaurant.slug || 'header');
-      setHeaderLogoUrl(res.url);
-      showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP nítido.');
-    } catch (err) {
-      console.warn('Error processing header logo:', err);
-      // Keep instant preview intact
-      showToast('✓ Logotipo cargado correctamente.');
-    } finally {
-      setIsUploading(false);
+      });
       e.target.value = '';
+      return;
     }
+
+    uploadPromiseRef.current = processAndUploadImage(file, 'logo', restaurant.slug || 'header')
+      .then(res => {
+        setHeaderLogoUrl(res.url);
+        setIsUploading(false);
+        showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP nítido.');
+        return res.url;
+      })
+      .catch(err => {
+        console.warn('Error processing header logo:', err);
+        setIsUploading(false);
+        showToast('✓ Logotipo cargado correctamente.');
+        return tempUrl;
+      });
+
+    e.target.value = '';
   };
 
   const handleModeChange = (mode: 'IMAGE_AND_TEXT' | 'IMAGE_ONLY') => {
@@ -149,10 +160,25 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
     }
   };
 
-  const handleSave = (e?: React.FormEvent) => {
+  const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    const cleanLogoUrl = headerLogoUrl.trim();
+    if (uploadPromiseRef.current) {
+      try {
+        showToast('⏳ Esperando a que termine el procesamiento de la imagen...');
+        const resolvedUrl = await uploadPromiseRef.current;
+        if (resolvedUrl && !resolvedUrl.startsWith('blob:')) {
+          setHeaderLogoUrl(resolvedUrl);
+        }
+      } catch (err) {
+        console.warn('Upload await failed during save:', err);
+      }
+    }
+
+    let cleanLogoUrl = headerLogoUrl.trim();
+    if (cleanLogoUrl.startsWith('blob:')) {
+      cleanLogoUrl = '';
+    }
     const updatedBranding: RestaurantBranding = normalizeBranding({
       ...restaurant.branding,
       headerLogoUrl: cleanLogoUrl,

@@ -354,7 +354,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
           {/* Banner background photo */}
           <img 
-            src={restaurant.branding?.headerLogoUrl || restaurant.coverImageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80'}
+            src={restaurant.coverUrl || restaurant.coverImageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80'}
             alt={restaurant.name}
             className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
           />
@@ -362,7 +362,13 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
           {/* Logo Badge growing upwards to the top */}
           <div className="relative z-10 flex flex-col items-center justify-center p-2 w-full h-full">
-            {restaurant.logoUrl ? (
+            {restaurant.branding?.headerLogoUrl ? (
+              <img 
+                src={restaurant.branding.headerLogoUrl} 
+                alt={restaurant.name} 
+                className="max-h-36 sm:max-h-48 md:max-h-56 max-w-[320px] w-auto h-auto object-contain drop-shadow-2xl"
+              />
+            ) : restaurant.logoUrl ? (
               <img 
                 src={restaurant.logoUrl} 
                 alt={restaurant.name} 

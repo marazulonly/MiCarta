@@ -193,6 +193,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [brandDishNameFont, setBrandDishNameFont] = useState(safeInitialBranding.dishNameFont || 'inherit');
   const [brandDishDescFont, setBrandDishDescFont] = useState(safeInitialBranding.dishDescFont || 'inherit');
   const [brandDishPriceFont, setBrandDishPriceFont] = useState(safeInitialBranding.dishPriceFont || 'monospace');
+  const uploadPromiseRef = useRef<Promise<string> | null>(null);
 
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -208,26 +209,33 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
     const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
     if (isSvg) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setBrandLogoUrl(reader.result);
-          showToast('✓ Logotipo SVG vectorial guardado');
-        }
-      };
-      reader.readAsDataURL(file);
+      uploadPromiseRef.current = new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setBrandLogoUrl(reader.result);
+            showToast('✓ Logotipo SVG vectorial guardado');
+            resolve(reader.result);
+          } else {
+            resolve('');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
       e.target.value = '';
       return;
     }
 
-    processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
+    uploadPromiseRef.current = processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
       .then(res => {
         setBrandLogoUrl(res.url);
         showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP.');
+        return res.url;
       })
       .catch(err => {
         console.warn('Error processing logo:', err);
         showToast('✓ Logotipo asignado');
+        return tempUrl;
       });
     e.target.value = '';
   };
@@ -636,8 +644,22 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
   const [menuSettings, setMenuSettings] = useState<MenuAccessSettings>(initialSettings);
 
-  const handleSaveCustomization = () => {
-    const safeLogo = brandLogoUrl.trim();
+  const handleSaveCustomization = async () => {
+    if (uploadPromiseRef.current) {
+      try {
+        const resolvedLogo = await uploadPromiseRef.current;
+        if (resolvedLogo && !resolvedLogo.startsWith('blob:')) {
+          setBrandLogoUrl(resolvedLogo);
+        }
+      } catch (err) {
+        console.warn('Upload wait error in customization:', err);
+      }
+    }
+
+    let safeLogo = brandLogoUrl.trim();
+    if (safeLogo.startsWith('blob:')) {
+      safeLogo = '';
+    }
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor || brandDarkBgColor;
     const cleanNewName = brandName.trim() || restaurant.name;

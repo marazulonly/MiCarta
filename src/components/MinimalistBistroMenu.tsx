@@ -169,10 +169,10 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
                 <span>Ver Pedido</span>
               </button>
             )}
-            {(branding.headerLogoUrl || restaurant.logoUrl) && (
+            {branding.headerLogoUrl && (
               <div className="mb-3 pt-0">
                 <img
-                  src={branding.headerLogoUrl || restaurant.logoUrl}
+                  src={branding.headerLogoUrl}
                   alt={restaurant.name}
                   className="max-h-36 sm:max-h-48 md:max-h-56 max-w-full w-auto h-auto object-contain"
                 />

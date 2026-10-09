@@ -439,7 +439,7 @@ export const BrasasLuxuryMenu: React.FC<BrasasLuxuryMenuProps> = ({
               {/* HEADER SECTION: logo grows upwards to the top */}
               <div className="text-center pt-0 pb-5 space-y-1">
                 {(() => {
-                  const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+                  const headerLogo = restaurant.branding?.headerLogoUrl || '';
                   const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
                   const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
                   const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);
