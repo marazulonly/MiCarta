@@ -325,9 +325,40 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  // Support both root (/) and subpath (/micarta) seamlessly in cPanel & AI Studio
+  app.use((req, res, next) => {
+    if (req.url === '/micarta' || req.url === '/micarta/') {
+      req.url = '/';
+    } else if (req.url.startsWith('/micarta/')) {
+      req.url = req.url.replace(/^\/micarta/, '');
+    }
+    next();
+  });
+
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
+  });
+
+  // Direct download endpoints for the compressed deployment packages
+  app.get(['/app_final.tar.gz', '/api/download-final'], (req, res) => {
+    const filePath = path.resolve(__dirname, 'app_final.tar.gz');
+    if (fs.existsSync(filePath)) {
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', 'attachment; filename="app_final.tar.gz"');
+      return res.sendFile(filePath);
+    }
+    res.status(404).send('Archivo app_final.tar.gz no encontrado');
+  });
+
+  app.get(['/app.tar.gz', '/app_cpanel_light.tar.gz', '/api/download-light'], (req, res) => {
+    const filePath = path.resolve(__dirname, 'app_cpanel_light.tar.gz');
+    if (fs.existsSync(filePath)) {
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', 'attachment; filename="app_cpanel_light.tar.gz"');
+      return res.sendFile(filePath);
+    }
+    res.status(404).send('Archivo no encontrado');
   });
 
   // GET: Retrieve latest cloud menu
@@ -1078,7 +1109,8 @@ async function startServer() {
   // Mount Vite or Serve Static Files
   let vite: any = null;
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('dist'));
+    app.use('/micarta', express.static(path.resolve(__dirname, 'dist')));
+    app.use(express.static(path.resolve(__dirname, 'dist')));
   } else {
     vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
@@ -1088,7 +1120,7 @@ async function startServer() {
 
   // Handle HTML document requests with instant branding & logo preload for direct menu links
   app.get('*', async (req, res, next) => {
-    const url = req.originalUrl;
+    const url = req.url;
     // Pass non-HTML requests (API, Vite internal modules, static assets)
     if (
       url.startsWith('/api') ||
