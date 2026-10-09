@@ -78,7 +78,7 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
     } else if (dynamicField === 'restaurant_tagline') {
       resolvedText = restaurant?.tagline || text || 'Alta Cocina & Especialidades';
     } else if (dynamicField === 'restaurant_logo') {
-      resolvedImage = restaurant?.logoUrl || restaurant?.branding?.headerLogoUrl || backgroundImage || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80';
+      resolvedImage = backgroundImage || restaurant?.logoUrl || restaurant?.branding?.headerLogoUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80';
     } else if (dynamicField === 'dish_addons') {
       if (sampleItem?.availableAddons && sampleItem.availableAddons.length > 0) {
         resolvedText = `+ Adicionales: ` + sampleItem.availableAddons.map(a => `${a.name} (+S/ ${a.price.toFixed(2)})`).join(' · ');
@@ -133,10 +133,10 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
     case 'dish_image_container':
     case 'restaurant_logo':
     case 'image_custom': {
-      const imgUrl = resolvedImage || (type === 'dish_image_container' 
+      const imgUrl = backgroundImage || resolvedImage || (type === 'dish_image_container' 
         ? 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'
         : type === 'restaurant_logo'
-        ? (restaurant?.logoUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80')
+        ? (element.backgroundImage || restaurant?.logoUrl || restaurant?.branding?.headerLogoUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80')
         : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80');
 
       return (
