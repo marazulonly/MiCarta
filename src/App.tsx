@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  deleteDoc 
+} from 'firebase/firestore';
+import { db } from './lib/firebase';
+import { 
   CEVICHITO_PLIZ_LOGO_SVG,
   VORAZ_LOGO_SVG,
   RIENDAS_DE_PLATA_LOGO_SVG,
@@ -1274,6 +1283,16 @@ export default function App() {
     showToast(`Plantilla "${updated.name}" actualizada con éxito.`);
   };
 
+  const handleSaveTemplate = async (template: MenuTemplate) => {
+    try {
+      await setDoc(doc(db, 'templates', template.id), template);
+      showToast(`Plantilla "${template.name}" guardada en Firestore.`);
+    } catch (e) {
+      console.error('Error saving template:', e);
+      showToast(`Error al guardar la plantilla.`);
+    }
+  };
+
   const handleDeleteTemplate = (templateId: string) => {
     const targetTmpl = templates.find(t => t.id === templateId);
     setTemplates(prev => prev.filter(t => t.id !== templateId));
@@ -2249,6 +2268,7 @@ export default function App() {
           }}
           onOpenCustomerPreview={(r) => handleOpenCustomerPreview(r)}
           onDeleteTemplate={handleDeleteTemplate}
+          onSaveTemplate={handleSaveTemplate}
           onClose={() => setIsTemplateSplitEditorOpen(false)}
         />
       )}

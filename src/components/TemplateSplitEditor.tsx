@@ -44,6 +44,7 @@ interface TemplateSplitEditorProps {
   onUpdateRestaurant: (updated: Restaurant) => void;
   onOpenCustomerPreview: (restaurant: Restaurant) => void;
   onDeleteTemplate?: (templateId: string) => void;
+  onSaveTemplate?: (template: MenuTemplate) => void;
   onClose?: () => void;
 }
 
@@ -56,6 +57,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   onUpdateRestaurant,
   onOpenCustomerPreview,
   onDeleteTemplate,
+  onSaveTemplate,
   onClose
 }) => {
   // 1. Editor starts BLANK by default (No restaurant loaded initially)
@@ -513,9 +515,10 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     };
 
     setSavedTemplates(prev => [...prev, createdTemplate]);
+    if (onSaveTemplate) onSaveTemplate(createdTemplate);
     setIsSaveTemplateModalOpen(false);
     showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
-  }, [newTemplateName, newTemplateDesc, elements, config, showToast, setSavedTemplates]);
+  }, [newTemplateName, newTemplateDesc, elements, config, showToast, setSavedTemplates, onSaveTemplate]);
 
   const selectedElement = elements.find(e => e.id === selectedId) || null;
 
