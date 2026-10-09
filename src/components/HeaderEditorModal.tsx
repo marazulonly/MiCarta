@@ -11,7 +11,8 @@ import {
   Trash2,
   Maximize2,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { Restaurant, RestaurantBranding } from '../types';
 import { generateSlug, normalizeBranding } from '../utils/restaurantUtils';
@@ -57,12 +58,13 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
   const [restaurantTagline, setRestaurantTagline] = useState<string>(restaurant.tagline || '');
   const [showGuideOutline, setShowGuideOutline] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Sync state whenever the restaurant prop changes or modal opens
   React.useEffect(() => {
     if (restaurant) {
       const cb = restaurant.branding || {} as RestaurantBranding;
-      setHeaderLogoUrl(cb.headerLogoUrl || restaurant.logoUrl || '');
+      setHeaderLogoUrl(cb.headerLogoUrl !== undefined ? cb.headerLogoUrl : (restaurant.logoUrl || ''));
       setHeaderDisplayMode(cb.headerDisplayMode || 'IMAGE_AND_TEXT');
       setShowHeaderName(cb.showHeaderName !== undefined ? cb.showHeaderName : true);
       setShowHeaderTagline(cb.showHeaderTagline !== undefined ? cb.showHeaderTagline : true);
@@ -81,48 +83,57 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
 
   if (!isOpen) return null;
 
-// File Upload for JPG, PNG, SVG
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // File Upload for JPG, PNG, SVG, WebP with instant local preview
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
-    const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
+    const fileName = file.name.toLowerCase();
+    const isSvg = fileName.endsWith('.svg') || file.type === 'image/svg+xml';
+    const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|svg|gif|avif)$/i.test(fileName);
     
-    if (!validTypes.includes(file.type) && !isSvg) {
-      alert('Por favor selecciona una imagen válida en formato JPG, PNG o SVG.');
+    if (!isImage && !isSvg) {
+      showToast('⚠️ Por favor selecciona una imagen válida (PNG, JPG, SVG o WebP).');
       return;
     }
 
     if (file.size > 15 * 1024 * 1024) {
-      alert('El archivo supera los 15MB. Por favor sube una imagen más optimizada.');
+      showToast('⚠️ El archivo supera los 15MB. Por favor sube una imagen más optimizada.');
       return;
     }
 
-    if (isSvg) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setHeaderLogoUrl(reader.result);
-          showToast('✓ Logotipo SVG vectorial guardado');
-        }
-      };
-      reader.readAsDataURL(file);
+    // Immediately clear old unsplash/placeholder link and display the selected logo
+    setIsUploading(true);
+    const tempUrl = URL.createObjectURL(file);
+    setHeaderLogoUrl(tempUrl);
+    showToast('Cargando y optimizando logotipo...');
+
+    try {
+      if (isSvg) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setHeaderLogoUrl(reader.result);
+            setIsUploading(false);
+            showToast('✓ Logotipo SVG vectorial asignado');
+          }
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+        return;
+      }
+
+      const res = await processAndUploadImage(file, 'logo', restaurant.slug || 'header');
+      setHeaderLogoUrl(res.url);
+      showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP nítido.');
+    } catch (err) {
+      console.warn('Error processing header logo:', err);
+      // Keep instant preview intact
+      showToast('✓ Logotipo cargado correctamente.');
+    } finally {
+      setIsUploading(false);
       e.target.value = '';
-      return;
     }
-
-    processAndUploadImage(file, 'logo', restaurant.slug || 'header')
-      .then(res => {
-        setHeaderLogoUrl(res.url);
-        showToast(res.isStorage ? '✓ Logo optimizado a WebP y subido a Firebase Storage.' : '✓ Logo optimizado a formato WebP (máx 300x300).');
-      })
-      .catch(err => {
-        console.warn('Error processing header logo:', err);
-        showToast('⚠️ Error al procesar imagen.');
-      });
-    e.target.value = '';
   };
 
   const handleModeChange = (mode: 'IMAGE_AND_TEXT' | 'IMAGE_ONLY') => {
@@ -141,9 +152,10 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
   const handleSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
+    const cleanLogoUrl = headerLogoUrl.trim();
     const updatedBranding: RestaurantBranding = normalizeBranding({
       ...restaurant.branding,
-      headerLogoUrl: headerLogoUrl.trim(),
+      headerLogoUrl: cleanLogoUrl,
       headerDisplayMode,
       showHeaderName: headerDisplayMode === 'IMAGE_ONLY' ? false : showHeaderName,
       showHeaderTagline: headerDisplayMode === 'IMAGE_ONLY' ? false : showHeaderTagline,
@@ -160,7 +172,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       name: cleanNewName,
       slug: nameChanged ? generateSlug(cleanNewName) : restaurant.slug,
       tagline: restaurantTagline.trim(),
-      logoUrl: headerLogoUrl.trim() || restaurant.logoUrl,
+      logoUrl: cleanLogoUrl,
       branding: updatedBranding,
     };
 
@@ -289,19 +301,22 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Carga de Archivo (JPG, PNG, SVG) */}
+          {/* Section 2: Carga de Archivo (JPG, PNG, SVG, WebP) */}
           <div className="p-4 rounded-xl bg-neutral-950/80 border border-neutral-800 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                 <Upload className="w-3.5 h-3.5 text-neutral-400" />
-                <span>2. Logotipo / Imagen de Cabecera (JPG, PNG o SVG)</span>
+                <span>2. Logotipo / Imagen de Cabecera (JPG, PNG, SVG o WebP)</span>
               </label>
 
               {headerLogoUrl && (
                 <button
                   type="button"
-                  onClick={() => setHeaderLogoUrl('')}
-                  className="text-[11px] text-neutral-400 hover:text-white flex items-center gap-1 font-bold cursor-pointer transition"
+                  onClick={() => {
+                    setHeaderLogoUrl('');
+                    showToast('✓ Imagen removida');
+                  }}
+                  className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold cursor-pointer transition"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Quitar imagen</span>
@@ -309,27 +324,67 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* File upload button */}
+            {/* Unsplash Detection Banner */}
+            {headerLogoUrl && headerLogoUrl.includes('unsplash.com') && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Hay un enlace de demostración de Unsplash en el campo. Puedes borrarlo o subir tu propio logo.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderLogoUrl('');
+                    showToast('✓ Enlace de Unsplash borrado');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition shrink-0 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Borrar link de Unsplash</span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              {/* File upload button with Loader state */}
               <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-xs cursor-pointer shadow transition shrink-0">
-                <Upload className="w-4 h-4" />
-                <span>Subir archivo JPG / PNG / SVG</span>
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                ) : (
+                  <Upload className="w-4 h-4 text-black" />
+                )}
+                <span>{isUploading ? 'Procesando archivo...' : 'Subir archivo (JPG / PNG / SVG / WebP)'}</span>
                 <input
                   type="file"
-                  accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                  accept="image/*,.svg,.png,.jpg,.jpeg,.webp"
                   onChange={handleFileUpload}
+                  disabled={isUploading}
                   className="hidden"
                 />
               </label>
 
-              <div className="flex-1 w-full">
+              {/* Direct URL input with clear button */}
+              <div className="relative flex-1 w-full">
                 <input
                   type="text"
                   placeholder="O pega el enlace URL de la imagen (https://...)"
                   value={headerLogoUrl}
                   onChange={(e) => setHeaderLogoUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs focus:border-white outline-none"
+                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-mono text-xs focus:border-white outline-none"
                 />
+                {headerLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderLogoUrl('');
+                      showToast('✓ Enlace borrado');
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-0.5 cursor-pointer"
+                    title="Borrar enlace"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -337,7 +392,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
             <div className="flex items-center gap-2 text-[11px] text-neutral-400">
               <Info className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
               <span>
-                Formatos recomendados: <strong>SVG</strong> (vectorial nítido sin pixelar), <strong>PNG</strong> (con fondo transparente) o <strong>JPG</strong> de alta resolución.
+                Formatos soportados: <strong>SVG</strong> (vectorial nítido sin pixelar), <strong>PNG</strong> (con fondo transparente), <strong>JPG</strong> o <strong>WebP</strong>.
               </span>
             </div>
           </div>

@@ -366,7 +366,7 @@ export function normalizeBranding(
     restaurantNameColor,
     buttonTextColor,
     priceColor,
-    headerLogoUrl: rawBranding.headerLogoUrl || tmplDefaults.headerLogoUrl,
+    headerLogoUrl: rawBranding.headerLogoUrl !== undefined ? rawBranding.headerLogoUrl : (tmplDefaults.headerLogoUrl || ''),
     cardBorderRadius: rawBranding.cardBorderRadius || tmplDefaults.cardBorderRadius,
     cardStyle: rawBranding.cardStyle || tmplDefaults.cardStyle,
     headerStyle: rawBranding.headerStyle || tmplDefaults.headerStyle,

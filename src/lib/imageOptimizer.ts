@@ -14,7 +14,9 @@ export interface ImageOptimizationOptions {
 function loadImage(source: File | Blob | string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (typeof source === 'string' && !source.startsWith('data:') && !source.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
 
     let objectUrl: string | null = null;
     if (typeof source === 'string') {
@@ -29,7 +31,7 @@ function loadImage(source: File | Blob | string): Promise<HTMLImageElement> {
       resolve(img);
     };
 
-    img.onerror = (e) => {
+    img.onerror = () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       reject(new Error('No se pudo cargar la imagen para procesamiento.'));
     };
@@ -195,11 +197,17 @@ export async function uploadBlobToFirebaseStorage(
 
   try {
     const fileRef = ref(storage, storagePath);
-    const snapshot = await uploadBytes(fileRef, blob, {
-      contentType: 'image/webp',
+    const uploadPromise = uploadBytes(fileRef, blob, {
+      contentType: blob.type || 'image/webp',
       cacheControl: 'public, max-age=31536000'
-    });
-    const downloadUrl = await getDownloadURL(snapshot.ref);
+    }).then(snapshot => getDownloadURL(snapshot.ref));
+
+    // Strict 2.5 second timeout to prevent hanging when Firebase Storage writes aren't authorized or have CORS issues
+    const timeoutPromise = new Promise<null>((_, reject) => 
+      setTimeout(() => reject(new Error('Storage upload timeout')), 2500)
+    );
+
+    const downloadUrl = await Promise.race([uploadPromise, timeoutPromise]);
     return downloadUrl;
   } catch (err) {
     storageAvailableInSession = false;
@@ -211,7 +219,7 @@ export async function uploadBlobToFirebaseStorage(
 /**
  * High-level helper:
  * 1. Optimizes and crops image without deformation according to target type.
- * 2. Converts to WebP.
+ * 2. Converts to WebP (or preserves SVG directly).
  * 3. Uploads to Firebase Storage if available.
  * 4. Fallback to compact WebP dataUrl (only ~20-50 KB, never exceeding 1 MB).
  */
@@ -220,6 +228,21 @@ export async function processAndUploadImage(
   type: 'logo' | 'dish' | 'avatar' | 'cover',
   idHint: string = 'img'
 ): Promise<{ url: string; isStorage: boolean; sizeBytes: number }> {
+  // If it's an SVG file, handle directly without canvas distortion:
+  if (source instanceof File && (source.type === 'image/svg+xml' || source.name.toLowerCase().endsWith('.svg'))) {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Error al leer archivo SVG'));
+      reader.readAsDataURL(source);
+    });
+    return {
+      url: dataUrl,
+      isStorage: false,
+      sizeBytes: source.size
+    };
+  }
+
   const optimized = await optimizeImageByTargetType(source, type);
   const cleanId = idHint.replace(/[^a-zA-Z0-9_-]/g, '_');
   const storagePath = `uploads/${type}s/${cleanId}_${Date.now()}.webp`;

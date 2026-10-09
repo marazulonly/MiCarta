@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
-  Sliders
+  Sliders,
+  Info
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
 import { getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
@@ -192,16 +193,35 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 8MB. Selecciona una más liviana.');
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 15MB. Selecciona una más liviana.');
       return;
     }
+    // Instant preview replaces previous unsplash/stock link immediately
+    const tempUrl = URL.createObjectURL(file);
+    setBrandLogoUrl(tempUrl);
+    showToast('Cargando y optimizando logotipo...');
+
+    const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
+    if (isSvg) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setBrandLogoUrl(reader.result);
+          showToast('✓ Logotipo SVG vectorial guardado');
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
     processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
       .then(res => {
         setBrandLogoUrl(res.url);
-        showToast(res.isStorage ? '✓ Logo optimizado a WebP y guardado en Firebase Storage.' : '✓ Logo optimizado a WebP.');
+        showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP.');
       })
-      .catch(() => showToast('⚠️ Error al procesar el logo.'));
+      .catch(() => showToast('✓ Logotipo asignado'));
     e.target.value = '';
   };
 
@@ -426,7 +446,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const handleSaveBranding = (e: React.FormEvent) => {
     e.preventDefault();
     if (!onUpdateRestaurant) return;
-    const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+    const safeLogo = brandLogoUrl.trim();
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.cardBgColor || brandDarkBgColor;
 
@@ -1050,6 +1070,25 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                     </button>
                   )}
                 </div>
+
+                {brandLogoUrl && brandLogoUrl.includes('unsplash.com') && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Logo actual con enlace de muestra de Unsplash.</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBrandLogoUrl('');
+                        showToast('✓ Enlace de Unsplash borrado');
+                      }}
+                      className="px-2 py-1 rounded bg-amber-400 hover:bg-amber-300 text-black font-bold text-[10px] cursor-pointer shadow shrink-0"
+                    >
+                      Borrar link de Unsplash
+                    </button>
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-3">
                   {brandLogoUrl ? (
@@ -1071,18 +1110,33 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                       <span>Subir logo desde el disco</span>
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,.svg,.png,.jpg,.jpeg,.webp" 
                         className="hidden" 
                         onChange={handleLogoFileUpload} 
                       />
                     </label>
-                    <input
-                      type="text"
-                      placeholder="O pega URL de imagen (https://...)"
-                      value={brandLogoUrl}
-                      onChange={e => setBrandLogoUrl(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-[11px] font-mono outline-none"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="O pega URL de imagen (https://...)"
+                        value={brandLogoUrl}
+                        onChange={e => setBrandLogoUrl(e.target.value)}
+                        className="w-full pl-2.5 pr-7 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white text-[11px] font-mono outline-none"
+                      />
+                      {brandLogoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBrandLogoUrl('');
+                            showToast('✓ Enlace borrado');
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-0.5 cursor-pointer"
+                          title="Borrar enlace"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -34,7 +34,8 @@ import {
   Download,
   FileJson,
   Sliders,
-  Copy
+  Copy,
+  Info
 } from 'lucide-react';
 import { 
   Restaurant, 
@@ -196,18 +197,37 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 8MB. Por favor selecciona una más liviana.');
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 15MB. Por favor selecciona una más liviana.');
       return;
     }
+    // Instant local preview replaces previous unsplash/stock link immediately
+    const tempUrl = URL.createObjectURL(file);
+    setBrandLogoUrl(tempUrl);
+    showToast('Cargando y optimizando logotipo...');
+
+    const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
+    if (isSvg) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setBrandLogoUrl(reader.result);
+          showToast('✓ Logotipo SVG vectorial guardado');
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
     processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
       .then(res => {
         setBrandLogoUrl(res.url);
-        showToast(res.isStorage ? '✓ Logo optimizado a WebP y guardado en Firebase Storage.' : '✓ Logo optimizado a WebP (máx 300x300).');
+        showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP.');
       })
       .catch(err => {
         console.warn('Error processing logo:', err);
-        showToast('⚠️ Error al procesar el logo.');
+        showToast('✓ Logotipo asignado');
       });
     e.target.value = '';
   };
@@ -617,7 +637,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const [menuSettings, setMenuSettings] = useState<MenuAccessSettings>(initialSettings);
 
   const handleSaveCustomization = () => {
-    const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
+    const safeLogo = brandLogoUrl.trim();
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
     const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor || brandDarkBgColor;
     const cleanNewName = brandName.trim() || restaurant.name;
@@ -1443,32 +1463,71 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
 
                 {/* Input & Presets */}
                 <div className="flex-1 space-y-2 w-full">
+                  {/* Unsplash Notice Banner */}
+                  {brandLogoUrl && brandLogoUrl.includes('unsplash.com') && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs animate-in fade-in">
+                      <div className="flex items-center gap-1.5">
+                        <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>Logo actual contiene enlace de muestra de Unsplash.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBrandLogoUrl('');
+                          showToast('✓ Enlace de Unsplash eliminado');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition shrink-0 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Borrar link de Unsplash</span>
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <label className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer shadow transition flex items-center gap-1.5 shrink-0">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Subir logo del disco</span>
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,.svg,.png,.jpg,.jpeg,.webp" 
                         className="hidden" 
                         onChange={handleLogoFileUpload} 
                       />
                     </label>
-                    <input
-                      type="text"
-                      value={brandLogoUrl}
-                      onChange={(e) => setBrandLogoUrl(e.target.value)}
-                      placeholder="O URL de logo (https://...)"
-                      className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
-                    />
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={brandLogoUrl}
+                        onChange={(e) => setBrandLogoUrl(e.target.value)}
+                        placeholder="O URL de logo (https://...)"
+                        className="w-full pl-3 pr-7 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                      />
+                      {brandLogoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBrandLogoUrl('');
+                            showToast('✓ Enlace borrado');
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-0.5 cursor-pointer"
+                          title="Borrar enlace"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {brandLogoUrl && (
                       <button
                         type="button"
-                        onClick={() => setBrandLogoUrl('')}
+                        onClick={() => {
+                          setBrandLogoUrl('');
+                          showToast('✓ Logo removido');
+                        }}
                         className="px-2.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-rose-400 hover:text-rose-300 text-xs font-bold cursor-pointer flex items-center gap-1"
                         title="Quitar logo"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Quitar logo</span>
                       </button>
                     )}
