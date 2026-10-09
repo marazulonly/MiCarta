@@ -12,6 +12,8 @@ import {
 import { db } from './firebase';
 import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
 import { CloudMenuPayload } from './cloudSync';
+import { normalizeBranding } from '../utils/restaurantUtils';
+import { ensureOptimizedImageUrl, needsBase64Migration } from './imageOptimizer';
 
 export function normalizeSlugKey(str?: string): string {
   if (!str) return '';
@@ -49,10 +51,11 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
   if (slugKey) {
     clean.slug = slugKey;
   }
+  clean.branding = normalizeBranding(clean.branding, clean.templateId);
   if (clean.branding && clean.branding.headerLogoUrl && clean.logoUrl && clean.branding.headerLogoUrl === clean.logoUrl) {
     clean.branding = {
       ...clean.branding,
-      headerLogoUrl: '' // Avoid storing 1MB twice in the same Firestore document
+      headerLogoUrl: '' // Avoid storing twice in the same Firestore document
     };
   }
   return clean;
@@ -98,7 +101,7 @@ function isQuotaError(err: any): boolean {
 function handleFirestoreError(err: any, actionName: string): boolean {
   if (isQuotaError(err)) {
     markQuotaExceeded();
-    return true;
+    return false;
   }
   console.warn(`[Firestore] Notice during ${actionName}:`, err);
   return false;
@@ -136,14 +139,13 @@ export async function saveToFirestore(payload: CloudMenuPayload): Promise<boolea
     if (Array.isArray(payload.restaurants)) {
       payload.restaurants.forEach(r => {
         if (!r || (!r.slug && !r.id && !r.name)) return;
-        const primarySlug = normalizeSlugKey(r.slug || r.name || r.id);
-        if (!primarySlug) return;
-        const sanitized = sanitizeRestaurantForFirestore({ ...r, slug: primarySlug });
-        const ref = doc(db, 'restaurants', primarySlug);
-        writePromises.push(setDoc(ref, sanitized, { merge: true }).catch((err) => handleFirestoreError(err, `setDoc restaurant ${primarySlug}`)));
-        if (r.id && r.id !== primarySlug) {
-          writePromises.push(deleteDoc(doc(db, 'restaurants', r.id)).catch(() => {}));
-        }
+        const targetDocId = r.id || normalizeSlugKey(r.slug || r.name);
+        if (!targetDocId) return;
+        const primarySlug = normalizeSlugKey(r.slug || r.name || targetDocId);
+        const sanitized = sanitizeRestaurantForFirestore({ ...r, id: targetDocId, slug: primarySlug });
+        const ref = doc(db, 'restaurants', targetDocId);
+        writePromises.push(setDoc(ref, sanitized, { merge: true }).catch((err) => handleFirestoreError(err, `setDoc restaurant ${targetDocId}`)));
+        // IMPORTANT: NEVER delete original documents to preserve category/dish relationships!
       });
     }
 
@@ -207,25 +209,22 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
       return null;
     }
 
-    const restMapBySlug = new Map<string, Restaurant>();
+    const restMapById = new Map<string, Restaurant>();
     restsSnap?.forEach(d => { 
       const data = d.data() as Restaurant;
       if (data && (data.slug || data.name || data.id)) {
-        const cleanSlug = normalizeSlugKey(data.slug || data.name || data.id);
-        if (!cleanSlug) return;
-        data.slug = cleanSlug;
-        if (!data.id) data.id = cleanSlug;
+        const docId = data.id || d.id;
+        const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
+        data.id = docId;
+        data.slug = cleanSlug || docId;
+        data.branding = normalizeBranding(data.branding, data.templateId);
         if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
           data.branding.headerLogoUrl = data.logoUrl;
         }
-        // Prefer document whose doc.id matches the slug
-        const existing = restMapBySlug.get(cleanSlug);
-        if (!existing || d.id === cleanSlug) {
-          restMapBySlug.set(cleanSlug, data);
-        }
+        restMapById.set(docId, data);
       }
     });
-    const restaurants = Array.from(restMapBySlug.values());
+    const restaurants = Array.from(restMapById.values());
 
     const users: User[] = [];
     usersSnap?.forEach(d => { 
@@ -274,35 +273,23 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
 }
 
 /**
- * Persists an individual restaurant directly into Firestore using slug as primary document ID.
+ * Persists an individual restaurant directly into Firestore using its stable canonical ID.
+ * NEVER deletes original documents so that categories, items, and owners never lose references.
  */
-export async function saveRestaurantToFirestore(restaurant: Restaurant, previousSlugOrId?: string): Promise<boolean> {
+export async function saveRestaurantToFirestore(restaurant: Restaurant, _previousSlugOrId?: string): Promise<boolean> {
   if (isBypassingFirestore()) return true;
   if (!restaurant || (!restaurant.slug && !restaurant.id && !restaurant.name)) return false;
   try {
-    const primarySlug = normalizeSlugKey(restaurant.slug || restaurant.name || restaurant.id);
-    if (!primarySlug) return false;
-    const sanitized = sanitizeRestaurantForFirestore({ ...restaurant, slug: primarySlug });
-    const ref = doc(db, 'restaurants', primarySlug);
+    const targetDocId = restaurant.id || normalizeSlugKey(restaurant.slug || restaurant.name);
+    if (!targetDocId) return false;
+    const primarySlug = normalizeSlugKey(restaurant.slug || restaurant.name || targetDocId);
+    const sanitized = sanitizeRestaurantForFirestore({
+      ...restaurant,
+      id: targetDocId,
+      slug: primarySlug || targetDocId
+    });
+    const ref = doc(db, 'restaurants', targetDocId);
     await setDoc(ref, sanitized, { merge: true });
-
-    // Clean up any legacy document keyed by old ID or old slug so there are never duplicates
-    const cleanupPromises: Promise<any>[] = [];
-    if (restaurant.id && restaurant.id !== primarySlug) {
-      cleanupPromises.push(deleteDoc(doc(db, 'restaurants', restaurant.id)).catch(() => {}));
-    }
-    if (previousSlugOrId) {
-      const normPrev = normalizeSlugKey(previousSlugOrId);
-      if (normPrev && normPrev !== primarySlug) {
-        cleanupPromises.push(deleteDoc(doc(db, 'restaurants', normPrev)).catch(() => {}));
-      }
-      if (previousSlugOrId !== primarySlug) {
-        cleanupPromises.push(deleteDoc(doc(db, 'restaurants', previousSlugOrId)).catch(() => {}));
-      }
-    }
-    if (cleanupPromises.length > 0) {
-      await Promise.all(cleanupPromises);
-    }
     return true;
   } catch (err) {
     return handleFirestoreError(err, 'saveRestaurantToFirestore');
@@ -627,7 +614,8 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
 
     // If published_menus exists and has valid restaurant + items, return immediately!
     if (pubData && pubData.restaurant && Array.isArray(pubData.items) && pubData.items.length > 0) {
-      if (pubData.restaurant.logoUrl && pubData.restaurant.branding && !pubData.restaurant.branding.headerLogoUrl) {
+      pubData.restaurant.branding = normalizeBranding(pubData.restaurant.branding, pubData.restaurant.templateId);
+      if (pubData.restaurant.logoUrl && !pubData.restaurant.branding.headerLogoUrl) {
         pubData.restaurant.branding.headerLogoUrl = pubData.restaurant.logoUrl;
       }
       return pubData;
@@ -653,7 +641,8 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
 
     const activeRest: Restaurant | null = matchedRest || pubData?.restaurant || null;
     if (activeRest) {
-      if (activeRest.logoUrl && activeRest.branding && !activeRest.branding.headerLogoUrl) {
+      activeRest.branding = normalizeBranding(activeRest.branding, activeRest.templateId);
+      if (activeRest.logoUrl && !activeRest.branding.headerLogoUrl) {
         activeRest.branding.headerLogoUrl = activeRest.logoUrl;
       }
       const primarySlug = normalizeSlugKey(activeRest.slug || activeRest.name || activeRest.id);
@@ -731,17 +720,15 @@ export function subscribeToFirestoreRealtime(
         snap.forEach(d => {
           const data = d.data() as Restaurant;
           if (data && (data.slug || data.name || data.id)) {
-            const cleanSlug = normalizeSlugKey(data.slug || data.name || data.id);
-            if (!cleanSlug) return;
-            data.slug = cleanSlug;
-            if (!data.id) data.id = cleanSlug;
+            const docId = data.id || d.id;
+            const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
+            data.id = docId;
+            data.slug = cleanSlug || docId;
+            data.branding = normalizeBranding(data.branding, data.templateId);
             if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
               data.branding.headerLogoUrl = data.logoUrl;
             }
-            const existing = restMap.get(cleanSlug);
-            if (!existing || d.id === cleanSlug) {
-              restMap.set(cleanSlug, data);
-            }
+            restMap.set(docId, data);
           }
         });
         onUpdate({ restaurants: Array.from(restMap.values()) });

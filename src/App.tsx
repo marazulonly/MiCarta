@@ -34,7 +34,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
-import { getSafeActiveRestaurant, getSafeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, normalizeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { saveUserToFirestore, clearAllDatabaseCollections, deletePublishedMenuFromFirestore } from './lib/firestoreSync';
 import {
@@ -142,10 +142,7 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       occupancyRate: 0,
       ...(r.metrics || {})
     };
-    const safeBranding: RestaurantBranding = {
-      ...DEFAULT_BRANDING,
-      ...(r.branding || {})
-    };
+    const safeBranding: RestaurantBranding = normalizeBranding(r.branding, r.templateId);
     if (r.logoUrl && !safeBranding.headerLogoUrl) {
       safeBranding.headerLogoUrl = r.logoUrl;
     }
@@ -871,15 +868,6 @@ export default function App() {
       if (targetUser) autoSyncUser(targetUser).catch(() => {});
     }
 
-    // Full atomic persistence to server disk and remote backup
-    saveFullCloudMenu({
-      restaurants: nextRestaurants,
-      categories: nextCategories,
-      items: menuItemsRef.current,
-      users: nextUsers,
-      orders: ordersRef.current
-    }).catch(() => {});
-    
     triggerCloudUpdate(newRestaurant.id, newRestaurant, nextCategories.filter(c => c.restaurantId === newRestaurant.id), []);
 
     setSelectedRestaurantId(newRestaurant.id);
@@ -1008,13 +996,6 @@ export default function App() {
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedWithCleanSlug.id);
     publishRestaurantMenu(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems).catch(() => {});
     triggerCloudUpdate(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems);
-    saveFullCloudMenu({
-      restaurants: nextRestaurants,
-      categories: categoriesRef.current,
-      items: menuItemsRef.current,
-      users: nextUsers,
-      orders: ordersRef.current
-    }).catch(() => {});
 
     showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
   };
@@ -1096,8 +1077,7 @@ export default function App() {
     const nextItems = menuItemsRef.current.map(i => i.id === updated.id ? updated : i);
     menuItemsRef.current = nextItems;
     setMenuItems(nextItems);
-    autoSyncMenuItem(updated);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
+    autoSyncMenuItem(updated).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === updated.restaurantId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.restaurantId);
     const rest = restaurantsRef.current.find(r => r.id === updated.restaurantId);
@@ -1110,8 +1090,7 @@ export default function App() {
     const nextItems = [newItem, ...menuItemsRef.current.filter(i => i.id !== newItem.id)];
     menuItemsRef.current = nextItems;
     setMenuItems(nextItems);
-    autoSyncMenuItem(newItem);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: nextItems, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
+    autoSyncMenuItem(newItem).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === newItem.restaurantId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === newItem.restaurantId);
     const rest = restaurantsRef.current.find(r => r.id === newItem.restaurantId);
@@ -1125,8 +1104,7 @@ export default function App() {
     const updatedItems = menuItemsRef.current.filter(i => i.id !== itemId);
     menuItemsRef.current = updatedItems;
     setMenuItems(updatedItems);
-    autoDeleteMenuItem(itemId);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: updatedItems, users: usersRef.current, orders: ordersRef.current });
+    autoDeleteMenuItem(itemId).catch(() => {});
     if (targetItem) {
       const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
       const restCats = categoriesRef.current.filter(c => c.restaurantId === targetItem.restaurantId);
@@ -1144,7 +1122,7 @@ export default function App() {
     const updatedList = [...otherCats, ...reorderedCats];
     categoriesRef.current = updatedList;
     setCategories(updatedList);
-    saveFullCloudMenu({ categories: updatedList, restaurants: restaurantsRef.current, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
+    reorderedCats.forEach(cat => autoSyncCategory(cat).catch(() => {}));
     const restCats = updatedList.filter(c => c.restaurantId === restId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === restId);
     const rest = restaurantsRef.current.find(r => r.id === restId);
@@ -1165,7 +1143,7 @@ export default function App() {
     const updatedList = [...otherItems, ...reorderedItems, ...existingRestItemsNotInReordered];
     menuItemsRef.current = updatedList;
     setMenuItems(updatedList);
-    saveFullCloudMenu({ items: updatedList, restaurants: restaurantsRef.current, categories: categoriesRef.current, users: usersRef.current, orders: ordersRef.current });
+    reorderedItems.forEach(item => autoSyncMenuItem(item).catch(() => {}));
     const restItems = updatedList.filter(i => i.restaurantId === restId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === restId);
     const rest = restaurantsRef.current.find(r => r.id === restId);
@@ -1178,8 +1156,7 @@ export default function App() {
     const nextCategories = [...categoriesRef.current.filter(c => c.id !== newCategory.id), newCategory];
     categoriesRef.current = nextCategories;
     setCategories(nextCategories);
-    autoSyncCategory(newCategory);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
+    autoSyncCategory(newCategory).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === newCategory.restaurantId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === newCategory.restaurantId);
     const rest = restaurantsRef.current.find(r => r.id === newCategory.restaurantId);
@@ -1192,8 +1169,7 @@ export default function App() {
     const nextCategories = categoriesRef.current.map(c => c.id === updatedCategory.id ? updatedCategory : c);
     categoriesRef.current = nextCategories;
     setCategories(nextCategories);
-    autoSyncCategory(updatedCategory);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: nextCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current }).catch(() => {});
+    autoSyncCategory(updatedCategory).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === updatedCategory.restaurantId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedCategory.restaurantId);
     const rest = restaurantsRef.current.find(r => r.id === updatedCategory.restaurantId);
@@ -1207,8 +1183,7 @@ export default function App() {
     const updatedCategories = categoriesRef.current.filter(c => c.id !== categoryId);
     categoriesRef.current = updatedCategories;
     setCategories(updatedCategories);
-    autoDeleteCategory(categoryId);
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: updatedCategories, items: menuItemsRef.current, users: usersRef.current, orders: ordersRef.current });
+    autoDeleteCategory(categoryId).catch(() => {});
     if (targetCat) {
       const restCats = updatedCategories.filter(c => c.restaurantId === targetCat.restaurantId);
       const restItems = menuItemsRef.current.filter(i => i.restaurantId === targetCat.restaurantId);
@@ -1223,7 +1198,6 @@ export default function App() {
     usersRef.current = nextUsers;
     setUsers(nextUsers);
     autoSyncUser(newUser).catch(() => {});
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: menuItemsRef.current, users: nextUsers, orders: ordersRef.current });
     showToast(`✓ Usuario "${newUser.name}" (DNI ${newUser.dni}) guardado permanentemente.`);
   };
 
@@ -1238,7 +1212,6 @@ export default function App() {
       } catch {}
     }
     autoSyncUser(updated).catch(() => {});
-    saveFullCloudMenu({ restaurants: restaurantsRef.current, categories: categoriesRef.current, items: menuItemsRef.current, users: nextUsers, orders: ordersRef.current });
     showToast(`✓ Usuario "${updated.name}" actualizado y guardado permanentemente.`);
   };
 
@@ -1281,14 +1254,6 @@ export default function App() {
     // Call direct Cloud & Firestore deletion
     autoDeleteUser(userId).catch(() => {});
     if (targetDni) autoDeleteUser(targetDni).catch(() => {});
-
-    saveFullCloudMenu({
-      restaurants: nextRestaurants,
-      categories: categoriesRef.current,
-      items: menuItemsRef.current,
-      users: nextUsers,
-      orders: ordersRef.current
-    }).catch(() => {});
     showToast(`✓ Usuario ${targetUser ? `"${targetUser.name}"` : ''} eliminado permanentemente.`);
   };
 
@@ -1298,22 +1263,26 @@ export default function App() {
     restCategories: MenuCategory[],
     restItems: MenuItem[]
   ) => {
-    const filterCats = restCategories.filter(c => c.restaurantId === restaurantId);
-    const filterItems = restItems.filter(i => i.restaurantId === restaurantId);
-    const res = await publishRestaurantMenu(restaurantId, restaurant, filterCats, filterItems, currentUser?.name || 'Administrador');
+    const normalizedRest: Restaurant = {
+      ...restaurant,
+      branding: normalizeBranding(restaurant.branding, restaurant.templateId)
+    };
+    const filterCats = restCategories.filter(c => c.restaurantId === restaurantId || normalizeSlug(c.restaurantId) === normalizeSlug(restaurant.slug));
+    const filterItems = restItems.filter(i => i.restaurantId === restaurantId || normalizeSlug(i.restaurantId) === normalizeSlug(restaurant.slug));
+    const res = await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador');
     if (res.success) {
       const newSnapshot = {
         published: true,
         version: res.version || 1,
         publishedAt: res.publishedAt || new Date().toISOString(),
-        restaurant,
+        restaurant: normalizedRest,
         categories: filterCats,
         items: filterItems
       };
       setPublishedMenuData(newSnapshot);
-      setRestaurants(prev => prev.map(r => r.id === restaurantId ? restaurant : r));
+      setRestaurants(prev => prev.map(r => r.id === restaurantId ? normalizedRest : r));
       if (previewRestaurant && previewRestaurant.id === restaurantId) {
-        setPreviewRestaurant(restaurant);
+        setPreviewRestaurant(normalizedRest);
       }
       showToast(`✓ ¡Carta oficial de "${restaurant.name}" publicada con éxito (Versión ${res.version})!`);
     } else {

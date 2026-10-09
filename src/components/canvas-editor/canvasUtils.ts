@@ -1,5 +1,6 @@
 import { CanvasElement, CanvasConfig, SnapGuide } from './types';
 import { Restaurant, RestaurantBranding, MenuItem, MenuCategory } from '../../types';
+import { normalizeBranding } from '../../utils/restaurantUtils';
 
 export const DEFAULT_CANVAS_WIDTH = 800;
 export const DEFAULT_CANVAS_HEIGHT = 1500;
@@ -1255,7 +1256,7 @@ export function extractBrandingFromCanvas(
   const buttonColor = buttonElem?.backgroundColor || primaryColor;
   const buttonTextColor = buttonElem?.textColor || '#000000';
 
-  return {
+  return normalizeBranding({
     ...currentBranding,
     primaryColor,
     secondaryColor: currentBranding.secondaryColor || primaryColor,
@@ -1282,5 +1283,5 @@ export function extractBrandingFromCanvas(
       backgroundColor: config.backgroundColor,
       backgroundImage: config.backgroundImage
     }
-  };
+  });
 }

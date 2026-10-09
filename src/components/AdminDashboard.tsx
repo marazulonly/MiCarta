@@ -26,7 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
-import { generateSlug, getTemplateDefaultBranding } from '../utils/restaurantUtils';
+import { generateSlug, getTemplateDefaultBranding, normalizeBranding } from '../utils/restaurantUtils';
 
 interface AdminDashboardProps {
   restaurants: Restaurant[];
@@ -305,16 +305,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const prevOwnerId = previousRest?.ownerId;
     const newOwnerId = editingRestaurant.ownerId;
-    const templateChanged = previousRest && previousRest.templateId !== editingRestaurant.templateId;
-    const templateBranding = getTemplateDefaultBranding(editingRestaurant.templateId);
+    const safeBranding = normalizeBranding(editingRestaurant.branding, editingRestaurant.templateId);
 
     const updatedRest: Restaurant = {
       ...editingRestaurant,
       name: cleanName,
       slug: cleanSlug,
-      branding: templateChanged 
-        ? { ...templateBranding, ...editingRestaurant.branding, darkBgColor: templateBranding.darkBgColor, cardBgColor: templateBranding.cardBgColor, textColor: templateBranding.textColor, buttonColor: templateBranding.buttonColor }
-        : (editingRestaurant.branding || templateBranding)
+      branding: safeBranding
     };
 
     onUpdateRestaurant(updatedRest);

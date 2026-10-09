@@ -12,6 +12,7 @@ import {
   Hash
 } from 'lucide-react';
 import { User } from '../types';
+import { processAndUploadImage } from '../lib/imageOptimizer';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -125,74 +126,26 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMsg('La imagen excede 8MB. Selecciona una más liviana.');
+      return;
+    }
+
     setIsProcessingImage(true);
     setErrorMsg(null);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          
-          // Force EXACT 2:3 aspect ratio (e.g., standard 400x600 px)
-          const targetWidth = 400;
-          const targetHeight = 600;
-          canvas.width = targetWidth;
-          canvas.height = targetHeight;
-          const ctx = canvas.getContext('2d');
-
-          if (ctx) {
-            const imgRatio = img.width / img.height;
-            const targetRatio = 2 / 3;
-            
-            let sx = 0;
-            let sy = 0;
-            let sWidth = img.width;
-            let sHeight = img.height;
-
-            if (imgRatio > targetRatio) {
-              // Image is wider than 2:3, crop sides
-              sWidth = img.height * targetRatio;
-              sx = (img.width - sWidth) / 2;
-            } else if (imgRatio < targetRatio) {
-              // Image is taller than 2:3, crop top and bottom
-              sHeight = img.width / targetRatio;
-              sy = (img.height - sHeight) / 2;
-            }
-
-            // Draw center-cropped image
-            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-            
-            // Export as JPEG
-            const base64Jpeg = canvas.toDataURL('image/jpeg', 0.88);
-            
-            // Format to 72 DPI explicitly in binary JFIF with safe fallback
-            let formatted = base64Jpeg;
-            try {
-              formatted = formatJpegTo72Dpi(base64Jpeg);
-            } catch {
-              formatted = base64Jpeg;
-            }
-            
-            setAvatarPreview(formatted);
-            setSuccessMsg('Foto de perfil actualizada con éxito.');
-          } else {
-            setErrorMsg('No se pudo procesar la imagen.');
-          }
-        } catch (err: any) {
-          setErrorMsg(`Error al formatear la imagen: ${err?.message || err}`);
-        } finally {
-          setIsProcessingImage(false);
-        }
-      };
-      img.onerror = () => {
-        setErrorMsg('Error al cargar la imagen seleccionada.');
+    processAndUploadImage(file, 'avatar', currentUser?.dni || 'user')
+      .then(res => {
+        setAvatarPreview(res.url);
+        setSuccessMsg(res.isStorage ? '✓ Foto de perfil subida a Firebase Storage (WebP).' : '✓ Foto de perfil optimizada a WebP.');
+      })
+      .catch(err => {
+        console.warn('Error processing profile avatar:', err);
+        setErrorMsg('Error al procesar la foto de perfil.');
+      })
+      .finally(() => {
         setIsProcessingImage(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      });
   };
 
   const handleSave = (e: React.FormEvent) => {

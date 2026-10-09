@@ -22,6 +22,7 @@ import {
   Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
+import { getSafeBranding } from '../utils/restaurantUtils';
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 import { ScheduleViewModal } from './ScheduleViewModal';
@@ -115,17 +116,7 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
 
   if (!isOpen || !restaurant) return null;
 
-  const branding = restaurant.branding || {
-    primaryColor: '#EF4444',
-    secondaryColor: '#F59E0B',
-    accentColor: '#EF4444',
-    darkBgColor: '#09090B',
-    cardBgColor: '#18181B',
-    textColor: '#FFFFFF',
-    fontDisplay: 'Syne, sans-serif',
-    buttonColor: '#EF4444',
-    buttonTextColor: '#FFFFFF'
-  };
+  const branding = getSafeBranding(restaurant);
 
   const primaryColor = branding.buttonColor || branding.primaryColor || '#EF4444';
   const buttonTextColor = branding.buttonTextColor || '#FFFFFF';
@@ -274,7 +265,13 @@ export const NeonStreetMenu: React.FC<NeonStreetMenuProps> = ({
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white truncate">
+                  <h1 
+                    style={{
+                      color: branding.restaurantNameColor || textColor,
+                      fontFamily: branding.restaurantNameFont || branding.fontDisplay || undefined
+                    }}
+                    className="text-xl sm:text-2xl font-black tracking-tight truncate"
+                  >
                     {restaurant.name}
                   </h1>
                   <span 

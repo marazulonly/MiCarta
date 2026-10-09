@@ -21,6 +21,7 @@ import {
   Eye
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
+import { getSafeBranding } from '../utils/restaurantUtils';
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 import { ScheduleViewModal } from './ScheduleViewModal';
@@ -132,8 +133,8 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
   // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
-  const branding = restaurant.branding;
-  const brandingBg = branding?.darkBgColor || branding?.backgroundColor;
+  const branding = getSafeBranding(restaurant);
+  const brandingBg = branding.darkBgColor || branding.backgroundColor;
 
   // Dynamic Palette Colors from branding with fallback defaults
   const COLOR_BG = branding?.darkBgColor || '#EAEBDC';

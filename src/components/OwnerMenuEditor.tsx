@@ -44,7 +44,8 @@ import {
   MenuAccessSettings,
   MenuTemplate
 } from '../types';
-import { getSafeBranding, getSafeMenuAccessSettings, generateSlug } from '../utils/restaurantUtils';
+import { getSafeBranding, getSafeMenuAccessSettings, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { processAndUploadImage } from '../lib/imageOptimizer';
 import { downloadRestaurantJSON, parseImportedJSON } from '../lib/jsonExportImport';
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
@@ -154,70 +155,80 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La imagen es demasiado pesada. Elige una foto de menos de 5MB.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La imagen es demasiado pesada. Elige una foto de menos de 8MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (result) {
-        callback(result);
-        showToast('✓ Imagen cargada exitosamente desde el disco');
-      }
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'dish', 'dish')
+      .then(res => {
+        callback(res.url);
+        showToast(res.isStorage ? '✓ Foto guardada en Firebase Storage y optimizada a WebP.' : '✓ Foto optimizada a formato WebP.');
+      })
+      .catch(err => {
+        console.warn('Error processing dish image:', err);
+        showToast('⚠️ Error al procesar imagen.');
+      });
   };
 
   // Find linked system template (reference only - never mutated)
   const baseSystemTemplate = templates.find(t => t.id === restaurant?.templateId) || templates[0];
+
+  const safeInitialBranding = getSafeBranding(restaurant);
 
   // Restaurant Brand and Visual Customization State (Isolated per restaurant)
   const [brandName, setBrandName] = useState(restaurant?.name || '');
   const [brandTagline, setBrandTagline] = useState(restaurant?.tagline || '');
   const [brandLogoUrl, setBrandLogoUrl] = useState(restaurant?.logoUrl || '');
   const [brandCoverUrl, setBrandCoverUrl] = useState(restaurant?.coverUrl || '');
-  const [brandPrimaryColor, setBrandPrimaryColor] = useState(restaurant?.branding?.primaryColor || '#D4AF37');
-  const [brandDarkBgColor, setBrandDarkBgColor] = useState(restaurant?.branding?.darkBgColor || '#071A14');
-  const [brandSecondaryColor, setBrandSecondaryColor] = useState(restaurant?.branding?.secondaryColor || '#FFFFFF');
-  const [brandButtonColor, setBrandButtonColor] = useState(restaurant?.branding?.buttonColor || restaurant?.branding?.accentColor || '#38bdf8');
-  const [brandDishNameFont, setBrandDishNameFont] = useState(restaurant?.branding?.dishNameFont || 'inherit');
-  const [brandDishDescFont, setBrandDishDescFont] = useState(restaurant?.branding?.dishDescFont || 'inherit');
-  const [brandDishPriceFont, setBrandDishPriceFont] = useState(restaurant?.branding?.dishPriceFont || 'monospace');
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState(safeInitialBranding.primaryColor || '#D4AF37');
+  const [brandDarkBgColor, setBrandDarkBgColor] = useState(safeInitialBranding.darkBgColor || '#071A14');
+  const [brandDishCardBgColor, setBrandDishCardBgColor] = useState(safeInitialBranding.dishCardBgColor || safeInitialBranding.cardBgColor || '');
+  const [brandSecondaryColor, setBrandSecondaryColor] = useState(safeInitialBranding.secondaryColor || '#FFFFFF');
+  const [brandButtonColor, setBrandButtonColor] = useState(safeInitialBranding.buttonColor || safeInitialBranding.accentColor || '#38bdf8');
+  const [brandButtonTextColor, setBrandButtonTextColor] = useState(safeInitialBranding.buttonTextColor || '#000000');
+  const [brandTextColor, setBrandTextColor] = useState(safeInitialBranding.textColor || '#FFFFFF');
+  const [brandRestaurantNameColor, setBrandRestaurantNameColor] = useState(safeInitialBranding.restaurantNameColor || '#FFFFFF');
+  const [brandDishNameFont, setBrandDishNameFont] = useState(safeInitialBranding.dishNameFont || 'inherit');
+  const [brandDishDescFont, setBrandDishDescFont] = useState(safeInitialBranding.dishDescFont || 'inherit');
+  const [brandDishPriceFont, setBrandDishPriceFont] = useState(safeInitialBranding.dishPriceFont || 'monospace');
 
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 5MB. Por favor selecciona una más liviana.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 8MB. Por favor selecciona una más liviana.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setBrandLogoUrl(reader.result);
-        showToast('✓ Logo cargado desde el disco.');
-      }
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
+      .then(res => {
+        setBrandLogoUrl(res.url);
+        showToast(res.isStorage ? '✓ Logo optimizado a WebP y guardado en Firebase Storage.' : '✓ Logo optimizado a WebP (máx 300x300).');
+      })
+      .catch(err => {
+        console.warn('Error processing logo:', err);
+        showToast('⚠️ Error al procesar el logo.');
+      });
+    e.target.value = '';
   };
 
   const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La imagen excede 5MB.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La imagen excede 8MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setBrandCoverUrl(reader.result);
-        showToast('✓ Portada cargada desde el disco.');
-      }
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'cover', restaurant.slug || 'cover')
+      .then(res => {
+        setBrandCoverUrl(res.url);
+        showToast(res.isStorage ? '✓ Portada optimizada y guardada en Firebase Storage.' : '✓ Portada optimizada a WebP.');
+      })
+      .catch(err => {
+        console.warn('Error processing cover:', err);
+        showToast('⚠️ Error al procesar portada.');
+      });
+    e.target.value = '';
   };
 
   // Quick edit modal states for instant price & photo tweaking
@@ -265,7 +276,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     { label: 'Lomo Saltado', url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80' },
   ];
 
-  // Synchronize state when restaurant prop changes
+  // Synchronize state when restaurant prop or its branding changes
   useEffect(() => {
     if (!restaurant) return;
     const branding = getSafeBranding(restaurant);
@@ -275,13 +286,25 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     setBrandCoverUrl(restaurant.coverUrl || '');
     setBrandPrimaryColor(branding.primaryColor || '#D4AF37');
     setBrandDarkBgColor(branding.darkBgColor || '#071A14');
+    setBrandDishCardBgColor(branding.dishCardBgColor || branding.cardBgColor || '');
     setBrandSecondaryColor(branding.secondaryColor || '#FFFFFF');
     setBrandButtonColor(branding.buttonColor || branding.accentColor || '#38bdf8');
+    setBrandButtonTextColor(branding.buttonTextColor || '#000000');
+    setBrandTextColor(branding.textColor || '#FFFFFF');
+    setBrandRestaurantNameColor(branding.restaurantNameColor || '#FFFFFF');
     setBrandDishNameFont(branding.dishNameFont || 'inherit');
     setBrandDishDescFont(branding.dishDescFont || 'inherit');
     setBrandDishPriceFont(branding.dishPriceFont || 'monospace');
     setMenuSettings(getSafeMenuAccessSettings(restaurant));
-  }, [restaurant?.id]);
+  }, [
+    restaurant?.id,
+    restaurant?.templateId,
+    restaurant?.branding?.darkBgColor,
+    restaurant?.branding?.buttonColor,
+    restaurant?.branding?.primaryColor,
+    restaurant?.branding?.dishCardBgColor,
+    restaurant?.branding?.textColor
+  ]);
 
   // Filter & sort categories and items for this restaurant
   const restaurantCategories = [...categories.filter(c => c.restaurantId === restaurant.id)]
@@ -596,6 +619,7 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
   const handleSaveCustomization = () => {
     const safeLogo = brandLogoUrl.trim() || restaurant.branding?.headerLogoUrl || restaurant.logoUrl;
     const safeCover = brandCoverUrl.trim() || restaurant.coverUrl;
+    const safeCardBg = brandDishCardBgColor.trim() || restaurant.branding?.dishCardBgColor || restaurant.branding?.cardBgColor || brandDarkBgColor;
     const cleanNewName = brandName.trim() || restaurant.name;
     const nameChanged = cleanNewName.toLowerCase() !== (restaurant.name || '').trim().toLowerCase();
     const updatedRest: Restaurant = {
@@ -605,20 +629,27 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
       tagline: brandTagline.trim(),
       logoUrl: safeLogo,
       coverUrl: safeCover,
-      branding: {
+      branding: normalizeBranding({
         ...restaurant.branding,
         headerLogoUrl: safeLogo,
-        primaryColor: brandPrimaryColor,
+        primaryColor: brandButtonColor,
         darkBgColor: brandDarkBgColor,
+        backgroundColor: brandDarkBgColor,
+        cardBgColor: safeCardBg,
+        dishCardBgColor: safeCardBg,
         secondaryColor: brandSecondaryColor,
         buttonColor: brandButtonColor,
+        buttonTextColor: brandButtonTextColor,
         accentColor: brandButtonColor,
+        textColor: brandTextColor,
+        restaurantNameColor: brandRestaurantNameColor,
         dishNameFont: brandDishNameFont,
         dishDescFont: brandDishDescFont,
         dishPriceFont: brandDishPriceFont,
-      },
+      }, restaurant.templateId),
       menuAccessSettings: {
         ...menuSettings,
+        presentialBgValue: menuSettings.presentialBgType === 'theme' ? brandDarkBgColor : menuSettings.presentialBgValue,
         enableDineIn: menuSettings.enableDineIn !== false,
         enableDelivery: menuSettings.enableDelivery !== false,
       },
@@ -1614,6 +1645,27 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
               </div>
 
               <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Color de Fondo de la Ficha del Plato
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandDishCardBgColor && brandDishCardBgColor !== 'transparent' ? brandDishCardBgColor : brandDarkBgColor}
+                    onChange={(e) => setBrandDishCardBgColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={brandDishCardBgColor}
+                    onChange={(e) => setBrandDishCardBgColor(e.target.value)}
+                    placeholder="Ej: #18181B o transparent"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="text-xs font-bold text-amber-300 block mb-1">
                   Color de Botones y Borde de Platos
                 </label>
@@ -1621,19 +1673,45 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
                   <input
                     type="color"
                     value={brandButtonColor}
-                    onChange={(e) => setBrandButtonColor(e.target.value)}
+                    onChange={(e) => {
+                      setBrandButtonColor(e.target.value);
+                      setBrandPrimaryColor(e.target.value);
+                    }}
                     className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
                   />
                   <input
                     type="text"
                     value={brandButtonColor}
-                    onChange={(e) => setBrandButtonColor(e.target.value)}
+                    onChange={(e) => {
+                      setBrandButtonColor(e.target.value);
+                      setBrandPrimaryColor(e.target.value);
+                    }}
                     className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
                   />
                 </div>
                 <span className="text-[10px] text-neutral-400 block mt-0.5">
                   El borde de cada recuadro de plato coincidirá con este color.
                 </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-200 block mb-1">
+                  Color de Textos (Platos y Descripciones)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={brandTextColor}
+                    onChange={(e) => setBrandTextColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-neutral-700 bg-black cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={brandTextColor}
+                    onChange={(e) => setBrandTextColor(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-black border border-neutral-800 text-white text-xs font-mono focus:border-amber-400 transition"
+                  />
+                </div>
               </div>
             </div>
 

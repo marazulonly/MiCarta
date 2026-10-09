@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { CanvasElement, CanvasConfig, CANVAS_FONTS, PRESET_COLOR_SWATCHES } from './types';
 import { Restaurant } from '../../types';
+import { processAndUploadImage } from '../../lib/imageOptimizer';
 
 interface PropertiesInspectorProps {
   selectedElement: CanvasElement | null;
@@ -374,25 +375,26 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
           </div>
 
           <div>
-            <label className="text-[10px] text-neutral-600 font-mono block mb-1">Cargar Imagen Local (JPG, PNG, SVG)</label>
+            <label className="text-[10px] text-neutral-600 font-mono block mb-1">Cargar Imagen Local (JPG, PNG, SVG, WebP)</label>
             <input
               type="file"
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (event) => {
-                    const base64 = event.target?.result as string;
-                    if (base64) {
+                  const targetType = selectedElement.type === 'restaurant_logo' ? 'logo' : 'dish';
+                  processAndUploadImage(file, targetType, selectedElement.id || 'canvas_img')
+                    .then(res => {
                       onUpdateElement({
                         ...selectedElement,
-                        backgroundImage: base64
+                        backgroundImage: res.url
                       });
-                    }
-                  };
-                  reader.readAsDataURL(file);
+                    })
+                    .catch(err => {
+                      console.warn('Error optimizing canvas image:', err);
+                    });
                 }
+                e.target.value = '';
               }}
               className="w-full text-[11px] text-neutral-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
             />

@@ -23,6 +23,7 @@ import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../typ
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 import { ScheduleViewModal } from './ScheduleViewModal';
+import { getSafeBranding } from '../utils/restaurantUtils';
 
 interface CriolloChalkboardMenuProps {
   isOpen: boolean;
@@ -98,10 +99,12 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
 
   if (!isOpen || !restaurant) return null;
 
+  const branding = getSafeBranding(restaurant);
+
   // Background customization from settings or branding
   const accessSettings = restaurant.menuAccessSettings;
   const isSeparate = accessSettings?.menuMode === 'SEPARATE';
-  const brandingBg = restaurant.branding?.darkBgColor || restaurant.branding?.backgroundColor;
+  const brandingBg = branding.darkBgColor || branding.backgroundColor;
   
   let chalkboardStyle: React.CSSProperties = brandingBg
     ? { backgroundColor: brandingBg, backgroundImage: 'none' }
@@ -486,15 +489,20 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
             </div>
 
             {/* Categorized Chalkboard Lists */}
-            {groupedCategories.map(cat => (
+            {groupedCategories.map(cat => {
+              const catAccentColor = branding.buttonColor || branding.accentColor || branding.primaryColor || '#f59e0b';
+              return (
               <div key={cat.id} className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="h-[2px] w-6 bg-amber-400" />
-                    <h2 className="text-base font-black text-amber-300 uppercase tracking-wider font-serif">
+                    <span className="h-[2px] w-6" style={{ backgroundColor: catAccentColor }} />
+                    <h2 
+                      style={{ color: catAccentColor, fontFamily: branding.fontDisplay || undefined }}
+                      className="text-base font-black uppercase tracking-wider font-serif"
+                    >
                       {cat.name}
                     </h2>
-                    <span className="h-[2px] flex-1 bg-amber-400/30" />
+                    <span className="h-[2px] flex-1" style={{ backgroundColor: `${catAccentColor}4d` }} />
                   </div>
                   {isLiveEditActive && onAddNewItem && (
                     <button
@@ -511,13 +519,14 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                 <div className="space-y-3">
                   {cat.items.map(item => {
                     const inCart = cart.find(c => c.item.id === item.id);
-                    const btnColor = restaurant.branding?.buttonColor || restaurant.branding?.accentColor || '#f59e0b';
-                    const btnTextColor = restaurant.branding?.buttonTextColor || '#000000';
-                    const textColor = restaurant.branding?.textColor;
-                    const dishCardBgColor = restaurant.branding?.dishCardBgColor || restaurant.branding?.darkBgColor;
-                    const dishNameFont = restaurant.branding?.dishNameFont || 'inherit';
-                    const dishDescFont = restaurant.branding?.dishDescFont || 'inherit';
-                    const dishPriceFont = restaurant.branding?.dishPriceFont || 'monospace';
+                    const btnColor = branding.buttonColor || branding.accentColor || branding.primaryColor || '#f59e0b';
+                    const btnTextColor = branding.buttonTextColor || '#000000';
+                    const textColor = branding.textColor || '#ffffff';
+                    const dishCardBgColor = branding.dishCardBgColor || branding.cardBgColor || branding.darkBgColor;
+                    const dishNameFont = branding.dishNameFont || 'inherit';
+                    const dishDescFont = branding.dishDescFont || 'inherit';
+                    const dishPriceFont = branding.dishPriceFont || 'monospace';
+                    const priceColor = branding.priceColor || btnColor;
 
                     return (
                       <div 
@@ -590,8 +599,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                               {item.description}
                             </p>
                             <span 
-                              style={{ fontFamily: dishPriceFont }}
-                              className="text-xs font-black text-amber-300 mt-0.5 block"
+                              style={{ fontFamily: dishPriceFont, color: priceColor }}
+                              className="text-xs font-black mt-0.5 block"
                             >
                               S/ {item.price.toFixed(2)}
                             </span>
@@ -611,7 +620,8 @@ export const CriolloChalkboardMenu: React.FC<CriolloChalkboardMenuProps> = ({
                   })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Floating Cart Trigger (Flush to bottom screen edge) */}

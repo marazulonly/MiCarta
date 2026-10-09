@@ -24,7 +24,7 @@ import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } fro
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
-import { getSafeActiveRestaurant, getSafeBranding, generateSlug } from '../utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -117,6 +117,21 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [darkBgColor, setDarkBgColor] = useState(safeBranding.darkBgColor);
   const [paletteSaved, setPaletteSaved] = useState(false);
 
+  React.useEffect(() => {
+    if (currentRestaurant) {
+      const restBranding = getSafeBranding(currentRestaurant);
+      setPrimaryColor(restBranding.primaryColor);
+      setSecondaryColor(restBranding.secondaryColor);
+      setAccentColor(restBranding.accentColor);
+      setDarkBgColor(restBranding.darkBgColor);
+    }
+  }, [
+    currentRestaurant?.id,
+    currentRestaurant?.branding?.primaryColor,
+    currentRestaurant?.branding?.accentColor,
+    currentRestaurant?.branding?.darkBgColor
+  ]);
+
   // Switch restaurant
   const handleSelectRestaurant = (id: string) => {
     setSelectedRestId(id);
@@ -145,14 +160,16 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const handleSavePalette = () => {
     onUpdateRestaurant({
       ...currentRestaurant,
-      branding: {
+      branding: normalizeBranding({
         ...currentRestaurant.branding,
         primaryColor,
         secondaryColor,
         accentColor,
+        buttonColor: accentColor || primaryColor,
         darkBgColor,
+        backgroundColor: darkBgColor,
         headerLogoUrl: currentRestaurant.branding?.headerLogoUrl || currentRestaurant.logoUrl,
-      }
+      }, currentRestaurant.templateId)
     });
     setPaletteSaved(true);
     setTimeout(() => setPaletteSaved(false), 2500);

@@ -19,6 +19,7 @@ import {
   Layout
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
+import { getSafeBranding } from '../utils/restaurantUtils';
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 import { ScheduleViewModal } from './ScheduleViewModal';
@@ -168,21 +169,8 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Palette & Branding matching medioplato2.jpg
-  const branding = restaurant.branding || {
-    primaryColor: '#000000',
-    secondaryColor: '#D97757',
-    accentColor: '#D97757',
-    darkBgColor: '#E6E8DF',
-    cardBgColor: '#E6E8DF',
-    textColor: '#1A1A1A',
-    fontDisplay: "'Playfair Display', serif",
-    buttonColor: '#D97757',
-    buttonTextColor: '#FFFFFF',
-    dishNameFont: "'Playfair Display', serif",
-    dishDescFont: "'Plus Jakarta Sans', sans-serif",
-    dishPriceFont: "'Playfair Display', serif"
-  };
+  // Palette & Branding matching normalized restaurant branding
+  const branding = getSafeBranding(restaurant);
 
   // The menu background color (fondo de la carta)
   const cartaBg = branding.darkBgColor || branding.cardBgColor || '#E6E8DF';
@@ -393,9 +381,14 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
         <nav className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-none select-none shrink-0">
           <button
             onClick={() => setActiveCategory('all')}
+            style={
+              activeCategory === 'all'
+                ? { backgroundColor: branding.buttonColor || accentColor, color: branding.buttonTextColor || '#FFFFFF' }
+                : undefined
+            }
             className={`px-4 py-2 rounded-full text-xs font-bold font-sans transition-all whitespace-nowrap cursor-pointer shadow-sm ${
               activeCategory === 'all'
-                ? 'bg-[#D97757] text-white shadow-md'
+                ? 'shadow-md'
                 : 'bg-[#D6DAD1] text-neutral-800 hover:bg-[#CAD0C4]'
             }`}
           >
@@ -405,9 +398,14 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
+              style={
+                activeCategory === cat.id
+                  ? { backgroundColor: branding.buttonColor || accentColor, color: branding.buttonTextColor || '#FFFFFF' }
+                  : undefined
+              }
               className={`px-4 py-2 rounded-full text-xs font-bold font-sans transition-all whitespace-nowrap cursor-pointer shadow-sm ${
                 activeCategory === cat.id
-                  ? 'bg-[#D97757] text-white shadow-md'
+                  ? 'shadow-md'
                   : 'bg-[#D6DAD1] text-neutral-800 hover:bg-[#CAD0C4]'
               }`}
             >
@@ -548,26 +546,31 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               </div>
             ) : null;
 
+            const itemTextColor = branding.textColor || '#1A1A1A';
+            const itemPriceColor = branding.priceColor || branding.textColor || '#1A1A1A';
+
             const textEl = (
               <div className={`flex-1 min-w-0 ${isCover ? 'relative z-10 p-4' : ''} ${
                 textAlignment === 'center' ? 'text-center' : textAlignment === 'right' ? 'text-right' : 'text-left'
               }`}>
                 <h3 
-                  className="font-serif font-black uppercase text-xs sm:text-base md:text-lg text-neutral-900 tracking-wide leading-tight"
-                  style={{ fontFamily: dishNameFont }}
+                  className="font-serif font-black uppercase text-xs sm:text-base md:text-lg tracking-wide leading-tight"
+                  style={{ fontFamily: dishNameFont, color: itemTextColor }}
                 >
                   {item.name}
                 </h3>
                 {item.description && (
                   <p 
-                    className="text-[11px] sm:text-xs md:text-sm text-neutral-800 font-sans font-normal leading-relaxed mt-1"
-                    style={{ fontFamily: dishDescFont }}
+                    className="text-[11px] sm:text-xs md:text-sm font-sans font-normal leading-relaxed mt-1"
+                    style={{ fontFamily: dishDescFont, color: itemTextColor ? `${itemTextColor}dd` : '#262626' }}
                   >
                     {item.description}
                   </p>
                 )}
                 {/* 5-Star Rating */}
-                <div className={`flex items-center gap-0.5 text-[10px] sm:text-xs text-neutral-900 mt-2 tracking-wider ${
+                <div 
+                  style={{ color: itemTextColor }}
+                  className={`flex items-center gap-0.5 text-[10px] sm:text-xs mt-2 tracking-wider ${
                   textAlignment === 'center' ? 'justify-center' : textAlignment === 'right' ? 'justify-end' : 'justify-start'
                 }`}>
                   <span>★</span>
@@ -585,9 +588,13 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
 
             const priceStyle: React.CSSProperties = isAbsolutePhoto && item.imageUrl && photoTranslateVal < 50 ? {
               paddingLeft: `${photoSize - 4}px`,
-              transition: 'padding 0.15s ease-out'
+              transition: 'padding 0.15s ease-out',
+              color: itemPriceColor,
+              fontFamily: branding.dishPriceFont || undefined
             } : {
-              transition: 'padding 0.15s ease-out'
+              transition: 'padding 0.15s ease-out',
+              color: itemPriceColor,
+              fontFamily: branding.dishPriceFont || undefined
             };
 
             const footerEl = (
@@ -595,7 +602,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                 isCover ? 'relative z-10 border-t-0 mt-2 px-4 pb-4' : ''
               }`}>
                 <span 
-                  className="text-xs sm:text-sm md:text-base font-bold font-serif text-neutral-900 transition-all duration-200"
+                  className="text-xs sm:text-sm md:text-base font-bold font-serif transition-all duration-200"
                   style={priceStyle}
                 >
                   S/ {item.price.toFixed(2)}

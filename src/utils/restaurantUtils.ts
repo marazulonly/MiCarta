@@ -98,10 +98,31 @@ export function getSafeActiveRestaurant(
     return null;
   }
   if (selectedId) {
-    const matched = validList.find(r => r.id === selectedId);
+    const matched = validList.find(
+      r => r.id === selectedId || r.slug === selectedId || generateSlug(r.slug || r.name || r.id) === generateSlug(selectedId)
+    );
     if (matched) return matched;
   }
   return validList[0] || null;
+}
+
+/**
+ * Consistently checks if a category or menu item's restaurantId belongs to the given restaurant
+ * across ID, slug, or normalized slug without losing references.
+ */
+export function matchesRestaurantRef(
+  itemOrCatRestaurantId: string | undefined | null,
+  restaurant: Pick<Restaurant, 'id' | 'slug' | 'name'> | undefined | null
+): boolean {
+  if (!itemOrCatRestaurantId || !restaurant) return false;
+  if (itemOrCatRestaurantId === restaurant.id) return true;
+  if (restaurant.slug && itemOrCatRestaurantId === restaurant.slug) return true;
+  const normRef = generateSlug(itemOrCatRestaurantId);
+  if (!normRef) return false;
+  if (restaurant.id && generateSlug(restaurant.id) === normRef) return true;
+  if (restaurant.slug && generateSlug(restaurant.slug) === normRef) return true;
+  if (restaurant.name && generateSlug(restaurant.name) === normRef) return true;
+  return false;
 }
 
 /**
@@ -111,10 +132,11 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   const tmpl = templateId || 'tmpl-luxury';
   if (tmpl === 'tmpl-medio-plato' || tmpl.includes('medio')) {
     return {
-      primaryColor: '#000000',
+      primaryColor: '#D97757',
       secondaryColor: '#D97757',
       accentColor: '#D97757',
       darkBgColor: '#E6E8DF',
+      backgroundColor: '#E6E8DF',
       cardBgColor: '#E6E8DF',
       dishCardBgColor: 'transparent',
       textColor: '#1A1A1A',
@@ -133,21 +155,22 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   }
   if (tmpl === 'tmpl-marine' || tmpl.includes('marine') || tmpl.includes('costa') || tmpl.includes('cevichito')) {
     return {
-      primaryColor: '#18181B',
-      secondaryColor: '#0284C7',
-      accentColor: '#0284C7',
-      darkBgColor: '#09090B',
+      primaryColor: '#111111',
+      secondaryColor: '#71717A',
+      accentColor: '#111111',
+      darkBgColor: '#EAEBDC',
+      backgroundColor: '#EAEBDC',
       cardBgColor: '#FFFFFF',
       dishCardBgColor: '#FFFFFF',
-      textColor: '#18181B',
-      buttonColor: '#18181B',
+      textColor: '#111111',
+      buttonColor: '#111111',
       buttonTextColor: '#FFFFFF',
       fontDisplay: 'Outfit, sans-serif',
       dishNameFont: 'Outfit, sans-serif',
       dishDescFont: 'Outfit, sans-serif',
       dishPriceFont: 'Outfit, monospace',
       restaurantNameFont: 'Outfit, sans-serif',
-      restaurantNameColor: '#18181B',
+      restaurantNameColor: '#111111',
       cardBorderRadius: '16px',
       cardStyle: 'horizontal',
       headerStyle: 'banner'
@@ -155,14 +178,15 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   }
   if (tmpl === 'tmpl-criollo' || tmpl.includes('criollo') || tmpl.includes('chalkboard')) {
     return {
-      primaryColor: '#000000',
+      primaryColor: '#F59E0B',
       secondaryColor: '#D97757',
-      accentColor: '#D97757',
-      darkBgColor: '#18181B',
+      accentColor: '#F59E0B',
+      darkBgColor: '#141716',
+      backgroundColor: '#141716',
       cardBgColor: '#27272A',
       dishCardBgColor: '#27272A',
       textColor: '#FAFAFA',
-      buttonColor: '#FFFFFF',
+      buttonColor: '#F59E0B',
       buttonTextColor: '#000000',
       fontDisplay: 'Plus Jakarta Sans, sans-serif',
       dishNameFont: 'Plus Jakarta Sans, sans-serif',
@@ -177,15 +201,16 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   }
   if (tmpl === 'tmpl-neon' || tmpl.includes('neon') || tmpl.includes('street')) {
     return {
-      primaryColor: '#000000',
+      primaryColor: '#EF4444',
       secondaryColor: '#EF4444',
       accentColor: '#EF4444',
       darkBgColor: '#09090B',
+      backgroundColor: '#09090B',
       cardBgColor: '#18181B',
       dishCardBgColor: '#18181B',
       textColor: '#FFFFFF',
-      buttonColor: '#FFFFFF',
-      buttonTextColor: '#000000',
+      buttonColor: '#EF4444',
+      buttonTextColor: '#FFFFFF',
       fontDisplay: 'Syne, sans-serif',
       dishNameFont: 'Syne, sans-serif',
       dishDescFont: 'Syne, sans-serif',
@@ -202,9 +227,10 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
       primaryColor: '#FFFFFF',
       secondaryColor: '#E5E5E5',
       accentColor: '#FFFFFF',
-      darkBgColor: '#000000',
-      cardBgColor: '#0A0A0A',
-      dishCardBgColor: '#0A0A0A',
+      darkBgColor: '#0A0A0A',
+      backgroundColor: '#0A0A0A',
+      cardBgColor: '#121212',
+      dishCardBgColor: '#121212',
       textColor: '#E5E5E5',
       buttonColor: '#FFFFFF',
       buttonTextColor: '#000000',
@@ -221,10 +247,11 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   }
   if (tmpl === 'tmpl-starters-editorial' || tmpl === 'tmpl-editorial' || tmpl.includes('editorial') || tmpl.includes('starters')) {
     return {
-      primaryColor: '#000000',
+      primaryColor: '#D4AF37',
       secondaryColor: '#D4AF37',
       accentColor: '#D4AF37',
       darkBgColor: '#071A14',
+      backgroundColor: '#071A14',
       cardBgColor: '#FFFFFF',
       dishCardBgColor: '#FFFFFF',
       textColor: '#1A1A1A',
@@ -243,12 +270,13 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
   }
   // Default: Brasas Luxury Gold & Emerald (tmpl-luxury)
   return {
-    primaryColor: '#000000',
+    primaryColor: '#D4AF37',
     secondaryColor: '#D4AF37',
     accentColor: '#D4AF37',
-    darkBgColor: '#0F172A',
-    cardBgColor: '#1E293B',
-    dishCardBgColor: '#1E293B',
+    darkBgColor: '#051813',
+    backgroundColor: '#051813',
+    cardBgColor: '#0A2720',
+    dishCardBgColor: '#0A2720',
     textColor: '#FFFFFF',
     buttonColor: '#D4AF37',
     buttonTextColor: '#000000',
@@ -265,17 +293,96 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
 }
 
 /**
- * Safely gets branding settings with full default fallbacks based on template
+ * Canonical branding normalization: establishes a single source of truth across
+ * equivalent properties (primaryColor, buttonColor, accentColor, darkBgColor, dishCardBgColor, etc.),
+ * ensuring that custom colors are NEVER discarded when changing templates or saving.
  */
-export function getSafeBranding(restaurant?: Restaurant | null): RestaurantBranding {
-  const tmplDefaults = getTemplateDefaultBranding(restaurant?.templateId);
-  if (!restaurant || !restaurant.branding) {
+export function normalizeBranding(
+  rawBranding?: Partial<RestaurantBranding> | null,
+  templateId?: string
+): RestaurantBranding {
+  const tmplDefaults = getTemplateDefaultBranding(templateId);
+  if (!rawBranding) {
     return tmplDefaults;
   }
+
+  // Canonical mapping of user intentions across equivalent keys:
+  // Brand color intent (buttonColor, accentColor, primaryColor)
+  const brandAccentIntent = 
+    rawBranding.buttonColor || 
+    rawBranding.accentColor || 
+    rawBranding.primaryColor;
+
+  // Background intent (darkBgColor, backgroundColor)
+  const bgIntent = 
+    rawBranding.darkBgColor || 
+    rawBranding.backgroundColor;
+
+  // Dish Card / Card Background intent (dishCardBgColor, cardBgColor)
+  const cardBgIntent = 
+    rawBranding.dishCardBgColor || 
+    rawBranding.cardBgColor;
+
+  // Secondary color intent
+  const secondaryIntent = 
+    rawBranding.secondaryColor || 
+    rawBranding.accentColor || 
+    brandAccentIntent;
+
+  // Text color intent
+  const textIntent = rawBranding.textColor;
+
+  // Resolve canonical properties prioritizing user's customized values
+  const primaryColor = brandAccentIntent || tmplDefaults.primaryColor;
+  const buttonColor = rawBranding.buttonColor || brandAccentIntent || tmplDefaults.buttonColor || primaryColor;
+  const accentColor = rawBranding.accentColor || brandAccentIntent || tmplDefaults.accentColor || buttonColor;
+  const secondaryColor = rawBranding.secondaryColor || secondaryIntent || tmplDefaults.secondaryColor;
+  
+  const darkBgColor = bgIntent || tmplDefaults.darkBgColor;
+  const backgroundColor = bgIntent || tmplDefaults.backgroundColor || darkBgColor;
+
+  const cardBgColor = cardBgIntent || tmplDefaults.cardBgColor;
+  const dishCardBgColor = cardBgIntent || tmplDefaults.dishCardBgColor || cardBgColor;
+  const dishCardBorderColor = rawBranding.dishCardBorderColor || (buttonColor ? `${buttonColor}40` : tmplDefaults.dishCardBorderColor);
+
+  const textColor = textIntent || tmplDefaults.textColor;
+  const restaurantNameColor = rawBranding.restaurantNameColor || textIntent || tmplDefaults.restaurantNameColor;
+  const buttonTextColor = rawBranding.buttonTextColor || tmplDefaults.buttonTextColor || '#FFFFFF';
+  const priceColor = rawBranding.priceColor || buttonColor || accentColor || tmplDefaults.priceColor;
+
   return {
     ...tmplDefaults,
-    ...restaurant.branding
+    ...rawBranding,
+    primaryColor,
+    buttonColor,
+    accentColor,
+    secondaryColor,
+    darkBgColor,
+    backgroundColor,
+    cardBgColor,
+    dishCardBgColor,
+    dishCardBorderColor,
+    textColor,
+    restaurantNameColor,
+    buttonTextColor,
+    priceColor,
+    headerLogoUrl: rawBranding.headerLogoUrl || tmplDefaults.headerLogoUrl,
+    cardBorderRadius: rawBranding.cardBorderRadius || tmplDefaults.cardBorderRadius,
+    cardStyle: rawBranding.cardStyle || tmplDefaults.cardStyle,
+    headerStyle: rawBranding.headerStyle || tmplDefaults.headerStyle,
+    fontDisplay: rawBranding.fontDisplay || tmplDefaults.fontDisplay,
+    dishNameFont: rawBranding.dishNameFont || tmplDefaults.dishNameFont,
+    dishDescFont: rawBranding.dishDescFont || tmplDefaults.dishDescFont,
+    dishPriceFont: rawBranding.dishPriceFont || tmplDefaults.dishPriceFont,
+    restaurantNameFont: rawBranding.restaurantNameFont || tmplDefaults.restaurantNameFont
   };
+}
+
+/**
+ * Safely gets branding settings with canonical normalization and template fallbacks
+ */
+export function getSafeBranding(restaurant?: Restaurant | null): RestaurantBranding {
+  return normalizeBranding(restaurant?.branding, restaurant?.templateId);
 }
 
 /**

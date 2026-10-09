@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
 import { isDniDuplicate } from '../lib/userUtils';
+import { processAndUploadImage } from '../lib/imageOptimizer';
 
 interface UsersViewProps {
   users: User[];
@@ -113,30 +114,19 @@ export const UsersView: React.FC<UsersViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Crop and resize to 1:1 square canvas (300x300 px)
-        const canvas = document.createElement('canvas');
-        const size = 300;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
+    if (file.size > 8 * 1024 * 1024) {
+      setFormError('La foto de perfil no debe superar los 8MB.');
+      return;
+    }
 
-        if (ctx) {
-          const minDim = Math.min(img.width, img.height);
-          const sx = (img.width - minDim) / 2;
-          const sy = (img.height - minDim) / 2;
-
-          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
-          const squareDataUrl = canvas.toDataURL('image/jpeg', 0.88);
-          setNewAvatar(squareDataUrl);
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'avatar', 'user')
+      .then(res => {
+        setNewAvatar(res.url);
+      })
+      .catch(err => {
+        console.warn('Error processing avatar:', err);
+        setFormError('Error al procesar la foto de perfil.');
+      });
   };
 
   const handleSaveUser = (e: React.FormEvent) => {

@@ -22,6 +22,7 @@ import {
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
+import { getSafeBranding } from '../utils/restaurantUtils';
 
 interface MinimalistBistroMenuProps {
   isOpen: boolean;
@@ -101,17 +102,7 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
 
   if (!isOpen || !restaurant) return null;
 
-  const branding = restaurant.branding || {
-    primaryColor: '#FFFFFF',
-    secondaryColor: '#A3A3A3',
-    accentColor: '#FFFFFF',
-    darkBgColor: '#0A0A0A',
-    cardBgColor: '#121212',
-    textColor: '#E5E5E5',
-    fontDisplay: 'Plus Jakarta Sans, sans-serif',
-    buttonColor: '#FFFFFF',
-    buttonTextColor: '#000000'
-  };
+  const branding = getSafeBranding(restaurant);
 
   const primaryColor = branding.buttonColor || branding.primaryColor || '#FFFFFF';
   const buttonTextColor = branding.buttonTextColor || '#000000';
@@ -189,12 +180,18 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
             <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-400 block mb-1">
               {restaurant.cuisineType || 'Bistró & Gastronomía'}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-white uppercase">
+            <h1 
+              style={{
+                color: branding.restaurantNameColor || textColor,
+                fontFamily: branding.restaurantNameFont || branding.fontDisplay || undefined
+              }}
+              className="text-2xl sm:text-3xl font-light tracking-tight uppercase"
+            >
               {restaurant.name}
             </h1>
             {restaurant.tagline && (
               <p 
-                style={{ color: branding.restaurantNameColor || undefined }}
+                style={{ color: branding.restaurantNameColor || textColor }}
                 className="text-xs mt-1 font-serif italic"
               >
                 {restaurant.tagline}
@@ -226,9 +223,14 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
         <div className="px-4 sm:px-6 py-3 border-b border-neutral-800/80 flex items-center gap-6 overflow-x-auto scrollbar-none text-xs uppercase tracking-wider font-mono">
           <button
             onClick={() => setActiveCategory('all')}
+            style={
+              activeCategory === 'all'
+                ? { borderColor: primaryColor, color: primaryColor }
+                : undefined
+            }
             className={`transition cursor-pointer pb-1 border-b-2 whitespace-nowrap ${
               activeCategory === 'all'
-                ? 'border-white text-white font-bold'
+                ? 'font-bold'
                 : 'border-transparent text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -238,9 +240,14 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
+              style={
+                activeCategory === cat.id
+                  ? { borderColor: primaryColor, color: primaryColor }
+                  : undefined
+              }
               className={`transition cursor-pointer pb-1 border-b-2 whitespace-nowrap ${
                 activeCategory === cat.id
-                  ? 'border-white text-white font-bold'
+                  ? 'font-bold'
                   : 'border-transparent text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -267,21 +274,31 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
               <div 
                 key={item.id}
                 onClick={() => item.isAvailable && setSelectedItemForCustomization(item)}
-                className="pt-4 first:pt-0 group flex items-start justify-between gap-4 cursor-pointer hover:bg-neutral-900/30 p-2 transition"
+                style={{
+                  backgroundColor: cardBgColor && cardBgColor !== '#121212' ? cardBgColor : undefined,
+                  borderColor: primaryColor ? `${primaryColor}40` : undefined
+                }}
+                className="pt-4 first:pt-0 group flex items-start justify-between gap-4 cursor-pointer hover:bg-neutral-900/30 p-3 rounded-lg transition"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="text-sm font-medium text-white group-hover:text-amber-200 transition">
+                    <h3 
+                      style={{ color: textColor, fontFamily: branding.dishNameFont || undefined }}
+                      className="text-sm font-medium group-hover:opacity-90 transition"
+                    >
                       {item.name}
                     </h3>
                   </div>
-                  <p className="text-xs text-neutral-400 font-light mt-1 line-clamp-2 leading-relaxed">
+                  <p 
+                    style={{ color: textColor ? `${textColor}cc` : undefined, fontFamily: branding.dishDescFont || undefined }}
+                    className="text-xs text-neutral-400 font-light mt-1 line-clamp-2 leading-relaxed"
+                  >
                     {item.description}
                   </p>
                 </div>
 
                 <div className="flex flex-col items-end shrink-0 gap-2">
-                  <span className="text-xs font-mono font-medium" style={{ color: priceColor }}>
+                  <span className="text-xs font-mono font-medium" style={{ color: priceColor, fontFamily: branding.dishPriceFont || undefined }}>
                     S/ {item.price.toFixed(2)}
                   </span>
                   <button

@@ -17,7 +17,8 @@ import {
   Sliders
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
-import { getSafeBranding, generateSlug } from '../utils/restaurantUtils';
+import { getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { processAndUploadImage } from '../lib/imageOptimizer';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { CostaMarinaMenu } from './CostaMarinaMenu';
@@ -195,10 +196,12 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       showToast('⚠️ La imagen excede 8MB. Selecciona una más liviana.');
       return;
     }
-    compressAndOptimizeImage(file, 1200, (url) => {
-      setBrandLogoUrl(url);
-      showToast('✓ Logo cargado y optimizado con éxito.');
-    });
+    processAndUploadImage(file, 'logo', restaurant.slug || 'logo')
+      .then(res => {
+        setBrandLogoUrl(res.url);
+        showToast(res.isStorage ? '✓ Logo optimizado a WebP y guardado en Firebase Storage.' : '✓ Logo optimizado a WebP.');
+      })
+      .catch(() => showToast('⚠️ Error al procesar el logo.'));
     e.target.value = '';
   };
 
@@ -209,10 +212,12 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       showToast('⚠️ La imagen excede 8MB.');
       return;
     }
-    compressAndOptimizeImage(file, 1600, (url) => {
-      setBrandCoverUrl(url);
-      showToast('✓ Portada cargada y optimizada con éxito.');
-    });
+    processAndUploadImage(file, 'cover', restaurant.slug || 'cover')
+      .then(res => {
+        setBrandCoverUrl(res.url);
+        showToast(res.isStorage ? '✓ Portada optimizada y guardada en Firebase Storage.' : '✓ Portada optimizada a WebP.');
+      })
+      .catch(() => showToast('⚠️ Error al procesar la portada.'));
     e.target.value = '';
   };
 
@@ -245,25 +250,25 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Disk Image Upload Handler (reads file from local disk as DataURL base64)
+  // Disk Image Upload Handler (optimizes to WebP and uploads to Storage)
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('⚠️ La foto es demasiado pesada. Elige una imagen de menos de 5MB.');
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('⚠️ La foto es demasiado pesada. Elige una imagen de menos de 8MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (result) {
-        callback(result);
-        showToast('✓ Foto del plato cargada exitosamente desde el disco');
-      }
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'dish', 'dish')
+      .then(res => {
+        callback(res.url);
+        showToast(res.isStorage ? '✓ Foto guardada en Firebase Storage y optimizada a WebP.' : '✓ Foto optimizada a formato WebP.');
+      })
+      .catch(err => {
+        console.warn('Error processing dish image:', err);
+        showToast('⚠️ Error al procesar imagen.');
+      });
   };
 
   if (!isOpen) return null;
@@ -435,7 +440,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       tagline: brandTagline.trim(),
       logoUrl: safeLogo,
       coverUrl: safeCover,
-      branding: {
+      branding: normalizeBranding({
         ...restaurant.branding,
         headerLogoUrl: safeLogo,
         darkBgColor: brandDarkBgColor,
@@ -452,7 +457,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
         dishNameFont: brandDishNameFont,
         dishDescFont: brandDishDescFont,
         dishPriceFont: brandDishPriceFont,
-      },
+      }, restaurant.templateId),
       menuAccessSettings: {
         ...restaurant.menuAccessSettings,
         enableDineIn,

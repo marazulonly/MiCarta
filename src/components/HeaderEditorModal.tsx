@@ -14,7 +14,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Restaurant, RestaurantBranding } from '../types';
-import { generateSlug } from '../utils/restaurantUtils';
+import { generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { processAndUploadImage } from '../lib/imageOptimizer';
 
 interface HeaderEditorModalProps {
   isOpen: boolean;
@@ -99,57 +100,28 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const rawResult = reader.result;
-        
-        // For SVGs, keep as raw data URL or string
-        if (isSvg) {
-          setHeaderLogoUrl(rawResult);
+    if (isSvg) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setHeaderLogoUrl(reader.result);
           showToast('✓ Logotipo SVG vectorial guardado');
-          return;
         }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
 
-        // For bitmap images (JPG/PNG/WEBP), compress lightly via canvas to ensure it fits safely in localStorage & Cloud Redis
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 1400;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const optimizedDataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.88);
-            setHeaderLogoUrl(optimizedDataUrl);
-            showToast('✓ Foto de cabecera optimizada y cargada con éxito');
-          } else {
-            setHeaderLogoUrl(rawResult);
-            showToast('✓ Imagen cargada con éxito');
-          }
-        };
-        img.onerror = () => {
-          setHeaderLogoUrl(rawResult);
-          showToast('✓ Imagen cargada con éxito');
-        };
-        img.src = rawResult;
-      }
-    };
-    reader.readAsDataURL(file);
+    processAndUploadImage(file, 'logo', restaurant.slug || 'header')
+      .then(res => {
+        setHeaderLogoUrl(res.url);
+        showToast(res.isStorage ? '✓ Logo optimizado a WebP y subido a Firebase Storage.' : '✓ Logo optimizado a formato WebP (máx 300x300).');
+      })
+      .catch(err => {
+        console.warn('Error processing header logo:', err);
+        showToast('⚠️ Error al procesar imagen.');
+      });
     e.target.value = '';
   };
 
@@ -169,7 +141,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
   const handleSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    const updatedBranding: RestaurantBranding = {
+    const updatedBranding: RestaurantBranding = normalizeBranding({
       ...restaurant.branding,
       headerLogoUrl: headerLogoUrl.trim(),
       headerDisplayMode,
@@ -178,7 +150,7 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       showHeaderBadge: headerDisplayMode === 'IMAGE_ONLY' ? false : showHeaderBadge,
       headerLogoFit,
       headerBannerHeight,
-    };
+    }, restaurant.templateId);
 
     const cleanNewName = restaurantName.trim() || restaurant.name;
     const nameChanged = cleanNewName.toLowerCase() !== (restaurant.name || '').trim().toLowerCase();
