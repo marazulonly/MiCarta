@@ -193,9 +193,36 @@ export async function publishRestaurantMenu(
   };
 }
 
+// In-flight request deduplication map to avoid duplicate network calls for the same slug
+const pendingMenuRequests = new Map<string, Promise<any>>();
+
+export function getCachedPublicMenu(slugOrId: string): any | null {
+  const norm = normalizeSlug(slugOrId);
+  if (!norm || typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const cached = window.localStorage.getItem(`micarta_pub_download_cache_${norm}`);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && (parsed.restaurant || (parsed.items && parsed.items.length > 0))) {
+        return {
+          success: true,
+          published: true,
+          version: parsed.version || 1,
+          publishedAt: parsed.publishedAt || new Date().toISOString(),
+          restaurant: parsed.restaurant,
+          categories: parsed.categories || [],
+          items: parsed.items || []
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
 /**
  * Retrieves the published menu snapshot for public anonymous visitors and QR scanners
  * strictly from Firestore (Single Source of Truth), with robust fallback to "datos de descarga" cache or mockData.
+ * Deduplicates in-flight requests to eliminate duplicate calls across components.
  */
 export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   success: boolean;
@@ -209,67 +236,64 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   const norm = normalizeSlug(slugOrId);
   if (!norm) return null;
 
-  try {
-    const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
-    if (firestoreSnap && firestoreSnap.restaurant) {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-          window.localStorage.setItem(`micarta_pub_download_cache_${norm}`, JSON.stringify(firestoreSnap));
-        } catch {}
+  // Deduplicate in-flight requests: if a request is already running for this slug, return the same promise
+  if (pendingMenuRequests.has(norm)) {
+    return pendingMenuRequests.get(norm)!;
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
+      if (firestoreSnap && firestoreSnap.restaurant) {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          try {
+            window.localStorage.setItem(`micarta_pub_download_cache_${norm}`, JSON.stringify(firestoreSnap));
+          } catch {}
+        }
+        return {
+          success: true,
+          published: true,
+          version: firestoreSnap.version || 1,
+          publishedAt: firestoreSnap.publishedAt || new Date().toISOString(),
+          restaurant: firestoreSnap.restaurant,
+          categories: firestoreSnap.categories || [],
+          items: firestoreSnap.items || []
+        };
       }
+    } catch (err) {
+      console.warn('[Firestore] Notice fetching public menu from Firestore:', err);
+    }
+
+    // Fallback to public downloaded cache
+    const cached = getCachedPublicMenu(norm);
+    if (cached) {
+      return cached;
+    }
+
+    // Fallback to mock data for specific slug
+    const fallbackRest = INITIAL_RESTAURANTS.find(r => normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm);
+    if (fallbackRest) {
+      const mSlug = normalizeSlug(fallbackRest.slug || fallbackRest.name || fallbackRest.id);
+      const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === fallbackRest.id || normalizeSlug(c.restaurantId) === mSlug);
+      const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === fallbackRest.id || normalizeSlug(i.restaurantId) === mSlug);
       return {
         success: true,
         published: true,
-        version: firestoreSnap.version || 1,
-        publishedAt: firestoreSnap.publishedAt || new Date().toISOString(),
-        restaurant: firestoreSnap.restaurant,
-        categories: firestoreSnap.categories || [],
-        items: firestoreSnap.items || []
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        restaurant: fallbackRest,
+        categories: restCats,
+        items: restItems
       };
     }
-  } catch (err) {
-    console.warn('[Firestore] Notice fetching public menu from Firestore:', err);
-  }
 
-  // Fallback to public downloaded cache
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const cached = window.localStorage.getItem(`micarta_pub_download_cache_${norm}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && parsed.restaurant) {
-          return {
-            success: true,
-            published: true,
-            version: parsed.version || 1,
-            publishedAt: parsed.publishedAt || new Date().toISOString(),
-            restaurant: parsed.restaurant,
-            categories: parsed.categories || [],
-            items: parsed.items || []
-          };
-        }
-      }
-    } catch {}
-  }
+    return null;
+  })().finally(() => {
+    pendingMenuRequests.delete(norm);
+  });
 
-  // Fallback to mock data for specific slug
-  const fallbackRest = INITIAL_RESTAURANTS.find(r => normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm);
-  if (fallbackRest) {
-    const mSlug = normalizeSlug(fallbackRest.slug || fallbackRest.name || fallbackRest.id);
-    const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === fallbackRest.id || normalizeSlug(c.restaurantId) === mSlug);
-    const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === fallbackRest.id || normalizeSlug(i.restaurantId) === mSlug);
-    return {
-      success: true,
-      published: true,
-      version: 1,
-      publishedAt: new Date().toISOString(),
-      restaurant: fallbackRest,
-      categories: restCats,
-      items: restItems
-    };
-  }
-
-  return null;
+  pendingMenuRequests.set(norm, fetchPromise);
+  return fetchPromise;
 }
 
 /**

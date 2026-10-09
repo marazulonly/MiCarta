@@ -601,9 +601,11 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
 }
 
 /**
- * Fetches an official published menu snapshot directly from Firestore (Single Source of Truth).
- * Looks up the live restaurant by slug/ID and combines with live categories/items in Firestore,
- * falling back to published_menus so direct links ALWAYS display the exact live menu.
+ * Fetches an official published menu snapshot directly from Firestore.
+ * 1. Checks published_menus/{slug} first (ultra-fast single document read).
+ * 2. If already complete (has restaurant, categories and items), returns it immediately with zero extra reads and zero writes.
+ * 3. Only if missing or incomplete, performs parallel targeted queries (using where() filters instead of downloading entire collections).
+ * 4. Never writes to Firestore on a guest read visit.
  */
 export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string): Promise<any | null> {
   if (isBypassingFirestore()) return null;
@@ -611,46 +613,45 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
   const normKey = normalizeSlugKey(restaurantIdOrSlug);
 
   try {
-    // 1. Check live restaurants collection first so branding, template, and dishes are 100% up-to-date
+    // 1. Prioritize published_menus/{slug} (Fast path: 1 single document read!)
+    const [pubNormSnap, pubRawSnap] = await Promise.all([
+      getDoc(doc(db, 'published_menus', normKey)).catch(() => null),
+      restaurantIdOrSlug !== normKey
+        ? getDoc(doc(db, 'published_menus', restaurantIdOrSlug)).catch(() => null)
+        : Promise.resolve(null)
+    ]);
+
+    const pubData = (pubNormSnap && pubNormSnap.exists())
+      ? pubNormSnap.data()
+      : ((pubRawSnap && pubRawSnap.exists()) ? pubRawSnap.data() : null);
+
+    // If published_menus exists and has valid restaurant + items, return immediately!
+    if (pubData && pubData.restaurant && Array.isArray(pubData.items) && pubData.items.length > 0) {
+      if (pubData.restaurant.logoUrl && pubData.restaurant.branding && !pubData.restaurant.branding.headerLogoUrl) {
+        pubData.restaurant.branding.headerLogoUrl = pubData.restaurant.logoUrl;
+      }
+      return pubData;
+    }
+
+    // 2. Fallback: Lookup restaurant by document ID or query by slug in parallel
+    const [directRestNormSnap, directRestRawSnap, slugQuerySnap] = await Promise.all([
+      getDoc(doc(db, 'restaurants', normKey)).catch(() => null),
+      restaurantIdOrSlug !== normKey
+        ? getDoc(doc(db, 'restaurants', restaurantIdOrSlug)).catch(() => null)
+        : Promise.resolve(null),
+      getDocs(query(collection(db, 'restaurants'), where('slug', '==', normKey))).catch(() => null)
+    ]);
+
     let matchedRest: Restaurant | null = null;
-    const directRestSnap = await getDoc(doc(db, 'restaurants', normKey)).catch(() => null);
-    if (directRestSnap && directRestSnap.exists()) {
-      matchedRest = directRestSnap.data() as Restaurant;
-    } else if (restaurantIdOrSlug !== normKey) {
-      const rawRestSnap = await getDoc(doc(db, 'restaurants', restaurantIdOrSlug)).catch(() => null);
-      if (rawRestSnap && rawRestSnap.exists()) {
-        matchedRest = rawRestSnap.data() as Restaurant;
-      }
+    if (directRestNormSnap && directRestNormSnap.exists()) {
+      matchedRest = directRestNormSnap.data() as Restaurant;
+    } else if (directRestRawSnap && directRestRawSnap.exists()) {
+      matchedRest = directRestRawSnap.data() as Restaurant;
+    } else if (slugQuerySnap && !slugQuerySnap.empty) {
+      matchedRest = slugQuerySnap.docs[0].data() as Restaurant;
     }
 
-    if (!matchedRest) {
-      const allRestsSnap = await getDocs(collection(db, 'restaurants')).catch(() => null);
-      allRestsSnap?.forEach(d => {
-        if (matchedRest) return;
-        const r = d.data() as Restaurant;
-        if (r && (
-          normalizeSlugKey(r.slug) === normKey ||
-          normalizeSlugKey(r.id) === normKey ||
-          normalizeSlugKey(r.name) === normKey
-        )) {
-          matchedRest = r;
-        }
-      });
-    }
-
-    // Also check published_menus snapshot in parallel
-    let pubSnapData: any = null;
-    const pubDoc = await getDoc(doc(db, 'published_menus', normKey)).catch(() => null);
-    if (pubDoc && pubDoc.exists()) {
-      pubSnapData = pubDoc.data();
-    } else if (restaurantIdOrSlug !== normKey) {
-      const rawPubDoc = await getDoc(doc(db, 'published_menus', restaurantIdOrSlug)).catch(() => null);
-      if (rawPubDoc && rawPubDoc.exists()) {
-        pubSnapData = rawPubDoc.data();
-      }
-    }
-
-    const activeRest: Restaurant | null = matchedRest || pubSnapData?.restaurant || null;
+    const activeRest: Restaurant | null = matchedRest || pubData?.restaurant || null;
     if (activeRest) {
       if (activeRest.logoUrl && activeRest.branding && !activeRest.branding.headerLogoUrl) {
         activeRest.branding.headerLogoUrl = activeRest.logoUrl;
@@ -658,48 +659,55 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       const primarySlug = normalizeSlugKey(activeRest.slug || activeRest.name || activeRest.id);
       activeRest.slug = primarySlug;
 
-      // Query live categories and items from Firestore matching either id or slug
-      const possibleRestIds = Array.from(new Set([activeRest.id, primarySlug, normKey].filter(Boolean)));
-      const [allCatsSnap, allItemsSnap] = await Promise.all([
-        getDocs(collection(db, 'categories')).catch(() => null),
-        getDocs(collection(db, 'items')).catch(() => null)
+      // Query ONLY categories and items targeted for this specific restaurant using where() queries in parallel
+      const possibleIds = Array.from(new Set([activeRest.id, primarySlug, normKey].filter(Boolean)));
+      
+      const categoryPromises = possibleIds.map(targetId =>
+        getDocs(query(collection(db, 'categories'), where('restaurantId', '==', targetId))).catch(() => null)
+      );
+      const itemPromises = possibleIds.map(targetId =>
+        getDocs(query(collection(db, 'items'), where('restaurantId', '==', targetId))).catch(() => null)
+      );
+
+      const [catResults, itemResults] = await Promise.all([
+        Promise.all(categoryPromises),
+        Promise.all(itemPromises)
       ]);
 
-      const liveCategories: MenuCategory[] = [];
-      allCatsSnap?.forEach(d => {
-        const c = d.data() as MenuCategory;
-        if (c && (possibleRestIds.includes(c.restaurantId) || normalizeSlugKey(c.restaurantId) === primarySlug)) {
-          liveCategories.push(c);
-        }
+      const catMap = new Map<string, MenuCategory>();
+      catResults.forEach(snap => {
+        snap?.forEach(d => {
+          const c = d.data() as MenuCategory;
+          if (c && c.id) catMap.set(c.id, c);
+        });
       });
 
-      const liveItems: MenuItem[] = [];
-      allItemsSnap?.forEach(d => {
-        const i = d.data() as MenuItem;
-        if (i && (possibleRestIds.includes(i.restaurantId) || normalizeSlugKey(i.restaurantId) === primarySlug)) {
-          liveItems.push(i);
-        }
+      const itemMap = new Map<string, MenuItem>();
+      itemResults.forEach(snap => {
+        snap?.forEach(d => {
+          const i = d.data() as MenuItem;
+          if (i && i.id) itemMap.set(i.id, i);
+        });
       });
 
-      const finalCategories = liveCategories.length > 0 ? liveCategories : (pubSnapData?.categories || []);
-      const finalItems = liveItems.length > 0 ? liveItems : (pubSnapData?.items || []);
+      const liveCategories = Array.from(catMap.values());
+      const liveItems = Array.from(itemMap.values());
 
-      const generatedSnap = {
+      const finalCategories = liveCategories.length > 0 ? liveCategories : (pubData?.categories || []);
+      const finalItems = liveItems.length > 0 ? liveItems : (pubData?.items || []);
+
+      return {
         published: true,
-        version: (pubSnapData?.version || 1),
-        publishedAt: pubSnapData?.publishedAt || new Date().toISOString(),
+        version: pubData?.version || 1,
+        publishedAt: pubData?.publishedAt || new Date().toISOString(),
         restaurant: activeRest,
         categories: finalCategories,
         items: finalItems
       };
-
-      // Keep published_menus synced with latest live state in Firestore
-      savePublishedMenuToFirestore(primarySlug, generatedSnap).catch(() => {});
-      return generatedSnap;
     }
 
-    if (pubSnapData) {
-      return pubSnapData;
+    if (pubData) {
+      return pubData;
     }
   } catch (err) {
     console.warn('[Firestore] Error fetching published menu from Firestore:', err);

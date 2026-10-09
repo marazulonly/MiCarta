@@ -50,6 +50,7 @@ import {
   autoDeleteUser,
   publishRestaurantMenu,
   fetchPublicPublishedMenu,
+  getCachedPublicMenu,
   saveIndividualRestaurantSnapshotToUpstash,
   subscribeToCloudUpdates,
   subscribeToOrdersFeed,
@@ -236,7 +237,7 @@ function getInitialStorageState() {
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      // Purge all legacy and menu localStorage keys so stale data never overrides Firestore
+      // Purge only deprecated internal applet keys, never delete micarta_pub_download_cache_*
       const legacyKeys = [
         'micarta_restaurants_v6', 'micarta_restaurants_v5', 'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
         'micarta_menu_items_v6', 'micarta_menu_items_v5', 'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
@@ -247,7 +248,7 @@ function getInitialStorageState() {
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
-      // Also purge any pub_menu_override_* keys
+      // Also purge any legacy pub_menu_override_* keys
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (k && k.startsWith('pub_menu_override_')) {
@@ -320,13 +321,14 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<UserRole>(initialState.cachedAuth?.role || 'ADMIN');
 
   // Customer preview modal
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [isTemplateSplitEditorOpen, setIsTemplateSplitEditorOpen] = useState<boolean>(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant | null>(null);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(null);
+
+  // Try to load cached published menu synchronously for instant render (Stale-While-Revalidate)
+  const initialCachedPubMenu = initialRequestedSlug ? getCachedPublicMenu(initialRequestedSlug) : null;
 
   // Authoritative Published Menu state for public anonymous visitors and QR diners
   const [publishedMenuData, setPublishedMenuData] = useState<{
@@ -336,8 +338,16 @@ export default function App() {
     restaurant: Restaurant;
     categories: MenuCategory[];
     items: MenuItem[];
-  } | null>(null);
-  const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(Boolean(initialRequestedSlug));
+  } | null>(initialCachedPubMenu);
+  const [isLoadingPublishedMenu, setIsLoadingPublishedMenu] = useState<boolean>(
+    Boolean(initialRequestedSlug && !initialCachedPubMenu)
+  );
+  const [previewRestaurant, setPreviewRestaurant] = useState<Restaurant | null>(
+    initialCachedPubMenu?.restaurant || null
+  );
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(
+    Boolean(initialRequestedSlug && initialCachedPubMenu)
+  );
   const [isInitialCloudFetchDone, setIsInitialCloudFetchDone] = useState<boolean>(false);
 
   // Active Customer Order Tracking (persists until served/cancelled for floating "Ver Pedido" button)
@@ -384,30 +394,41 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Check URL search parameters on initial mount for QR scanning / direct link access directly from Firestore
+  // Unified and deduplicated Direct Public Link handler (QR scanning / ?r= links)
+  // Runs once on mount, works for both guests and authenticated users accessing a direct menu link,
+  // preventing all-collections download and preventing duplicate fetch requests.
   useEffect(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const restaurantSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant') || initialRequestedSlug;
-      const table = urlParams.get('mesa') || urlParams.get('table');
-      const mode = urlParams.get('mode') as 'DINE_IN' | 'DELIVERY' | null;
+    let isMounted = true;
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const restaurantSlug = urlParams?.get('r') || urlParams?.get('rest') || urlParams?.get('restaurant') || initialRequestedSlug;
+    const table = urlParams?.get('mesa') || urlParams?.get('table') || initParams.table;
+    const mode = (urlParams?.get('mode') === 'DELIVERY' || initParams.mode === 'DELIVERY') ? 'DELIVERY' : 'DINE_IN';
 
-      if (restaurantSlug) {
+    // If accessing directly via link/QR and not specifically attempting staff login
+    if (restaurantSlug && !initParams.isStaffLogin) {
+      if (table) setPreviewTableNumber(table);
+      setPreviewMode(mode);
+
+      // Stale-While-Revalidate: If we already had cached data, keep isLoadingPublishedMenu false so UI is instant
+      if (!publishedMenuData && !previewRestaurant) {
         setIsLoadingPublishedMenu(true);
-        fetchPublicPublishedMenu(restaurantSlug).then(pub => {
+      }
+
+      fetchPublicPublishedMenu(restaurantSlug)
+        .then(pub => {
+          if (!isMounted) return;
           if (pub && pub.success && pub.restaurant) {
             setPublishedMenuData(pub);
             setPreviewRestaurant(pub.restaurant);
-            setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
-            if (table) setPreviewTableNumber(table);
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
           } else {
-            // Check if already loaded in Firestore state
+            // Check in-memory restaurants if available
             const match = findRestaurantBySlug(restaurantsRef.current, restaurantSlug);
             if (match) {
-              const restCats = categoriesRef.current.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === normalizeSlug(match.slug)));
-              const restItems = menuItemsRef.current.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === normalizeSlug(match.slug)));
+              const mSlug = normalizeSlug(match.slug || match.name || match.id);
+              const restCats = categoriesRef.current.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === mSlug));
+              const restItems = menuItemsRef.current.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === mSlug));
               const snap = {
                 published: true,
                 version: 1,
@@ -418,66 +439,47 @@ export default function App() {
               };
               setPublishedMenuData(snap);
               setPreviewRestaurant(match);
-              setPreviewMode(mode === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
-              if (table) setPreviewTableNumber(table);
               setIsCustomerModalOpen(true);
               setNotFoundSlugError(null);
-            } else {
+            } else if (!publishedMenuData && !previewRestaurant) {
               setPreviewRestaurant(null);
               setPublishedMenuData(null);
               setIsCustomerModalOpen(false);
               setNotFoundSlugError(restaurantSlug);
             }
           }
-        }).catch(() => {
-          setPreviewRestaurant(null);
-          setPublishedMenuData(null);
-          setIsCustomerModalOpen(false);
-          setNotFoundSlugError(restaurantSlug);
-        }).finally(() => {
-          setIsLoadingPublishedMenu(false);
+        })
+        .catch(err => {
+          console.warn('[DirectLink] Error fetching menu:', err);
+          if (isMounted && !publishedMenuData && !previewRestaurant) {
+            setNotFoundSlugError(restaurantSlug);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsLoadingPublishedMenu(false);
+            setIsInitialCloudFetchDone(true);
+          }
         });
-      }
-    } catch {
-      // Ignored if window not available
-    }
-  }, []);
-
-  // Direct Firestore fetch & Real-time Firestore onSnapshot subscription (Single Source of Truth)
-  useEffect(() => {
-    let isMounted = true;
-
-    // Check if the request is for a guest viewer (has ?r= slug and is NOT attempting a staff login)
-    const isGuestViewer = Boolean(initialRequestedSlug && !initParams.isStaffLogin && !currentUser);
-
-    if (isGuestViewer && initialRequestedSlug) {
-      // GUEST LIGHTWEIGHT LOAD PATH: Fetch ONLY this specific restaurant's published menu snapshot.
-      // This reduces database read consumption by 98% for customer traffic!
-      fetchPublicPublishedMenu(initialRequestedSlug).then(pubData => {
-        if (!isMounted) return;
-        if (pubData && pubData.restaurant) {
-          setPreviewRestaurant(pubData.restaurant);
-          setPublishedMenuData(pubData);
-          setIsCustomerModalOpen(true);
-          setNotFoundSlugError(null);
-        } else {
-          setPreviewRestaurant(null);
-          setPublishedMenuData(null);
-          setIsCustomerModalOpen(false);
-          setNotFoundSlugError(initialRequestedSlug);
-        }
-        setIsInitialCloudFetchDone(true);
-      }).catch(err => {
-        console.warn('[Firestore] Error loading guest menu snapshot:', err);
-        setIsInitialCloudFetchDone(true);
-      });
 
       return () => {
         isMounted = false;
       };
     }
+  }, []);
 
-    // STAFF / FULL SYNCHRONIZATION PATH: Load all collections and listen in real-time
+  // STAFF / FULL SYNCHRONIZATION PATH:
+  // ONLY runs when NOT on a direct public link (i.e. admin panel, staff views, home),
+  // ensuring that direct link visits NEVER download all database collections.
+  useEffect(() => {
+    let isMounted = true;
+    const isDirectLink = Boolean((initialRequestedSlug || initParams.isQr) && !initParams.isStaffLogin);
+
+    // If viewing a public direct menu link, skip full sync of all collections
+    if (isDirectLink) {
+      return;
+    }
+
     // 1. Initial Fetch strictly from Firestore
     fetchLatestCloudMenu().then(cloudData => {
       if (!isMounted) return;
@@ -517,9 +519,6 @@ export default function App() {
       ordersRef.current = cleanLoadedOrders;
       setOrders(cleanLoadedOrders);
 
-      // Automatic publishing of all restaurants on mount is removed to prevent Firestore quota exhaustion.
-      // Menus are published when the user explicitly triggers it or updates their details.
-
       if (currentUser) {
         const fresh = combinedUsers.find(u => u.id === currentUser.id || (u.dni && u.dni === currentUser.dni));
         if (fresh) {
@@ -527,27 +526,6 @@ export default function App() {
         }
       }
 
-      // If accessing via link/slug, locate the restaurant in Firestore restaurants and sync live categories/items
-      if (initialRequestedSlug) {
-        const match = findRestaurantBySlug(cleanLoadedRests, initialRequestedSlug);
-        if (match) {
-          const mSlug = normalizeSlug(match.slug || match.name || match.id);
-          setPreviewRestaurant(match);
-          const restCats = cleanLoadedCategories.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === mSlug));
-          const restItems = cleanLoadedItems.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === mSlug));
-          setPublishedMenuData({
-            published: true,
-            version: 1,
-            publishedAt: new Date().toISOString(),
-            restaurant: match,
-            categories: restCats,
-            items: restItems
-          });
-          setIsCustomerModalOpen(true);
-          setNotFoundSlugError(null);
-        }
-      }
-      
       setIsInitialCloudFetchDone(true);
     }).catch(err => {
       console.warn('[Firestore] Notice during initial fetch:', err);
@@ -1640,8 +1618,8 @@ export default function App() {
   if (isDirectLinkAccess) {
     if (isLoadingPublishedMenu && !publishedMenuData && !previewRestaurant) {
       return (
-        <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white">
-          <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+        <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white p-4">
+          <LoadingRestaurantState message="Abriendo carta digital..." />
         </div>
       );
     }
