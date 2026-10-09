@@ -52,12 +52,6 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
     clean.slug = slugKey;
   }
   clean.branding = normalizeBranding(clean.branding, clean.templateId);
-  if (clean.branding && clean.branding.headerLogoUrl && clean.logoUrl && clean.branding.headerLogoUrl === clean.logoUrl) {
-    clean.branding = {
-      ...clean.branding,
-      headerLogoUrl: '' // Avoid storing twice in the same Firestore document
-    };
-  }
   return clean;
 }
 
@@ -218,9 +212,6 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
         data.id = docId;
         data.slug = cleanSlug || docId;
         data.branding = normalizeBranding(data.branding, data.templateId);
-        if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
-          data.branding.headerLogoUrl = data.logoUrl;
-        }
         restMapById.set(docId, data);
       }
     });
@@ -640,9 +631,6 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
     // If published_menus exists and has valid restaurant + items, return immediately!
     if (pubData && pubData.restaurant && Array.isArray(pubData.items) && pubData.items.length > 0) {
       pubData.restaurant.branding = normalizeBranding(pubData.restaurant.branding, pubData.restaurant.templateId);
-      if (pubData.restaurant.logoUrl && !pubData.restaurant.branding.headerLogoUrl) {
-        pubData.restaurant.branding.headerLogoUrl = pubData.restaurant.logoUrl;
-      }
       return pubData;
     }
 
@@ -667,9 +655,6 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
     const activeRest: Restaurant | null = matchedRest || pubData?.restaurant || null;
     if (activeRest) {
       activeRest.branding = normalizeBranding(activeRest.branding, activeRest.templateId);
-      if (activeRest.logoUrl && !activeRest.branding.headerLogoUrl) {
-        activeRest.branding.headerLogoUrl = activeRest.logoUrl;
-      }
       const primarySlug = normalizeSlugKey(activeRest.slug || activeRest.name || activeRest.id);
       activeRest.slug = primarySlug;
 
@@ -750,9 +735,6 @@ export function subscribeToFirestoreRealtime(
             data.id = docId;
             data.slug = cleanSlug || docId;
             data.branding = normalizeBranding(data.branding, data.templateId);
-            if (data.logoUrl && data.branding && !data.branding.headerLogoUrl) {
-              data.branding.headerLogoUrl = data.logoUrl;
-            }
             restMap.set(docId, data);
           }
         });

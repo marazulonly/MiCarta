@@ -147,15 +147,12 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       ...(r.metrics || {})
     };
     const safeBranding: RestaurantBranding = normalizeBranding(r.branding, r.templateId);
-    if (r.logoUrl && safeBranding.headerLogoUrl === undefined) {
-      safeBranding.headerLogoUrl = r.logoUrl;
-    }
     const safeRest: Restaurant = {
       ...r,
       slug: cleanSlug,
       branding: safeBranding,
       metrics: safeMetrics,
-      logoUrl: safeBranding.headerLogoUrl !== undefined ? safeBranding.headerLogoUrl : (r.logoUrl || ''),
+      logoUrl: r.logoUrl || '',
       menuAccessSettings: r.menuAccessSettings || DEFAULT_MENU_ACCESS_SETTINGS,
       tables: Array.isArray(r.tables) ? r.tables : [],
       weeklySchedule: Array.isArray(r.weeklySchedule) ? r.weeklySchedule : [],
