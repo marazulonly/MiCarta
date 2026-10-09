@@ -1243,6 +1243,7 @@ export function extractBrandingFromCanvas(
   const dishPriceElem = elements.find(e => e.type === 'dish_price');
   const restNameElem = elements.find(e => e.type === 'restaurant_name');
   const buttonElem = elements.find(e => e.type === 'order_button' || e.type === 'shape_badge' || e.type === 'category_pill');
+  const logoElem = elements.find(e => e.type === 'restaurant_logo' || e.dynamicField === 'restaurant_logo');
 
   const primaryColor = buttonElem?.backgroundColor || currentBranding.primaryColor || '#D4AF37';
   const darkBgColor = bgElem?.backgroundColor || config.backgroundColor || currentBranding.darkBgColor || '#071A14';
@@ -1275,6 +1276,7 @@ export function extractBrandingFromCanvas(
     buttonTextColor,
     restaurantNameFont: restNameElem?.fontFamily || fontDisplay,
     restaurantNameColor: restNameElem?.textColor || '#FFFFFF',
+    headerLogoUrl: logoElem?.backgroundImage || currentBranding.headerLogoUrl,
     // Canvas persistence fields
     canvasElements: elements.map((el, i) => sanitizeCanvasElement(el, i)),
     canvasConfig: {
