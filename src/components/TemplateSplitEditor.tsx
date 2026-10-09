@@ -109,6 +109,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState<boolean>(false);
   const [newTemplateName, setNewTemplateName] = useState<string>('Nueva Plantilla Personalizada');
   const [newTemplateDesc, setNewTemplateDesc] = useState<string>('Diseño creado desde el editor gráfico');
+  const [savedTemplates, setSavedTemplates] = useState<MenuTemplate[]>([]);
 
   // 4. Undo / Redo History Stack
   const [history, setHistory] = useState<HistoryState[]>([
@@ -512,9 +513,10 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       fontDisplay: "'Cinzel', serif"
     };
 
+    setSavedTemplates(prev => [...prev, createdTemplate]);
     setIsSaveTemplateModalOpen(false);
     showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
-  }, [newTemplateName, newTemplateDesc, elements, config, showToast]);
+  }, [newTemplateName, newTemplateDesc, elements, config, showToast, setSavedTemplates]);
 
   const selectedElement = elements.find(e => e.id === selectedId) || null;
 
@@ -581,6 +583,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             onReorderElement={(id, dir) => handleReorderElement(id, dir)}
             onApplyTemplatePreset={handleApplyTemplatePreset}
             onApplyColorPalette={handleApplyColorPalette}
+            savedTemplates={savedTemplates}
           />
         )}
 

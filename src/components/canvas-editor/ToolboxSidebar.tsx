@@ -45,9 +45,10 @@ interface ToolboxSidebarProps {
   onReorderElement: (id: string, direction: 'up' | 'down') => void;
   onApplyTemplatePreset: (template: MenuTemplate) => void;
   onApplyColorPalette: (palette: any) => void;
+  savedTemplates?: MenuTemplate[];
 }
 
-type SidebarTab = 'layers' | 'insert' | 'templates' | 'palettes';
+type SidebarTab = 'layers' | 'insert' | 'templates' | 'palettes' | 'saved-templates';
 
 const QUICK_PALETTES = [
   {
@@ -129,7 +130,8 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
   onDeleteElement,
   onReorderElement,
   onApplyTemplatePreset,
-  onApplyColorPalette
+  onApplyColorPalette,
+  savedTemplates
 }) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>('layers');
 
@@ -140,7 +142,7 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
     <aside className="w-72 sm:w-80 bg-white border-r border-neutral-200 flex flex-col shrink-0 select-none overflow-hidden z-20 text-neutral-900 shadow-xs">
       
       {/* Navigation Segmented Control */}
-      <div className="p-2 border-b border-neutral-200 bg-neutral-100 grid grid-cols-4 gap-1">
+      <div className="p-2 border-b border-neutral-200 bg-neutral-100 grid grid-cols-5 gap-1">
         <button
           onClick={() => setActiveTab('layers')}
           className={`flex flex-col items-center justify-center py-2 rounded-xl text-[10px] font-bold transition cursor-pointer ${
@@ -178,6 +180,19 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
         >
           <LayoutTemplate className="w-4 h-4 mb-1 text-neutral-700" />
           <span>Estilos</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('saved-templates')}
+          className={`flex flex-col items-center justify-center py-2 rounded-xl text-[10px] font-bold transition cursor-pointer ${
+            activeTab === 'saved-templates' 
+              ? 'bg-white text-neutral-950 border border-neutral-300 shadow-xs' 
+              : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-200/60'
+          }`}
+          title="Mis Plantillas"
+        >
+          <FolderOpen className="w-4 h-4 mb-1 text-neutral-700" />
+          <span>Mis</span>
         </button>
 
         <button
@@ -1007,6 +1022,45 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3.5: MIS PLANTILLAS GUARDADAS                                         */}
+        {/* ========================================================================= */}
+        {activeTab === 'saved-templates' && (
+          <div className="space-y-2.5">
+            <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
+              Mis Plantillas
+            </span>
+            {savedTemplates && savedTemplates.length > 0 ? (
+              savedTemplates.map(tmpl => (
+                <button
+                  key={tmpl.id}
+                  onClick={() => onApplyTemplatePreset(tmpl)}
+                  className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 cursor-pointer shadow-xs group"
+                >
+                  <img 
+                    src={tmpl.thumbnailUrl} 
+                    alt={tmpl.name} 
+                    className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-neutral-900 truncate">
+                      {tmpl.name}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                      {tmpl.description}
+                    </p>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="text-center py-6 px-4 border-2 border-dashed border-neutral-200 rounded-2xl">
+                <FolderOpen className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
+                <p className="text-xs text-neutral-600">Aún no has guardado ninguna plantilla personalizada.</p>
+              </div>
+            )}
           </div>
         )}
 
