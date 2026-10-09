@@ -3,6 +3,7 @@ import { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, INITIAL_US
 import { 
   saveToFirestore,
   fetchFromFirestore,
+  fetchUsersFromFirestore,
   saveRestaurantToFirestore,
   deleteRestaurantFromFirestore,
   saveUserToFirestore,
@@ -86,6 +87,101 @@ export function normalizeSlug(str?: string): string {
  */
 export async function saveIndividualRestaurantSnapshotToUpstash(slugOrId: string, snapshot: any): Promise<boolean> {
   return savePublishedMenuToFirestore(slugOrId, snapshot);
+}
+
+const LOGIN_USERS_CACHE_KEY = 'micarta_login_users_cache_v1';
+const LOGIN_USERS_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+
+/**
+ * Lightweight user list fetcher for the Login screen with 5-minute LocalStorage TTL cache.
+ * Prevents downloading the entire database (items, categories, orders, restaurants) before login.
+ */
+export async function fetchLoginUsers(forceRefresh = false): Promise<User[]> {
+  if (!forceRefresh && typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(LOGIN_USERS_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0 && Date.now() - (parsed.ts || 0) < LOGIN_USERS_TTL_MS) {
+          return parsed.users;
+        }
+      }
+      // Also check if full download cache already has users
+      const fullCache = window.localStorage.getItem('micarta_download_cache_v1');
+      if (fullCache) {
+        const parsedFull = JSON.parse(fullCache);
+        if (parsedFull && Array.isArray(parsedFull.users) && parsedFull.users.length > 0 && Date.now() - (parsedFull.cachedAt || 0) < LOGIN_USERS_TTL_MS) {
+          return parsedFull.users;
+        }
+      }
+    } catch {}
+  }
+
+  const remoteUsers = await fetchUsersFromFirestore();
+  if (remoteUsers && remoteUsers.length > 0) {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(LOGIN_USERS_CACHE_KEY, JSON.stringify({ users: remoteUsers, ts: Date.now() }));
+      } catch {}
+    }
+    return remoteUsers;
+  }
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(LOGIN_USERS_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0) {
+          return parsed.users;
+        }
+      }
+      const fullCache = window.localStorage.getItem('micarta_download_cache_v1');
+      if (fullCache) {
+        const parsedFull = JSON.parse(fullCache);
+        if (parsedFull && Array.isArray(parsedFull.users) && parsedFull.users.length > 0) {
+          return parsedFull.users;
+        }
+      }
+    } catch {}
+  }
+
+  return INITIAL_USERS;
+}
+
+export function getCachedCloudMenu(): CloudMenuPayload | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const cached = window.localStorage.getItem('micarta_download_cache_v1');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch {}
+  }
+  return null;
+}
+
+export function updateCachedCloudMenuPartial(partial: Partial<CloudMenuPayload>) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const existing = getCachedCloudMenu() || {
+      restaurants: [],
+      categories: [],
+      items: [],
+      users: [],
+      orders: []
+    };
+    const merged = {
+      ...existing,
+      ...partial,
+      cachedAt: Date.now(),
+      updatedAt: new Date().toISOString()
+    };
+    window.localStorage.setItem('micarta_download_cache_v1', JSON.stringify(merged));
+    if (partial.users && partial.users.length > 0) {
+      window.localStorage.setItem(LOGIN_USERS_CACHE_KEY, JSON.stringify({ users: partial.users, ts: Date.now() }));
+    }
+  } catch {}
 }
 
 /**
@@ -364,6 +460,7 @@ export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
 export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void {
   return subscribeToFirestoreRealtime((partialPayload) => {
     if (isCloudSyncPaused) return;
+    updateCachedCloudMenuPartial(partialPayload);
     listener({
       type: 'FULL_SYNC',
       data: partialPayload

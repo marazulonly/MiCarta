@@ -339,6 +339,31 @@ export async function saveUserToFirestore(user: User): Promise<boolean> {
 }
 
 /**
+ * Fetches only the users collection (or returns cached users) for authentication before full staff session starts.
+ */
+export async function fetchUsersFromFirestore(): Promise<User[] | null> {
+  if (isBypassingFirestore()) return null;
+  try {
+    const usersSnap = await getDocs(collection(db, 'users')).catch((err) => {
+      handleFirestoreError(err, 'fetch users only');
+      return null;
+    });
+    if (!usersSnap) return null;
+    const users: User[] = [];
+    usersSnap.forEach(d => {
+      const data = d.data() as User;
+      if (data && data.id) {
+        users.push(data);
+      }
+    });
+    return users;
+  } catch (err) {
+    console.warn('[Firestore] fetchUsersFromFirestore notice:', err);
+    return null;
+  }
+}
+
+/**
  * Deletes an individual user directly from Firestore.
  */
 export async function deleteUserFromFirestore(userId: string): Promise<boolean> {
