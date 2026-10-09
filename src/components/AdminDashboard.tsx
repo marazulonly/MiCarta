@@ -118,7 +118,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   // Search filtering
-  const filterBySearch = (text: string) => text.toLowerCase().includes(searchTerm.toLowerCase());
+  const filterBySearch = (text?: string) => (text || '').toLowerCase().includes(searchTerm.toLowerCase());
 
   // Creation Handler for Owners
   const handleCreateOwner = (e: React.FormEvent) => {
@@ -531,8 +531,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ownersList.filter(o => filterBySearch(o.name) || filterBySearch(o.email) || filterBySearch(o.dni || '')).map(owner => {
-              const ownedRests = restaurants.filter(r => owner.restaurantIds.includes(r.id));
+            {ownersList.filter(o => o && (filterBySearch(o.name) || filterBySearch(o.email) || filterBySearch(o.dni || ''))).map(owner => {
+              const ownedRests = restaurants.filter(r => r && (owner.restaurantIds || []).includes(r.id));
               return (
                 <div
                   key={owner.id}
@@ -678,8 +678,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {restaurants.filter(r => filterBySearch(r.name) || filterBySearch(r.cuisineType) || filterBySearch(r.slug)).map(rest => {
-              const currentTmpl = templates.find(t => t.id === rest.templateId) || templates[0];
-              const owner = users.find(u => u.id === rest.ownerId);
+              const currentTmpl = templates.find(t => t && t.id === rest.templateId) || templates[0];
+              const owner = users.find(u => u && u.id === rest.ownerId);
 
               return (
                 <div
@@ -751,7 +751,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div>
                         <span className="text-neutral-400 block mb-0.5">Plantilla Carta</span>
                         <span className="font-bold text-neutral-800 truncate block">
-                          {currentTmpl.name}
+                          {currentTmpl?.name || 'Plantilla Personalizada'}
                         </span>
                       </div>
                       <div>
@@ -807,8 +807,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'waiters' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {waitersList.filter(w => filterBySearch(w.name) || filterBySearch(w.email)).map(waiter => {
-              const assignedRest = restaurants.find(r => waiter.restaurantIds.includes(r.id));
+            {waitersList.filter(w => w && (filterBySearch(w.name) || filterBySearch(w.email))).map(waiter => {
+              const assignedRest = restaurants.find(r => r && (waiter.restaurantIds || []).includes(r.id));
               return (
                 <div
                   key={waiter.id}
@@ -887,8 +887,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeSection === 'delivery' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {deliveryList.filter(d => filterBySearch(d.name) || filterBySearch(d.email)).map(rider => {
-              const assignedRests = restaurants.filter(r => rider.restaurantIds.includes(r.id));
+            {deliveryList.filter(d => d && (filterBySearch(d.name) || filterBySearch(d.email))).map(rider => {
+              const assignedRests = restaurants.filter(r => r && (rider.restaurantIds || []).includes(r.id));
               return (
                 <div
                   key={rider.id}
@@ -1093,7 +1093,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </p>
 
                       <div className="flex flex-wrap gap-1.5 mt-3.5">
-                        {tmpl.tags.map((tag, i) => (
+                        {(tmpl.tags || []).map((tag, i) => (
                           <span key={i} className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-600 font-bold">
                             {tag}
                           </span>
