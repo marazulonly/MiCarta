@@ -11,6 +11,7 @@ import {
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
 import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
 import { deduplicateUsers } from './lib/userUtils';
+import { getBasePath } from './utils/urlBase';
 import { TopHeader } from './components/TopHeader';
 import { FloatingNavBar } from './components/FloatingNavBar';
 import { HomeView } from './components/HomeView';
@@ -96,17 +97,18 @@ const getInitialUrlParams = () => {
     const rSlug = urlParams.get('r') || urlParams.get('rest') || urlParams.get('restaurant');
     const table = urlParams.get('mesa') || urlParams.get('table') || urlParams.get('m') || undefined;
     const mode = urlParams.get('mode') === 'DELIVERY' ? ('DELIVERY' as const) : ('DINE_IN' as const);
+    const cleanPath = window.location.pathname.replace(/^\/micarta(?=\/|$)/, '') || '/';
     const isStaffLogin = Boolean(
       urlParams.get('admin') || 
       urlParams.get('login') || 
       urlParams.get('staff') || 
       urlParams.get('panel') ||
-      window.location.pathname.startsWith('/admin') ||
-      window.location.pathname.startsWith('/login')
+      cleanPath.startsWith('/admin') ||
+      cleanPath.startsWith('/login')
     );
     const isLandingPage = Boolean(
-      window.location.pathname === '/carta' ||
-      window.location.pathname.startsWith('/carta') ||
+      cleanPath === '/carta' ||
+      cleanPath.startsWith('/carta') ||
       urlParams.get('page') === 'carta' ||
       urlParams.get('landing') === 'true'
     );
@@ -389,9 +391,12 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
+      const cleanPath = typeof window !== 'undefined'
+        ? (window.location.pathname.replace(/^\/micarta(?=\/|$)/, '') || '/')
+        : '/';
       const isLanding = typeof window !== 'undefined' && (
-        window.location.pathname === '/carta' ||
-        window.location.pathname.startsWith('/carta') ||
+        cleanPath === '/carta' ||
+        cleanPath.startsWith('/carta') ||
         new URLSearchParams(window.location.search).get('page') === 'carta'
       );
       setIsViewingLanding(isLanding);
@@ -1744,7 +1749,7 @@ export default function App() {
           onGoToLogin={() => {
             setIsViewingLanding(false);
             try {
-              window.history.pushState(null, '', '/login');
+              window.history.pushState(null, '', `${getBasePath()}/login`);
             } catch {}
           }}
           onGoToLiveDemo={(demoRole) => {
@@ -1762,7 +1767,7 @@ export default function App() {
               }
             } else {
               try {
-                window.history.pushState(null, '', '/login');
+                window.history.pushState(null, '', `${getBasePath()}/login`);
               } catch {}
             }
           }}

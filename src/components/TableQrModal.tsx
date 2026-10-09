@@ -39,7 +39,8 @@ export const TableQrModal: React.FC<TableQrModalProps> = ({
   if (!isOpen) return null;
 
   // Real URL pointing to this app's current origin with query params for the restaurant and table
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
+  const origin = typeof window !== 'undefined' ? `${window.location.origin}${basePath}` : 'https://micarta.io';
   const tableUrl = `${origin}/?r=${restaurant.slug}&mesa=${table.number}&mode=DINE_IN`;
 
   const handleCopyLink = () => {

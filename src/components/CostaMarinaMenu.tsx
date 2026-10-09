@@ -225,8 +225,9 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
   const totalItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
   const fullUrl = typeof window !== 'undefined' && window.location.origin
-    ? `${window.location.origin}/?r=${restaurant.slug}`
+    ? `${window.location.origin}${basePath}/?r=${restaurant.slug}`
     : `https://micarta-bay.vercel.app/?r=${restaurant.slug}`;
 
   const copyUrl = () => {

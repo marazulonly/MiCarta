@@ -46,7 +46,8 @@ export const CustomerPortalView: React.FC<CustomerPortalViewProps> = ({
     o && ((currentUser?.id && o.customerId === currentUser.id) || (currentUser?.dni && o.customerDni === currentUser.dni))
   );
 
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
+  const origin = typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}${basePath}` : 'https://micarta-bay.vercel.app';
 
   const handleCopyLink = (slug: string) => {
     const url = `${origin}/?r=${slug}`;

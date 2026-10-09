@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
+import { getAssetUrl } from '../utils/urlBase';
 
 interface TopHeaderProps {
   restaurants: Restaurant[];
@@ -73,7 +74,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           {/* Brand */}
           <div className="flex items-center gap-3">
             <img 
-              src="/huevofrito.svg" 
+              src={getAssetUrl('/huevofrito.svg')} 
               alt="Micarta" 
               className="w-8 h-8 object-contain border-0 shadow-none outline-none"
             />

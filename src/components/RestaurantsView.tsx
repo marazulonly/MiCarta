@@ -107,7 +107,8 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
     }
   }, [currentRestaurant?.slug, currentRestaurant?.id]);
 
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://micarta-bay.vercel.app';
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
+  const origin = typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}${basePath}` : 'https://micarta-bay.vercel.app';
   const currentLiveUrl = `${origin}/?r=${currentRestaurant.slug || ''}`;
 
   // Palette editing

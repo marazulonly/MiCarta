@@ -140,7 +140,8 @@ export const MinimalistBistroMenu: React.FC<MinimalistBistroMenuProps> = ({
   const totalItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
   const copyUrl = () => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/?r=${restaurant.slug}` : '';
+    const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
+    const url = typeof window !== 'undefined' ? `${window.location.origin}${basePath}/?r=${restaurant.slug}` : '';
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);

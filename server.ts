@@ -1,19 +1,19 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _resolvedDirname = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 
-const PORT = 3000;
-const DATA_DIR = path.resolve(__dirname, 'data');
+const PORT = Number(process.env.PORT) || 3000;
+const DATA_DIR = path.resolve(_resolvedDirname, 'data');
 const CLOUD_STORAGE_FILE = path.join(DATA_DIR, 'cloud-menu.json');
 
 // Read .env if present
 try {
-  const envPath = path.resolve(__dirname, '.env');
+  const envPath = path.resolve(_resolvedDirname, '.env');
   if (fs.existsSync(envPath)) {
     const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
     for (const line of lines) {
@@ -199,7 +199,7 @@ function saveCloudDataToDisk(data: any) {
     fs.writeFileSync(CLOUD_STORAGE_FILE, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
     
     // Keep public static backup snapshot in sync
-    const staticSnapshotPath = path.resolve(__dirname, 'public/menus/cloud-snapshot.json');
+    const staticSnapshotPath = path.resolve(_resolvedDirname, 'public/menus/cloud-snapshot.json');
     if (fs.existsSync(path.dirname(staticSnapshotPath))) {
       try {
         fs.writeFileSync(staticSnapshotPath, JSON.stringify(cachedCloudData, null, 2), 'utf-8');
@@ -325,40 +325,9 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  // Support both root (/) and subpath (/micarta) seamlessly in cPanel & AI Studio
-  app.use((req, res, next) => {
-    if (req.url === '/micarta' || req.url === '/micarta/') {
-      req.url = '/';
-    } else if (req.url.startsWith('/micarta/')) {
-      req.url = req.url.replace(/^\/micarta/, '');
-    }
-    next();
-  });
-
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
-  });
-
-  // Direct download endpoints for the compressed deployment packages
-  app.get(['/app_final.tar.gz', '/api/download-final'], (req, res) => {
-    const filePath = path.resolve(__dirname, 'app_final.tar.gz');
-    if (fs.existsSync(filePath)) {
-      res.setHeader('Content-Type', 'application/gzip');
-      res.setHeader('Content-Disposition', 'attachment; filename="app_final.tar.gz"');
-      return res.sendFile(filePath);
-    }
-    res.status(404).send('Archivo app_final.tar.gz no encontrado');
-  });
-
-  app.get(['/app.tar.gz', '/app_cpanel_light.tar.gz', '/api/download-light'], (req, res) => {
-    const filePath = path.resolve(__dirname, 'app_cpanel_light.tar.gz');
-    if (fs.existsSync(filePath)) {
-      res.setHeader('Content-Type', 'application/gzip');
-      res.setHeader('Content-Disposition', 'attachment; filename="app_cpanel_light.tar.gz"');
-      return res.sendFile(filePath);
-    }
-    res.status(404).send('Archivo no encontrado');
   });
 
   // GET: Retrieve latest cloud menu
@@ -1108,10 +1077,17 @@ async function startServer() {
 
   // Mount Vite or Serve Static Files
   let vite: any = null;
-  if (process.env.NODE_ENV === 'production') {
-    app.use('/micarta', express.static(path.resolve(__dirname, 'dist')));
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+  const isProd = process.env.NODE_ENV === 'production' || !fs.existsSync(path.resolve(_resolvedDirname, 'src'));
+  if (isProd) {
+    if (fs.existsSync(path.resolve(_resolvedDirname, 'dist'))) {
+      app.use('/micarta', express.static(path.resolve(_resolvedDirname, 'dist')));
+      app.use(express.static(path.resolve(_resolvedDirname, 'dist')));
+    }
+    app.use('/micarta', express.static(_resolvedDirname));
+    app.use(express.static(_resolvedDirname));
   } else {
+    const vitePkg = 'vite';
+    const { createServer: createViteServer } = await import(vitePkg);
     vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
       appType: 'custom',
@@ -1136,10 +1112,11 @@ async function startServer() {
     }
 
     try {
-      const isProd = process.env.NODE_ENV === 'production';
-      const indexPath = isProd 
-        ? path.resolve(__dirname, 'dist', 'index.html')
-        : path.resolve(__dirname, 'index.html');
+      const distHtml = path.resolve(_resolvedDirname, 'dist', 'index.html');
+      const rootHtml = path.resolve(_resolvedDirname, 'index.html');
+      const indexPath = isProd
+        ? (fs.existsSync(distHtml) ? distHtml : rootHtml)
+        : rootHtml;
 
       if (!fs.existsSync(indexPath)) {
         if (vite) return vite.middlewares(req, res, next);

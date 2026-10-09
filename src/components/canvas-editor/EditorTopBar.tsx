@@ -19,6 +19,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Restaurant } from '../../types';
+import { getAssetUrl } from '../../utils/urlBase';
 
 interface EditorTopBarProps {
   loadedRestaurant: Restaurant | null;
@@ -90,7 +91,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
         <div className="flex items-center gap-2.5">
           <img 
-            src="/huevofrito.svg" 
+            src={getAssetUrl('/huevofrito.svg')} 
             alt="Micarta" 
             className="w-7 h-7 object-contain shrink-0 border-0 shadow-none outline-none"
           />

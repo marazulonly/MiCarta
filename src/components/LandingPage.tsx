@@ -43,6 +43,7 @@ import {
   Bike
 } from 'lucide-react';
 import { User, Restaurant } from '../types';
+import { getAssetUrl, getBasePath } from '../utils/urlBase';
 
 interface LandingPageProps {
   onGoToLogin: () => void;
@@ -200,10 +201,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           {/* Logo Brand */}
           <div className="flex items-center gap-3">
-            <a href="/carta" className="flex items-center gap-2.5 group">
+            <a href={`${getBasePath()}/carta`} className="flex items-center gap-2.5 group">
               <div className="w-10 h-10 rounded-2xl bg-[#582C84]/10 border border-[#582C84]/20 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
                 <img 
-                  src="/huevofrito.svg" 
+                  src={getAssetUrl('/huevofrito.svg')} 
                   alt="Mi Carta Logo" 
                   className="w-7 h-7 object-contain" 
                 />
@@ -1159,7 +1160,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Yellow/Orange Accent Circle */}
                 <div className="absolute inset-2 rounded-full bg-gradient-to-tr from-[#FFA048] to-[#F26522] shadow-xl overflow-hidden flex items-end justify-center">
                   <img 
-                    src="/alexisgonzales.jpg" 
+                    src={getAssetUrl('/alexisgonzales.jpg')} 
                     alt="Chef Alexis Gonzales - Mi Carta" 
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-top"
@@ -1407,7 +1408,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             
             <div className="md:col-span-2 space-y-4">
               <div className="flex items-center gap-2.5">
-                <img src="/huevofrito.svg" alt="Mi Carta Logo" className="w-8 h-8 object-contain" />
+                <img src={getAssetUrl('/huevofrito.svg')} alt="Mi Carta Logo" className="w-8 h-8 object-contain" />
                 <span className="text-xl font-black text-[#4F2D7F] tracking-tight">Mi Carta</span>
               </div>
               <p className="text-xs text-neutral-500 font-medium max-w-sm leading-relaxed">

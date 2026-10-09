@@ -773,7 +773,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?r=${rest.slug}`;
+                            const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/micarta') ? '/micarta' : '';
+                            const url = `${typeof window !== 'undefined' ? `${window.location.origin}${basePath}` : ''}/?r=${rest.slug}`;
                             navigator.clipboard?.writeText(url);
                           }}
                           className="p-2 rounded-xl bg-neutral-50 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 border border-neutral-200 transition cursor-pointer"

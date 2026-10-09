@@ -20,6 +20,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { User, UserRole, Restaurant } from '../types';
+import { getAssetUrl } from '../utils/urlBase';
 
 interface RoleHeaderProps {
   currentUser: User;
@@ -229,7 +230,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({
               /* Default Logo & Brand Info for non-owner views */
               <div className="flex items-center gap-3">
                 <img 
-                  src="/huevofrito.svg" 
+                  src={getAssetUrl('/huevofrito.svg')} 
                   alt="Micarta" 
                   className="w-9 h-9 object-contain border-0 shadow-none outline-none"
                 />

@@ -36,6 +36,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Published Menus (Public QR & Direct Slug Links)
+    match /published_menus/{slugOrId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Snapshots and system state
     match /snapshots/{snapshotId} {
       allow read: if true;

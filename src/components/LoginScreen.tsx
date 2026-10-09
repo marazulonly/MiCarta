@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { User, UserRole, Restaurant } from '../types';
+import { getAppOrigin, getAssetUrl, getBasePath } from '../utils/urlBase';
 
 interface LoginScreenProps {
   users: User[];
@@ -56,7 +57,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const qrRef = useRef<HTMLDivElement>(null);
 
   const activeRest = selectedRestForQr || restaurants[0];
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://micarta.io';
+  const origin = getAppOrigin();
   const qrUrl = activeRest 
     ? `${origin}/?r=${activeRest.slug}&mesa=${selectedTableNum}&mode=${selectedChannel}`
     : `${origin}/`;
@@ -198,12 +199,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Headline */}
           <div className="text-center space-y-3 flex flex-col items-center">
             <img 
-              src="/huevofrito.svg" 
+              src={getAssetUrl('/huevofrito.svg')} 
               alt="Mi Carta" 
               className="w-16 h-16 sm:w-20 sm:h-20 object-contain border-0 shadow-none outline-none transition-transform hover:scale-105"
             />
             <img 
-              src="/micarta.svg" 
+              src={getAssetUrl('/micarta.svg')} 
               alt="Mi Carta" 
               className="h-8 sm:h-9 w-auto object-contain mt-1" 
             />
@@ -279,7 +280,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <div className="mt-4 pt-3 border-t border-neutral-100 text-center">
               <a 
-                href="/carta" 
+                href={`${getBasePath()}/carta`} 
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-950 transition-colors"
               >
                 <span>Conoce la plataforma</span>
