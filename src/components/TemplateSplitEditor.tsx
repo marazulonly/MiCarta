@@ -6,7 +6,6 @@ import {
   MenuCategory, 
   RestaurantBranding 
 } from '../types';
-import { INITIAL_MENU_TEMPLATES } from '../data/menuTemplatesData';
 import { CanvasElement, CanvasConfig, HistoryState } from './canvas-editor/types';
 import { 
   createBlankCanvas,
@@ -50,7 +49,7 @@ interface TemplateSplitEditorProps {
 
 export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   restaurants = [],
-  templates = INITIAL_MENU_TEMPLATES,
+  templates = [],
   menuItems = [],
   categories = [],
   currentRestaurantId,
