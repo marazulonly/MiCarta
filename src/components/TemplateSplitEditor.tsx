@@ -466,12 +466,15 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
     try {
       const updatedBranding = extractBrandingFromCanvas(elements, config, targetRest.branding);
-      const safeLogo = targetRest.branding?.headerLogoUrl || targetRest.logoUrl;
+      const safeLogo = updatedBranding.headerLogoUrl || targetRest.branding?.headerLogoUrl || targetRest.logoUrl || '';
 
       const updatedRestaurant: Restaurant = {
         ...targetRest,
         logoUrl: safeLogo,
-        branding: updatedBranding
+        branding: {
+          ...updatedBranding,
+          headerLogoUrl: safeLogo
+        }
       };
 
       onUpdateRestaurant(updatedRestaurant);
@@ -495,6 +498,8 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
     const primaryElem = elements.find(e => e.type === 'order_button' || e.type === 'shape_badge' || e.type === 'dish_price');
     const bgElem = elements.find(e => e.type === 'background');
+    const cardElem = elements.find(e => e.type === 'shape_rect' && (e.name.toLowerCase().includes('ficha') || e.name.toLowerCase().includes('plato')));
+    const nameElem = elements.find(e => e.type === 'dish_name' || e.type === 'restaurant_name');
 
     const createdTemplate: MenuTemplate = {
       id: `custom-tpl-${Date.now()}`,
@@ -509,12 +514,12 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       isCustomizable: true,
       primaryColor: primaryElem?.backgroundColor || config.backgroundColor || '#D4AF37',
       darkBgColor: bgElem?.backgroundColor || config.backgroundColor || '#071A14',
-      cardBgColor: '#141E2E',
-      textColor: '#FFFFFF',
-      fontDisplay: "'Cinzel', serif"
+      cardBgColor: cardElem?.backgroundColor || '#141E2E',
+      textColor: nameElem?.textColor || '#FFFFFF',
+      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif"
     };
 
-    setSavedTemplates(prev => [...prev, createdTemplate]);
+    setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
     if (onSaveTemplate) onSaveTemplate(createdTemplate);
     setIsSaveTemplateModalOpen(false);
     showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
@@ -585,7 +590,16 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             onReorderElement={(id, dir) => handleReorderElement(id, dir)}
             onApplyTemplatePreset={handleApplyTemplatePreset}
             onApplyColorPalette={handleApplyColorPalette}
-            savedTemplates={savedTemplates}
+            savedTemplates={(() => {
+              const map = new Map<string, MenuTemplate>();
+              templates.forEach(t => { if (t && t.id) map.set(t.id, t); });
+              savedTemplates.forEach(t => { if (t && t.id) map.set(t.id, t); });
+              return Array.from(map.values());
+            })()}
+            onDeleteSavedTemplate={(templateId) => {
+              setSavedTemplates(prev => prev.filter(t => t.id !== templateId));
+              if (onDeleteTemplate) onDeleteTemplate(templateId);
+            }}
           />
         )}
 

@@ -244,6 +244,7 @@ export function importCardToEditorModel(
       zIndex: 2,
       visible: true,
       locked: false,
+      backgroundImage: logoUrl || undefined,
       objectFit: 'contain',
       isDynamic: true,
       dynamicField: 'restaurant_logo'
@@ -678,6 +679,7 @@ export function importCardToEditorModel(
     zIndex: 2,
     visible: true,
     locked: false,
+    backgroundImage: logoUrl || undefined,
     borderRadius: 18,
     borderWidth: 2,
     borderColor: '#DFB86C',

@@ -365,13 +365,25 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
 
           <div>
             <label className="text-[10px] text-neutral-600 font-mono block mb-1">URL de la Imagen o Logo</label>
-            <input
-              type="text"
-              value={selectedElement.backgroundImage || ''}
-              placeholder="https://... o sube un archivo"
-              onChange={(e) => onUpdateElement({ ...selectedElement, backgroundImage: e.target.value })}
-              className="w-full bg-white px-2.5 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={selectedElement.backgroundImage?.startsWith('data:') ? '(Imagen optimizada embebida)' : (selectedElement.backgroundImage || '')}
+                placeholder="https://... o sube un archivo"
+                onChange={(e) => onUpdateElement({ ...selectedElement, backgroundImage: e.target.value })}
+                className="flex-1 bg-white px-2.5 py-1.5 rounded-lg border border-neutral-300 text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-900"
+              />
+              {selectedElement.backgroundImage && (
+                <button
+                  type="button"
+                  onClick={() => onUpdateElement({ ...selectedElement, backgroundImage: '' })}
+                  className="px-2 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-bold transition cursor-pointer shrink-0"
+                  title="Quitar imagen"
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -379,22 +391,31 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  const targetType = selectedElement.type === 'restaurant_logo' ? 'logo' : 'dish';
-                  processAndUploadImage(file, targetType, selectedElement.id || 'canvas_img')
-                    .then(res => {
-                      onUpdateElement({
-                        ...selectedElement,
-                        backgroundImage: res.url
-                      });
-                    })
-                    .catch(err => {
-                      console.warn('Error optimizing canvas image:', err);
-                    });
-                }
                 e.target.value = '';
+                if (!file) return;
+                const targetType = (selectedElement.type === 'restaurant_logo' || selectedElement.dynamicField === 'restaurant_logo') ? 'logo' : 'dish';
+                try {
+                  const res = await processAndUploadImage(file, targetType, selectedElement.id || 'canvas_img');
+                  // Show immediate preview if available
+                  if (res.previewUrl) {
+                    onUpdateElement({
+                      ...selectedElement,
+                      backgroundImage: res.previewUrl
+                    });
+                  }
+                  // Resolve the permanent compressed base64/cloud URL so it never expires like a blob: URL!
+                  const permanentUrl = await res.finalUrl;
+                  if (permanentUrl) {
+                    onUpdateElement({
+                      ...selectedElement,
+                      backgroundImage: permanentUrl
+                    });
+                  }
+                } catch (err) {
+                  console.warn('Error optimizing canvas image:', err);
+                }
               }}
               className="w-full text-[11px] text-neutral-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
             />

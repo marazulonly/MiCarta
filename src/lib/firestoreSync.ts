@@ -10,7 +10,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
+import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
 import { CloudMenuPayload } from './cloudSync';
 import { normalizeBranding } from '../utils/restaurantUtils';
 import { ensureOptimizedImageUrl, needsBase64Migration } from './imageOptimizer';
@@ -43,7 +43,7 @@ function cleanObject<T extends Record<string, any>>(obj: T): T {
 
 /**
  * Strips duplicate giant base64 payloads to guarantee Firestore 1MB document limit is never exceeded,
- * and ensures the restaurant's primary identifier is its normalized slug.
+ * ensures the restaurant's primary identifier is its normalized slug, and keeps logoUrl and headerLogoUrl synced.
  */
 function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
   const clean = cleanObject(restaurant);
@@ -51,7 +51,12 @@ function sanitizeRestaurantForFirestore(restaurant: Restaurant): Restaurant {
   if (slugKey) {
     clean.slug = slugKey;
   }
-  clean.branding = normalizeBranding(clean.branding, clean.templateId);
+  const resolvedLogo = clean.branding?.headerLogoUrl || clean.logoUrl || '';
+  clean.logoUrl = resolvedLogo;
+  clean.branding = normalizeBranding(
+    { ...(clean.branding || {}), headerLogoUrl: resolvedLogo },
+    clean.templateId
+  );
   return clean;
 }
 
@@ -211,7 +216,12 @@ export async function fetchFromFirestore(): Promise<CloudMenuPayload | null> {
         const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
         data.id = docId;
         data.slug = cleanSlug || docId;
-        data.branding = normalizeBranding(data.branding, data.templateId);
+        const resolvedLogo = data.branding?.headerLogoUrl || data.logoUrl || '';
+        data.logoUrl = resolvedLogo;
+        data.branding = normalizeBranding(
+          { ...(data.branding || {}), headerLogoUrl: resolvedLogo },
+          data.templateId
+        );
         restMapById.set(docId, data);
       }
     });
@@ -630,7 +640,12 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
 
     // If published_menus exists and has valid restaurant + items, return immediately!
     if (pubData && pubData.restaurant && Array.isArray(pubData.items) && pubData.items.length > 0) {
-      pubData.restaurant.branding = normalizeBranding(pubData.restaurant.branding, pubData.restaurant.templateId);
+      const rLogo = pubData.restaurant.branding?.headerLogoUrl || pubData.restaurant.logoUrl || '';
+      pubData.restaurant.logoUrl = rLogo;
+      pubData.restaurant.branding = normalizeBranding(
+        { ...(pubData.restaurant.branding || {}), headerLogoUrl: rLogo },
+        pubData.restaurant.templateId
+      );
       return pubData;
     }
 
@@ -654,7 +669,12 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
 
     const activeRest: Restaurant | null = matchedRest || pubData?.restaurant || null;
     if (activeRest) {
-      activeRest.branding = normalizeBranding(activeRest.branding, activeRest.templateId);
+      const rLogo = activeRest.branding?.headerLogoUrl || activeRest.logoUrl || '';
+      activeRest.logoUrl = rLogo;
+      activeRest.branding = normalizeBranding(
+        { ...(activeRest.branding || {}), headerLogoUrl: rLogo },
+        activeRest.templateId
+      );
       const primarySlug = normalizeSlugKey(activeRest.slug || activeRest.name || activeRest.id);
       activeRest.slug = primarySlug;
 
@@ -715,83 +735,224 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
 }
 
 /**
- * Real-time Firestore listener on all collections so changes propagate immediately across tabs/links.
+ * Fetches saved templates from the Firestore 'templates' collection (one-time getDocs).
  */
-export function subscribeToFirestoreRealtime(
-  onUpdate: (payload: Partial<CloudMenuPayload>) => void
+export async function fetchTemplatesFromFirestore(): Promise<MenuTemplate[] | null> {
+  if (isBypassingFirestore()) return null;
+  try {
+    const snap = await getDocs(collection(db, 'templates')).catch((err) => {
+      handleFirestoreError(err, 'fetch templates');
+      return null;
+    });
+    if (!snap) return null;
+    const templates: MenuTemplate[] = [];
+    snap.forEach(d => {
+      const data = d.data() as MenuTemplate;
+      if (data && (data.id || d.id) && data.name) {
+        templates.push({ ...data, id: data.id || d.id });
+      }
+    });
+    return templates;
+  } catch (err) {
+    console.warn('[Firestore] fetchTemplatesFromFirestore notice:', err);
+    return null;
+  }
+}
+
+/**
+ * Saves a custom template to Firestore 'templates' collection.
+ */
+export async function saveTemplateToFirestore(template: MenuTemplate): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
+  if (!template || !template.id) return false;
+  try {
+    await setDoc(doc(db, 'templates', template.id), cleanObject(template), { merge: true });
+    return true;
+  } catch (err) {
+    return handleFirestoreError(err, 'saveTemplateToFirestore');
+  }
+}
+
+/**
+ * Deletes a template from Firestore 'templates' collection.
+ */
+export async function deleteTemplateFromFirestore(templateId: string): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
+  if (!templateId) return false;
+  try {
+    await deleteDoc(doc(db, 'templates', templateId));
+    return true;
+  } catch (err) {
+    return handleFirestoreError(err, 'deleteTemplateFromFirestore');
+  }
+}
+
+/**
+ * Fetches data for a specific restaurant ONLY using doc(db, 'restaurants', id) and where('restaurantId', '==', id).
+ * Never reads entire collections.
+ */
+export async function fetchSpecificRestaurantDataFromFirestore(restaurantId: string): Promise<{
+  restaurant: Restaurant | null;
+  categories: MenuCategory[];
+  items: MenuItem[];
+  orders: Order[];
+} | null> {
+  if (isBypassingFirestore() || !restaurantId) return null;
+  try {
+    const normSlug = normalizeSlugKey(restaurantId);
+    const possibleIds = Array.from(new Set([restaurantId, normSlug].filter(Boolean)));
+
+    const [restDocSnap, restNormSnap, ...queryResults] = await Promise.all([
+      getDoc(doc(db, 'restaurants', restaurantId)).catch((err) => { handleFirestoreError(err, 'getDoc restaurant'); return null; }),
+      normSlug && normSlug !== restaurantId
+        ? getDoc(doc(db, 'restaurants', normSlug)).catch(() => null)
+        : Promise.resolve(null),
+      ...possibleIds.map(id => getDocs(query(collection(db, 'categories'), where('restaurantId', '==', id))).catch(() => null)),
+      ...possibleIds.map(id => getDocs(query(collection(db, 'items'), where('restaurantId', '==', id))).catch(() => null)),
+      ...possibleIds.map(id => getDocs(query(collection(db, 'orders'), where('restaurantId', '==', id))).catch(() => null))
+    ]);
+
+    let restaurant: Restaurant | null = null;
+    const rawSnap = (restDocSnap && restDocSnap.exists()) ? restDocSnap : ((restNormSnap && restNormSnap.exists()) ? restNormSnap : null);
+    if (rawSnap) {
+      const data = rawSnap.data() as Restaurant;
+      const docId = data.id || rawSnap.id;
+      const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
+      const resolvedLogo = data.branding?.headerLogoUrl || data.logoUrl || '';
+      restaurant = {
+        ...data,
+        id: docId,
+        slug: cleanSlug || docId,
+        logoUrl: resolvedLogo,
+        branding: normalizeBranding({ ...(data.branding || {}), headerLogoUrl: resolvedLogo }, data.templateId)
+      };
+    }
+
+    const n = possibleIds.length;
+    const catSnaps = queryResults.slice(0, n);
+    const itemSnaps = queryResults.slice(n, n * 2);
+    const orderSnaps = queryResults.slice(n * 2, n * 3);
+
+    const catMap = new Map<string, MenuCategory>();
+    catSnaps.forEach(s => s?.forEach(d => {
+      const c = d.data() as MenuCategory;
+      if (c && c.id) catMap.set(c.id, c);
+    }));
+
+    const itemMap = new Map<string, MenuItem>();
+    itemSnaps.forEach(s => s?.forEach(d => {
+      const i = d.data() as MenuItem;
+      if (i && i.id) itemMap.set(i.id, i);
+    }));
+
+    const orderMap = new Map<string, Order>();
+    orderSnaps.forEach(s => s?.forEach(d => {
+      const o = d.data() as Order;
+      if (o && o.id) orderMap.set(o.id, o);
+    }));
+
+    return {
+      restaurant,
+      categories: Array.from(catMap.values()),
+      items: Array.from(itemMap.values()),
+      orders: Array.from(orderMap.values())
+    };
+  } catch (err) {
+    handleFirestoreError(err, 'fetchSpecificRestaurantDataFromFirestore');
+    return null;
+  }
+}
+
+/**
+ * Subscribes in real-time ONLY to a single specific restaurant document and/or its filtered orders
+ * using doc(db, 'restaurants', restaurantId) and where('restaurantId', '==', restaurantId).
+ * NEVER listens to entire collections.
+ */
+export function subscribeToRestaurantOrdersRealtime(
+  restaurantId: string,
+  onOrdersUpdate: (orders: Order[]) => void,
+  onRestaurantDocUpdate?: (restaurant: Restaurant) => void
 ): () => void {
-  if (isBypassingFirestore()) return () => {};
+  if (isBypassingFirestore() || !restaurantId || restaurantId === 'all') return () => {};
   const unsubs: (() => void)[] = [];
 
   try {
-    unsubs.push(
-      onSnapshot(collection(db, 'restaurants'), (snap) => {
-        const restMap = new Map<string, Restaurant>();
-        snap.forEach(d => {
-          const data = d.data() as Restaurant;
-          if (data && (data.slug || data.name || data.id)) {
-            const docId = data.id || d.id;
-            const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
-            data.id = docId;
-            data.slug = cleanSlug || docId;
-            data.branding = normalizeBranding(data.branding, data.templateId);
-            restMap.set(docId, data);
-          }
-        });
-        onUpdate({ restaurants: Array.from(restMap.values()) });
-      }, () => {})
-    );
+    // 1. Optional single-document listener on doc(db, 'restaurants', restaurantId)
+    if (onRestaurantDocUpdate) {
+      unsubs.push(
+        onSnapshot(
+          doc(db, 'restaurants', restaurantId),
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as Restaurant;
+              if (data && (data.slug || data.name || data.id)) {
+                const docId = data.id || docSnap.id;
+                const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
+                const resolvedLogo = data.branding?.headerLogoUrl || data.logoUrl || '';
+                data.id = docId;
+                data.slug = cleanSlug || docId;
+                data.logoUrl = resolvedLogo;
+                data.branding = normalizeBranding(
+                  { ...(data.branding || {}), headerLogoUrl: resolvedLogo },
+                  data.templateId
+                );
+                onRestaurantDocUpdate(data);
+              }
+            }
+          },
+          (err) => handleFirestoreError(err, `onSnapshot doc restaurant ${restaurantId}`)
+        )
+      );
+    }
 
+    // 2. Filtered listener ONLY for orders of this specific restaurantId
+    const ordersQuery = query(collection(db, 'orders'), where('restaurantId', '==', restaurantId));
     unsubs.push(
-      onSnapshot(collection(db, 'categories'), (snap) => {
-        const categories: MenuCategory[] = [];
-        snap.forEach(d => {
-          const data = d.data() as MenuCategory;
-          if (data && data.id) categories.push(data);
-        });
-        onUpdate({ categories });
-      }, () => {})
-    );
-
-    unsubs.push(
-      onSnapshot(collection(db, 'items'), (snap) => {
-        const items: MenuItem[] = [];
-        snap.forEach(d => {
-          const data = d.data() as MenuItem;
-          if (data && data.id) items.push(data);
-        });
-        onUpdate({ items });
-      }, () => {})
-    );
-
-    unsubs.push(
-      onSnapshot(collection(db, 'users'), (snap) => {
-        const users: User[] = [];
-        snap.forEach(d => {
-          const data = d.data() as User;
-          if (data && data.id) users.push(data);
-        });
-        onUpdate({ users });
-      }, () => {})
-    );
-
-    unsubs.push(
-      onSnapshot(collection(db, 'orders'), (snap) => {
-        const orders: Order[] = [];
-        snap.forEach(d => {
-          const data = d.data() as Order;
-          if (data && data.id) orders.push(data);
-        });
-        onUpdate({ orders });
-      }, () => {})
+      onSnapshot(
+        ordersQuery,
+        (snap) => {
+          const orders: Order[] = [];
+          snap.forEach(d => {
+            const data = d.data() as Order;
+            if (data && data.id) orders.push(data);
+          });
+          onOrdersUpdate(orders);
+        },
+        (err) => handleFirestoreError(err, `onSnapshot orders where restaurantId==${restaurantId}`)
+      )
     );
   } catch (err) {
-    console.warn('[Firestore] Realtime subscription notice:', err);
+    handleFirestoreError(err, 'subscribeToRestaurantOrdersRealtime');
   }
 
   return () => {
     unsubs.forEach(u => {
       try { u(); } catch {}
     });
+  };
+}
+
+/**
+ * Replaces the old 5-collection perpetual onSnapshot with a single one-time fetch (getDocs once)
+ * so that editing or navigating the panel NEVER keeps open collection-wide onSnapshot listeners.
+ */
+export function subscribeToFirestoreRealtime(
+  onUpdate: (payload: Partial<CloudMenuPayload>) => void
+): () => void {
+  if (isBypassingFirestore()) return () => {};
+  let cancelled = false;
+
+  fetchFromFirestore()
+    .then((payload) => {
+      if (!cancelled && payload) {
+        onUpdate(payload);
+      }
+    })
+    .catch((err) => {
+      handleFirestoreError(err, 'initial one-time fetchFromFirestore');
+    });
+
+  return () => {
+    cancelled = true;
   };
 }

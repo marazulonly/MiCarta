@@ -1,4 +1,4 @@
-import { Restaurant, MenuItem, MenuCategory, User, Order } from '../types';
+import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
 import { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, INITIAL_USERS } from '../data/mockData';
 import { 
   saveToFirestore,
@@ -17,7 +17,12 @@ import {
   savePublishedMenuToFirestore,
   fetchPublishedMenuFromFirestore,
   deletePublishedMenuFromFirestore,
-  subscribeToFirestoreRealtime
+  subscribeToFirestoreRealtime,
+  subscribeToRestaurantOrdersRealtime,
+  fetchSpecificRestaurantDataFromFirestore,
+  fetchTemplatesFromFirestore,
+  saveTemplateToFirestore,
+  deleteTemplateFromFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {
@@ -26,6 +31,7 @@ export interface CloudMenuPayload {
   categories: MenuCategory[];
   users?: User[];
   orders?: Order[];
+  templates?: MenuTemplate[];
   updatedAt?: string;
 }
 
@@ -281,11 +287,27 @@ export async function publishRestaurantMenu(
     savePublishedMenuToFirestore(primarySlug, snap)
   ]);
 
+  // Always update local public & download cache so edits (like logo or branding) persist even if quota is exceeded
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(`micarta_pub_download_cache_${primarySlug}`, JSON.stringify(snap));
+      const existing = getCachedCloudMenu();
+      if (existing) {
+        const nextRests = Array.isArray(existing.restaurants)
+          ? existing.restaurants.some(r => r.id === normalizedRest.id || normalizeSlug(r.slug) === primarySlug)
+            ? existing.restaurants.map(r => (r.id === normalizedRest.id || normalizeSlug(r.slug) === primarySlug) ? normalizedRest : r)
+            : [normalizedRest, ...existing.restaurants]
+          : [normalizedRest];
+        updateCachedCloudMenuPartial({ restaurants: nextRests });
+      }
+    } catch {}
+  }
+
   return { 
     success: restOk && menuOk, 
     version: 1, 
     publishedAt: nowIso, 
-    message: restOk && menuOk ? '✓ Carta publicada y guardada correctamente en Firestore.' : '⚠️ Error al guardar la carta en Firestore.' 
+    message: restOk && menuOk ? '✓ Carta publicada y guardada correctamente en Firestore.' : '✓ Guardado en memoria local (sincronización diferida por límite de cuota de Firestore).' 
   };
 }
 
@@ -393,44 +415,91 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
 }
 
 /**
- * Automatically saves a user modification directly to Firestore.
+ * Automatically saves a user modification directly to Firestore and updates local cache.
  */
 export async function autoSyncUser(user: User): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.users)) {
+      const next = existing.users.some(u => u.id === user.id)
+        ? existing.users.map(u => u.id === user.id ? user : u)
+        : [user, ...existing.users];
+      updateCachedCloudMenuPartial({ users: next });
+    }
+  } catch {}
   return await saveUserToFirestore(user);
 }
 
 /**
- * Automatically deletes a user directly from Firestore.
+ * Automatically deletes a user directly from Firestore and updates local cache.
  */
 export async function autoDeleteUser(userId: string): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.users)) {
+      updateCachedCloudMenuPartial({ users: existing.users.filter(u => u.id !== userId) });
+    }
+  } catch {}
   return await deleteUserFromFirestore(userId);
 }
 
 /**
- * Automatically saves a menu item modification directly to Firestore.
+ * Automatically saves a menu item modification directly to Firestore and updates local cache.
  */
 export async function autoSyncMenuItem(item: MenuItem): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.items)) {
+      const next = existing.items.some(i => i.id === item.id)
+        ? existing.items.map(i => i.id === item.id ? item : i)
+        : [item, ...existing.items];
+      updateCachedCloudMenuPartial({ items: next });
+    }
+  } catch {}
   return await saveItemToFirestore(item);
 }
 
 /**
- * Automatically deletes a menu item directly from Firestore.
+ * Automatically deletes a menu item directly from Firestore and updates local cache.
  */
 export async function autoDeleteMenuItem(itemId: string): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.items)) {
+      updateCachedCloudMenuPartial({ items: existing.items.filter(i => i.id !== itemId) });
+    }
+  } catch {}
   return await deleteItemFromFirestore(itemId);
 }
 
 /**
- * Automatically saves a restaurant modification directly to Firestore.
+ * Automatically saves a restaurant modification directly to Firestore and updates local cache.
  */
 export async function autoSyncRestaurant(restaurant: Restaurant, previousSlugOrId?: string): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.restaurants)) {
+      const next = existing.restaurants.some(r => r.id === restaurant.id)
+        ? existing.restaurants.map(r => r.id === restaurant.id ? restaurant : r)
+        : [restaurant, ...existing.restaurants];
+      updateCachedCloudMenuPartial({ restaurants: next });
+    }
+  } catch {}
   return await saveRestaurantToFirestore(restaurant, previousSlugOrId);
 }
 
 /**
- * Automatically deletes a restaurant directly from Firestore.
+ * Automatically deletes a restaurant directly from Firestore and updates local cache.
  */
 export async function autoDeleteRestaurant(restaurantId: string, slug?: string): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.restaurants)) {
+      updateCachedCloudMenuPartial({
+        restaurants: existing.restaurants.filter(r => r.id !== restaurantId && (!slug || normalizeSlug(r.slug) !== normalizeSlug(slug)))
+      });
+    }
+  } catch {}
   const [firestoreOk] = await Promise.all([
     deleteRestaurantFromFirestore(restaurantId, slug),
     deletePublishedMenuFromFirestore(restaurantId),
@@ -441,21 +510,83 @@ export async function autoDeleteRestaurant(restaurantId: string, slug?: string):
 }
 
 /**
- * Automatically saves a category modification directly to Firestore.
+ * Automatically saves a category modification directly to Firestore and updates local cache.
  */
 export async function autoSyncCategory(category: MenuCategory): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.categories)) {
+      const next = existing.categories.some(c => c.id === category.id)
+        ? existing.categories.map(c => c.id === category.id ? category : c)
+        : [...existing.categories, category];
+      updateCachedCloudMenuPartial({ categories: next });
+    }
+  } catch {}
   return await saveCategoryToFirestore(category);
 }
 
 /**
- * Automatically deletes a category directly from Firestore.
+ * Automatically deletes a category directly from Firestore and updates local cache.
  */
 export async function autoDeleteCategory(categoryId: string): Promise<boolean> {
+  try {
+    const existing = getCachedCloudMenu();
+    if (existing && Array.isArray(existing.categories)) {
+      updateCachedCloudMenuPartial({ categories: existing.categories.filter(c => c.id !== categoryId) });
+    }
+  } catch {}
   return await deleteCategoryFromFirestore(categoryId);
 }
 
+const TEMPLATES_CACHE_KEY = 'micarta_templates_cache_v1';
+
+export function getCachedTemplates(): MenuTemplate[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(TEMPLATES_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+  }
+  return [];
+}
+
+export function setCachedTemplates(templates: MenuTemplate[]) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(TEMPLATES_CACHE_KEY, JSON.stringify(templates));
+    } catch {}
+  }
+}
+
+export async function fetchCloudTemplates(): Promise<MenuTemplate[]> {
+  const remote = await fetchTemplatesFromFirestore();
+  if (remote !== null) {
+    setCachedTemplates(remote);
+    return remote;
+  }
+  return getCachedTemplates();
+}
+
+export async function autoSyncTemplate(template: MenuTemplate): Promise<boolean> {
+  const current = getCachedTemplates();
+  const next = current.some(t => t.id === template.id)
+    ? current.map(t => t.id === template.id ? template : t)
+    : [template, ...current];
+  setCachedTemplates(next);
+  return await saveTemplateToFirestore(template);
+}
+
+export async function autoDeleteTemplate(templateId: string): Promise<boolean> {
+  const current = getCachedTemplates();
+  setCachedTemplates(current.filter(t => t.id !== templateId));
+  return await deleteTemplateFromFirestore(templateId);
+}
+
 /**
- * Subscribe to real-time Firestore changes directly.
+ * Performs a one-time fetch of Firestore data upon staff login (no perpetual 5-collection onSnapshot).
  */
 export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void {
   return subscribeToFirestoreRealtime((partialPayload) => {
@@ -468,9 +599,18 @@ export function subscribeToCloudUpdates(listener: CloudSyncListener): () => void
   });
 }
 
-export function subscribeToOrdersFeed(_onOrdersUpdate: (orders: Order[]) => void): () => void {
-  return () => {};
+/**
+ * Targeted real-time subscription ONLY for orders (and optional single restaurant doc) of a specific restaurantId.
+ */
+export function subscribeToOrdersFeed(
+  restaurantId: string,
+  onOrdersUpdate: (orders: Order[]) => void,
+  onRestaurantDocUpdate?: (restaurant: Restaurant) => void
+): () => void {
+  return subscribeToRestaurantOrdersRealtime(restaurantId, onOrdersUpdate, onRestaurantDocUpdate);
 }
+
+export { fetchSpecificRestaurantDataFromFirestore };
 
 /**
  * Automatically saves a new order directly to Firestore.

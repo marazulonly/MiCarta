@@ -66,6 +66,11 @@ import {
   saveIndividualRestaurantSnapshotToUpstash,
   subscribeToCloudUpdates,
   subscribeToOrdersFeed,
+  fetchSpecificRestaurantDataFromFirestore,
+  getCachedTemplates,
+  fetchCloudTemplates,
+  autoSyncTemplate,
+  autoDeleteTemplate,
   autoSyncOrder,
   autoUpdateOrderStatus,
   setCloudSyncPaused,
@@ -155,13 +160,17 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       occupancyRate: 0,
       ...(r.metrics || {})
     };
-    const safeBranding: RestaurantBranding = normalizeBranding(r.branding, r.templateId);
+    const resolvedLogo = r.branding?.headerLogoUrl || r.logoUrl || '';
+    const safeBranding: RestaurantBranding = normalizeBranding(
+      { ...(r.branding || {}), headerLogoUrl: resolvedLogo },
+      r.templateId
+    );
     const safeRest: Restaurant = {
       ...r,
       slug: cleanSlug,
       branding: safeBranding,
       metrics: safeMetrics,
-      logoUrl: r.logoUrl || '',
+      logoUrl: resolvedLogo,
       menuAccessSettings: r.menuAccessSettings || DEFAULT_MENU_ACCESS_SETTINGS,
       tables: Array.isArray(r.tables) ? r.tables : [],
       weeklySchedule: Array.isArray(r.weeklySchedule) ? r.weeklySchedule : [],
@@ -173,12 +182,14 @@ function sanitizeRestaurants(rests: Restaurant[]): Restaurant[] {
       mapById.set(r.id, safeRest);
       mapBySlugOrName.set(slugKey, safeRest);
     } else {
+      const mergedLogo = safeRest.logoUrl || existing.logoUrl || '';
       const merged: Restaurant = {
         ...existing,
         ...safeRest,
+        logoUrl: mergedLogo,
         ownerId: safeRest.ownerId || existing.ownerId,
         templateId: safeRest.templateId || existing.templateId,
-        branding: { ...existing.branding, ...safeRest.branding }
+        branding: { ...existing.branding, ...safeRest.branding, headerLogoUrl: mergedLogo }
       };
       mapById.delete(existing.id);
       mapById.set(merged.id, merged);
@@ -241,10 +252,10 @@ const STORAGE_KEYS = {
 
 function getInitialStorageState() {
   let cachedAuth: User | null = null;
-  let cachedRests: Restaurant[] = [];
-  let cachedCategories: MenuCategory[] = [];
-  let cachedItems: MenuItem[] = [];
-  let cachedUsers: User[] = INITIAL_USERS.filter(u => u.role === 'ADMIN');
+  let cachedRests: Restaurant[] = sanitizeRestaurants(INITIAL_RESTAURANTS);
+  let cachedCategories: MenuCategory[] = INITIAL_CATEGORIES;
+  let cachedItems: MenuItem[] = INITIAL_MENU_ITEMS;
+  let cachedUsers: User[] = deduplicateUsers(INITIAL_USERS);
   let cachedOrders: Order[] = [];
 
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -279,16 +290,16 @@ function getInitialStorageState() {
       // Hydrate from cached download snapshot if available to avoid blank state or unnecessary reads
       const downloadCache = getCachedCloudMenu();
       if (downloadCache) {
-        if (Array.isArray(downloadCache.restaurants)) {
+        if (Array.isArray(downloadCache.restaurants) && downloadCache.restaurants.length > 0) {
           cachedRests = sanitizeRestaurants(downloadCache.restaurants.filter((r: any) => r && (r.slug || r.id)));
         }
-        if (Array.isArray(downloadCache.categories)) {
+        if (Array.isArray(downloadCache.categories) && downloadCache.categories.length > 0) {
           cachedCategories = downloadCache.categories.filter((c: any) => c && c.id && c.name);
         }
-        if (Array.isArray(downloadCache.items)) {
+        if (Array.isArray(downloadCache.items) && downloadCache.items.length > 0) {
           cachedItems = sanitizeMenuItems(downloadCache.items.filter((i: any) => i && i.id && i.name && i.price !== undefined));
         }
-        if (Array.isArray(downloadCache.users)) {
+        if (Array.isArray(downloadCache.users) && downloadCache.users.length > 0) {
           const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
           cachedUsers = deduplicateUsers([...downloadCache.users.filter((u: any) => u && u.id), ...adminFallbacks]);
         }
@@ -325,7 +336,7 @@ export default function App() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialState.cachedItems);
   const [users, setUsers] = useState<User[]>(() => deduplicateUsers(initialState.cachedUsers));
   const [orders, setOrders] = useState<Order[]>(initialState.cachedOrders);
-  const [templates, setTemplates] = useState<MenuTemplate[]>(INITIAL_MENU_TEMPLATES);
+  const [templates, setTemplates] = useState<MenuTemplate[]>(() => getCachedTemplates());
 
   // Authenticated user state: default to cachedAuth or null (prompts for DNI and password upon entry)
   const [currentUser, setCurrentUser] = useState<User | null>(initialState.cachedAuth);
@@ -532,12 +543,20 @@ export default function App() {
       };
     }
 
-    // Logged-in staff user: rely strictly on a single real-time Firestore subscription (no duplicate getDocs + onSnapshot)
+    // Logged-in staff user: perform a single one-time load of data and templates
+    fetchCloudTemplates()
+      .then(loadedTemplates => {
+        if (isMounted && Array.isArray(loadedTemplates)) {
+          setTemplates(loadedTemplates);
+        }
+      })
+      .catch(() => {});
+
     const unsubscribe = subscribeToCloudUpdates((event) => {
       if (!isMounted) return;
       if (event.type === 'FULL_SYNC' && event.data) {
         const d = event.data;
-        if (d.restaurants && Array.isArray(d.restaurants)) {
+        if (d.restaurants && Array.isArray(d.restaurants) && d.restaurants.length > 0) {
           const cleanR = sanitizeRestaurants(d.restaurants);
           restaurantsRef.current = cleanR;
           setRestaurants(cleanR);
@@ -569,7 +588,7 @@ export default function App() {
             }
           }
         }
-        if (d.categories && Array.isArray(d.categories)) {
+        if (d.categories && Array.isArray(d.categories) && d.categories.length > 0) {
           categoriesRef.current = d.categories;
           setCategories(d.categories);
           setPublishedMenuData(prev => {
@@ -579,7 +598,7 @@ export default function App() {
             return rCats.length > 0 ? { ...prev, categories: rCats } : prev;
           });
         }
-        if (d.items && Array.isArray(d.items)) {
+        if (d.items && Array.isArray(d.items) && d.items.length > 0) {
           const cleanItems = sanitizeMenuItems(d.items);
           menuItemsRef.current = cleanItems;
           setMenuItems(cleanItems);
@@ -590,7 +609,7 @@ export default function App() {
             return rItems.length > 0 ? { ...prev, items: rItems } : prev;
           });
         }
-        if (d.users && Array.isArray(d.users)) {
+        if (d.users && Array.isArray(d.users) && d.users.length > 0) {
           const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
           const nextU = deduplicateUsers([...d.users, ...adminFallbacks]);
           usersRef.current = nextU;
@@ -681,6 +700,56 @@ export default function App() {
       unsubscribe();
     };
   }, [currentUser?.id]);
+
+  // Targeted real-time subscription ONLY for orders of the active restaurant when in operational views
+  useEffect(() => {
+    if (!currentUser || !selectedRestaurantId) return;
+    const isOrderFocusedRole =
+      currentUser.role === 'KITCHEN' ||
+      currentUser.role === 'WAITER' ||
+      currentUser.role === 'DELIVERY' ||
+      currentUser.role === 'OWNER' ||
+      currentUser.role === 'RESTAURANT_MANAGER' ||
+      (currentUser.role === 'ADMIN' && activeTab === 'orders');
+
+    if (!isOrderFocusedRole) return;
+
+    const unsubscribeOrders = subscribeToOrdersFeed(
+      selectedRestaurantId,
+      (incomingOrders) => {
+        setOrders(prev => {
+          const prevIds = new Set(prev.map(o => o.id));
+          const brandNewOrders = incomingOrders.filter(o => !prevIds.has(o.id));
+          if (brandNewOrders.length > 0 && prev.length > 0) {
+            playNotificationSound();
+            const newest = brandNewOrders[0];
+            const rest = (restaurantsRef.current || []).find(r => r && r.id === newest.restaurantId);
+            showToast(`🔔 ¡Nueva comanda recibida! ${newest.orderNumber} (${rest?.name || 'Restaurante'})`);
+          }
+          const otherRestOrders = prev.filter(o => o.restaurantId !== selectedRestaurantId);
+          const merged = [...incomingOrders, ...otherRestOrders];
+          ordersRef.current = merged;
+          return merged;
+        });
+      },
+      (updatedRestaurantDoc) => {
+        setRestaurants(prev => {
+          const idx = prev.findIndex(r => r.id === updatedRestaurantDoc.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = updatedRestaurantDoc;
+            restaurantsRef.current = next;
+            return next;
+          }
+          return prev;
+        });
+      }
+    );
+
+    return () => {
+      unsubscribeOrders();
+    };
+  }, [currentUser?.id, currentUser?.role, selectedRestaurantId, activeTab]);
 
   // Keep previewRestaurant synchronized with restaurants array whenever restaurants update
   useEffect(() => {
@@ -930,10 +999,22 @@ export default function App() {
       } catch {}
     }
 
+    const resolvedLogo =
+      updated.branding?.headerLogoUrl ||
+      updated.logoUrl ||
+      prevRest?.branding?.headerLogoUrl ||
+      prevRest?.logoUrl ||
+      '';
+
     const updatedWithCleanSlug: Restaurant = {
       ...updated,
       name: cleanName,
-      slug: cleanSlug
+      slug: cleanSlug,
+      logoUrl: resolvedLogo,
+      branding: normalizeBranding(
+        { ...(updated.branding || prevRest?.branding || {}), headerLogoUrl: resolvedLogo },
+        updated.templateId
+      )
     };
 
     const nextRestaurants = restaurantsRef.current.map(r => r.id === updated.id ? updatedWithCleanSlug : r);
@@ -1250,9 +1331,14 @@ export default function App() {
     restCategories: MenuCategory[],
     restItems: MenuItem[]
   ) => {
+    const resolvedLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl || '';
     const normalizedRest: Restaurant = {
       ...restaurant,
-      branding: normalizeBranding(restaurant.branding, restaurant.templateId)
+      logoUrl: resolvedLogo,
+      branding: normalizeBranding(
+        { ...(restaurant.branding || {}), headerLogoUrl: resolvedLogo },
+        restaurant.templateId
+      )
     };
     const filterCats = restCategories.filter(c => c.restaurantId === restaurantId || normalizeSlug(c.restaurantId) === normalizeSlug(restaurant.slug));
     const filterItems = restItems.filter(i => i.restaurantId === restaurantId || normalizeSlug(i.restaurantId) === normalizeSlug(restaurant.slug));
@@ -1279,24 +1365,37 @@ export default function App() {
   };
 
   const handleUpdateTemplate = (updated: MenuTemplate) => {
-    setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
+    setTemplates(prev => {
+      const exists = prev.some(t => t.id === updated.id);
+      return exists ? prev.map(t => t.id === updated.id ? updated : t) : [updated, ...prev];
+    });
+    autoSyncTemplate(updated).catch(() => {});
     showToast(`Plantilla "${updated.name}" actualizada con éxito.`);
   };
 
   const handleSaveTemplate = async (template: MenuTemplate) => {
+    setTemplates(prev => {
+      const exists = prev.some(t => t.id === template.id);
+      return exists ? prev.map(t => t.id === template.id ? template : t) : [template, ...prev];
+    });
     try {
-      await setDoc(doc(db, 'templates', template.id), template);
-      showToast(`Plantilla "${template.name}" guardada en Firestore.`);
+      const ok = await autoSyncTemplate(template);
+      if (ok) {
+        showToast(`✓ Plantilla "${template.name}" guardada permanentemente.`);
+      } else {
+        showToast(`✓ Plantilla "${template.name}" guardada localmente.`);
+      }
     } catch (e) {
       console.error('Error saving template:', e);
-      showToast(`Error al guardar la plantilla.`);
+      showToast(`✓ Plantilla "${template.name}" guardada localmente.`);
     }
   };
 
   const handleDeleteTemplate = (templateId: string) => {
     const targetTmpl = templates.find(t => t.id === templateId);
     setTemplates(prev => prev.filter(t => t.id !== templateId));
-    showToast(`✓ Plantilla ${targetTmpl ? `"${targetTmpl.name}"` : ''} eliminada de la plataforma.`);
+    autoDeleteTemplate(templateId).catch(() => {});
+    showToast(`✓ Plantilla ${targetTmpl ? `"${targetTmpl.name}"` : ''} eliminada definitivamente.`);
   };
 
   const handleImportBackupJSON = (
@@ -1963,6 +2062,25 @@ export default function App() {
           currentUser={currentUser}
           onUpdateUser={handleUpdateUser}
         />
+
+        {/* Split-Screen Template Editor Modal for Owners / Managers */}
+        {isTemplateSplitEditorOpen && (
+          <TemplateSplitEditor
+            restaurants={safeRestaurants}
+            templates={safeTemplates}
+            menuItems={safeMenuItems}
+            categories={safeCategories}
+            currentRestaurantId={selectedRestaurantId}
+            onUpdateRestaurant={(updated) => {
+              handleUpdateRestaurant(updated);
+              showToast(`✓ Diseño guardado exitosamente en "${updated.name}".`);
+            }}
+            onOpenCustomerPreview={(r) => handleOpenCustomerPreview(r)}
+            onDeleteTemplate={handleDeleteTemplate}
+            onSaveTemplate={handleSaveTemplate}
+            onClose={() => setIsTemplateSplitEditorOpen(false)}
+          />
+        )}
 
         {/* Floating Toast Notification */}
         {toastMessage && (

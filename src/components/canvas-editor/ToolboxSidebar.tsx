@@ -46,6 +46,7 @@ interface ToolboxSidebarProps {
   onApplyTemplatePreset: (template: MenuTemplate) => void;
   onApplyColorPalette: (palette: any) => void;
   savedTemplates?: MenuTemplate[];
+  onDeleteSavedTemplate?: (templateId: string) => void;
 }
 
 type SidebarTab = 'layers' | 'insert' | 'templates' | 'palettes' | 'saved-templates';
@@ -131,7 +132,8 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
   onReorderElement,
   onApplyTemplatePreset,
   onApplyColorPalette,
-  savedTemplates
+  savedTemplates,
+  onDeleteSavedTemplate
 }) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>('layers');
 
@@ -992,36 +994,59 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
         {activeTab === 'templates' && (
           <div className="space-y-2.5">
             <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
-              Plantillas Visuales
+              Plantillas Visuales ({templates.length})
             </span>
             <p className="text-[11px] text-neutral-600 leading-relaxed">
               Selecciona un estilo base. Tus elementos del canvas se adaptarán manteniendo la composición.
             </p>
 
-            {templates.map(tmpl => (
-              <button
+            {templates.length > 0 ? templates.map(tmpl => (
+              <div
                 key={tmpl.id}
-                onClick={() => onApplyTemplatePreset(tmpl)}
-                className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 cursor-pointer shadow-xs group"
+                className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 shadow-xs group relative"
               >
-                <img 
-                  src={tmpl.thumbnailUrl} 
-                  alt={tmpl.name} 
-                  className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
-                />
-                <div className="flex-1 min-w-0">
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-bold uppercase inline-block mb-1 border border-neutral-200">
-                    {tmpl.badge || 'Plantilla'}
-                  </span>
-                  <p className="text-xs font-bold text-neutral-900 truncate group-hover:text-black">
-                    {tmpl.name}
-                  </p>
-                  <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
-                    {tmpl.description}
-                  </p>
-                </div>
-              </button>
-            ))}
+                <button
+                  type="button"
+                  onClick={() => onApplyTemplatePreset(tmpl)}
+                  className="flex-1 flex items-start gap-3 text-left cursor-pointer min-w-0"
+                >
+                  <img 
+                    src={tmpl.thumbnailUrl} 
+                    alt={tmpl.name} 
+                    className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-bold uppercase inline-block mb-1 border border-neutral-200">
+                      {tmpl.badge || 'Plantilla'}
+                    </span>
+                    <p className="text-xs font-bold text-neutral-900 truncate group-hover:text-black">
+                      {tmpl.name}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                      {tmpl.description}
+                    </p>
+                  </div>
+                </button>
+                {onDeleteSavedTemplate && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteSavedTemplate(tmpl.id);
+                    }}
+                    className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+                    title="Eliminar plantilla permanentemente"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )) : (
+              <div className="text-center py-6 px-4 border-2 border-dashed border-neutral-200 rounded-2xl">
+                <LayoutTemplate className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
+                <p className="text-xs text-neutral-600">No hay plantillas registradas. Crea una nueva desde "Guardar como Plantilla".</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1031,29 +1056,47 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
         {activeTab === 'saved-templates' && (
           <div className="space-y-2.5">
             <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
-              Mis Plantillas
+              Mis Plantillas ({savedTemplates?.length || 0})
             </span>
             {savedTemplates && savedTemplates.length > 0 ? (
               savedTemplates.map(tmpl => (
-                <button
+                <div
                   key={tmpl.id}
-                  onClick={() => onApplyTemplatePreset(tmpl)}
-                  className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 cursor-pointer shadow-xs group"
+                  className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 shadow-xs group relative"
                 >
-                  <img 
-                    src={tmpl.thumbnailUrl} 
-                    alt={tmpl.name} 
-                    className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-neutral-900 truncate">
-                      {tmpl.name}
-                    </p>
-                    <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
-                      {tmpl.description}
-                    </p>
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => onApplyTemplatePreset(tmpl)}
+                    className="flex-1 flex items-start gap-3 text-left cursor-pointer min-w-0"
+                  >
+                    <img 
+                      src={tmpl.thumbnailUrl} 
+                      alt={tmpl.name} 
+                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-neutral-900 truncate">
+                        {tmpl.name}
+                      </p>
+                      <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                        {tmpl.description}
+                      </p>
+                    </div>
+                  </button>
+                  {onDeleteSavedTemplate && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteSavedTemplate(tmpl.id);
+                      }}
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+                      title="Eliminar plantilla permanentemente"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               ))
             ) : (
               <div className="text-center py-6 px-4 border-2 border-dashed border-neutral-200 rounded-2xl">
