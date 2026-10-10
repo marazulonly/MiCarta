@@ -480,14 +480,31 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
     const primarySlug = normalizeSlugKey(snapshot.restaurant?.slug || snapshot.restaurant?.name || targetId);
     const cleanRest = snapshot.restaurant ? sanitizeRestaurantForFirestore({ ...snapshot.restaurant, slug: primarySlug }) : null;
     
-    const validIds = new Set<string>([targetId, restaurantId, primarySlug].filter(Boolean));
+    const validIds = new Set<string>([
+      targetId, 
+      restaurantId, 
+      primarySlug, 
+      normalizeSlugKey(targetId), 
+      normalizeSlugKey(restaurantId)
+    ].filter(Boolean));
 
     const cleanCats = Array.isArray(snapshot.categories) 
-      ? snapshot.categories.filter((c: any) => c && (validIds.has(c.restaurantId) || normalizeSlugKey(c.restaurantId) === primarySlug))
+      ? snapshot.categories.filter((c: any) => c && (validIds.has(c.restaurantId) || normalizeSlugKey(c.restaurantId) === primarySlug || validIds.has(normalizeSlugKey(c.restaurantId))))
       : [];
     const cleanItems = Array.isArray(snapshot.items)
-      ? snapshot.items.filter((i: any) => i && (validIds.has(i.restaurantId) || normalizeSlugKey(i.restaurantId) === primarySlug))
+      ? snapshot.items.filter((i: any) => i && (validIds.has(i.restaurantId) || normalizeSlugKey(i.restaurantId) === primarySlug || validIds.has(normalizeSlugKey(i.restaurantId))))
       : [];
+
+    const finalCats = cleanCats.length > 0
+      ? cleanCats
+      : (Array.isArray(snapshot.categories) && snapshot.categories.length > 0
+          ? snapshot.categories.map((c: any) => ({ ...c, restaurantId: targetId }))
+          : []);
+    const finalItems = cleanItems.length > 0
+      ? cleanItems
+      : (Array.isArray(snapshot.items) && snapshot.items.length > 0
+          ? snapshot.items.map((i: any) => ({ ...i, restaurantId: targetId }))
+          : []);
 
     const optimizedSnapshot = cleanObject({
       published: true,
@@ -495,8 +512,8 @@ export async function savePublishedMenuToFirestore(restaurantId: string, snapsho
       publishedAt: snapshot.publishedAt || new Date().toISOString(),
       publishedBy: snapshot.publishedBy || 'Admin / Owner',
       restaurant: cleanRest,
-      categories: cleanCats,
-      items: cleanItems
+      categories: finalCats,
+      items: finalItems
     });
 
     const keysToPublish = new Set<string>();
@@ -638,8 +655,11 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       ? pubNormSnap.data()
       : ((pubRawSnap && pubRawSnap.exists()) ? pubRawSnap.data() : null);
 
-    // If published_menus exists and has valid restaurant + items, return immediately!
-    if (pubData && pubData.restaurant && Array.isArray(pubData.items) && pubData.items.length > 0) {
+    // If published_menus exists and has valid restaurant + items or categories, return immediately!
+    if (pubData && pubData.restaurant && (
+      (Array.isArray(pubData.items) && pubData.items.length > 0) ||
+      (Array.isArray(pubData.categories) && pubData.categories.length > 0)
+    )) {
       const rLogo = pubData.restaurant.branding?.headerLogoUrl || pubData.restaurant.logoUrl || '';
       pubData.restaurant.logoUrl = rLogo;
       pubData.restaurant.branding = normalizeBranding(

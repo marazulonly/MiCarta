@@ -1,4 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
+import { normalizeBranding } from '../utils/restaurantUtils';
 import { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, INITIAL_USERS } from '../data/mockData';
 import { 
   saveToFirestore,
@@ -266,9 +267,15 @@ export async function publishRestaurantMenu(
 ): Promise<{ success: boolean; version?: number; publishedAt?: string; message?: string }> {
   const nowIso = new Date().toISOString();
   const primarySlug = normalizeSlug(restaurant.slug || restaurant.name || restaurantId);
+  const resolvedLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl || '';
   const normalizedRest: Restaurant = {
     ...restaurant,
-    slug: primarySlug
+    slug: primarySlug,
+    logoUrl: resolvedLogo || restaurant.logoUrl || '',
+    branding: normalizeBranding(
+      { ...(restaurant.branding || {}), headerLogoUrl: resolvedLogo },
+      restaurant.templateId
+    )
   };
 
   const snap = {

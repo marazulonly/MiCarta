@@ -398,19 +398,10 @@ export const PropertiesInspector: React.FC<PropertiesInspectorProps> = ({
                 const targetType = (selectedElement.type === 'restaurant_logo' || selectedElement.dynamicField === 'restaurant_logo') ? 'logo' : 'dish';
                 try {
                   const res = await processAndUploadImage(file, targetType, selectedElement.id || 'canvas_img');
-                  // Show immediate preview if available
-                  if (res.previewUrl) {
+                  if (res.url) {
                     onUpdateElement({
                       ...selectedElement,
-                      backgroundImage: res.previewUrl
-                    });
-                  }
-                  // Resolve the permanent compressed base64/cloud URL so it never expires like a blob: URL!
-                  const permanentUrl = await res.finalUrl;
-                  if (permanentUrl) {
-                    onUpdateElement({
-                      ...selectedElement,
-                      backgroundImage: permanentUrl
+                      backgroundImage: res.url
                     });
                   }
                 } catch (err) {

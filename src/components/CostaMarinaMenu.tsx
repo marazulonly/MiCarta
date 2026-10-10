@@ -460,7 +460,7 @@ export const CostaMarinaMenu: React.FC<CostaMarinaMenuProps> = ({
 
               {/* Header Logo / Banner Container: grows upwards to the top */}
               {(() => {
-                const headerLogo = restaurant.branding?.headerLogoUrl || '';
+                const headerLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl || '';
                 const isImageOnly = restaurant.branding?.headerDisplayMode === 'IMAGE_ONLY';
                 const showName = !isImageOnly && (restaurant.branding?.showHeaderName !== false);
                 const showTagline = !isImageOnly && (restaurant.branding?.showHeaderTagline !== false);

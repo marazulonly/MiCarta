@@ -153,7 +153,7 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
       headerStyle: 'centered'
     };
   }
-  if (tmpl === 'tmpl-marine' || tmpl.includes('marine') || tmpl.includes('costa') || tmpl.includes('cevichito')) {
+  if (tmpl === 'tmpl-marine' || tmpl === 'tmpl-costa-marina' || tmpl === 'tmpl-modern-seafood' || tmpl.includes('marine') || tmpl.includes('costa') || tmpl.includes('cevichito') || tmpl.includes('seafood')) {
     return {
       primaryColor: '#111111',
       secondaryColor: '#71717A',
@@ -176,7 +176,7 @@ export function getTemplateDefaultBranding(templateId?: string): RestaurantBrand
       headerStyle: 'banner'
     };
   }
-  if (tmpl === 'tmpl-criollo' || tmpl.includes('criollo') || tmpl.includes('chalkboard')) {
+  if (tmpl === 'tmpl-criollo' || tmpl === 'tmpl-fire-grill' || tmpl.includes('criollo') || tmpl.includes('chalkboard') || tmpl.includes('grill') || tmpl.includes('fuego')) {
     return {
       primaryColor: '#F59E0B',
       secondaryColor: '#D97757',
@@ -382,7 +382,12 @@ export function normalizeBranding(
  * Safely gets branding settings with canonical normalization and template fallbacks
  */
 export function getSafeBranding(restaurant?: Restaurant | null): RestaurantBranding {
-  return normalizeBranding(restaurant?.branding, restaurant?.templateId);
+  const norm = normalizeBranding(restaurant?.branding, restaurant?.templateId);
+  const logo = restaurant?.branding?.headerLogoUrl || restaurant?.logoUrl || '';
+  if (logo && !norm.headerLogoUrl) {
+    norm.headerLogoUrl = logo;
+  }
+  return norm;
 }
 
 /**

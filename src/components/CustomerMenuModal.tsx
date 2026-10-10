@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
 import { getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { normalizeSlug } from '../lib/cloudSync';
 import { processAndUploadImage } from '../lib/imageOptimizer';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
 import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
@@ -96,10 +97,21 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 }) => {
   // Scoped categories and items for this specific restaurant to prevent cross-contamination
   const restId = restaurant?.id || '';
-  const scopedCategories = restId ? (categories || []).filter(c => c && c.restaurantId === restId) : (categories || []);
-  const effectiveCategories = scopedCategories.length > 0 ? scopedCategories : (categories || []);
-  const scopedItems = restId ? (items || []).filter(i => i && i.restaurantId === restId) : (items || []);
-  const effectiveItems = scopedItems.length > 0 ? scopedItems : (items || []);
+  const restSlug = restaurant?.slug ? normalizeSlug(restaurant.slug) : '';
+  const matchRestId = (targetId?: string) => {
+    if (!targetId) return false;
+    if (restId && (targetId === restId || normalizeSlug(targetId) === normalizeSlug(restId))) return true;
+    if (restSlug && (targetId === restSlug || normalizeSlug(targetId) === restSlug)) return true;
+    return false;
+  };
+
+  const scopedCategories = restId ? (categories || []).filter(c => c && matchRestId(c.restaurantId)) : (categories || []);
+  const rawEffectiveCategories = scopedCategories.length > 0 ? scopedCategories : (categories || []);
+  const effectiveCategories = rawEffectiveCategories.map(c => ({ ...c, restaurantId: restId || c.restaurantId }));
+
+  const scopedItems = restId ? (items || []).filter(i => i && matchRestId(i.restaurantId)) : (items || []);
+  const rawEffectiveItems = scopedItems.length > 0 ? scopedItems : (items || []);
+  const effectiveItems = rawEffectiveItems.map(i => ({ ...i, restaurantId: restId || i.restaurantId }));
 
   // Preloader State: only active if explicitly in loading state
   const [isPreloading, setIsPreloading] = useState(Boolean(isLoading));
@@ -518,8 +530,13 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   // Resolve branding with template default fallbacks
   const effectiveBranding = getSafeBranding(restaurant);
+  const resolvedLogo = effectiveBranding.headerLogoUrl || restaurant.logoUrl || '';
+  if (resolvedLogo && !effectiveBranding.headerLogoUrl) {
+    effectiveBranding.headerLogoUrl = resolvedLogo;
+  }
   const effectiveRestaurant: Restaurant = {
     ...restaurant,
+    logoUrl: resolvedLogo || restaurant.logoUrl || '',
     branding: effectiveBranding
   };
 
@@ -530,16 +547,32 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   const isNeonTemplate = tmplId === 'tmpl-neon' || tmplId.includes('neon') || tmplId.includes('street');
   const isMinimalTemplate = tmplId === 'tmpl-minimalist' || tmplId.includes('minimal') || tmplId.includes('bistro');
   const isMarineTemplate = tmplId === 'tmpl-marine' || 
-    (!restaurant.templateId && (
-      restaurant.id === 'rest-costa' || 
-      restaurant.slug === 'costa-marina' || 
-      restaurant.slug === 'cevichito-pliz' || 
+    tmplId === 'tmpl-costa-marina' || 
+    tmplId === 'tmpl-modern-seafood' || 
+    tmplId.includes('marine') || 
+    tmplId.includes('seafood') || 
+    tmplId.includes('costa') || 
+    tmplId.includes('cevichito') ||
+    restaurant.id === 'cevichito-pliz' ||
+    restaurant.id === 'rest-costa' || 
+    restaurant.slug === 'costa-marina' || 
+    restaurant.slug === 'cevichito-pliz' || 
+    (Boolean(restaurant.name) && (
       restaurant.name.toLowerCase().includes('costa') || 
       restaurant.name.toLowerCase().includes('cevichito')
     ));
 
   const isCriolloTemplate = tmplId === 'tmpl-criollo' || 
-    (!restaurant.templateId && (restaurant.id === 'rest-criollo' || restaurant.slug === 'criollo-tradicion' || restaurant.name.toLowerCase().includes('criollo')));
+    tmplId === 'tmpl-fire-grill' ||
+    tmplId.includes('criollo') ||
+    tmplId.includes('grill') ||
+    tmplId.includes('fuego') ||
+    tmplId.includes('chalkboard') ||
+    restaurant.id === 'fuego-criollo' ||
+    restaurant.id === 'rest-criollo' || 
+    restaurant.slug === 'fuego-criollo' ||
+    restaurant.slug === 'criollo-tradicion' || 
+    (Boolean(restaurant.name) && restaurant.name.toLowerCase().includes('criollo'));
 
   const liveEditProps = {
     isLiveEditActive: Boolean(isOwnerOrAdmin && isLiveEditActive),

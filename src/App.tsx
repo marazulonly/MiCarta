@@ -1805,12 +1805,22 @@ export default function App() {
         normalizeSlug(publishedMenuData.restaurant?.slug) === targetSlug
       )
     );
-    const targetCategories = liveCategories.length > 0
-      ? liveCategories
-      : (isTargetPublished && publishedMenuData ? publishedMenuData.categories : []);
-    const targetItems = liveItems.length > 0
-      ? liveItems
-      : (isTargetPublished && publishedMenuData ? publishedMenuData.items : []);
+    // Prioritize authoritative publishedMenuData categories and items over default in-memory mock data
+    const targetCategories = (isTargetPublished && publishedMenuData?.categories && publishedMenuData.categories.length > 0)
+      ? publishedMenuData.categories
+      : (liveCategories.length > 0 ? liveCategories : (publishedMenuData?.categories || []));
+    const targetItems = (isTargetPublished && publishedMenuData?.items && publishedMenuData.items.length > 0)
+      ? publishedMenuData.items
+      : (liveItems.length > 0 ? liveItems : (publishedMenuData?.items || []));
+
+    // Ensure targetRest branding has resolved header logo
+    const resolvedRestLogo = targetRest.branding?.headerLogoUrl || targetRest.logoUrl || '';
+    if (resolvedRestLogo) {
+      if (!targetRest.logoUrl) targetRest.logoUrl = resolvedRestLogo;
+      if (targetRest.branding && !targetRest.branding.headerLogoUrl) {
+        targetRest.branding.headerLogoUrl = resolvedRestLogo;
+      }
+    }
 
     return (
       <div 
