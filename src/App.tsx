@@ -11,11 +11,7 @@ import { db } from './lib/firebase';
 import { 
   CEVICHITO_PLIZ_LOGO_SVG,
   VORAZ_LOGO_SVG,
-  RIENDAS_DE_PLATA_LOGO_SVG,
-  INITIAL_USERS,
-  INITIAL_RESTAURANTS,
-  INITIAL_CATEGORIES,
-  INITIAL_MENU_ITEMS
+  RIENDAS_DE_PLATA_LOGO_SVG
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
 import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
@@ -245,6 +241,36 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
   return Array.from(map.values());
 }
 
+// Known mock/fictitious IDs and demo patterns that must never be injected or displayed
+const FICTITIOUS_USER_IDS = new Set([
+  'u-1', 'u-4', 'u-5', 'u-5b', 'u-5c', 'u-6', 'u-7', 'u-7b', 'u-7c', 'u-8', 'u-8b', 'u-8c', 'u-8d', 'u-k1', 'u-k2', 'u-k3',
+  'u-owner-carlos', 'u-owner-mariana', 'u-manager-roberto', 'u-manager-valeria',
+  'u-kitchen-gaston', 'u-kitchen-lucia', 'u-waiter-mateo', 'u-waiter-camila',
+  'u-delivery-diego', 'u-delivery-sofia', 'u-customer-andres', 'u-customer-elena',
+  'u-ever-aguilar'
+]);
+
+function isFictitiousUser(u: any): boolean {
+  if (!u || !u.id) return true;
+  if (FICTITIOUS_USER_IDS.has(u.id)) return true;
+  const email = String(u.email || '').toLowerCase().trim();
+  if (
+    email.endsWith('@brasasfuego.pe') ||
+    email.endsWith('@tradicioncriolla.pe') ||
+    email.endsWith('@costamarina.pe') ||
+    email.endsWith('@loopburgers.pe') ||
+    email.endsWith('@gastrodelivery.pe') ||
+    email === 'carlos.mendoza@micarta.io' ||
+    email === 'ever.aguilar@micarta.pe'
+  ) {
+    return true;
+  }
+  return false;
+}
+const FICTITIOUS_REST_IDS = new Set(['fuego-criollo']);
+const FICTITIOUS_CAT_IDS = new Set(['cat-mar-1', 'cat-mar-2', 'cat-mar-3', 'cat-fuego-1', 'cat-fuego-2', 'cat-fuego-3']);
+const FICTITIOUS_ITEM_IDS = new Set(['item-mar-1', 'item-mar-2', 'item-mar-3', 'item-mar-4', 'item-fuego-1', 'item-fuego-2', 'item-fuego-3', 'item-fuego-4']);
+
 // Storage cache keys for session auth only (all menu/restaurant data lives strictly in Firestore)
 const STORAGE_KEYS = {
   AUTH: 'micarta_logged_user_v6'
@@ -252,29 +278,30 @@ const STORAGE_KEYS = {
 
 function getInitialStorageState() {
   let cachedAuth: User | null = null;
-  let cachedRests: Restaurant[] = sanitizeRestaurants(INITIAL_RESTAURANTS);
-  let cachedCategories: MenuCategory[] = INITIAL_CATEGORIES;
-  let cachedItems: MenuItem[] = INITIAL_MENU_ITEMS;
-  let cachedUsers: User[] = deduplicateUsers(INITIAL_USERS);
+  let cachedRests: Restaurant[] = [];
+  let cachedCategories: MenuCategory[] = [];
+  let cachedItems: MenuItem[] = [];
+  let cachedUsers: User[] = [];
   let cachedOrders: Order[] = [];
 
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      // Purge only deprecated internal applet keys, never delete micarta_pub_download_cache_*
+      // Purge only deprecated internal applet keys and cached fictitious data
       const legacyKeys = [
         'micarta_restaurants_v6', 'micarta_restaurants_v5', 'micarta_restaurants_v4', 'micarta_restaurants_v3', 'micarta_restaurants_v2', 'micarta_restaurants',
         'micarta_menu_items_v6', 'micarta_menu_items_v5', 'micarta_menu_items_v4', 'micarta_menu_items_v3', 'micarta_menu_items_v2', 'micarta_menu_items',
         'micarta_categories_v6', 'micarta_categories_v5', 'micarta_categories_v4', 'micarta_categories_v3', 'micarta_categories_v2', 'micarta_categories',
         'micarta_users_v6', 'micarta_users_v5', 'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
         'micarta_orders_v6', 'micarta_orders_v5', 'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
-        'applet_restaurants_index_local', 'applet_categories_index_local', 'applet_items_index_local', 'applet_menu_snapshot'
+        'applet_restaurants_index_local', 'applet_categories_index_local', 'applet_items_index_local', 'applet_menu_snapshot',
+        'micarta_login_users_cache_v1', 'micarta_pub_download_cache_fuego-criollo'
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
       // Also purge any legacy pub_menu_override_* keys
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('pub_menu_override_')) {
+        if (k && (k.startsWith('pub_menu_override_') || k.includes('fuego-criollo'))) {
           localStorage.removeItem(k);
         }
       }
@@ -282,8 +309,10 @@ function getInitialStorageState() {
       const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
       if (storedAuth) {
         const parsed = JSON.parse(storedAuth);
-        if (parsed && parsed.id) {
+        if (parsed && parsed.id && !isFictitiousUser(parsed)) {
           cachedAuth = parsed;
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.AUTH);
         }
       }
 
@@ -291,17 +320,16 @@ function getInitialStorageState() {
       const downloadCache = getCachedCloudMenu();
       if (downloadCache) {
         if (Array.isArray(downloadCache.restaurants) && downloadCache.restaurants.length > 0) {
-          cachedRests = sanitizeRestaurants(downloadCache.restaurants.filter((r: any) => r && (r.slug || r.id)));
+          cachedRests = sanitizeRestaurants(downloadCache.restaurants.filter((r: any) => r && (r.slug || r.id) && !FICTITIOUS_REST_IDS.has(r.id) && !FICTITIOUS_REST_IDS.has(r.slug)));
         }
         if (Array.isArray(downloadCache.categories) && downloadCache.categories.length > 0) {
-          cachedCategories = downloadCache.categories.filter((c: any) => c && c.id && c.name);
+          cachedCategories = downloadCache.categories.filter((c: any) => c && c.id && c.name && !FICTITIOUS_CAT_IDS.has(c.id));
         }
         if (Array.isArray(downloadCache.items) && downloadCache.items.length > 0) {
-          cachedItems = sanitizeMenuItems(downloadCache.items.filter((i: any) => i && i.id && i.name && i.price !== undefined));
+          cachedItems = sanitizeMenuItems(downloadCache.items.filter((i: any) => i && i.id && i.name && i.price !== undefined && !FICTITIOUS_ITEM_IDS.has(i.id)));
         }
         if (Array.isArray(downloadCache.users) && downloadCache.users.length > 0) {
-          const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
-          cachedUsers = deduplicateUsers([...downloadCache.users.filter((u: any) => u && u.id), ...adminFallbacks]);
+          cachedUsers = deduplicateUsers(downloadCache.users.filter((u: any) => !isFictitiousUser(u)));
         }
         if (Array.isArray(downloadCache.orders)) {
           cachedOrders = downloadCache.orders.filter((o: any) => o && o.id);
@@ -532,8 +560,8 @@ export default function App() {
       fetchLoginUsers()
         .then(loadedUsers => {
           if (!isMounted || !loadedUsers) return;
-          const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
-          const combinedUsers = deduplicateUsers([...loadedUsers.filter((u: any) => u && u.id), ...adminFallbacks]);
+          const cleanUsers = loadedUsers.filter((u: any) => !isFictitiousUser(u));
+          const combinedUsers = deduplicateUsers(cleanUsers);
           usersRef.current = combinedUsers;
           setUsers(combinedUsers);
         })
@@ -610,8 +638,8 @@ export default function App() {
           });
         }
         if (d.users && Array.isArray(d.users) && d.users.length > 0) {
-          const adminFallbacks = INITIAL_USERS.filter(u => u.role === 'ADMIN');
-          const nextU = deduplicateUsers([...d.users, ...adminFallbacks]);
+          const cleanUsers = d.users.filter((u: any) => !isFictitiousUser(u));
+          const nextU = deduplicateUsers(cleanUsers);
           usersRef.current = nextU;
           setUsers(nextU);
         }
@@ -1880,14 +1908,14 @@ export default function App() {
           onGoToLiveDemo={(demoRole) => {
             setIsViewingLanding(false);
             if (demoRole === 'ADMIN') {
-              const adminUser = safeUsers.find(u => u.role === 'ADMIN') || INITIAL_USERS[0];
+              const adminUser = safeUsers.find(u => u.role === 'ADMIN');
               if (adminUser) handleLogin(adminUser);
             } else if (demoRole) {
               const matched = safeUsers.find(u => u.role === demoRole);
               if (matched) {
                 handleLogin(matched);
               } else {
-                const adminUser = safeUsers.find(u => u.role === 'ADMIN') || INITIAL_USERS[0];
+                const adminUser = safeUsers.find(u => u.role === 'ADMIN');
                 if (adminUser) handleLogin(adminUser);
               }
             } else {

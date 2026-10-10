@@ -595,29 +595,14 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
       status: 'active',
       lastActive: 'En línea'
     };
-    const adminEver: User = {
-      id: 'u-ever-aguilar',
-      name: 'Ever Aguilar',
-      email: 'ever.aguilar@micarta.pe',
-      dni: '10203040',
-      password: 'password',
-      role: 'ADMIN',
-      phone: '+51 980 102 030',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
-      restaurantIds: [],
-      status: 'active',
-      lastActive: 'En línea'
-    };
-
     await Promise.all([
-      setDoc(doc(db, 'users', adminHerly.id), cleanObject(adminHerly), { merge: true }).catch(err => handleFirestoreError(err, 'setDoc adminHerly')),
-      setDoc(doc(db, 'users', adminEver.id), cleanObject(adminEver), { merge: true }).catch(err => handleFirestoreError(err, 'setDoc adminEver'))
+      setDoc(doc(db, 'users', adminHerly.id), cleanObject(adminHerly), { merge: true }).catch(err => handleFirestoreError(err, 'setDoc adminHerly'))
     ]);
 
     const snapshotRef = doc(db, 'system', 'cloud_menu_snapshot');
     await setDoc(snapshotRef, {
       restaurantsCount: 0,
-      usersCount: 2,
+      usersCount: 1,
       categoriesCount: 0,
       itemsCount: 0,
       ordersCount: 0,

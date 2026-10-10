@@ -109,7 +109,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     const matchedUser = (users || []).find(u => u && String(u.dni).trim() === cleanDni);
     if (!matchedUser) {
-      setErrorMessage(`No existe ningún usuario registrado con el DNI ${cleanDni}. Verifica los accesos de prueba abajo.`);
+      setErrorMessage(`No existe ningún usuario registrado con el DNI ${cleanDni}. Verifica tu número de documento.`);
       return;
     }
 
@@ -140,8 +140,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setPasswordInput(user.password || '12345678');
     setErrorMessage(null);
   };
-
-  const herlyAdmin = users.find(u => u.dni === '00448157') || users[0];
 
   const roleMeta: Record<UserRole, { label: string; icon: React.FC<{ className?: string }>; badgeColor: string; roleDesc: string }> = {
     ADMIN: { 

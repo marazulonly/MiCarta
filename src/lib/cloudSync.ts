@@ -1,6 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
 import { normalizeBranding } from '../utils/restaurantUtils';
-import { INITIAL_RESTAURANTS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, INITIAL_USERS } from '../data/mockData';
 import { 
   saveToFirestore,
   fetchFromFirestore,
@@ -153,7 +152,7 @@ export async function fetchLoginUsers(forceRefresh = false): Promise<User[]> {
     } catch {}
   }
 
-  return INITIAL_USERS;
+  return [];
 }
 
 export function getCachedCloudMenu(): CloudMenuPayload | null {
@@ -222,13 +221,11 @@ export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
     } catch {}
   }
 
-  // Fallback to mock data if there is absolutely no cache, to avoid a completely empty screen
-  console.log('[Firestore Sync] Using default mock data fallback due to rate limit/quota');
   return {
-    restaurants: INITIAL_RESTAURANTS,
-    categories: INITIAL_CATEGORIES,
-    items: INITIAL_MENU_ITEMS,
-    users: INITIAL_USERS,
+    restaurants: [],
+    categories: [],
+    items: [],
+    users: [],
     orders: []
   };
 }
@@ -393,23 +390,6 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
     const cached = getCachedPublicMenu(norm);
     if (cached) {
       return cached;
-    }
-
-    // Fallback to mock data for specific slug
-    const fallbackRest = INITIAL_RESTAURANTS.find(r => normalizeSlug(r.slug) === norm || normalizeSlug(r.id) === norm);
-    if (fallbackRest) {
-      const mSlug = normalizeSlug(fallbackRest.slug || fallbackRest.name || fallbackRest.id);
-      const restCats = INITIAL_CATEGORIES.filter(c => c.restaurantId === fallbackRest.id || normalizeSlug(c.restaurantId) === mSlug);
-      const restItems = INITIAL_MENU_ITEMS.filter(i => i.restaurantId === fallbackRest.id || normalizeSlug(i.restaurantId) === mSlug);
-      return {
-        success: true,
-        published: true,
-        version: 1,
-        publishedAt: new Date().toISOString(),
-        restaurant: fallbackRest,
-        categories: restCats,
-        items: restItems
-      };
     }
 
     return null;
