@@ -470,51 +470,188 @@ export async function updateOrderStatusInFirestore(orderId: string, status: stri
 }
 
 /**
- * Persists an official published menu snapshot directly into Firestore using the restaurant's slug as primary key.
+ * Validates whether a published menu snapshot is structurally coherent and complete.
+ * A snapshot with 0 items is ONLY considered complete if it carries an explicit `explicitlyEmpty === true` flag.
  */
-export async function savePublishedMenuToFirestore(restaurantId: string, snapshot: any): Promise<boolean> {
+export function isCompletePublishedMenuSnapshot(pubData: any): boolean {
+  if (!pubData || typeof pubData !== 'object') return false;
+  if (!pubData.restaurant || (!pubData.restaurant.id && !pubData.restaurant.slug)) return false;
+  if (!Array.isArray(pubData.categories) || !Array.isArray(pubData.items)) return false;
+
+  if (pubData.explicitlyEmpty === true) {
+    return true;
+  }
+
+  return pubData.items.length > 0 && pubData.categories.length > 0;
+}
+
+/**
+ * Persists an official published menu snapshot directly into Firestore using the restaurant's slug as primary key.
+ * Protects against accidentally overwriting a valid published menu with empty items during partial loads or failed queries.
+ */
+export async function savePublishedMenuToFirestore(
+  restaurantId: string,
+  snapshot: any,
+  options?: { allowEmpty?: boolean }
+): Promise<boolean> {
   if (isBypassingFirestore()) return true;
   if (!restaurantId || !snapshot) return false;
   try {
     const targetId = snapshot.restaurant?.id || restaurantId;
     const primarySlug = normalizeSlugKey(snapshot.restaurant?.slug || snapshot.restaurant?.name || targetId);
     const cleanRest = snapshot.restaurant ? sanitizeRestaurantForFirestore({ ...snapshot.restaurant, slug: primarySlug }) : null;
-    
+    const isExplicitlyEmpty = Boolean(options?.allowEmpty || snapshot.explicitlyEmpty);
+
     const validIds = new Set<string>([
-      targetId, 
-      restaurantId, 
-      primarySlug, 
-      normalizeSlugKey(targetId), 
+      targetId,
+      restaurantId,
+      primarySlug,
+      normalizeSlugKey(targetId),
       normalizeSlugKey(restaurantId)
     ].filter(Boolean));
 
-    const cleanCats = Array.isArray(snapshot.categories) 
-      ? snapshot.categories.filter((c: any) => c && (validIds.has(c.restaurantId) || normalizeSlugKey(c.restaurantId) === primarySlug || validIds.has(normalizeSlugKey(c.restaurantId))))
+    const belongsToRestaurant = (entityRestId?: string) => {
+      if (!entityRestId) return false;
+      const norm = normalizeSlugKey(entityRestId);
+      return validIds.has(entityRestId) || validIds.has(norm);
+    };
+
+    let finalCats: MenuCategory[] = Array.isArray(snapshot.categories)
+      ? snapshot.categories.filter((c: any) => c && c.id && belongsToRestaurant(c.restaurantId))
       : [];
-    const cleanItems = Array.isArray(snapshot.items)
-      ? snapshot.items.filter((i: any) => i && (validIds.has(i.restaurantId) || normalizeSlugKey(i.restaurantId) === primarySlug || validIds.has(normalizeSlugKey(i.restaurantId))))
+    let finalItems: MenuItem[] = Array.isArray(snapshot.items)
+      ? snapshot.items.filter((i: any) => i && i.id && belongsToRestaurant(i.restaurantId))
       : [];
 
-    const finalCats = cleanCats.length > 0
-      ? cleanCats
-      : (Array.isArray(snapshot.categories) && snapshot.categories.length > 0
-          ? snapshot.categories.map((c: any) => ({ ...c, restaurantId: targetId }))
-          : []);
-    const finalItems = cleanItems.length > 0
-      ? cleanItems
-      : (Array.isArray(snapshot.items) && snapshot.items.length > 0
-          ? snapshot.items.map((i: any) => ({ ...i, restaurantId: targetId }))
-          : []);
+    // Guard against overwriting a valid published menu with empty items unless explicitly confirmed
+    if (finalItems.length === 0 && !isExplicitlyEmpty) {
+      let checkFailed = false;
+      const existingPubSnap = await getDoc(doc(db, 'published_menus', primarySlug || normalizeSlugKey(targetId))).catch((err) => {
+        checkFailed = true;
+        handleFirestoreError(err, 'check existing published_menu before empty write');
+        return null;
+      });
 
-    const optimizedSnapshot = cleanObject({
+      const existingPubData = existingPubSnap && existingPubSnap.exists() ? existingPubSnap.data() : null;
+
+      // Also check live items collection in Firestore for this restaurant
+      const possibleIds = Array.from(validIds);
+      const itemSnaps = await Promise.all(
+        possibleIds.map(id =>
+          getDocs(query(collection(db, 'items'), where('restaurantId', '==', id))).catch((err) => {
+            checkFailed = true;
+            handleFirestoreError(err, `recover items for ${id} before publish`);
+            return null;
+          })
+        )
+      );
+
+      const recoveredItemMap = new Map<string, MenuItem>();
+      itemSnaps.forEach(s => {
+        s?.forEach(d => {
+          const item = d.data() as MenuItem;
+          if (item && item.id && belongsToRestaurant(item.restaurantId)) {
+            recoveredItemMap.set(item.id, item);
+          }
+        });
+      });
+
+      const recoveredItems = Array.from(recoveredItemMap.values());
+
+      if (recoveredItems.length > 0) {
+        console.warn(`[Firestore Guard] Prevented empty items overwrite for "${primarySlug}"; recovered ${recoveredItems.length} live dishes from Firestore.`);
+        finalItems = recoveredItems;
+      } else if (existingPubData && Array.isArray(existingPubData.items) && existingPubData.items.length > 0) {
+        console.warn(`[Firestore Guard] Prevented empty items overwrite for "${primarySlug}"; preserved ${existingPubData.items.length} existing published dishes.`);
+        finalItems = existingPubData.items.filter((i: any) => i && i.id && belongsToRestaurant(i.restaurantId));
+      } else if (checkFailed) {
+        console.warn(`[Firestore Guard] Aborted publishing empty menu for "${primarySlug}" because verification query failed.`);
+        return false;
+      }
+
+      if (finalCats.length === 0) {
+        if (existingPubData && Array.isArray(existingPubData.categories) && existingPubData.categories.length > 0) {
+          finalCats = existingPubData.categories.filter((c: any) => c && c.id && belongsToRestaurant(c.restaurantId));
+        } else {
+          const catSnaps = await Promise.all(
+            possibleIds.map(id =>
+              getDocs(query(collection(db, 'categories'), where('restaurantId', '==', id))).catch(() => null)
+            )
+          );
+          const recoveredCatMap = new Map<string, MenuCategory>();
+          catSnaps.forEach(s => {
+            s?.forEach(d => {
+              const cat = d.data() as MenuCategory;
+              if (cat && cat.id && belongsToRestaurant(cat.restaurantId)) {
+                recoveredCatMap.set(cat.id, cat);
+              }
+            });
+          });
+          finalCats = Array.from(recoveredCatMap.values());
+        }
+      }
+    }
+
+    // Optimize items for single-document storage so published_menus/{slug} never exceeds Firestore's 1MB limit
+    // when multiple dishes share or contain large base64 data URLs.
+    const sharedImagesPool: Record<string, string> = {};
+    const base64ToPoolKey = new Map<string, string>();
+    let poolIndex = 0;
+
+    const compactItems = await Promise.all(
+      finalItems.map(async (item) => {
+        let img = item.imageUrl || '';
+        if (img.startsWith('data:image/') && img.length > 50000) {
+          const migrated = await ensureOptimizedImageUrl(img, 'dish', item.id);
+          if (migrated && migrated.length > 0 && migrated.length < img.length) {
+            img = migrated;
+          }
+        }
+        if (img.startsWith('data:image/') && img.length > 20000) {
+          let pKey = base64ToPoolKey.get(img);
+          if (!pKey) {
+            poolIndex += 1;
+            pKey = `pool_img_${poolIndex}`;
+            base64ToPoolKey.set(img, pKey);
+            sharedImagesPool[pKey] = img;
+          }
+          return { ...item, imageUrl: pKey };
+        }
+        return { ...item, imageUrl: img };
+      })
+    );
+
+    let optimizedSnapshot = cleanObject({
       published: true,
       version: snapshot.version || 1,
       publishedAt: snapshot.publishedAt || new Date().toISOString(),
       publishedBy: snapshot.publishedBy || 'Admin / Owner',
+      explicitlyEmpty: isExplicitlyEmpty && finalItems.length === 0,
       restaurant: cleanRest,
       categories: finalCats,
-      items: finalItems
+      items: compactItems,
+      sharedImagesPool: Object.keys(sharedImagesPool).length > 0 ? sharedImagesPool : undefined
     });
+
+    // Final safety check against Firestore 1MB (1,048,576 bytes) document limit
+    const estimatedBytes = new TextEncoder().encode(JSON.stringify(optimizedSnapshot)).length;
+    if (estimatedBytes > 950000) {
+      // Strip oversized inline base64 strings from the pool if total still approaches 1MB
+      const trimmedPool: Record<string, string> = {};
+      let runningSize = estimatedBytes;
+      for (const [k, v] of Object.entries(sharedImagesPool)) {
+        if (runningSize > 900000 && v.length > 100000) {
+          runningSize -= v.length;
+          trimmedPool[k] = '';
+        } else {
+          trimmedPool[k] = v;
+        }
+      }
+      optimizedSnapshot = cleanObject({
+        ...optimizedSnapshot,
+        sharedImagesPool: Object.keys(trimmedPool).length > 0 ? trimmedPool : undefined
+      });
+    }
 
     const keysToPublish = new Set<string>();
     if (primarySlug) keysToPublish.add(primarySlug);
@@ -618,9 +755,9 @@ export async function clearAllDatabaseCollections(): Promise<boolean> {
 /**
  * Fetches an official published menu snapshot directly from Firestore.
  * 1. Checks published_menus/{slug} first (ultra-fast single document read).
- * 2. If already complete (has restaurant, categories and items), returns it immediately with zero extra reads and zero writes.
- * 3. Only if missing or incomplete, performs parallel targeted queries (using where() filters instead of downloading entire collections).
- * 4. Never writes to Firestore on a guest read visit.
+ * 2. Validates snapshot integrity with isCompletePublishedMenuSnapshot (requires items > 0 && categories > 0, or explicitlyEmpty === true).
+ * 3. If missing or incomplete (e.g. items: [] without explicitlyEmpty), recovers categories and items from Firestore using the restaurant's real IDs.
+ * 4. Distinguishes legitimately empty menus from failed queries, and self-heals incomplete published_menus snapshots when items are recovered.
  */
 export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string): Promise<any | null> {
   if (isBypassingFirestore()) return null;
@@ -628,48 +765,97 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
   const normKey = normalizeSlugKey(restaurantIdOrSlug);
 
   try {
+    let initialReadFailed = false;
     // 1. Prioritize published_menus/{slug} (Fast path: 1 single document read!)
     const [pubNormSnap, pubRawSnap] = await Promise.all([
-      getDoc(doc(db, 'published_menus', normKey)).catch(() => null),
+      getDoc(doc(db, 'published_menus', normKey)).catch((err) => {
+        initialReadFailed = true;
+        handleFirestoreError(err, `getDoc published_menus/${normKey}`);
+        return null;
+      }),
       restaurantIdOrSlug !== normKey
-        ? getDoc(doc(db, 'published_menus', restaurantIdOrSlug)).catch(() => null)
+        ? getDoc(doc(db, 'published_menus', restaurantIdOrSlug)).catch((err) => {
+            initialReadFailed = true;
+            handleFirestoreError(err, `getDoc published_menus/${restaurantIdOrSlug}`);
+            return null;
+          })
         : Promise.resolve(null)
     ]);
 
-    const pubData = (pubNormSnap && pubNormSnap.exists())
+    const rawPubData = (pubNormSnap && pubNormSnap.exists())
       ? pubNormSnap.data()
       : ((pubRawSnap && pubRawSnap.exists()) ? pubRawSnap.data() : null);
 
-    // If published_menus exists and has valid restaurant + items or categories, return immediately!
-    if (pubData && pubData.restaurant && (
-      (Array.isArray(pubData.items) && pubData.items.length > 0) ||
-      (Array.isArray(pubData.categories) && pubData.categories.length > 0)
-    )) {
-      const rLogo = pubData.restaurant.branding?.headerLogoUrl || pubData.restaurant.logoUrl || '';
-      pubData.restaurant.logoUrl = rLogo;
-      pubData.restaurant.branding = normalizeBranding(
-        { ...(pubData.restaurant.branding || {}), headerLogoUrl: rLogo },
-        pubData.restaurant.templateId
-      );
-      return pubData;
+    const rehydrateSnapshotItems = (data: any): any => {
+      if (!data) return null;
+      const pool: Record<string, string> = (data.sharedImagesPool && typeof data.sharedImagesPool === 'object')
+        ? data.sharedImagesPool
+        : {};
+      if (!Array.isArray(data.items) || Object.keys(pool).length === 0) return data;
+      const rehydratedItems = data.items.map((item: any) => {
+        if (item && typeof item.imageUrl === 'string' && pool[item.imageUrl] !== undefined) {
+          return { ...item, imageUrl: pool[item.imageUrl] };
+        }
+        return item;
+      });
+      return { ...data, items: rehydratedItems };
+    };
+
+    const pubData = rehydrateSnapshotItems(rawPubData);
+
+    // Validate complete snapshot: must have restaurant + (both categories AND items > 0, OR explicitlyEmpty === true)
+    if (isCompletePublishedMenuSnapshot(pubData)) {
+      const restId = pubData!.restaurant.id || '';
+      const restSlug = normalizeSlugKey(pubData!.restaurant.slug || pubData!.restaurant.name || restId);
+      const validIds = new Set([restId, restSlug, normKey, normalizeSlugKey(restId)].filter(Boolean));
+      const belongsToRest = (rId?: string) => Boolean(rId && (validIds.has(rId) || validIds.has(normalizeSlugKey(rId))));
+
+      const validCategories = (pubData!.categories || []).filter((c: any) => c && c.id && belongsToRest(c.restaurantId));
+      const validItems = (pubData!.items || []).filter((i: any) => i && i.id && belongsToRest(i.restaurantId));
+
+      if (pubData!.explicitlyEmpty === true || (validItems.length > 0 && validCategories.length > 0)) {
+        const rLogo = pubData!.restaurant.branding?.headerLogoUrl || pubData!.restaurant.logoUrl || '';
+        pubData!.restaurant.logoUrl = rLogo;
+        pubData!.restaurant.branding = normalizeBranding(
+          { ...(pubData!.restaurant.branding || {}), headerLogoUrl: rLogo },
+          pubData!.restaurant.templateId
+        );
+        return {
+          ...pubData,
+          categories: validCategories,
+          items: validItems
+        };
+      }
     }
 
-    // 2. Fallback: Lookup restaurant by document ID or query by slug in parallel
-    const [directRestNormSnap, directRestRawSnap, slugQuerySnap] = await Promise.all([
-      getDoc(doc(db, 'restaurants', normKey)).catch(() => null),
-      restaurantIdOrSlug !== normKey
-        ? getDoc(doc(db, 'restaurants', restaurantIdOrSlug)).catch(() => null)
-        : Promise.resolve(null),
-      getDocs(query(collection(db, 'restaurants'), where('slug', '==', normKey))).catch(() => null)
-    ]);
+    // 2. Recovery Path: If pubData is missing or incomplete (e.g., categories > 0 but items === 0 without explicitlyEmpty)
+    let matchedRest: Restaurant | null = pubData?.restaurant || null;
+    let restLookupFailed = false;
 
-    let matchedRest: Restaurant | null = null;
-    if (directRestNormSnap && directRestNormSnap.exists()) {
-      matchedRest = directRestNormSnap.data() as Restaurant;
-    } else if (directRestRawSnap && directRestRawSnap.exists()) {
-      matchedRest = directRestRawSnap.data() as Restaurant;
-    } else if (slugQuerySnap && !slugQuerySnap.empty) {
-      matchedRest = slugQuerySnap.docs[0].data() as Restaurant;
+    if (!matchedRest || !matchedRest.id) {
+      const [directRestNormSnap, directRestRawSnap, slugQuerySnap] = await Promise.all([
+        getDoc(doc(db, 'restaurants', normKey)).catch((err) => {
+          restLookupFailed = true;
+          handleFirestoreError(err, `getDoc restaurants/${normKey}`);
+          return null;
+        }),
+        restaurantIdOrSlug !== normKey
+          ? getDoc(doc(db, 'restaurants', restaurantIdOrSlug)).catch(() => null)
+          : Promise.resolve(null),
+        getDocs(query(collection(db, 'restaurants'), where('slug', '==', normKey))).catch((err) => {
+          restLookupFailed = true;
+          handleFirestoreError(err, `query restaurants slug==${normKey}`);
+          return null;
+        })
+      ]);
+
+      if (directRestNormSnap && directRestNormSnap.exists()) {
+        matchedRest = directRestNormSnap.data() as Restaurant;
+      } else if (directRestRawSnap && directRestRawSnap.exists()) {
+        matchedRest = directRestRawSnap.data() as Restaurant;
+      } else if (slugQuerySnap && !slugQuerySnap.empty) {
+        matchedRest = slugQuerySnap.docs[0].data() as Restaurant;
+      }
     }
 
     const activeRest: Restaurant | null = matchedRest || pubData?.restaurant || null;
@@ -683,14 +869,27 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       const primarySlug = normalizeSlugKey(activeRest.slug || activeRest.name || activeRest.id);
       activeRest.slug = primarySlug;
 
-      // Query ONLY categories and items targeted for this specific restaurant using where() queries in parallel
+      // Query ONLY categories and items targeted for this specific restaurant using its real IDs
       const possibleIds = Array.from(new Set([activeRest.id, primarySlug, normKey].filter(Boolean)));
-      
+      const validIdsSet = new Set([...possibleIds, ...possibleIds.map(id => normalizeSlugKey(id))].filter(Boolean));
+      const belongsToRest = (rId?: string) => Boolean(rId && (validIdsSet.has(rId) || validIdsSet.has(normalizeSlugKey(rId))));
+
+      let catQueryFailed = false;
+      let itemQueryFailed = false;
+
       const categoryPromises = possibleIds.map(targetId =>
-        getDocs(query(collection(db, 'categories'), where('restaurantId', '==', targetId))).catch(() => null)
+        getDocs(query(collection(db, 'categories'), where('restaurantId', '==', targetId))).catch((err) => {
+          catQueryFailed = true;
+          handleFirestoreError(err, `recover categories for ${targetId}`);
+          return null;
+        })
       );
       const itemPromises = possibleIds.map(targetId =>
-        getDocs(query(collection(db, 'items'), where('restaurantId', '==', targetId))).catch(() => null)
+        getDocs(query(collection(db, 'items'), where('restaurantId', '==', targetId))).catch((err) => {
+          itemQueryFailed = true;
+          handleFirestoreError(err, `recover items for ${targetId}`);
+          return null;
+        })
       );
 
       const [catResults, itemResults] = await Promise.all([
@@ -702,7 +901,9 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       catResults.forEach(snap => {
         snap?.forEach(d => {
           const c = d.data() as MenuCategory;
-          if (c && c.id) catMap.set(c.id, c);
+          if (c && c.id && belongsToRest(c.restaurantId)) {
+            catMap.set(c.id, c);
+          }
         });
       });
 
@@ -710,28 +911,58 @@ export async function fetchPublishedMenuFromFirestore(restaurantIdOrSlug: string
       itemResults.forEach(snap => {
         snap?.forEach(d => {
           const i = d.data() as MenuItem;
-          if (i && i.id) itemMap.set(i.id, i);
+          if (i && i.id && belongsToRest(i.restaurantId)) {
+            itemMap.set(i.id, i);
+          }
         });
       });
 
       const liveCategories = Array.from(catMap.values());
       const liveItems = Array.from(itemMap.values());
 
-      const finalCategories = liveCategories.length > 0 ? liveCategories : (pubData?.categories || []);
-      const finalItems = liveItems.length > 0 ? liveItems : (pubData?.items || []);
+      const pubCatsFiltered = Array.isArray(pubData?.categories)
+        ? pubData.categories.filter((c: any) => c && c.id && belongsToRest(c.restaurantId))
+        : [];
+      const pubItemsFiltered = Array.isArray(pubData?.items)
+        ? pubData.items.filter((i: any) => i && i.id && belongsToRest(i.restaurantId))
+        : [];
 
-      return {
+      const finalCategories = liveCategories.length > 0 ? liveCategories : pubCatsFiltered;
+      const finalItems = liveItems.length > 0 ? liveItems : pubItemsFiltered;
+
+      const recoveryFailed = (itemQueryFailed || catQueryFailed) && finalItems.length === 0;
+      const legitimatelyEmpty = !itemQueryFailed && !catQueryFailed && finalItems.length === 0;
+
+      const recoveredSnapshot = {
         published: true,
         version: pubData?.version || 1,
         publishedAt: pubData?.publishedAt || new Date().toISOString(),
+        publishedBy: pubData?.publishedBy || 'System Recovery',
+        explicitlyEmpty: Boolean(pubData?.explicitlyEmpty && legitimatelyEmpty),
+        legitimatelyEmpty,
+        recoveryFailed,
         restaurant: activeRest,
         categories: finalCategories,
         items: finalItems
       };
+
+      // Self-heal published_menus in Firestore if we recovered missing items for an incomplete publication
+      if (liveItems.length > 0 && pubItemsFiltered.length === 0) {
+        savePublishedMenuToFirestore(activeRest.id, recoveredSnapshot).catch(() => {});
+      }
+
+      return recoveredSnapshot;
+    }
+
+    if (initialReadFailed || restLookupFailed) {
+      return null;
     }
 
     if (pubData) {
-      return pubData;
+      return {
+        ...pubData,
+        recoveryFailed: !isCompletePublishedMenuSnapshot(pubData)
+      };
     }
   } catch (err) {
     console.warn('[Firestore] Error fetching published menu from Firestore:', err);

@@ -40,7 +40,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyRestaurantState } from './components/EmptyRestaurantState';
 import { LoadingRestaurantState } from './components/LoadingRestaurantState';
 import { CustomerActiveOrderModal } from './components/CustomerActiveOrderModal';
-import { getSafeActiveRestaurant, getSafeBranding, normalizeBranding, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, normalizeBranding, matchesRestaurantRef, DEFAULT_BRANDING, DEFAULT_MENU_ACCESS_SETTINGS, isLegacyRestaurant } from './utils/restaurantUtils';
 import { Bell, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { saveUserToFirestore, clearAllDatabaseCollections, deletePublishedMenuFromFirestore } from './lib/firestoreSync';
 import {
@@ -493,7 +493,26 @@ export default function App() {
         .then(pub => {
           if (!isMounted) return;
           if (pub && pub.success && pub.restaurant) {
-            setPublishedMenuData(pub);
+            setPublishedMenuData(prev => {
+              const incomingItems = Array.isArray(pub.items) ? pub.items : [];
+              const prevItems = Array.isArray(prev?.items) ? prev.items : [];
+              // Never replace valid cached/existing items with empty items unless explicitlyEmpty or legitimatelyEmpty
+              if (
+                incomingItems.length === 0 &&
+                !pub.explicitlyEmpty &&
+                !pub.legitimatelyEmpty &&
+                prevItems.length > 0 &&
+                prev?.restaurant &&
+                matchesRestaurantRef(prev.restaurant.id || prev.restaurant.slug, pub.restaurant)
+              ) {
+                return {
+                  ...pub,
+                  categories: (pub.categories && pub.categories.length > 0) ? pub.categories : prev.categories,
+                  items: prevItems
+                };
+              }
+              return pub;
+            });
             setPreviewRestaurant(pub.restaurant);
             setIsCustomerModalOpen(true);
             setNotFoundSlugError(null);
@@ -881,22 +900,40 @@ export default function App() {
     restaurantId: string, 
     overrideRest?: Restaurant, 
     overrideCats?: MenuCategory[], 
-    overrideItems?: MenuItem[]
+    overrideItems?: MenuItem[],
+    options?: { allowEmpty?: boolean }
   ) => {
-    const restaurant = overrideRest || restaurants.find(r => r.id === restaurantId);
+    const restaurant = overrideRest || restaurantsRef.current.find(r => r && (r.id === restaurantId || matchesRestaurantRef(restaurantId, r)));
     if (!restaurant) return;
 
     // Ensure slug is normalized before sending to cloud
-    const normalizedRest = {
+    const normalizedRest: Restaurant = {
       ...restaurant,
-      slug: normalizeSlug(restaurant.slug)
+      slug: normalizeSlug(restaurant.slug || restaurant.name || restaurant.id)
     };
 
-    const filterCats = overrideCats || categories.filter(c => c.restaurantId === restaurantId);
-    const filterItems = overrideItems || menuItems.filter(i => i.restaurantId === restaurantId);
+    const filterCats = overrideCats
+      ? overrideCats.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId))
+      : categoriesRef.current.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+    const filterItems = overrideItems
+      ? overrideItems.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId))
+      : menuItemsRef.current.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+
+    // Guard against overwriting a valid published menu with empty items before initial cloud fetch completes
+    if (filterItems.length === 0 && !options?.allowEmpty && !isInitialCloudFetchDone && menuItemsRef.current.length === 0) {
+      await autoSyncRestaurant(normalizedRest).catch(() => {});
+      return;
+    }
 
     try {
-      await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador');
+      await publishRestaurantMenu(
+        restaurantId,
+        normalizedRest,
+        filterCats,
+        filterItems,
+        currentUser?.name || 'Administrador',
+        options
+      );
     } catch (e) {
       console.error('Error triggering cloud update:', e);
     }
@@ -970,7 +1007,13 @@ export default function App() {
     }
 
     // Publish initial menu snapshot (also saves restaurant to Firestore)
-    triggerCloudUpdate(newRestaurant.id, newRestaurant, nextCategories.filter(c => c.restaurantId === newRestaurant.id), []);
+    triggerCloudUpdate(
+      newRestaurant.id,
+      newRestaurant,
+      nextCategories.filter(c => c.restaurantId === newRestaurant.id),
+      [],
+      { allowEmpty: true }
+    );
 
     setSelectedRestaurantId(newRestaurant.id);
     showToast(`Restaurante "${newRestaurant.name}" creado y guardado permanentemente.`);
@@ -1213,7 +1256,13 @@ export default function App() {
     if (targetItem) {
       const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
       const restCats = categoriesRef.current.filter(c => c.restaurantId === targetItem.restaurantId);
-      triggerCloudUpdate(targetItem.restaurantId, undefined, restCats, restItems);
+      triggerCloudUpdate(
+        targetItem.restaurantId,
+        undefined,
+        restCats,
+        restItems,
+        { allowEmpty: restItems.length === 0 }
+      );
     }
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
   };
@@ -1355,25 +1404,28 @@ export default function App() {
     restaurantId: string,
     restaurant: Restaurant,
     restCategories: MenuCategory[],
-    restItems: MenuItem[]
+    restItems: MenuItem[],
+    options?: { allowEmpty?: boolean }
   ) => {
     const resolvedLogo = restaurant.branding?.headerLogoUrl || restaurant.logoUrl || '';
     const normalizedRest: Restaurant = {
       ...restaurant,
+      slug: normalizeSlug(restaurant.slug || restaurant.name || restaurant.id),
       logoUrl: resolvedLogo,
       branding: normalizeBranding(
         { ...(restaurant.branding || {}), headerLogoUrl: resolvedLogo },
         restaurant.templateId
       )
     };
-    const filterCats = restCategories.filter(c => c.restaurantId === restaurantId || normalizeSlug(c.restaurantId) === normalizeSlug(restaurant.slug));
-    const filterItems = restItems.filter(i => i.restaurantId === restaurantId || normalizeSlug(i.restaurantId) === normalizeSlug(restaurant.slug));
-    const res = await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador');
+    const filterCats = restCategories.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+    const filterItems = restItems.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+    const res = await publishRestaurantMenu(restaurantId, normalizedRest, filterCats, filterItems, currentUser?.name || 'Administrador', options);
     if (res.success) {
       const newSnapshot = {
         published: true,
         version: res.version || 1,
         publishedAt: res.publishedAt || new Date().toISOString(),
+        explicitlyEmpty: Boolean(options?.allowEmpty && filterItems.length === 0),
         restaurant: normalizedRest,
         categories: filterCats,
         items: filterItems
@@ -1838,11 +1890,16 @@ export default function App() {
         normalizeSlug(publishedMenuData.restaurant?.slug) === targetSlug
       )
     );
+    const isExplicitlyOrLegitimatelyEmpty = Boolean(
+      isTargetPublished &&
+      publishedMenuData &&
+      ((publishedMenuData as any).explicitlyEmpty || (publishedMenuData as any).legitimatelyEmpty)
+    );
     // Prioritize authoritative publishedMenuData categories and items over default in-memory mock data
     const targetCategories = (isTargetPublished && publishedMenuData?.categories && publishedMenuData.categories.length > 0)
       ? publishedMenuData.categories
       : (liveCategories.length > 0 ? liveCategories : (publishedMenuData?.categories || []));
-    const targetItems = (isTargetPublished && publishedMenuData?.items && publishedMenuData.items.length > 0)
+    const targetItems = (isTargetPublished && publishedMenuData?.items && (publishedMenuData.items.length > 0 || isExplicitlyOrLegitimatelyEmpty))
       ? publishedMenuData.items
       : (liveItems.length > 0 ? liveItems : (publishedMenuData?.items || []));
 

@@ -71,7 +71,8 @@ interface OwnerMenuEditorProps {
     restaurantId: string,
     restaurant: Restaurant,
     categories: MenuCategory[],
-    items: MenuItem[]
+    items: MenuItem[],
+    options?: { allowEmpty?: boolean }
   ) => Promise<{ success: boolean; version?: number; publishedAt?: string } | void> | void;
   onImportBackupJSON?: (
     data: { restaurants: Restaurant[]; categories: MenuCategory[]; items: MenuItem[] },
@@ -119,18 +120,21 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     });
   }, [restaurant.id]);
 
-  const handlePublishClick = async () => {
+  const [isConfirmEmptyPublishOpen, setIsConfirmEmptyPublishOpen] = useState(false);
+
+  const executePublish = async (allowEmpty = false) => {
     if (isPublishing) return;
     setIsPublishing(true);
     try {
+      const options = allowEmpty ? { allowEmpty: true } : undefined;
       if (onPublishMenu) {
-        const res = await onPublishMenu(restaurant.id, restaurant, categories, items);
+        const res = await onPublishMenu(restaurant.id, restaurant, categories, items, options);
         if (res && res.version) {
           setLastPublishedVersion(res.version);
           setLastPublishedAt(res.publishedAt || new Date().toISOString());
         }
       } else {
-        const res = await publishRestaurantMenu(restaurant.id, restaurant, categories, items);
+        const res = await publishRestaurantMenu(restaurant.id, restaurant, categories, items, undefined, options);
         if (res.success) {
           setLastPublishedVersion(res.version || 1);
           setLastPublishedAt(res.publishedAt || new Date().toISOString());
@@ -144,6 +148,16 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const handlePublishClick = async () => {
+    if (isPublishing) return;
+    const restItemsCount = items.filter(i => i && i.restaurantId === restaurant.id).length;
+    if (restItemsCount === 0) {
+      setIsConfirmEmptyPublishOpen(true);
+      return;
+    }
+    await executePublish(false);
   };
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -876,8 +890,53 @@ export const OwnerMenuEditor: React.FC<OwnerMenuEditorProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span>+ Nuevo Plato</span>
           </button>
+
+          <button
+            type="button"
+            onClick={handlePublishClick}
+            disabled={isPublishing}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black transition cursor-pointer shadow-md disabled:opacity-50"
+            title="Publicar la carta oficial en la nube"
+          >
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>{isPublishing ? 'Publicando...' : 'Publicar Carta'}</span>
+          </button>
         </div>
       </div>
+
+      {/* Modal de confirmación explícita para publicar una carta vacía */}
+      {isConfirmEmptyPublishOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-neutral-950 border border-amber-500/40 text-white p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-2.5 text-amber-400">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <h3 className="text-sm font-bold">¿Confirmar publicación de carta vacía?</h3>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Actualmente no hay platos registrados para <strong>{restaurant.name}</strong>. Si continúas, la carta pública quedará vacía de forma intencional.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsConfirmEmptyPublishOpen(false)}
+                className="px-3.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsConfirmEmptyPublishOpen(false);
+                  await executePublish(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black cursor-pointer shadow"
+              >
+                Sí, publicar carta vacía
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SUBTAB 1: GESTIÓN DE PLATOS */}
       {subTab === 'items' && (

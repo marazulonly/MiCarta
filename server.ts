@@ -386,16 +386,46 @@ async function startServer() {
       }
     }
 
-    // 2. If already published, return the atomic snapshot
+    // 2. If already published, return the atomic snapshot (with recovery from current.items if snapshot items were accidentally emptied)
     if (matchedSnapshot) {
+      const snapRest = matchedSnapshot.restaurant;
+      const snapItems = Array.isArray(matchedSnapshot.items) ? matchedSnapshot.items : [];
+      const snapCats = Array.isArray(matchedSnapshot.categories) ? matchedSnapshot.categories : [];
+      const isExplicitlyEmpty = Boolean(matchedSnapshot.explicitlyEmpty);
+
+      let resolvedItems = snapItems;
+      let resolvedCats = snapCats;
+
+      if (resolvedItems.length === 0 && !isExplicitlyEmpty && snapRest) {
+        const recoveredItems = (current.items || []).filter((i: any) => i && (
+          i.restaurantId === snapRest.id ||
+          normalizeSlug(i.restaurantId) === normalizeSlug(snapRest.slug) ||
+          normalizeSlug(i.restaurantId) === targetSlug
+        ));
+        if (recoveredItems.length > 0) {
+          resolvedItems = recoveredItems;
+        }
+        if (resolvedCats.length === 0) {
+          const recoveredCats = (current.categories || []).filter((c: any) => c && (
+            c.restaurantId === snapRest.id ||
+            normalizeSlug(c.restaurantId) === normalizeSlug(snapRest.slug) ||
+            normalizeSlug(c.restaurantId) === targetSlug
+          ));
+          if (recoveredCats.length > 0) {
+            resolvedCats = recoveredCats;
+          }
+        }
+      }
+
       res.json({
         success: true,
         published: true,
         version: matchedSnapshot.version || 1,
         publishedAt: matchedSnapshot.publishedAt || current.updatedAt,
+        explicitlyEmpty: isExplicitlyEmpty && resolvedItems.length === 0,
         restaurant: matchedSnapshot.restaurant,
-        categories: matchedSnapshot.categories || [],
-        items: matchedSnapshot.items || []
+        categories: resolvedCats,
+        items: resolvedItems
       });
       return;
     }
@@ -447,7 +477,7 @@ async function startServer() {
 
   // POST: Publish a restaurant's menu atomically (guaranteeing exact single source of truth for public visitors)
   app.post('/api/menu/publish', async (req, res) => {
-    const { restaurantId, restaurant, categories, items, publishedBy } = req.body;
+    const { restaurantId, restaurant, categories, items, publishedBy, explicitlyEmpty, allowEmpty } = req.body;
     if (!restaurantId || !restaurant) {
       res.status(400).json({ success: false, message: 'Se requiere restaurantId y datos del restaurante para publicar' });
       return;
@@ -456,20 +486,41 @@ async function startServer() {
     await ensureCloudDataHydrated();
     const current = cachedCloudData || { restaurants: [], items: [], categories: [], users: [], orders: [], publishedMenus: {} };
     const publishedMenus = current.publishedMenus || {};
-    const prevSnapshot = publishedMenus[restaurantId];
+    const prevSnapshot = publishedMenus[restaurantId] || (restaurant.slug ? publishedMenus[normalizeSlug(restaurant.slug)] : null);
     const nextVersion = (prevSnapshot?.version || 0) + 1;
     const nowIso = new Date().toISOString();
+    const isExplicitlyEmpty = Boolean(explicitlyEmpty || allowEmpty);
+
+    const incomingItems = Array.isArray(items) ? items : [];
+    const incomingCats = Array.isArray(categories) ? categories : [];
+    const existingRestItems = (current.items || []).filter((i: any) => i && i.restaurantId === restaurantId);
+    const prevSnapItems = Array.isArray(prevSnapshot?.items) ? prevSnapshot.items : [];
+
+    // Guard against overwriting non-empty items with empty array unless explicitly confirmed
+    const safeItems = (incomingItems.length === 0 && !isExplicitlyEmpty)
+      ? (existingRestItems.length > 0 ? existingRestItems : prevSnapItems)
+      : incomingItems;
+
+    const existingRestCats = (current.categories || []).filter((c: any) => c && c.restaurantId === restaurantId);
+    const prevSnapCats = Array.isArray(prevSnapshot?.categories) ? prevSnapshot.categories : [];
+    const safeCategories = (incomingCats.length === 0 && safeItems.length > 0)
+      ? (existingRestCats.length > 0 ? existingRestCats : prevSnapCats)
+      : incomingCats;
 
     const newSnapshot = {
       version: nextVersion,
       publishedAt: nowIso,
       publishedBy: publishedBy || 'Admin / Owner',
+      explicitlyEmpty: isExplicitlyEmpty && safeItems.length === 0,
       restaurant,
-      categories: categories || [],
-      items: items || []
+      categories: safeCategories,
+      items: safeItems
     };
 
     publishedMenus[restaurantId] = newSnapshot;
+    if (restaurant.slug) {
+      publishedMenus[normalizeSlug(restaurant.slug)] = newSnapshot;
+    }
 
     // Synchronize current draft restaurant, categories, and items with the published version
     const updatedRestaurants = [...(current.restaurants || [])];
@@ -480,13 +531,13 @@ async function startServer() {
       updatedRestaurants.push(restaurant);
     }
 
-    // Replace items of this restaurant with published items
+    // Replace items of this restaurant with safeItems
     const otherItems = (current.items || []).filter((i: any) => i.restaurantId !== restaurantId);
-    const updatedItems = [...otherItems, ...(items || [])];
+    const updatedItems = [...otherItems, ...safeItems];
 
-    // Replace categories of this restaurant with published categories
+    // Replace categories of this restaurant with safeCategories
     const otherCategories = (current.categories || []).filter((c: any) => c.restaurantId !== restaurantId);
-    const updatedCategories = [...otherCategories, ...(categories || [])];
+    const updatedCategories = [...otherCategories, ...safeCategories];
 
     const updatedData = {
       ...current,

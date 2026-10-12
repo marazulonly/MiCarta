@@ -1,8 +1,174 @@
-import { Restaurant, RestaurantBranding, MenuAccessSettings } from '../types';
+import { Restaurant, RestaurantBranding, MenuAccessSettings, MenuCategory, MenuItem } from '../types';
 
 export function isLegacyRestaurant(_r: any): boolean {
   // Never treat any restaurant as legacy or delete/filter it out.
   return false;
+}
+
+/**
+ * Normalizes a category name for visual deduplication comparisons without mutating stored data.
+ */
+export function normalizeCategoryNameKey(name?: string | null): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Resolves categories and items for visual display:
+ * - Filters strictly by the target restaurant (using ID, slug, and normalized slug) so restaurants never mix dishes.
+ * - Deduplicates repeated categories that share the same normalized name within the same restaurant
+ *   using a deterministic canonical category ID (preferring the category with the most items, then lowest sortOrder, then ID).
+ * - Remaps items in-memory (for display only) from duplicate sibling category IDs to the canonical category ID
+ *   so zero dishes are hidden or lost, without deleting or merging any records in Firestore.
+ */
+export function resolveMenuCategoriesAndItemsForDisplay(
+  categories: MenuCategory[] | null | undefined,
+  items: MenuItem[] | null | undefined,
+  restaurant?: Pick<Restaurant, 'id' | 'slug' | 'name'> | null
+): {
+  categories: MenuCategory[];
+  items: MenuItem[];
+  duplicateCategoryMap: Record<string, string>;
+} {
+  const rawCats = Array.isArray(categories) ? categories.filter((c): c is MenuCategory => Boolean(c && c.id && c.name)) : [];
+  const rawItems = Array.isArray(items) ? items.filter((i): i is MenuItem => Boolean(i && i.id && i.name)) : [];
+
+  const restId = restaurant?.id || '';
+  const scopedCats = restaurant
+    ? rawCats.filter(c => matchesRestaurantRef(c.restaurantId, restaurant))
+    : rawCats;
+  const scopedItems = restaurant
+    ? rawItems.filter(i => matchesRestaurantRef(i.restaurantId, restaurant))
+    : rawItems;
+
+  // Deduplicate items by id first
+  const uniqueItemsMap = new Map<string, MenuItem>();
+  scopedItems.forEach(item => {
+    if (!uniqueItemsMap.has(item.id)) {
+      uniqueItemsMap.set(item.id, item);
+    }
+  });
+  const uniqueItems = Array.from(uniqueItemsMap.values());
+
+  // Count how many items directly reference each category ID
+  const itemCountByCatId = new Map<string, number>();
+  uniqueItems.forEach(item => {
+    if (item.categoryId) {
+      itemCountByCatId.set(item.categoryId, (itemCountByCatId.get(item.categoryId) || 0) + 1);
+    }
+  });
+
+  // Deduplicate categories by exact ID first
+  const uniqueCatsById = new Map<string, MenuCategory>();
+  scopedCats.forEach(cat => {
+    if (!uniqueCatsById.has(cat.id)) {
+      uniqueCatsById.set(cat.id, cat);
+    }
+  });
+
+  // Group categories by normalized name key to prevent duplicate visual tabs
+  const groupsByName = new Map<string, MenuCategory[]>();
+  Array.from(uniqueCatsById.values()).forEach(cat => {
+    const key = normalizeCategoryNameKey(cat.name) || cat.id;
+    const group = groupsByName.get(key) || [];
+    group.push(cat);
+    groupsByName.set(key, group);
+  });
+
+  const duplicateCategoryMap: Record<string, string> = {};
+  const canonicalCategories: MenuCategory[] = [];
+
+  groupsByName.forEach(group => {
+    if (group.length === 1) {
+      const single = group[0];
+      duplicateCategoryMap[single.id] = single.id;
+      canonicalCategories.push({
+        ...single,
+        restaurantId: restId || single.restaurantId
+      });
+      return;
+    }
+
+    // Deterministically pick the canonical category for this name group:
+    // 1. Most associated items
+    // 2. Lowest sortOrder
+    // 3. Stable ID comparison
+    const sortedGroup = [...group].sort((a, b) => {
+      const countA = itemCountByCatId.get(a.id) || 0;
+      const countB = itemCountByCatId.get(b.id) || 0;
+      if (countB !== countA) return countB - countA;
+      const orderA = a.sortOrder ?? 999;
+      const orderB = b.sortOrder ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.id.localeCompare(b.id);
+    });
+
+    const canonical = sortedGroup[0];
+    const minSortOrder = Math.min(...group.map(c => c.sortOrder ?? 999));
+    group.forEach(member => {
+      duplicateCategoryMap[member.id] = canonical.id;
+    });
+
+    canonicalCategories.push({
+      ...canonical,
+      sortOrder: minSortOrder === 999 ? canonical.sortOrder : minSortOrder,
+      restaurantId: restId || canonical.restaurantId
+    });
+  });
+
+  canonicalCategories.sort((a, b) => {
+    const orderA = a.sortOrder ?? 999;
+    const orderB = b.sortOrder ?? 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.id.localeCompare(b.id);
+  });
+
+  const canonicalItems = uniqueItems.map(item => {
+    let mappedCatId = (item.categoryId && duplicateCategoryMap[item.categoryId])
+      ? duplicateCategoryMap[item.categoryId]
+      : item.categoryId;
+
+    // If the item's categoryId does not match any canonical category (e.g., legacy cat-m1 / cat-m2),
+    // map it in-memory to the closest matching canonical category by dish/category semantics so no dish is orphaned
+    if (!mappedCatId || !canonicalCategories.some(c => c.id === mappedCatId)) {
+      const lowerName = (item.name || '').toLowerCase();
+      const findCatByKeyword = (kw: string) =>
+        canonicalCategories.find(c => normalizeCategoryNameKey(c.name).includes(kw))?.id;
+
+      if (lowerName.includes('pulpo')) {
+        mappedCatId = findCatByKeyword('pulpo') || findCatByKeyword('entrada') || canonicalCategories[0]?.id || mappedCatId;
+      } else if (lowerName.includes('causa')) {
+        mappedCatId = findCatByKeyword('causa') || canonicalCategories[0]?.id || mappedCatId;
+      } else if (lowerName.includes('ceviche') || lowerName.includes('tiradito')) {
+        mappedCatId = findCatByKeyword('ceviche') || canonicalCategories[0]?.id || mappedCatId;
+      } else if (lowerName.includes('arroz') || lowerName.includes('chaufa')) {
+        mappedCatId = findCatByKeyword('arroz') || findCatByKeyword('arroces') || canonicalCategories[0]?.id || mappedCatId;
+      } else if (lowerName.includes('pisco') || lowerName.includes('chilcano') || lowerName.includes('coctel')) {
+        mappedCatId = findCatByKeyword('coctel') || findCatByKeyword('bebida') || canonicalCategories[0]?.id || mappedCatId;
+      } else if (lowerName.includes('chicha') || lowerName.includes('limonada')) {
+        mappedCatId = findCatByKeyword('bebida') || canonicalCategories[0]?.id || mappedCatId;
+      } else {
+        mappedCatId = findCatByKeyword('entrada') || findCatByKeyword('piqueo') || canonicalCategories[0]?.id || mappedCatId;
+      }
+    }
+
+    return {
+      ...item,
+      categoryId: mappedCatId,
+      restaurantId: restId || item.restaurantId
+    };
+  });
+
+  return {
+    categories: canonicalCategories,
+    items: canonicalItems,
+    duplicateCategoryMap
+  };
 }
 
 export function sanitizeRestaurantsList(list: any[]): Restaurant[] {

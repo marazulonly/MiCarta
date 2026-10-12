@@ -1,5 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
-import { normalizeBranding } from '../utils/restaurantUtils';
+import { normalizeBranding, matchesRestaurantRef } from '../utils/restaurantUtils';
 import { 
   saveToFirestore,
   fetchFromFirestore,
@@ -260,7 +260,8 @@ export async function publishRestaurantMenu(
   restaurant: Restaurant,
   categories: MenuCategory[],
   items: MenuItem[],
-  publishedBy?: string
+  publishedBy?: string,
+  options?: { allowEmpty?: boolean }
 ): Promise<{ success: boolean; version?: number; publishedAt?: string; message?: string }> {
   const nowIso = new Date().toISOString();
   const primarySlug = normalizeSlug(restaurant.slug || restaurant.name || restaurantId);
@@ -275,26 +276,74 @@ export async function publishRestaurantMenu(
     )
   };
 
+  const isExplicitlyEmpty = Boolean(options?.allowEmpty);
+  let scopedCats = (categories || []).filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+  let scopedItems = (items || []).filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+
+  // Protect against accidental empty item publication when in-memory state has not finished hydrating
+  if (scopedItems.length === 0 && !isExplicitlyEmpty) {
+    const existingPubCache = getCachedPublicMenu(primarySlug);
+    if (existingPubCache && Array.isArray(existingPubCache.items) && existingPubCache.items.length > 0) {
+      scopedItems = existingPubCache.items.filter((i: MenuItem) => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+      if (scopedCats.length === 0 && Array.isArray(existingPubCache.categories)) {
+        scopedCats = existingPubCache.categories.filter((c: MenuCategory) => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+      }
+    } else {
+      const fullCache = getCachedCloudMenu();
+      if (fullCache && Array.isArray(fullCache.items)) {
+        const recoveredFromFull = fullCache.items.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+        if (recoveredFromFull.length > 0) {
+          scopedItems = recoveredFromFull;
+        }
+        if (scopedCats.length === 0 && Array.isArray(fullCache.categories)) {
+          scopedCats = fullCache.categories.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+        }
+      }
+    }
+  }
+
   const snap = {
     success: true,
     published: true,
     version: 1,
     publishedAt: nowIso,
     publishedBy: publishedBy || 'Admin / Owner',
+    explicitlyEmpty: isExplicitlyEmpty && scopedItems.length === 0,
     restaurant: normalizedRest,
-    categories: categories || [],
-    items: items || []
+    categories: scopedCats,
+    items: scopedItems
   };
 
   const [restOk, menuOk] = await Promise.all([
     saveRestaurantToFirestore(normalizedRest, restaurantId),
-    savePublishedMenuToFirestore(primarySlug, snap)
+    savePublishedMenuToFirestore(primarySlug, snap, options)
   ]);
 
-  // Always update local public & download cache so edits (like logo or branding) persist even if quota is exceeded
+  // Update local public & download cache only if items are non-empty or explicitly emptied, or if no valid cache exists yet
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      window.localStorage.setItem(`micarta_pub_download_cache_${primarySlug}`, JSON.stringify(snap));
+      const existingPub = getCachedPublicMenu(primarySlug);
+      const shouldWritePubCache =
+        scopedItems.length > 0 ||
+        isExplicitlyEmpty ||
+        !existingPub ||
+        !Array.isArray(existingPub.items) ||
+        existingPub.items.length === 0;
+
+      if (shouldWritePubCache) {
+        window.localStorage.setItem(`micarta_pub_download_cache_${primarySlug}`, JSON.stringify(snap));
+      } else if (existingPub) {
+        // Update restaurant branding/metadata in cache while preserving valid cached items
+        window.localStorage.setItem(
+          `micarta_pub_download_cache_${primarySlug}`,
+          JSON.stringify({
+            ...existingPub,
+            restaurant: normalizedRest,
+            categories: scopedCats.length > 0 ? scopedCats : existingPub.categories
+          })
+        );
+      }
+
       const existing = getCachedCloudMenu();
       if (existing) {
         const nextRests = Array.isArray(existing.restaurants)
@@ -331,6 +380,8 @@ export function getCachedPublicMenu(slugOrId: string): any | null {
           published: true,
           version: parsed.version || 1,
           publishedAt: parsed.publishedAt || new Date().toISOString(),
+          explicitlyEmpty: Boolean(parsed.explicitlyEmpty),
+          legitimatelyEmpty: Boolean(parsed.legitimatelyEmpty),
           restaurant: parsed.restaurant,
           categories: parsed.categories || [],
           items: parsed.items || []
@@ -343,7 +394,7 @@ export function getCachedPublicMenu(slugOrId: string): any | null {
 
 /**
  * Retrieves the published menu snapshot for public anonymous visitors and QR scanners
- * strictly from Firestore (Single Source of Truth), with robust fallback to "datos de descarga" cache or mockData.
+ * strictly from Firestore (Single Source of Truth), with robust fallback to "datos de descarga" cache.
  * Deduplicates in-flight requests to eliminate duplicate calls across components.
  */
 export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
@@ -351,6 +402,8 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   published: boolean;
   version: number;
   publishedAt: string;
+  explicitlyEmpty?: boolean;
+  legitimatelyEmpty?: boolean;
   restaurant: Restaurant;
   categories: MenuCategory[];
   items: MenuItem[];
@@ -364,30 +417,62 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
   }
 
   const fetchPromise = (async () => {
+    const cached = getCachedPublicMenu(norm);
+
     try {
       const firestoreSnap = await fetchPublishedMenuFromFirestore(norm);
       if (firestoreSnap && firestoreSnap.restaurant) {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          try {
-            window.localStorage.setItem(`micarta_pub_download_cache_${norm}`, JSON.stringify(firestoreSnap));
-          } catch {}
+        const incomingItems = Array.isArray(firestoreSnap.items) ? firestoreSnap.items : [];
+        const incomingCats = Array.isArray(firestoreSnap.categories) ? firestoreSnap.categories : [];
+        const isExplicitlyEmpty = Boolean(firestoreSnap.explicitlyEmpty);
+        const isLegitimatelyEmpty = Boolean(firestoreSnap.legitimatelyEmpty);
+        const recoveryFailed = Boolean(firestoreSnap.recoveryFailed);
+
+        // If recovery failed or snapshot has 0 items without being legitimately/explicitly empty, preserve valid cached items
+        if (
+          incomingItems.length === 0 &&
+          (recoveryFailed || (!isExplicitlyEmpty && !isLegitimatelyEmpty)) &&
+          cached &&
+          Array.isArray(cached.items) &&
+          cached.items.length > 0
+        ) {
+          console.warn(`[CloudSync] Preserving ${cached.items.length} valid cached items for "${norm}" because Firestore snapshot returned 0 items (recoveryFailed=${recoveryFailed}).`);
+          return {
+            success: true,
+            published: true,
+            version: firestoreSnap.version || cached.version || 1,
+            publishedAt: firestoreSnap.publishedAt || cached.publishedAt || new Date().toISOString(),
+            restaurant: firestoreSnap.restaurant || cached.restaurant,
+            categories: incomingCats.length > 0 ? incomingCats : (cached.categories || []),
+            items: cached.items
+          };
         }
-        return {
+
+        const resolvedSnap = {
           success: true,
           published: true,
           version: firestoreSnap.version || 1,
           publishedAt: firestoreSnap.publishedAt || new Date().toISOString(),
+          explicitlyEmpty: isExplicitlyEmpty,
+          legitimatelyEmpty: isLegitimatelyEmpty,
           restaurant: firestoreSnap.restaurant,
-          categories: firestoreSnap.categories || [],
-          items: firestoreSnap.items || []
+          categories: incomingCats,
+          items: incomingItems
         };
+
+        if (typeof window !== 'undefined' && window.localStorage && !recoveryFailed) {
+          try {
+            window.localStorage.setItem(`micarta_pub_download_cache_${norm}`, JSON.stringify(resolvedSnap));
+          } catch {}
+        }
+
+        return resolvedSnap;
       }
     } catch (err) {
       console.warn('[Firestore] Notice fetching public menu from Firestore:', err);
     }
 
     // Fallback to public downloaded cache
-    const cached = getCachedPublicMenu(norm);
     if (cached) {
       return cached;
     }

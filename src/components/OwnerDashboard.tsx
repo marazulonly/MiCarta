@@ -98,7 +98,8 @@ interface OwnerDashboardProps {
     restaurantId: string,
     restaurant: Restaurant,
     categories: MenuCategory[],
-    items: MenuItem[]
+    items: MenuItem[],
+    options?: { allowEmpty?: boolean }
   ) => Promise<{ success: boolean; version?: number; publishedAt?: string } | void> | void;
   onSwitchToAdminView: () => void;
   onImportBackupJSON?: (

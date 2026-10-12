@@ -18,7 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '../types';
-import { getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { getSafeBranding, generateSlug, normalizeBranding, resolveMenuCategoriesAndItemsForDisplay } from '../utils/restaurantUtils';
 import { normalizeSlug } from '../lib/cloudSync';
 import { processAndUploadImage } from '../lib/imageOptimizer';
 import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
@@ -95,23 +95,11 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   isOwnerOrAdmin = false,
   publishedSnapshotInfo,
 }) => {
-  // Scoped categories and items for this specific restaurant to prevent cross-contamination
-  const restId = restaurant?.id || '';
-  const restSlug = restaurant?.slug ? normalizeSlug(restaurant.slug) : '';
-  const matchRestId = (targetId?: string) => {
-    if (!targetId) return false;
-    if (restId && (targetId === restId || normalizeSlug(targetId) === normalizeSlug(restId))) return true;
-    if (restSlug && (targetId === restSlug || normalizeSlug(targetId) === restSlug)) return true;
-    return false;
-  };
-
-  const scopedCategories = restId ? (categories || []).filter(c => c && matchRestId(c.restaurantId)) : (categories || []);
-  const rawEffectiveCategories = scopedCategories.length > 0 ? scopedCategories : (categories || []);
-  const effectiveCategories = rawEffectiveCategories.map(c => ({ ...c, restaurantId: restId || c.restaurantId }));
-
-  const scopedItems = restId ? (items || []).filter(i => i && matchRestId(i.restaurantId)) : (items || []);
-  const rawEffectiveItems = scopedItems.length > 0 ? scopedItems : (items || []);
-  const effectiveItems = rawEffectiveItems.map(i => ({ ...i, restaurantId: restId || i.restaurantId }));
+  // Scoped and deduplicated categories and items for this specific restaurant to prevent cross-contamination and duplicate tabs
+  const {
+    categories: effectiveCategories,
+    items: effectiveItems
+  } = resolveMenuCategoriesAndItemsForDisplay(categories, items, restaurant);
 
   // Preloader State: only active if explicitly in loading state
   const [isPreloading, setIsPreloading] = useState(Boolean(isLoading));
@@ -360,8 +348,9 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     if (!quickPriceItem || !onUpdateMenuItem) return;
     const priceNum = parseFloat(quickPriceVal);
     if (isNaN(priceNum) || priceNum <= 0) return;
+    const rawOriginal = (items || []).find(i => i && i.id === quickPriceItem.id) || quickPriceItem;
     const updated: MenuItem = {
-      ...quickPriceItem,
+      ...rawOriginal,
       price: priceNum,
     };
     onUpdateMenuItem(updated);
@@ -378,8 +367,9 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
     if (!quickPhotoItem || !onUpdateMenuItem) return;
     const targetUrl = selectedUrl || quickPhotoUrl;
     if (!targetUrl.trim()) return;
+    const rawOriginal = (items || []).find(i => i && i.id === quickPhotoItem.id) || quickPhotoItem;
     const updated: MenuItem = {
-      ...quickPhotoItem,
+      ...rawOriginal,
       imageUrl: targetUrl.trim(),
     };
     onUpdateMenuItem(updated);
@@ -389,9 +379,10 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
 
   const handleToggleAvailability = (item: MenuItem) => {
     if (!onUpdateMenuItem) return;
+    const rawOriginal = (items || []).find(i => i && i.id === item.id) || item;
     const updated: MenuItem = {
-      ...item,
-      isAvailable: !item.isAvailable,
+      ...rawOriginal,
+      isAvailable: !rawOriginal.isAvailable,
     };
     onUpdateMenuItem(updated);
     showToast(`Plato marcado como ${updated.isAvailable ? 'Disponible' : 'Agotado'}`);
