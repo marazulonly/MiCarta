@@ -47,6 +47,7 @@ import {
   fetchLatestCloudMenu,
   fetchLoginUsers,
   getCachedCloudMenu,
+  updateCachedCloudMenuPartial,
   saveFullCloudMenu,
   autoSyncMenuItem,
   autoDeleteMenuItem,
@@ -63,6 +64,7 @@ import {
   subscribeToCloudUpdates,
   subscribeToOrdersFeed,
   fetchSpecificRestaurantDataFromFirestore,
+  fetchRestaurantsListFromFirestore,
   getCachedTemplates,
   fetchCloudTemplates,
   autoSyncTemplate,
@@ -562,9 +564,70 @@ export default function App() {
     }
   }, []);
 
-  // STAFF / FULL SYNCHRONIZATION PATH:
-  // 1) Before login (on the Login Screen): ONLY load/cache the lightweight users list so DNI login works without downloading all collections (items, categories, orders, restaurants).
-  // 2) After a staff user logs in: attach a SINGLE real-time subscription (subscribeToCloudUpdates) without running a duplicate fetchLatestCloudMenu() getDocs() call first.
+  // Track which restaurants have already had their categories/items loaded in memory during this session
+  const loadedRestaurantIdsRef = useRef<Set<string>>(new Set());
+
+  // Helper to load a single restaurant's data (restaurant doc, categories, items, orders) on demand with in-memory cache
+  const loadSingleRestaurantOnDemand = async (targetRestId: string, forceReload = false) => {
+    if (!targetRestId || targetRestId === 'all') return;
+    const normTarget = normalizeSlug(targetRestId);
+    if (!forceReload && (loadedRestaurantIdsRef.current.has(targetRestId) || (normTarget && loadedRestaurantIdsRef.current.has(normTarget)))) {
+      return;
+    }
+
+    const res = await fetchSpecificRestaurantDataFromFirestore(targetRestId);
+    if (!res) return;
+
+    loadedRestaurantIdsRef.current.add(targetRestId);
+    if (normTarget) loadedRestaurantIdsRef.current.add(normTarget);
+    if (res.restaurant?.id) loadedRestaurantIdsRef.current.add(res.restaurant.id);
+    if (res.restaurant?.slug) loadedRestaurantIdsRef.current.add(normalizeSlug(res.restaurant.slug));
+
+    if (res.restaurant) {
+      const nextRests = sanitizeRestaurants([
+        res.restaurant,
+        ...restaurantsRef.current.filter(r => r && r.id !== res.restaurant!.id && normalizeSlug(r.slug) !== normalizeSlug(res.restaurant!.slug))
+      ]);
+      restaurantsRef.current = nextRests;
+      setRestaurants(nextRests);
+      updateCachedCloudMenuPartial({ restaurants: nextRests });
+    }
+
+    if (Array.isArray(res.categories) && res.categories.length > 0) {
+      const catMap = new Map<string, MenuCategory>();
+      categoriesRef.current.forEach(c => { if (c && c.id) catMap.set(c.id, c); });
+      res.categories.forEach(c => { if (c && c.id && !FICTITIOUS_CAT_IDS.has(c.id)) catMap.set(c.id, c); });
+      const nextCats = Array.from(catMap.values());
+      categoriesRef.current = nextCats;
+      setCategories(nextCats);
+      updateCachedCloudMenuPartial({ categories: nextCats });
+    }
+
+    if (Array.isArray(res.items) && res.items.length > 0) {
+      const itemMap = new Map<string, MenuItem>();
+      menuItemsRef.current.forEach(i => { if (i && i.id) itemMap.set(i.id, i); });
+      res.items.forEach(i => { if (i && i.id && !FICTITIOUS_ITEM_IDS.has(i.id)) itemMap.set(i.id, i); });
+      const nextItems = sanitizeMenuItems(Array.from(itemMap.values()));
+      menuItemsRef.current = nextItems;
+      setMenuItems(nextItems);
+      updateCachedCloudMenuPartial({ items: nextItems });
+    }
+
+    if (Array.isArray(res.orders) && res.orders.length > 0) {
+      const orderMap = new Map<string, Order>();
+      ordersRef.current.forEach(o => { if (o && o.id) orderMap.set(o.id, o); });
+      res.orders.forEach(o => { if (o && o.id) orderMap.set(o.id, o); });
+      const nextOrders = Array.from(orderMap.values());
+      ordersRef.current = nextOrders;
+      setOrders(nextOrders);
+      updateCachedCloudMenuPartial({ orders: nextOrders });
+    }
+  };
+
+  // STAFF / TARGETED SYNCHRONIZATION PATH:
+  // 1) Before login (on the Login Screen): ONLY load/cache the lightweight users list so DNI login works without downloading all collections.
+  // 2) When an Owner / Kitchen / Waiter / Delivery logs in: ONLY read their assigned restaurant(s) using fetchSpecificRestaurantDataFromFirestore(restaurantId).
+  // 3) When an Admin logs in: ONLY load the lightweight list of restaurants & users, and load dishes/categories on demand for the selected restaurant with in-memory cache.
   useEffect(() => {
     let isMounted = true;
     const isDirectLink = Boolean((initialRequestedSlug || initParams.isQr) && !initParams.isStaffLogin);
@@ -590,7 +653,7 @@ export default function App() {
       };
     }
 
-    // Logged-in staff user: perform a single one-time load of data and templates
+    // Logged-in user: load templates
     fetchCloudTemplates()
       .then(loadedTemplates => {
         if (isMounted && Array.isArray(loadedTemplates)) {
@@ -599,144 +662,78 @@ export default function App() {
       })
       .catch(() => {});
 
-    const unsubscribe = subscribeToCloudUpdates((event) => {
-      if (!isMounted) return;
-      if (event.type === 'FULL_SYNC' && event.data) {
-        const d = event.data;
-        if (d.restaurants && Array.isArray(d.restaurants) && d.restaurants.length > 0) {
-          const cleanR = sanitizeRestaurants(d.restaurants);
-          restaurantsRef.current = cleanR;
-          setRestaurants(cleanR);
-          setPreviewRestaurant(p => {
-            if (initialRequestedSlug) {
-              const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
-              if (match) {
-                setNotFoundSlugError(null);
-                return match;
-              }
-              return p;
-            }
-            return p ? (cleanR.find(r => r.id === p.id || normalizeSlug(r.slug) === normalizeSlug(p.slug)) || null) : null;
-          });
-          if (initialRequestedSlug) {
-            const match = findRestaurantBySlug(cleanR, initialRequestedSlug);
-            if (match) {
-              const mSlug = normalizeSlug(match.slug || match.name || match.id);
-              const rCats = categoriesRef.current.filter(c => c && (c.restaurantId === match.id || normalizeSlug(c.restaurantId) === mSlug));
-              const rItems = menuItemsRef.current.filter(i => i && (i.restaurantId === match.id || normalizeSlug(i.restaurantId) === mSlug));
-              setPublishedMenuData(prev => ({
-                published: true,
-                version: prev?.version || 1,
-                publishedAt: new Date().toISOString(),
-                restaurant: match,
-                categories: rCats.length > 0 ? rCats : (prev?.categories || []),
-                items: rItems.length > 0 ? rItems : (prev?.items || [])
-              }));
-            }
-          }
-        }
-        if (d.categories && Array.isArray(d.categories) && d.categories.length > 0) {
-          categoriesRef.current = d.categories;
-          setCategories(d.categories);
-          setPublishedMenuData(prev => {
-            if (!prev || !prev.restaurant) return prev;
-            const mSlug = normalizeSlug(prev.restaurant.slug || prev.restaurant.name || prev.restaurant.id);
-            const rCats = d.categories.filter((c: MenuCategory) => c && (c.restaurantId === prev.restaurant.id || normalizeSlug(c.restaurantId) === mSlug));
-            return rCats.length > 0 ? { ...prev, categories: rCats } : prev;
-          });
-        }
-        if (d.items && Array.isArray(d.items) && d.items.length > 0) {
-          const cleanItems = sanitizeMenuItems(d.items);
-          menuItemsRef.current = cleanItems;
-          setMenuItems(cleanItems);
-          setPublishedMenuData(prev => {
-            if (!prev || !prev.restaurant) return prev;
-            const mSlug = normalizeSlug(prev.restaurant.slug || prev.restaurant.name || prev.restaurant.id);
-            const rItems = cleanItems.filter((i: MenuItem) => i && (i.restaurantId === prev.restaurant.id || normalizeSlug(i.restaurantId) === mSlug));
-            return rItems.length > 0 ? { ...prev, items: rItems } : prev;
-          });
-        }
-        if (d.users && Array.isArray(d.users) && d.users.length > 0) {
-          const cleanUsers = d.users.filter((u: any) => !isFictitiousUser(u));
-          const nextU = deduplicateUsers(cleanUsers);
-          usersRef.current = nextU;
-          setUsers(nextU);
-        }
-        if (d.orders && Array.isArray(d.orders)) {
-          ordersRef.current = d.orders;
-          setOrders(d.orders);
-        }
-        setIsInitialCloudFetchDone(true);
-      } else if (event.type === 'MENU_PUBLISHED') {
-        const targetId = event.restaurantId || event.slug;
-        if (targetId) {
-          fetchPublicPublishedMenu(targetId).then(pubData => {
-            if (pubData && pubData.restaurant) {
-              setPublishedMenuData(pubData);
-              if (previewRestaurant && (previewRestaurant.id === pubData.restaurant.id || previewRestaurant.slug === pubData.restaurant.slug)) {
-                setPreviewRestaurant(pubData.restaurant);
-              }
-            }
-          });
-        }
-      } else if (event.type === 'ITEM_UPDATED' && event.item) {
-        setMenuItems(prev => {
-          const idx = prev.findIndex(i => i.id === event.item!.id);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = event.item!;
-            return next;
-          }
-          return [event.item!, ...prev];
-        });
-      } else if (event.type === 'ITEM_DELETED' && event.itemId) {
-        setMenuItems(prev => prev.filter(i => i.id !== event.itemId));
-      } else if (event.type === 'RESTAURANT_UPDATED' && event.restaurant) {
-        setRestaurants(prev => {
-          const idx = prev.findIndex(r => r.id === event.restaurant!.id);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = event.restaurant!;
-            return next;
-          }
-          return [event.restaurant!, ...prev];
-        });
-        setPreviewRestaurant(prev => (prev && prev.id === event.restaurant!.id ? event.restaurant! : prev));
-      } else if (event.type === 'CATEGORY_UPDATED' && event.category) {
-        setCategories(prev => {
-          const idx = prev.findIndex(c => c.id === event.category!.id);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = event.category!;
-            return next;
-          }
-          return [...prev, event.category!];
-        });
-      } else if (event.type === 'CATEGORY_DELETED' && event.categoryId) {
-        setCategories(prev => prev.filter(c => c.id !== event.categoryId));
-      } else if (event.type === 'USER_UPDATED' && event.user) {
-        setUsers(prev => deduplicateUsers(prev.map(u => (u.id === event.user!.id || (event.user!.dni && u.dni === event.user!.dni)) ? event.user! : u)));
-        const curr = currentUserRef.current;
-        if (curr && (curr.id === event.user.id || (event.user.dni && curr.dni === event.user.dni))) {
-          setCurrentUser(event.user);
-        }
-      } else if (event.type === 'USER_DELETED' && event.userId) {
-        setUsers(prev => prev.filter(u => u.id !== event.userId));
-      } else if (event.type === 'ORDER_CREATED' && event.order) {
-        setOrders(prev => {
-          const exists = prev.some(o => o.id === event.order!.id);
-          if (exists) return prev;
-          return [event.order!, ...prev];
-        });
-        playNotificationSound();
-        const rest = (restaurantsRef.current || []).find(r => r && r.id === event.order!.restaurantId);
-        showToast(`🔔 ¡Nueva comanda recibida en tiempo real! ${event.order!.orderNumber} (${rest?.name || 'Restaurante'})`);
-      } else if (event.type === 'ORDER_UPDATED' && event.order) {
-        setOrders(prev => prev.map(o => o.id === event.order!.id ? event.order! : o));
-      }
-    });
+    const initRoleSpecificData = async () => {
+      try {
+        if (currentUser.role === 'ADMIN') {
+          // Admin: ONLY fetch the lightweight list of restaurants and users (NEVER download all items/categories of all restaurants)
+          const [remoteRests, remoteUsers] = await Promise.all([
+            fetchRestaurantsListFromFirestore(),
+            fetchLoginUsers()
+          ]);
+          if (!isMounted) return;
 
-    // Fallback safety timer in case Firestore is offline or empty so the spinner never hangs
+          if (remoteRests && remoteRests.length > 0) {
+            const cleanR = sanitizeRestaurants(remoteRests.filter(r => r && !FICTITIOUS_REST_IDS.has(r.id) && !FICTITIOUS_REST_IDS.has(r.slug)));
+            restaurantsRef.current = cleanR;
+            setRestaurants(cleanR);
+            updateCachedCloudMenuPartial({ restaurants: cleanR });
+
+            const targetId = selectedRestaurantId || cleanR[0]?.id || '';
+            if (targetId && !selectedRestaurantId) {
+              setSelectedRestaurantId(targetId);
+            }
+            if (targetId) {
+              await loadSingleRestaurantOnDemand(targetId);
+            }
+          }
+          if (remoteUsers && remoteUsers.length > 0) {
+            const cleanU = deduplicateUsers(remoteUsers.filter(u => !isFictitiousUser(u)));
+            usersRef.current = cleanU;
+            setUsers(cleanU);
+          }
+        } else {
+          // Owner / Manager / Kitchen / Waiter / Delivery: ONLY fetch their assigned restaurant(s)
+          const assignedIds = Array.from(new Set(
+            (currentUser.restaurantIds || []).filter(id => id && id !== 'all')
+          ));
+
+          // If user has no explicit restaurantIds in array, fallback to checking in-memory owned restaurants or lightweight list
+          let targetIds = assignedIds;
+          if (targetIds.length === 0) {
+            const ownedInMem = restaurantsRef.current
+              .filter(r => r && (r.ownerId === currentUser.id || (currentUser.email && r.ownerId === currentUser.email)))
+              .map(r => r.id);
+            if (ownedInMem.length > 0) {
+              targetIds = ownedInMem;
+            } else {
+              const lightRests = await fetchRestaurantsListFromFirestore();
+              if (lightRests && lightRests.length > 0) {
+                const ownedRemote = lightRests.filter(r => r && (r.ownerId === currentUser.id || (currentUser.email && r.ownerId === currentUser.email)));
+                targetIds = ownedRemote.map(r => r.id);
+              }
+            }
+          }
+
+          if (targetIds.length > 0) {
+            if (!selectedRestaurantId || !targetIds.includes(selectedRestaurantId)) {
+              setSelectedRestaurantId(targetIds[0]);
+            }
+            // Load ONLY the assigned restaurant(s)
+            await Promise.all(targetIds.map(id => loadSingleRestaurantOnDemand(id)));
+          }
+        }
+      } catch (err) {
+        console.warn('[TargetedSync] Notice during role-based initialization:', err);
+      } finally {
+        if (isMounted) {
+          setIsInitialCloudFetchDone(true);
+        }
+      }
+    };
+
+    initRoleSpecificData();
+
+    // Fallback safety timer in case Firestore is offline or quota-limited so the spinner never hangs
     const fallbackTimer = setTimeout(() => {
       if (isMounted) setIsInitialCloudFetchDone(true);
     }, 1500);
@@ -744,9 +741,14 @@ export default function App() {
     return () => {
       isMounted = false;
       clearTimeout(fallbackTimer);
-      unsubscribe();
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.role]);
+
+  // On-demand loading with in-memory cache whenever the selected restaurant changes
+  useEffect(() => {
+    if (!currentUser?.id || !selectedRestaurantId || selectedRestaurantId === 'all') return;
+    loadSingleRestaurantOnDemand(selectedRestaurantId).catch(() => {});
+  }, [currentUser?.id, selectedRestaurantId]);
 
   // Targeted real-time subscription ONLY for orders of the active restaurant when in operational views
   useEffect(() => {
@@ -895,7 +897,59 @@ export default function App() {
   };
 
   // Handlers
-  // Helper to force automatic cloud publication of a specific restaurant
+  // Helper to update in-memory & local cached published menu snapshot using data already present in memory (0 Firestore reads/writes)
+  const syncInMemoryPublishedMenu = (
+    restaurantId: string,
+    overrideRest?: Restaurant,
+    overrideCats?: MenuCategory[],
+    overrideItems?: MenuItem[]
+  ) => {
+    const restaurant = overrideRest || restaurantsRef.current.find(r => r && (r.id === restaurantId || matchesRestaurantRef(restaurantId, r)));
+    if (!restaurant) return;
+    const primarySlug = normalizeSlug(restaurant.slug || restaurant.name || restaurant.id);
+    const normalizedRest: Restaurant = {
+      ...restaurant,
+      slug: primarySlug
+    };
+
+    const filterCats = overrideCats
+      ? overrideCats.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId))
+      : categoriesRef.current.filter(c => c && (matchesRestaurantRef(c.restaurantId, normalizedRest) || c.restaurantId === restaurantId));
+    const filterItems = overrideItems
+      ? overrideItems.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId))
+      : menuItemsRef.current.filter(i => i && (matchesRestaurantRef(i.restaurantId, normalizedRest) || i.restaurantId === restaurantId));
+
+    setPublishedMenuData(prev => {
+      if (!prev || !prev.restaurant) return prev;
+      if (prev.restaurant.id === normalizedRest.id || normalizeSlug(prev.restaurant.slug) === primarySlug) {
+        return {
+          ...prev,
+          restaurant: normalizedRest,
+          categories: filterCats.length > 0 ? filterCats : prev.categories,
+          items: filterItems.length > 0 ? filterItems : prev.items
+        };
+      }
+      return prev;
+    });
+
+    if (typeof window !== 'undefined' && window.localStorage && primarySlug) {
+      try {
+        const existingPub = getCachedPublicMenu(primarySlug);
+        const snap = {
+          success: true,
+          published: true,
+          version: existingPub?.version || 1,
+          publishedAt: new Date().toISOString(),
+          restaurant: normalizedRest,
+          categories: filterCats.length > 0 ? filterCats : (existingPub?.categories || []),
+          items: filterItems.length > 0 ? filterItems : (existingPub?.items || [])
+        };
+        window.localStorage.setItem(`micarta_pub_download_cache_${primarySlug}`, JSON.stringify(snap));
+      } catch {}
+    }
+  };
+
+  // Helper to explicitly publish a restaurant's menu snapshot to Firestore (used on restaurant creation or "Publicar Carta")
   const triggerCloudUpdate = async (
     restaurantId: string, 
     overrideRest?: Restaurant, 
@@ -1146,10 +1200,11 @@ export default function App() {
       setUsers(nextUsers);
     }
 
-    // Single atomic publish & restaurant update call (avoids duplicate writes to restaurants & published_menus)
-    const restCats = categoriesRef.current.filter(c => c.restaurantId === updatedWithCleanSlug.id);
-    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedWithCleanSlug.id);
-    triggerCloudUpdate(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems);
+    // Save individual restaurant to Firestore and update in-memory published snapshot (no Firestore re-reads)
+    autoSyncRestaurant(updatedWithCleanSlug, prevSlug || updatedWithCleanSlug.id).catch(() => {});
+    const restCats = categoriesRef.current.filter(c => c.restaurantId === updatedWithCleanSlug.id || matchesRestaurantRef(c.restaurantId, updatedWithCleanSlug));
+    const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedWithCleanSlug.id || matchesRestaurantRef(i.restaurantId, updatedWithCleanSlug));
+    syncInMemoryPublishedMenu(updatedWithCleanSlug.id, updatedWithCleanSlug, restCats, restItems);
 
     showToast(`✓ Restaurante "${updated.name}" actualizado y sincronizado en la nube.`);
   };
@@ -1232,7 +1287,7 @@ export default function App() {
     autoSyncMenuItem(updated).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === updated.restaurantId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === updated.restaurantId);
-    triggerCloudUpdate(updated.restaurantId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(updated.restaurantId, undefined, restCats, restItems);
     showToast(`✓ Plato "${updated.name}" actualizado y guardado en la nube.`);
   };
 
@@ -1243,7 +1298,7 @@ export default function App() {
     autoSyncMenuItem(newItem).catch(() => {});
     const restItems = nextItems.filter(i => i.restaurantId === newItem.restaurantId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === newItem.restaurantId);
-    triggerCloudUpdate(newItem.restaurantId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(newItem.restaurantId, undefined, restCats, restItems);
     showToast(`✓ Plato "${newItem.name}" creado y guardado permanentemente en la nube.`);
   };
 
@@ -1256,13 +1311,7 @@ export default function App() {
     if (targetItem) {
       const restItems = updatedItems.filter(i => i.restaurantId === targetItem.restaurantId);
       const restCats = categoriesRef.current.filter(c => c.restaurantId === targetItem.restaurantId);
-      triggerCloudUpdate(
-        targetItem.restaurantId,
-        undefined,
-        restCats,
-        restItems,
-        { allowEmpty: restItems.length === 0 }
-      );
+      syncInMemoryPublishedMenu(targetItem.restaurantId, undefined, restCats, restItems);
     }
     showToast(`✓ Plato eliminado y actualizado en la nube.`);
   };
@@ -1277,7 +1326,7 @@ export default function App() {
     reorderedCats.forEach(cat => autoSyncCategory(cat).catch(() => {}));
     const restCats = updatedList.filter(c => c.restaurantId === restId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === restId);
-    triggerCloudUpdate(restId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(restId, undefined, restCats, restItems);
     showToast(`✓ Orden de categorías guardado en la nube.`);
   };
 
@@ -1296,7 +1345,7 @@ export default function App() {
     reorderedItems.forEach(item => autoSyncMenuItem(item).catch(() => {}));
     const restItems = updatedList.filter(i => i.restaurantId === restId);
     const restCats = categoriesRef.current.filter(c => c.restaurantId === restId);
-    triggerCloudUpdate(restId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(restId, undefined, restCats, restItems);
     showToast(`✓ Orden de platos guardado en la nube.`);
   };
 
@@ -1307,7 +1356,7 @@ export default function App() {
     autoSyncCategory(newCategory).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === newCategory.restaurantId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === newCategory.restaurantId);
-    triggerCloudUpdate(newCategory.restaurantId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(newCategory.restaurantId, undefined, restCats, restItems);
     showToast(`✓ Categoría "${newCategory.name}" agregada y guardada en la nube.`);
   };
 
@@ -1318,7 +1367,7 @@ export default function App() {
     autoSyncCategory(updatedCategory).catch(() => {});
     const restCats = nextCategories.filter(c => c.restaurantId === updatedCategory.restaurantId);
     const restItems = menuItemsRef.current.filter(i => i.restaurantId === updatedCategory.restaurantId);
-    triggerCloudUpdate(updatedCategory.restaurantId, undefined, restCats, restItems);
+    syncInMemoryPublishedMenu(updatedCategory.restaurantId, undefined, restCats, restItems);
     showToast(`✓ Categoría "${updatedCategory.name}" actualizada en la nube.`);
   };
 
@@ -1331,7 +1380,7 @@ export default function App() {
     if (targetCat) {
       const restCats = updatedCategories.filter(c => c.restaurantId === targetCat.restaurantId);
       const restItems = menuItemsRef.current.filter(i => i.restaurantId === targetCat.restaurantId);
-      triggerCloudUpdate(targetCat.restaurantId, undefined, restCats, restItems);
+      syncInMemoryPublishedMenu(targetCat.restaurantId, undefined, restCats, restItems);
     }
     showToast(`✓ Categoría eliminada de la nube.`);
   };
@@ -1710,8 +1759,9 @@ export default function App() {
     const rawTarget = restaurant || (restaurantsRef.current || []).find(r => r && r.id === selectedRestaurantId) || (restaurantsRef.current || []).filter(Boolean)[0];
     const target = rawTarget ? ((restaurantsRef.current || []).find(r => r && r.id === rawTarget.id) || rawTarget) : undefined;
     if (target) {
-      const targetCats = categories.filter(c => c.restaurantId === target.id);
-      const targetItems = menuItems.filter(i => i.restaurantId === target.id);
+      loadSingleRestaurantOnDemand(target.id).catch(() => {});
+      const targetCats = categoriesRef.current.filter(c => c.restaurantId === target.id || matchesRestaurantRef(c.restaurantId, target));
+      const targetItems = menuItemsRef.current.filter(i => i.restaurantId === target.id || matchesRestaurantRef(i.restaurantId, target));
       setPublishedMenuData({
         published: true,
         version: 1,
@@ -2270,6 +2320,8 @@ export default function App() {
               <HomeView
                 currentUser={currentUser}
                 restaurants={safeRestaurants}
+                selectedRestaurantId={selectedRestaurantId}
+                onSelectRestaurant={setSelectedRestaurantId}
                 orders={safeOrders}
                 users={safeUsers}
                 templates={safeTemplates}
@@ -2302,6 +2354,8 @@ export default function App() {
             {activeTab === 'restaurants' && (
               <RestaurantsView
                 restaurants={safeRestaurants}
+                selectedRestaurantId={selectedRestaurantId}
+                onSelectRestaurant={setSelectedRestaurantId}
                 categories={safeCategories}
                 items={safeMenuItems}
                 onUpdateRestaurant={handleUpdateRestaurant}

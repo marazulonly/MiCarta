@@ -20,6 +20,7 @@ import {
   subscribeToFirestoreRealtime,
   subscribeToRestaurantOrdersRealtime,
   fetchSpecificRestaurantDataFromFirestore,
+  fetchRestaurantsListFromFirestore,
   fetchTemplatesFromFirestore,
   saveTemplateToFirestore,
   deleteTemplateFromFirestore
@@ -197,14 +198,22 @@ export function updateCachedCloudMenuPartial(partial: Partial<CloudMenuPayload>)
  */
 export async function fetchLatestCloudMenu(): Promise<CloudMenuPayload | null> {
   try {
-    const firestoreData = await fetchFromFirestore();
-    if (firestoreData) {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-          window.localStorage.setItem('micarta_download_cache_v1', JSON.stringify(firestoreData));
-        } catch {}
-      }
-      return firestoreData;
+    const [restaurants, users] = await Promise.all([
+      fetchRestaurantsListFromFirestore(),
+      fetchUsersFromFirestore()
+    ]);
+    if (restaurants || users) {
+      const existing = getCachedCloudMenu();
+      const merged: CloudMenuPayload = {
+        restaurants: restaurants || existing?.restaurants || [],
+        users: users || existing?.users || [],
+        categories: existing?.categories || [],
+        items: existing?.items || [],
+        orders: existing?.orders || [],
+        updatedAt: new Date().toISOString()
+      };
+      updateCachedCloudMenuPartial(merged);
+      return merged;
     }
   } catch (err) {
     console.warn('[Firestore] Notice during direct Firestore fetch:', err);
@@ -682,7 +691,7 @@ export function subscribeToOrdersFeed(
   return subscribeToRestaurantOrdersRealtime(restaurantId, onOrdersUpdate, onRestaurantDocUpdate);
 }
 
-export { fetchSpecificRestaurantDataFromFirestore };
+export { fetchSpecificRestaurantDataFromFirestore, fetchRestaurantsListFromFirestore };
 
 /**
  * Automatically saves a new order directly to Firestore.

@@ -28,6 +28,8 @@ import { getSafeActiveRestaurant, getSafeBranding, generateSlug, normalizeBrandi
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
+  selectedRestaurantId?: string;
+  onSelectRestaurant?: (id: string) => void;
   categories: MenuCategory[];
   items: MenuItem[];
   onUpdateRestaurant: (updated: Restaurant) => void;
@@ -50,6 +52,8 @@ interface RestaurantsViewProps {
 
 export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   restaurants,
+  selectedRestaurantId,
+  onSelectRestaurant,
   categories,
   items,
   onUpdateRestaurant,
@@ -60,11 +64,17 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   onPublishMenu,
   onImportBackupJSON,
 }) => {
-  const [selectedRestId, setSelectedRestId] = useState<string>(restaurants[0]?.id || 'rest-brasas');
+  const [selectedRestId, setSelectedRestId] = useState<string>(selectedRestaurantId || restaurants[0]?.id || 'rest-brasas');
   const [activeTab, setActiveTab] = useState<'link' | 'branding' | 'menu'>('link');
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (selectedRestaurantId && selectedRestaurantId !== selectedRestId) {
+      setSelectedRestId(selectedRestaurantId);
+    }
+  }, [selectedRestaurantId]);
   
   const currentRestaurant = getSafeActiveRestaurant(restaurants, selectedRestId);
 
@@ -136,6 +146,9 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   // Switch restaurant
   const handleSelectRestaurant = (id: string) => {
     setSelectedRestId(id);
+    if (onSelectRestaurant) {
+      onSelectRestaurant(id);
+    }
     const rest = (restaurants || []).find(r => r && r.id === id);
     if (rest) {
       const restBranding = getSafeBranding(rest);

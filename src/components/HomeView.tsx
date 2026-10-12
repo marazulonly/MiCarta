@@ -19,6 +19,8 @@ import { OwnerDashboard } from './OwnerDashboard';
 interface HomeViewProps {
   currentUser?: User | null;
   restaurants: Restaurant[];
+  selectedRestaurantId?: string;
+  onSelectRestaurant?: (id: string) => void;
   orders: Order[];
   users: User[];
   templates: MenuTemplate[];
@@ -59,6 +61,8 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({
   currentUser,
   restaurants,
+  selectedRestaurantId,
+  onSelectRestaurant,
   orders,
   users,
   templates,
@@ -189,6 +193,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <OwnerDashboard
           currentUser={currentUser || undefined}
           restaurants={restaurants}
+          selectedRestaurantId={selectedRestaurantId}
+          onSelectRestaurant={onSelectRestaurant}
           users={users}
           templates={templates}
           menuItems={menuItems}

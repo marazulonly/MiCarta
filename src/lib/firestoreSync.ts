@@ -524,6 +524,7 @@ export async function savePublishedMenuToFirestore(
       : [];
 
     // Guard against overwriting a valid published menu with empty items unless explicitly confirmed
+    // Uses ONLY a single document check (published_menus/{slug}) to avoid multi-collection reads
     if (finalItems.length === 0 && !isExplicitlyEmpty) {
       let checkFailed = false;
       const existingPubSnap = await getDoc(doc(db, 'published_menus', primarySlug || normalizeSlugKey(targetId))).catch((err) => {
@@ -534,34 +535,7 @@ export async function savePublishedMenuToFirestore(
 
       const existingPubData = existingPubSnap && existingPubSnap.exists() ? existingPubSnap.data() : null;
 
-      // Also check live items collection in Firestore for this restaurant
-      const possibleIds = Array.from(validIds);
-      const itemSnaps = await Promise.all(
-        possibleIds.map(id =>
-          getDocs(query(collection(db, 'items'), where('restaurantId', '==', id))).catch((err) => {
-            checkFailed = true;
-            handleFirestoreError(err, `recover items for ${id} before publish`);
-            return null;
-          })
-        )
-      );
-
-      const recoveredItemMap = new Map<string, MenuItem>();
-      itemSnaps.forEach(s => {
-        s?.forEach(d => {
-          const item = d.data() as MenuItem;
-          if (item && item.id && belongsToRestaurant(item.restaurantId)) {
-            recoveredItemMap.set(item.id, item);
-          }
-        });
-      });
-
-      const recoveredItems = Array.from(recoveredItemMap.values());
-
-      if (recoveredItems.length > 0) {
-        console.warn(`[Firestore Guard] Prevented empty items overwrite for "${primarySlug}"; recovered ${recoveredItems.length} live dishes from Firestore.`);
-        finalItems = recoveredItems;
-      } else if (existingPubData && Array.isArray(existingPubData.items) && existingPubData.items.length > 0) {
+      if (existingPubData && Array.isArray(existingPubData.items) && existingPubData.items.length > 0) {
         console.warn(`[Firestore Guard] Prevented empty items overwrite for "${primarySlug}"; preserved ${existingPubData.items.length} existing published dishes.`);
         finalItems = existingPubData.items.filter((i: any) => i && i.id && belongsToRestaurant(i.restaurantId));
       } else if (checkFailed) {
@@ -569,26 +543,8 @@ export async function savePublishedMenuToFirestore(
         return false;
       }
 
-      if (finalCats.length === 0) {
-        if (existingPubData && Array.isArray(existingPubData.categories) && existingPubData.categories.length > 0) {
-          finalCats = existingPubData.categories.filter((c: any) => c && c.id && belongsToRestaurant(c.restaurantId));
-        } else {
-          const catSnaps = await Promise.all(
-            possibleIds.map(id =>
-              getDocs(query(collection(db, 'categories'), where('restaurantId', '==', id))).catch(() => null)
-            )
-          );
-          const recoveredCatMap = new Map<string, MenuCategory>();
-          catSnaps.forEach(s => {
-            s?.forEach(d => {
-              const cat = d.data() as MenuCategory;
-              if (cat && cat.id && belongsToRestaurant(cat.restaurantId)) {
-                recoveredCatMap.set(cat.id, cat);
-              }
-            });
-          });
-          finalCats = Array.from(recoveredCatMap.values());
-        }
+      if (finalCats.length === 0 && existingPubData && Array.isArray(existingPubData.categories) && existingPubData.categories.length > 0) {
+        finalCats = existingPubData.categories.filter((c: any) => c && c.id && belongsToRestaurant(c.restaurantId));
       }
     }
 
@@ -1169,8 +1125,44 @@ export function subscribeToRestaurantOrdersRealtime(
 }
 
 /**
- * Replaces the old 5-collection perpetual onSnapshot with a single one-time fetch (getDocs once)
- * so that editing or navigating the panel NEVER keeps open collection-wide onSnapshot listeners.
+ * Fetches ONLY the lightweight list of restaurants from Firestore without downloading items, categories, or orders.
+ */
+export async function fetchRestaurantsListFromFirestore(): Promise<Restaurant[] | null> {
+  if (isBypassingFirestore()) return null;
+  try {
+    const restsSnap = await getDocs(collection(db, 'restaurants')).catch((err) => {
+      handleFirestoreError(err, 'fetch restaurants list');
+      return null;
+    });
+    if (!restsSnap) return null;
+
+    const restMapById = new Map<string, Restaurant>();
+    restsSnap.forEach(d => {
+      const data = d.data() as Restaurant;
+      if (data && (data.slug || data.name || data.id)) {
+        const docId = data.id || d.id;
+        const cleanSlug = normalizeSlugKey(data.slug || data.name || docId);
+        data.id = docId;
+        data.slug = cleanSlug || docId;
+        const resolvedLogo = data.branding?.headerLogoUrl || data.logoUrl || '';
+        data.logoUrl = resolvedLogo;
+        data.branding = normalizeBranding(
+          { ...(data.branding || {}), headerLogoUrl: resolvedLogo },
+          data.templateId
+        );
+        restMapById.set(docId, data);
+      }
+    });
+    return Array.from(restMapById.values());
+  } catch (err) {
+    handleFirestoreError(err, 'fetchRestaurantsListFromFirestore');
+    return null;
+  }
+}
+
+/**
+ * Replaces the old 5-collection fetch with a lightweight restaurants + users fetch ONLY,
+ * so that editing or navigating the panel NEVER downloads all items, categories, or orders across all restaurants.
  */
 export function subscribeToFirestoreRealtime(
   onUpdate: (payload: Partial<CloudMenuPayload>) => void
@@ -1178,14 +1170,21 @@ export function subscribeToFirestoreRealtime(
   if (isBypassingFirestore()) return () => {};
   let cancelled = false;
 
-  fetchFromFirestore()
-    .then((payload) => {
-      if (!cancelled && payload) {
-        onUpdate(payload);
+  Promise.all([
+    fetchRestaurantsListFromFirestore(),
+    fetchUsersFromFirestore()
+  ])
+    .then(([restaurants, users]) => {
+      if (!cancelled && (restaurants || users)) {
+        onUpdate({
+          restaurants: restaurants || undefined,
+          users: users || undefined,
+          updatedAt: new Date().toISOString()
+        });
       }
     })
     .catch((err) => {
-      handleFirestoreError(err, 'initial one-time fetchFromFirestore');
+      handleFirestoreError(err, 'initial lightweight fetch');
     });
 
   return () => {
