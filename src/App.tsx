@@ -1165,21 +1165,19 @@ export default function App() {
       } : null);
     }
 
+    // Sync each updated user individually to Firestore
+    nextUsers.forEach(u => {
+      if (u.restaurantIds && usersRef.current.find(prev => prev.id === u.id)?.restaurantIds?.length !== u.restaurantIds.length) {
+        autoSyncUser(u).catch(() => {});
+      }
+    });
+
     const nextItems = menuItemsRef.current.filter(i => !deletedIds.includes(i.restaurantId));
     const nextCategories = categoriesRef.current.filter(c => !deletedIds.includes(c.restaurantId));
     menuItemsRef.current = nextItems;
     categoriesRef.current = nextCategories;
     setMenuItems(nextItems);
     setCategories(nextCategories);
-
-    // Save authoritative list without deleted items
-    saveFullCloudMenu({
-      restaurants: nextRestaurants,
-      items: nextItems,
-      categories: nextCategories,
-      users: nextUsers,
-      orders: ordersRef.current
-    }).catch(() => {});
 
     showToast(`Restaurante "${restName}" eliminado exitosamente de la base de datos.`);
   };
@@ -1532,16 +1530,23 @@ export default function App() {
       if (updatedPrev) setPreviewRestaurant(updatedPrev);
     }
 
-    // 5. Immediately persist full merged dataset to cloud (Server Disk & Upstash)
-    saveFullCloudMenu({
-      restaurants: nextRestaurants,
-      categories: nextCategories,
-      items: nextItems,
-      users: usersRef.current,
-      orders: ordersRef.current,
-    }).catch(err => {
-      console.error('[Import] Error saving to cloud:', err);
-    });
+    // 5. Sync individual modified restaurants, categories, and items to Firestore
+    // Only sync the imported/modified data, not the entire database
+    if (preparedRestaurants && preparedRestaurants.length > 0) {
+      preparedRestaurants.forEach(r => {
+        if (r && r.id) autoSyncRestaurant(r).catch(() => {});
+      });
+    }
+    if (preparedCategories && preparedCategories.length > 0) {
+      preparedCategories.forEach(c => {
+        if (c && c.id) autoSyncCategory(c).catch(() => {});
+      });
+    }
+    if (preparedItems && preparedItems.length > 0) {
+      preparedItems.forEach(i => {
+        if (i && i.id) autoSyncMenuItem(i).catch(() => {});
+      });
+    }
 
     // 6. Automatically publish official menu snapshot for all imported/modified restaurants to Firestore & Upstash
     nextRestaurants.forEach(r => {
