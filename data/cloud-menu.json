@@ -16,19 +16,6 @@
       "restaurantIds": [],
       "status": "active",
       "lastActive": "En línea"
-    },
-    {
-      "id": "u-ever-aguilar",
-      "name": "Ever Aguilar",
-      "email": "ever.aguilar@micarta.pe",
-      "dni": "10203040",
-      "password": "12345678",
-      "role": "ADMIN",
-      "phone": "+51 980 102 030",
-      "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80",
-      "restaurantIds": [],
-      "status": "active",
-      "lastActive": "En línea"
     }
   ],
   "publishedMenus": {},
