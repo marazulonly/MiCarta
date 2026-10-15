@@ -600,6 +600,15 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
               setSavedTemplates(prev => prev.filter(t => t.id !== templateId));
               if (onDeleteTemplate) onDeleteTemplate(templateId);
             }}
+            onApplyTemplateToRestaurant={(tmpl) => {
+              handleApplyTemplatePreset(tmpl);
+              if (loadedRestaurant) {
+                setSelectedRestaurantToApply(loadedRestaurant.id);
+              } else if (restaurants[0]) {
+                setSelectedRestaurantToApply(restaurants[0].id);
+              }
+              setIsApplyModalOpen(true);
+            }}
           />
         )}
 

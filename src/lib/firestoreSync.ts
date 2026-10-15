@@ -994,15 +994,20 @@ export async function fetchSpecificRestaurantDataFromFirestore(restaurantId: str
     const normSlug = normalizeSlugKey(restaurantId);
     const possibleIds = Array.from(new Set([restaurantId, normSlug].filter(Boolean)));
 
+    let queryFailed = false;
     const [restDocSnap, restNormSnap, ...queryResults] = await Promise.all([
-      getDoc(doc(db, 'restaurants', restaurantId)).catch((err) => { handleFirestoreError(err, 'getDoc restaurant'); return null; }),
+      getDoc(doc(db, 'restaurants', restaurantId)).catch((err) => { queryFailed = true; handleFirestoreError(err, 'getDoc restaurant'); return null; }),
       normSlug && normSlug !== restaurantId
         ? getDoc(doc(db, 'restaurants', normSlug)).catch(() => null)
         : Promise.resolve(null),
-      ...possibleIds.map(id => getDocs(query(collection(db, 'categories'), where('restaurantId', '==', id))).catch(() => null)),
-      ...possibleIds.map(id => getDocs(query(collection(db, 'items'), where('restaurantId', '==', id))).catch(() => null)),
-      ...possibleIds.map(id => getDocs(query(collection(db, 'orders'), where('restaurantId', '==', id))).catch(() => null))
+      ...possibleIds.map(id => getDocs(query(collection(db, 'categories'), where('restaurantId', '==', id))).catch((err) => { queryFailed = true; handleFirestoreError(err, 'getDocs categories'); return null; })),
+      ...possibleIds.map(id => getDocs(query(collection(db, 'items'), where('restaurantId', '==', id))).catch((err) => { queryFailed = true; handleFirestoreError(err, 'getDocs items'); return null; })),
+      ...possibleIds.map(id => getDocs(query(collection(db, 'orders'), where('restaurantId', '==', id))).catch((err) => { queryFailed = true; handleFirestoreError(err, 'getDocs orders'); return null; }))
     ]);
+
+    if (queryFailed && !restDocSnap && !restNormSnap && queryResults.every(r => r === null)) {
+      return null;
+    }
 
     let restaurant: Restaurant | null = null;
     const rawSnap = (restDocSnap && restDocSnap.exists()) ? restDocSnap : ((restNormSnap && restNormSnap.exists()) ? restNormSnap : null);

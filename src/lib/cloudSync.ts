@@ -500,13 +500,12 @@ export async function fetchPublicPublishedMenu(slugOrId: string): Promise<{
  */
 export async function autoSyncUser(user: User): Promise<boolean> {
   try {
-    const existing = getCachedCloudMenu();
-    if (existing && Array.isArray(existing.users)) {
-      const next = existing.users.some(u => u.id === user.id)
-        ? existing.users.map(u => u.id === user.id ? user : u)
-        : [user, ...existing.users];
-      updateCachedCloudMenuPartial({ users: next });
-    }
+    const existing = getCachedCloudMenu() || { restaurants: [], categories: [], items: [], users: [], orders: [] };
+    const prevUsers = Array.isArray(existing.users) ? existing.users : [];
+    const next = prevUsers.some(u => u.id === user.id)
+      ? prevUsers.map(u => u.id === user.id ? user : u)
+      : [user, ...prevUsers];
+    updateCachedCloudMenuPartial({ users: next });
   } catch {}
   return await saveUserToFirestore(user);
 }
@@ -529,13 +528,12 @@ export async function autoDeleteUser(userId: string): Promise<boolean> {
  */
 export async function autoSyncMenuItem(item: MenuItem): Promise<boolean> {
   try {
-    const existing = getCachedCloudMenu();
-    if (existing && Array.isArray(existing.items)) {
-      const next = existing.items.some(i => i.id === item.id)
-        ? existing.items.map(i => i.id === item.id ? item : i)
-        : [item, ...existing.items];
-      updateCachedCloudMenuPartial({ items: next });
-    }
+    const existing = getCachedCloudMenu() || { restaurants: [], categories: [], items: [], users: [], orders: [] };
+    const prevItems = Array.isArray(existing.items) ? existing.items : [];
+    const next = prevItems.some(i => i.id === item.id)
+      ? prevItems.map(i => i.id === item.id ? item : i)
+      : [item, ...prevItems];
+    updateCachedCloudMenuPartial({ items: next });
   } catch {}
   return await saveItemToFirestore(item);
 }
@@ -558,13 +556,12 @@ export async function autoDeleteMenuItem(itemId: string): Promise<boolean> {
  */
 export async function autoSyncRestaurant(restaurant: Restaurant, previousSlugOrId?: string): Promise<boolean> {
   try {
-    const existing = getCachedCloudMenu();
-    if (existing && Array.isArray(existing.restaurants)) {
-      const next = existing.restaurants.some(r => r.id === restaurant.id)
-        ? existing.restaurants.map(r => r.id === restaurant.id ? restaurant : r)
-        : [restaurant, ...existing.restaurants];
-      updateCachedCloudMenuPartial({ restaurants: next });
-    }
+    const existing = getCachedCloudMenu() || { restaurants: [], categories: [], items: [], users: [], orders: [] };
+    const prevRests = Array.isArray(existing.restaurants) ? existing.restaurants : [];
+    const next = prevRests.some(r => r.id === restaurant.id)
+      ? prevRests.map(r => r.id === restaurant.id ? restaurant : r)
+      : [restaurant, ...prevRests];
+    updateCachedCloudMenuPartial({ restaurants: next });
   } catch {}
   return await saveRestaurantToFirestore(restaurant, previousSlugOrId);
 }
@@ -595,13 +592,12 @@ export async function autoDeleteRestaurant(restaurantId: string, slug?: string):
  */
 export async function autoSyncCategory(category: MenuCategory): Promise<boolean> {
   try {
-    const existing = getCachedCloudMenu();
-    if (existing && Array.isArray(existing.categories)) {
-      const next = existing.categories.some(c => c.id === category.id)
-        ? existing.categories.map(c => c.id === category.id ? category : c)
-        : [...existing.categories, category];
-      updateCachedCloudMenuPartial({ categories: next });
-    }
+    const existing = getCachedCloudMenu() || { restaurants: [], categories: [], items: [], users: [], orders: [] };
+    const prevCats = Array.isArray(existing.categories) ? existing.categories : [];
+    const next = prevCats.some(c => c.id === category.id)
+      ? prevCats.map(c => c.id === category.id ? category : c)
+      : [...prevCats, category];
+    updateCachedCloudMenuPartial({ categories: next });
   } catch {}
   return await saveCategoryToFirestore(category);
 }

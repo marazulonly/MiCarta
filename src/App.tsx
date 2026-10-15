@@ -296,7 +296,7 @@ function getInitialStorageState() {
         'micarta_users_v6', 'micarta_users_v5', 'micarta_users_v4', 'micarta_users_v3', 'micarta_users_v2', 'micarta_users',
         'micarta_orders_v6', 'micarta_orders_v5', 'micarta_orders_v4', 'micarta_orders_v3', 'micarta_orders_v2', 'micarta_orders',
         'applet_restaurants_index_local', 'applet_categories_index_local', 'applet_items_index_local', 'applet_menu_snapshot',
-        'micarta_login_users_cache_v1', 'micarta_pub_download_cache_fuego-criollo'
+        'micarta_pub_download_cache_fuego-criollo'
       ];
       legacyKeys.forEach(k => localStorage.removeItem(k));
 
@@ -388,7 +388,11 @@ export default function App() {
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   
   // Selected restaurant filter context (or 'all')
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('');
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(() => {
+    const authRestIds = (initialState.cachedAuth?.restaurantIds || []).filter(id => id && id !== 'all');
+    if (authRestIds.length > 0) return authRestIds[0];
+    return initialState.cachedRests[0]?.id || '';
+  });
   const [ownerActiveSubTab, setOwnerActiveSubTab] = useState<string>('sales_monitor');
 
   // Active Role Simulator (synced with currentUser)
@@ -576,7 +580,34 @@ export default function App() {
     }
 
     const res = await fetchSpecificRestaurantDataFromFirestore(targetRestId);
-    if (!res) return;
+    if (!res) {
+      // Fallback: if Firestore is quota-limited, check if we have a cached public menu snapshot for this restaurant
+      const pubCache = getCachedPublicMenu(normTarget || targetRestId);
+      if (pubCache && pubCache.restaurant) {
+        if (!restaurantsRef.current.some(r => r && r.id === pubCache.restaurant.id)) {
+          const nextRests = sanitizeRestaurants([pubCache.restaurant, ...restaurantsRef.current]);
+          restaurantsRef.current = nextRests;
+          setRestaurants(nextRests);
+        }
+        if (Array.isArray(pubCache.categories) && pubCache.categories.length > 0) {
+          const catMap = new Map<string, MenuCategory>();
+          categoriesRef.current.forEach(c => { if (c && c.id) catMap.set(c.id, c); });
+          pubCache.categories.forEach((c: MenuCategory) => { if (c && c.id && !FICTITIOUS_CAT_IDS.has(c.id)) catMap.set(c.id, c); });
+          const nextCats = Array.from(catMap.values());
+          categoriesRef.current = nextCats;
+          setCategories(nextCats);
+        }
+        if (Array.isArray(pubCache.items) && pubCache.items.length > 0) {
+          const itemMap = new Map<string, MenuItem>();
+          menuItemsRef.current.forEach(i => { if (i && i.id) itemMap.set(i.id, i); });
+          pubCache.items.forEach((i: MenuItem) => { if (i && i.id && !FICTITIOUS_ITEM_IDS.has(i.id)) itemMap.set(i.id, i); });
+          const nextItems = sanitizeMenuItems(Array.from(itemMap.values()));
+          menuItemsRef.current = nextItems;
+          setMenuItems(nextItems);
+        }
+      }
+      return;
+    }
 
     loadedRestaurantIdsRef.current.add(targetRestId);
     if (normTarget) loadedRestaurantIdsRef.current.add(normTarget);
