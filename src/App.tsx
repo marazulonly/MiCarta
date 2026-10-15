@@ -243,35 +243,13 @@ function mergeMenuItemsById(baseList: MenuItem[], overrideList: MenuItem[]): Men
   return Array.from(map.values());
 }
 
-// Known mock/fictitious IDs and demo patterns that must never be injected or displayed
-const FICTITIOUS_USER_IDS = new Set([
-  'u-1', 'u-4', 'u-5', 'u-5b', 'u-5c', 'u-6', 'u-7', 'u-7b', 'u-7c', 'u-8', 'u-8b', 'u-8c', 'u-8d', 'u-k1', 'u-k2', 'u-k3',
-  'u-owner-carlos', 'u-owner-mariana', 'u-manager-roberto', 'u-manager-valeria',
-  'u-kitchen-gaston', 'u-kitchen-lucia', 'u-waiter-mateo', 'u-waiter-camila',
-  'u-delivery-diego', 'u-delivery-sofia', 'u-customer-andres', 'u-customer-elena',
-  'u-ever-aguilar'
-]);
-
+// Preservation guarantee: Never filter out or hide any user, restaurant, category, or item from Firestore
 function isFictitiousUser(u: any): boolean {
-  if (!u || !u.id) return true;
-  if (FICTITIOUS_USER_IDS.has(u.id)) return true;
-  const email = String(u.email || '').toLowerCase().trim();
-  if (
-    email.endsWith('@brasasfuego.pe') ||
-    email.endsWith('@tradicioncriolla.pe') ||
-    email.endsWith('@costamarina.pe') ||
-    email.endsWith('@loopburgers.pe') ||
-    email.endsWith('@gastrodelivery.pe') ||
-    email === 'carlos.mendoza@micarta.io' ||
-    email === 'ever.aguilar@micarta.pe'
-  ) {
-    return true;
-  }
   return false;
 }
-const FICTITIOUS_REST_IDS = new Set(['fuego-criollo']);
-const FICTITIOUS_CAT_IDS = new Set(['cat-mar-1', 'cat-mar-2', 'cat-mar-3', 'cat-fuego-1', 'cat-fuego-2', 'cat-fuego-3']);
-const FICTITIOUS_ITEM_IDS = new Set(['item-mar-1', 'item-mar-2', 'item-mar-3', 'item-mar-4', 'item-fuego-1', 'item-fuego-2', 'item-fuego-3', 'item-fuego-4']);
+const FICTITIOUS_REST_IDS = new Set<string>();
+const FICTITIOUS_CAT_IDS = new Set<string>();
+const FICTITIOUS_ITEM_IDS = new Set<string>();
 
 // Storage cache keys for session auth only (all menu/restaurant data lives strictly in Firestore)
 const STORAGE_KEYS = {
