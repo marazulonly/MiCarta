@@ -47,7 +47,6 @@ interface ToolboxSidebarProps {
   onApplyColorPalette: (palette: any) => void;
   savedTemplates?: MenuTemplate[];
   onDeleteSavedTemplate?: (templateId: string) => void;
-  onApplyTemplateToRestaurant?: (template: MenuTemplate) => void;
 }
 
 type SidebarTab = 'layers' | 'insert' | 'templates' | 'palettes' | 'saved-templates';
@@ -134,8 +133,7 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
   onApplyTemplatePreset,
   onApplyColorPalette,
   savedTemplates,
-  onDeleteSavedTemplate,
-  onApplyTemplateToRestaurant
+  onDeleteSavedTemplate
 }) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>('layers');
 
@@ -1085,34 +1083,19 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
                       </p>
                     </div>
                   </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {onApplyTemplateToRestaurant && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onApplyTemplateToRestaurant(tmpl);
-                        }}
-                        className="px-2.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold transition cursor-pointer shadow-xs"
-                        title="Aplicar en carta específica"
-                      >
-                        Aplicar
-                      </button>
-                    )}
-                    {onDeleteSavedTemplate && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSavedTemplate(tmpl.id);
-                        }}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
-                        title="Eliminar plantilla permanentemente"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                  {onDeleteSavedTemplate && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteSavedTemplate(tmpl.id);
+                      }}
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+                      title="Eliminar plantilla permanentemente"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               ))
             ) : (

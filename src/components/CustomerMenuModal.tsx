@@ -30,7 +30,6 @@ import { EditorialGrandMenu } from './EditorialGrandMenu';
 import { StartersEditorialMenu } from './StartersEditorialMenu';
 import { MedioPlatoMenu } from './MedioPlatoMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
-import { CanvasMenuRenderer } from './CanvasMenuRenderer';
 
 interface CustomerMenuModalProps {
   isOpen: boolean;
@@ -645,24 +644,6 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           isOrderActive,
           onOpenActiveOrderModal,
         };
-
-        if (restaurant.branding?.canvasElements && Array.isArray(restaurant.branding.canvasElements) && restaurant.branding.canvasElements.length > 0) {
-          return (
-            <CanvasMenuRenderer
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
-        }
 
         if (isMedioPlatoTemplate) {
           return (

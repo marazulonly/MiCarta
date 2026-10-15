@@ -107,37 +107,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       return;
     }
 
-    let matchedUser = (users || []).find(u => u && String(u.dni).trim() === cleanDni);
+    const matchedUser = (users || []).find(u => u && String(u.dni).trim() === cleanDni);
     if (!matchedUser) {
-      if (cleanDni === '00448157') {
-        matchedUser = {
-          id: 'u-admin-herly',
-          name: 'Herly Lizarazo',
-          email: 'herly.lizarazo@micarta.pe',
-          dni: '00448157',
-          password: 'password',
-          role: 'ADMIN',
-          phone: '952341165',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-          restaurantIds: [],
-          status: 'active',
-          lastActive: 'En línea'
-        };
-      } else {
-        matchedUser = {
-          id: `u-dyn-${cleanDni}`,
-          name: `Usuario ${cleanDni}`,
-          email: `usuario${cleanDni}@micarta.pe`,
-          dni: cleanDni,
-          password: passwordInput.trim() || '12345678',
-          role: 'OWNER',
-          phone: '999999999',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-          restaurantIds: [],
-          status: 'active',
-          lastActive: 'En línea'
-        };
-      }
+      setErrorMessage(`No existe ningún usuario registrado con el DNI ${cleanDni}. Verifica tu número de documento.`);
+      return;
     }
 
     const validPasswords = [

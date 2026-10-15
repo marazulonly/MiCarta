@@ -110,9 +110,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState<boolean>(false);
   const [newTemplateName, setNewTemplateName] = useState<string>('Nueva Plantilla Personalizada');
   const [newTemplateDesc, setNewTemplateDesc] = useState<string>('Diseño creado desde el editor gráfico');
-  const [savedTemplates, setSavedTemplates] = useState<MenuTemplate[]>(() => {
-    return templates.filter(t => t.themeStyle === 'custom' || t.isCustomizable || t.canvasElements);
-  });
+  const [savedTemplates, setSavedTemplates] = useState<MenuTemplate[]>([]);
 
   // 4. Undo / Redo History Stack
   const [history, setHistory] = useState<HistoryState[]>([
@@ -518,9 +516,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       darkBgColor: bgElem?.backgroundColor || config.backgroundColor || '#071A14',
       cardBgColor: cardElem?.backgroundColor || '#141E2E',
       textColor: nameElem?.textColor || '#FFFFFF',
-      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif",
-      canvasElements: elements,
-      canvasConfig: config
+      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif"
     };
 
     setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
@@ -603,15 +599,6 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
             onDeleteSavedTemplate={(templateId) => {
               setSavedTemplates(prev => prev.filter(t => t.id !== templateId));
               if (onDeleteTemplate) onDeleteTemplate(templateId);
-            }}
-            onApplyTemplateToRestaurant={(tmpl) => {
-              handleApplyTemplatePreset(tmpl);
-              if (loadedRestaurant) {
-                setSelectedRestaurantToApply(loadedRestaurant.id);
-              } else if (restaurants[0]) {
-                setSelectedRestaurantToApply(restaurants[0].id);
-              }
-              setIsApplyModalOpen(true);
             }}
           />
         )}
