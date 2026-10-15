@@ -72,6 +72,7 @@ import {
   autoSyncOrder,
   autoUpdateOrderStatus,
   setCloudSyncPaused,
+  restoreCoreRecordsToFirestore,
 } from './lib/cloudSync';
 
 // Helper function to normalize slugs for matching URLs, names, and IDs
@@ -697,10 +698,19 @@ export default function App() {
       try {
         if (currentUser.role === 'ADMIN') {
           // Admin: ONLY fetch the lightweight list of restaurants and users (NEVER download all items/categories of all restaurants)
-          const [remoteRests, remoteUsers] = await Promise.all([
+          let [remoteRests, remoteUsers] = await Promise.all([
             fetchRestaurantsListFromFirestore(),
             fetchLoginUsers()
           ]);
+
+          if ((!remoteRests || remoteRests.length === 0) || (!remoteUsers || remoteUsers.length === 0)) {
+            await restoreCoreRecordsToFirestore();
+            [remoteRests, remoteUsers] = await Promise.all([
+              fetchRestaurantsListFromFirestore(),
+              fetchLoginUsers(true)
+            ]);
+          }
+
           if (!isMounted) return;
 
           if (remoteRests && remoteRests.length > 0) {

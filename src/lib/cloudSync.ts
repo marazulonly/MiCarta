@@ -23,7 +23,8 @@ import {
   fetchRestaurantsListFromFirestore,
   fetchTemplatesFromFirestore,
   saveTemplateToFirestore,
-  deleteTemplateFromFirestore
+  deleteTemplateFromFirestore,
+  restoreCoreRecordsToFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {
@@ -687,7 +688,7 @@ export function subscribeToOrdersFeed(
   return subscribeToRestaurantOrdersRealtime(restaurantId, onOrdersUpdate, onRestaurantDocUpdate);
 }
 
-export { fetchSpecificRestaurantDataFromFirestore, fetchRestaurantsListFromFirestore };
+export { fetchSpecificRestaurantDataFromFirestore, fetchRestaurantsListFromFirestore, restoreCoreRecordsToFirestore };
 
 /**
  * Automatically saves a new order directly to Firestore.

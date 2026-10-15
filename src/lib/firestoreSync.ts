@@ -111,6 +111,146 @@ export function isBypassingFirestore(): boolean {
 }
 
 /**
+ * Restores the 3 core restaurants and 3 core users directly into Firestore collections.
+ * Ensures data is persisted in Firestore without being temporary frontend mock state.
+ */
+export async function restoreCoreRecordsToFirestore(): Promise<boolean> {
+  if (isBypassingFirestore()) return true;
+  try {
+    const nowIso = new Date().toISOString();
+    const coreRests: Restaurant[] = [
+      {
+        id: 'cevichito-pliz',
+        name: 'Cevichito Pliz',
+        slug: 'cevichito-pliz',
+        cuisineType: 'Cevichería & Mariscos',
+        cuisine: 'Cevichería & Mariscos',
+        tagline: 'Pesca Fresca y Tradición Marina',
+        address: 'Av. Costanera 1420, San Miguel',
+        phone: '952341165',
+        ownerId: 'u-owner-gaston',
+        isOpen: true,
+        rating: 4.9,
+        reviewCount: 142,
+        logoUrl: '',
+        coverUrl: '',
+        templateId: 'tmpl-costa-marina',
+        currency: 'S/.',
+        branding: {} as any,
+        metrics: {} as any
+      },
+      {
+        id: 'rest-criollo',
+        name: 'Fuego Criollo',
+        slug: 'fuego-criollo',
+        cuisineType: 'Cocina Criolla & A la Leña',
+        cuisine: 'Cocina Criolla & A la Leña',
+        tagline: 'Sazón Tradicional Peruana',
+        address: 'Jr. de la Unión 450, Lima',
+        phone: '952341166',
+        ownerId: 'u-owner-carlos',
+        isOpen: true,
+        rating: 4.8,
+        reviewCount: 98,
+        logoUrl: '',
+        coverUrl: '',
+        templateId: 'tmpl-criollo',
+        currency: 'S/.',
+        branding: {} as any,
+        metrics: {} as any
+      },
+      {
+        id: 'rest-brasas',
+        name: 'Voraz Urbano',
+        slug: 'voraz-urbano',
+        cuisineType: 'Parrillas & Craft Burgers',
+        cuisine: 'Parrillas & Craft Burgers',
+        tagline: 'Hamburguesas Artesanales & Carnes al Carbón',
+        address: 'Av. Larco 680, Miraflores',
+        phone: '952341167',
+        ownerId: 'u-owner-carlos',
+        isOpen: true,
+        rating: 4.9,
+        reviewCount: 215,
+        logoUrl: '',
+        coverUrl: '',
+        templateId: 'tmpl-voraz',
+        currency: 'S/.',
+        branding: {} as any,
+        metrics: {} as any
+      }
+    ];
+
+    const coreUsers: User[] = [
+      {
+        id: 'u-admin-herly',
+        name: 'Herly Lizarazo',
+        email: 'herly.lizarazo@micarta.pe',
+        dni: '00448157',
+        password: 'password',
+        role: 'ADMIN',
+        phone: '952341165',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+        restaurantIds: ['all'],
+        status: 'active',
+        lastActive: 'En línea'
+      },
+      {
+        id: 'u-owner-gaston',
+        name: 'Gastón Dueño',
+        email: 'gaston@micarta.pe',
+        dni: '12345678',
+        password: 'password',
+        role: 'OWNER',
+        phone: '900111222',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+        restaurantIds: ['cevichito-pliz'],
+        status: 'active',
+        lastActive: 'En línea'
+      },
+      {
+        id: 'u-owner-carlos',
+        name: 'Carlos Dueño',
+        email: 'carlos@micarta.pe',
+        dni: '87654321',
+        password: 'password',
+        role: 'OWNER',
+        phone: '900333444',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+        restaurantIds: ['rest-criollo', 'rest-brasas'],
+        status: 'active',
+        lastActive: 'En línea'
+      }
+    ];
+
+    const promises: Promise<any>[] = [];
+    coreRests.forEach(r => {
+      const sanitized = sanitizeRestaurantForFirestore(r);
+      promises.push(setDoc(doc(db, 'restaurants', r.id), sanitized, { merge: true }));
+      promises.push(setDoc(doc(db, 'published_menus', r.slug), {
+        success: true,
+        published: true,
+        version: 1,
+        publishedAt: nowIso,
+        publishedBy: 'System Restoration',
+        restaurant: sanitized,
+        categories: [],
+        items: []
+      }, { merge: true }));
+    });
+
+    coreUsers.forEach(u => {
+      promises.push(setDoc(doc(db, 'users', u.id), cleanObject(u), { merge: true }));
+    });
+
+    await Promise.all(promises);
+    return true;
+  } catch (err) {
+    return handleFirestoreError(err, 'restoreCoreRecordsToFirestore');
+  }
+}
+
+/**
  * Saves complete menu dataset directly to Firestore individual documents.
  * Uses slug as the primary document key for restaurants and published_menus.
  */
