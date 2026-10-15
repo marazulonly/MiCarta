@@ -118,16 +118,16 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
   // Safe category and items scoping
   const validCategories = useMemo(() => {
     if (!Array.isArray(categories)) return [];
-    return categories.filter(c => c && matchesRestaurantRef(c.restaurantId, restaurant.id, restaurant.slug));
-  }, [categories, restaurant.id, restaurant.slug]);
+    return categories.filter(c => c && matchesRestaurantRef(c.restaurantId, restaurant));
+  }, [categories, restaurant]);
 
   const validItems = useMemo(() => {
     if (!Array.isArray(items)) return [];
     return items.filter(i => {
       if (!i) return false;
-      return matchesRestaurantRef(i.restaurantId, restaurant.id, restaurant.slug);
+      return matchesRestaurantRef(i.restaurantId, restaurant);
     });
-  }, [items, restaurant.id, restaurant.slug]);
+  }, [items, restaurant]);
 
   // Dish filtering based on category, search, and channel
   const filteredDishes = useMemo(() => {
