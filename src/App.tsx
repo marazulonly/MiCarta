@@ -568,6 +568,15 @@ export default function App() {
     }
   }, []);
 
+  // Fetch cloud templates from Firestore on mount
+  useEffect(() => {
+    fetchCloudTemplates().then(cloudTmpls => {
+      if (cloudTmpls && cloudTmpls.length > 0) {
+        setTemplates(cloudTmpls);
+      }
+    }).catch(() => {});
+  }, []);
+
   // Track which restaurants have already had their categories/items loaded in memory during this session
   const loadedRestaurantIdsRef = useRef<Set<string>>(new Set());
 

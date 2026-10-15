@@ -159,6 +159,8 @@ export interface MenuTemplate {
   tags: string[];
   isCustomizable: boolean;
   activeRestaurantsCount?: number;
+  canvasElements?: any[];
+  canvasConfig?: any;
 }
 
 export interface DishAddon {
