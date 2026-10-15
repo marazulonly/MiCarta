@@ -24,7 +24,7 @@ import { downloadRestaurantJSON, downloadFullSystemJSON, parseImportedJSON } fro
 import { ImportMenuModal, ImportMenuMode } from './ImportMenuModal';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { EmptyRestaurantState } from './EmptyRestaurantState';
-import { getSafeActiveRestaurant, getSafeBranding, generateSlug, normalizeBranding } from '../utils/restaurantUtils';
+import { getSafeActiveRestaurant, getSafeBranding, generateSlug, normalizeBranding, matchesRestaurantRef } from '../utils/restaurantUtils';
 
 interface RestaurantsViewProps {
   restaurants: Restaurant[];
@@ -203,8 +203,8 @@ export const RestaurantsView: React.FC<RestaurantsViewProps> = ({
   const [newDishDesc, setNewDishDesc] = useState('');
   const [newDishCategory, setNewDishCategory] = useState('');
 
-  const currentCategories = categories.filter(c => c.restaurantId === currentRestaurant?.id);
-  const currentItems = items.filter(i => i.restaurantId === currentRestaurant?.id);
+  const currentCategories = categories.filter(c => c && (c.restaurantId === currentRestaurant?.id || matchesRestaurantRef(c.restaurantId, currentRestaurant)));
+  const currentItems = items.filter(i => i && (i.restaurantId === currentRestaurant?.id || matchesRestaurantRef(i.restaurantId, currentRestaurant)));
 
   const handleCreateDish = (e: React.FormEvent) => {
     e.preventDefault();

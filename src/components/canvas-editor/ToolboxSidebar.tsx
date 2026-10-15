@@ -27,7 +27,11 @@ import {
   Sliders,
   Check,
   MapPin,
-  FolderOpen
+  FolderOpen,
+  FolderPlus,
+  Store,
+  ArrowRight,
+  X
 } from 'lucide-react';
 import { CanvasElement, CanvasConfig, CANVAS_FONTS } from './types';
 import { MenuTemplate, Restaurant } from '../../types';
@@ -47,7 +51,9 @@ interface ToolboxSidebarProps {
   onApplyColorPalette: (palette: any) => void;
   savedTemplates?: MenuTemplate[];
   onDeleteSavedTemplate?: (templateId: string) => void;
-  onApplyTemplateToRestaurant?: (template: MenuTemplate) => void;
+  restaurants?: Restaurant[];
+  onLoadRestaurantToMyTemplates?: (restaurant: Restaurant) => void;
+  onCloneTemplateToRestaurant?: (template: MenuTemplate, targetRestaurant: Restaurant) => void;
 }
 
 type SidebarTab = 'layers' | 'insert' | 'templates' | 'palettes' | 'saved-templates';
@@ -135,9 +141,13 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
   onApplyColorPalette,
   savedTemplates,
   onDeleteSavedTemplate,
-  onApplyTemplateToRestaurant
+  restaurants = [],
+  onLoadRestaurantToMyTemplates,
+  onCloneTemplateToRestaurant
 }) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>('layers');
+  const [isPickRestaurantModalOpen, setIsPickRestaurantModalOpen] = useState<boolean>(false);
+  const [templateToClone, setTemplateToClone] = useState<MenuTemplate | null>(null);
 
   // Sorted layers (top-most in z-index first)
   const layerList = [...elements].sort((a, b) => b.zIndex - a.zIndex);
@@ -1056,69 +1066,226 @@ export const ToolboxSidebar: React.FC<ToolboxSidebarProps> = ({
         {/* TAB 3.5: MIS PLANTILLAS GUARDADAS                                         */}
         {/* ========================================================================= */}
         {activeTab === 'saved-templates' && (
-          <div className="space-y-2.5">
-            <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
-              Mis Plantillas ({savedTemplates?.length || 0})
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-neutral-700 uppercase tracking-widest block font-bold">
+                Mis Plantillas ({savedTemplates?.length || 0})
+              </span>
+            </div>
+
+            {/* Action: Cargar carta existente a Mis Plantillas */}
+            <button
+              type="button"
+              onClick={() => setIsPickRestaurantModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold transition shadow-sm cursor-pointer border border-neutral-800 group"
+            >
+              <FolderPlus className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>Cargar carta a Mis Plantillas</span>
+            </button>
+
             {savedTemplates && savedTemplates.length > 0 ? (
-              savedTemplates.map(tmpl => (
-                <div
-                  key={tmpl.id}
-                  className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 text-left transition flex items-start gap-3 shadow-xs group relative"
-                >
-                  <button
-                    type="button"
-                    onClick={() => onApplyTemplatePreset(tmpl)}
-                    className="flex-1 flex items-start gap-3 text-left cursor-pointer min-w-0"
+              <div className="space-y-2">
+                {savedTemplates.map(tmpl => (
+                  <div
+                    key={tmpl.id}
+                    className="w-full p-3 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-350 hover:shadow-xs transition flex flex-col gap-2 relative"
                   >
-                    <img 
-                      src={tmpl.thumbnailUrl} 
-                      alt={tmpl.name} 
-                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200 group-hover:scale-105 transition-transform" 
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-neutral-900 truncate">
-                        {tmpl.name}
-                      </p>
-                      <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
-                        {tmpl.description}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <img 
+                        src={tmpl.thumbnailUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80'} 
+                        alt={tmpl.name} 
+                        className="w-12 h-12 rounded-xl object-cover shrink-0 border border-neutral-200 bg-neutral-100" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-neutral-950 truncate">
+                          {tmpl.name}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                          {tmpl.description}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" 
+                            style={{ backgroundColor: tmpl.primaryColor || '#D4AF37' }} 
+                            title="Color Primario"
+                          />
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" 
+                            style={{ backgroundColor: tmpl.darkBgColor || '#071A14' }} 
+                            title="Fondo"
+                          />
+                          <span className="text-[9px] text-neutral-400 font-mono">
+                            {tmpl.category || 'Clonada'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {onDeleteSavedTemplate && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteSavedTemplate(tmpl.id);
+                          }}
+                          className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+                          title="Eliminar plantilla permanentemente"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                  </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {onApplyTemplateToRestaurant && (
+
+                    {/* Template Card Action Buttons */}
+                    <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-neutral-100 text-[11px] font-bold">
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onApplyTemplateToRestaurant(tmpl);
-                        }}
-                        className="px-2.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold transition cursor-pointer shadow-xs"
-                        title="Aplicar en carta específica"
+                        onClick={() => onApplyTemplatePreset(tmpl)}
+                        className="px-2 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition text-center cursor-pointer flex items-center justify-center gap-1"
                       >
-                        Aplicar
+                        <LayoutTemplate className="w-3 h-3 text-neutral-600" />
+                        <span>Ver en lienzo</span>
                       </button>
-                    )}
-                    {onDeleteSavedTemplate && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSavedTemplate(tmpl.id);
-                        }}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
-                        title="Eliminar plantilla permanentemente"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+
+                      {onCloneTemplateToRestaurant && (
+                        <button
+                          type="button"
+                          onClick={() => setTemplateToClone(tmpl)}
+                          className="px-2 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white transition text-center cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
+                        >
+                          <Copy className="w-3 h-3 text-emerald-400" />
+                          <span>Clonar a carta</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
               <div className="text-center py-6 px-4 border-2 border-dashed border-neutral-200 rounded-2xl">
                 <FolderOpen className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                 <p className="text-xs text-neutral-600">Aún no has guardado ninguna plantilla personalizada.</p>
+                <p className="text-[10px] text-neutral-400 mt-1">Usa "Cargar carta a Mis Plantillas" para importar el diseño de cualquier restaurante.</p>
+              </div>
+            )}
+
+            {/* MODAL: Seleccionar restaurante para cargar a Mis Plantillas */}
+            {isPickRestaurantModalOpen && (
+              <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FolderPlus className="w-5 h-5 text-neutral-900" />
+                      <div>
+                        <h4 className="text-sm font-black text-neutral-950">Cargar carta a Mis Plantillas</h4>
+                        <p className="text-[11px] text-neutral-500">Selecciona la carta que deseas guardar como plantilla clonada.</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIsPickRestaurantModalOpen(false)}
+                      className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                    {restaurants.length === 0 ? (
+                      <p className="text-center text-xs text-neutral-500 py-4">No hay restaurantes registrados.</p>
+                    ) : (
+                      restaurants.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={() => {
+                            if (onLoadRestaurantToMyTemplates) {
+                              onLoadRestaurantToMyTemplates(r);
+                            }
+                            setIsPickRestaurantModalOpen(false);
+                          }}
+                          className="w-full flex items-center justify-between p-3 rounded-2xl border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 transition cursor-pointer text-left group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            {r.logoUrl ? (
+                              <img src={r.logoUrl} alt={r.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-neutral-200" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center">
+                                <Store className="w-4 h-4 text-neutral-500" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs font-bold text-neutral-900 group-hover:text-black">{r.name}</p>
+                              <p className="text-[10px] text-neutral-500">{r.cuisineType || 'Restaurante'}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-emerald-600 group-hover:translate-x-0.5 transition-transform">
+                            Guardar
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: Seleccionar restaurante para clonar la plantilla */}
+            {templateToClone && (
+              <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Copy className="w-5 h-5 text-neutral-900" />
+                      <div>
+                        <h4 className="text-sm font-black text-neutral-950">Clonar plantilla a carta</h4>
+                        <p className="text-[11px] text-neutral-500">
+                          Aplica "{templateToClone.name}" como diseño individual sin dependencias.
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setTemplateToClone(null)}
+                      className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                    {restaurants.length === 0 ? (
+                      <p className="text-center text-xs text-neutral-500 py-4">No hay restaurantes registrados.</p>
+                    ) : (
+                      restaurants.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={() => {
+                            if (onCloneTemplateToRestaurant) {
+                              onCloneTemplateToRestaurant(templateToClone, r);
+                            }
+                            setTemplateToClone(null);
+                          }}
+                          className="w-full flex items-center justify-between p-3 rounded-2xl border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 transition cursor-pointer text-left group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            {r.logoUrl ? (
+                              <img src={r.logoUrl} alt={r.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-neutral-200" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center">
+                                <Store className="w-4 h-4 text-neutral-500" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs font-bold text-neutral-900 group-hover:text-black">{r.name}</p>
+                              <p className="text-[10px] text-neutral-500">{r.cuisineType || 'Restaurante'}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                            <span>Clonar</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

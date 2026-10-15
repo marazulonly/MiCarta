@@ -1101,6 +1101,9 @@ export default function App() {
       if (targetUser) autoSyncUser(targetUser).catch(() => {});
     }
 
+    // Persist restaurant separately into Firestore 'restaurants' collection
+    autoSyncRestaurant(newRestaurant).catch(() => {});
+
     // Publish initial menu snapshot (also saves restaurant to Firestore)
     triggerCloudUpdate(
       newRestaurant.id,
@@ -1593,6 +1596,18 @@ export default function App() {
         }));
         preparedRestaurants = [existingTargetRest];
       }
+    } else {
+      // Auto-remap imported categories and items whose restaurantId references an existing restaurant by slug/name/id
+      restaurants.forEach(existingRest => {
+        const matchesThisRest = (rId?: string) => Boolean(rId && (
+          rId === existingRest.id ||
+          matchesRestaurantRef(rId, existingRest) ||
+          normalizeSlug(rId) === normalizeSlug(existingRest.slug || existingRest.name || existingRest.id)
+        ));
+        preparedCategories = preparedCategories.map(c => matchesThisRest(c.restaurantId) ? { ...c, restaurantId: existingRest.id } : c);
+        preparedItems = preparedItems.map(i => matchesThisRest(i.restaurantId) ? { ...i, restaurantId: existingRest.id } : i);
+        preparedRestaurants = preparedRestaurants.map(r => matchesThisRest(r.id) ? { ...r, id: existingRest.id, slug: existingRest.slug } : r);
+      });
     }
 
     const targetRestIds = new Set<string>();
@@ -1694,8 +1709,9 @@ export default function App() {
     nextRestaurants.forEach(r => {
       if (!r || !r.id) return;
       if (targetRestIds.has(r.id) || mode === 'REPLACE' || preparedRestaurants.some(pr => pr.id === r.id)) {
-        const rCats = nextCategories.filter(c => c && c.restaurantId === r.id);
-        const rItems = nextItems.filter(i => i && i.restaurantId === r.id);
+        const rCats = nextCategories.filter(c => c && (c.restaurantId === r.id || matchesRestaurantRef(c.restaurantId, r)));
+        const rItems = nextItems.filter(i => i && (i.restaurantId === r.id || matchesRestaurantRef(i.restaurantId, r)));
+        syncInMemoryPublishedMenu(r.id, r, rCats, rItems);
         publishRestaurantMenu(r.id, r, rCats, rItems).catch(() => {});
       }
     });

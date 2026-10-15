@@ -6,6 +6,7 @@ import {
   MenuCategory, 
   RestaurantBranding 
 } from '../types';
+import { getSafeBranding } from '../utils/restaurantUtils';
 import { CanvasElement, CanvasConfig, HistoryState } from './canvas-editor/types';
 import { 
   createBlankCanvas,
@@ -110,9 +111,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState<boolean>(false);
   const [newTemplateName, setNewTemplateName] = useState<string>('Nueva Plantilla Personalizada');
   const [newTemplateDesc, setNewTemplateDesc] = useState<string>('Diseño creado desde el editor gráfico');
-  const [savedTemplates, setSavedTemplates] = useState<MenuTemplate[]>(() => {
-    return templates.filter(t => t.themeStyle === 'custom' || t.isCustomizable || t.canvasElements);
-  });
+  const [savedTemplates, setSavedTemplates] = useState<MenuTemplate[]>([]);
 
   // 4. Undo / Redo History Stack
   const [history, setHistory] = useState<HistoryState[]>([
@@ -518,9 +517,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       darkBgColor: bgElem?.backgroundColor || config.backgroundColor || '#071A14',
       cardBgColor: cardElem?.backgroundColor || '#141E2E',
       textColor: nameElem?.textColor || '#FFFFFF',
-      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif",
-      canvasElements: elements,
-      canvasConfig: config
+      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif"
     };
 
     setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
@@ -528,6 +525,79 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     setIsSaveTemplateModalOpen(false);
     showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
   }, [newTemplateName, newTemplateDesc, elements, config, showToast, setSavedTemplates, onSaveTemplate]);
+
+  // CARGAR CARTA COMPLETA A "MIS PLANTILLAS"
+  const handleLoadRestaurantToMyTemplates = useCallback((restaurant: Restaurant) => {
+    const itemForRest = menuItems.find(i => i.restaurantId === restaurant.id) || sampleItem;
+    const loadedData = createInitialCanvasElements(
+      restaurant, 
+      restaurant.branding, 
+      itemForRest,
+      menuItems,
+      categories
+    );
+
+    const safeBranding = getSafeBranding(restaurant);
+    const createdTemplate: MenuTemplate = {
+      id: `custom-tpl-${restaurant.id}-${Date.now()}`,
+      name: `${restaurant.name} (Clonada)`,
+      description: `Plantilla completa con todos los componentes y estilos de "${restaurant.name}"`,
+      category: 'MODERN',
+      themeStyle: safeBranding.themePreset || 'custom',
+      layoutMode: 'grid',
+      thumbnailUrl: safeBranding.coverImageUrl || restaurant.coverUrl || safeBranding.headerLogoUrl || restaurant.logoUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+      badge: 'Carta Clonada',
+      tags: ['Clonada', restaurant.cuisineType || 'Restaurante'],
+      isCustomizable: true,
+      primaryColor: safeBranding.buttonColor || safeBranding.accentColor || '#38BDF8',
+      darkBgColor: safeBranding.darkBgColor || safeBranding.backgroundColor || '#0F172A',
+      cardBgColor: safeBranding.cardBgColor || '#1E293B',
+      textColor: safeBranding.textColor || '#FFFFFF',
+      fontDisplay: safeBranding.fontDisplay || safeBranding.fontFamily || "'Inter', sans-serif"
+    };
+
+    setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
+    if (onSaveTemplate) onSaveTemplate(createdTemplate);
+    showToast(`✓ Carta de "${restaurant.name}" guardada en "Mis Plantillas" con todos sus componentes.`);
+  }, [menuItems, categories, sampleItem, onSaveTemplate, showToast]);
+
+  // CLONAR PLANTILLA A UNA CARTA (Sin dependencia externa)
+  const handleCloneTemplateToRestaurant = useCallback((template: MenuTemplate, targetRestaurant: Restaurant) => {
+    try {
+      const clonedBranding = {
+        ...targetRestaurant.branding,
+        backgroundColor: template.darkBgColor || targetRestaurant.branding?.backgroundColor || '#0F172A',
+        darkBgColor: template.darkBgColor || targetRestaurant.branding?.darkBgColor || '#0F172A',
+        cardBgColor: template.cardBgColor || targetRestaurant.branding?.cardBgColor || '#1E293B',
+        primaryColor: template.primaryColor || targetRestaurant.branding?.primaryColor || '#38BDF8',
+        accentColor: template.primaryColor || targetRestaurant.branding?.accentColor || '#38BDF8',
+        buttonColor: template.primaryColor || targetRestaurant.branding?.buttonColor || '#38BDF8',
+        fontFamily: template.fontDisplay || targetRestaurant.branding?.fontFamily || "'Inter', sans-serif",
+        fontDisplay: template.fontDisplay || targetRestaurant.branding?.fontDisplay || "'Inter', sans-serif",
+        textColor: template.textColor || targetRestaurant.branding?.textColor || '#FFFFFF',
+        clonedFromTemplate: template.name,
+        clonedAt: new Date().toISOString(),
+        isAutonomous: true
+      };
+
+      const safeLogo = clonedBranding.headerLogoUrl || targetRestaurant.branding?.headerLogoUrl || targetRestaurant.logoUrl || '';
+
+      const updatedRestaurant: Restaurant = {
+        ...targetRestaurant,
+        logoUrl: safeLogo,
+        branding: {
+          ...clonedBranding,
+          headerLogoUrl: safeLogo
+        }
+      };
+
+      onUpdateRestaurant(updatedRestaurant);
+      showToast(`✓ Plantilla "${template.name}" clonada e independizada en la carta de "${targetRestaurant.name}".`);
+    } catch (err) {
+      console.error('Error cloning template to restaurant:', err);
+      showToast('⚠️ Error al clonar plantilla a la carta.');
+    }
+  }, [onUpdateRestaurant, showToast]);
 
   const selectedElement = elements.find(e => e.id === selectedId) || null;
 
@@ -604,15 +674,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
               setSavedTemplates(prev => prev.filter(t => t.id !== templateId));
               if (onDeleteTemplate) onDeleteTemplate(templateId);
             }}
-            onApplyTemplateToRestaurant={(tmpl) => {
-              handleApplyTemplatePreset(tmpl);
-              if (loadedRestaurant) {
-                setSelectedRestaurantToApply(loadedRestaurant.id);
-              } else if (restaurants[0]) {
-                setSelectedRestaurantToApply(restaurants[0].id);
-              }
-              setIsApplyModalOpen(true);
-            }}
+            restaurants={restaurants}
+            onLoadRestaurantToMyTemplates={handleLoadRestaurantToMyTemplates}
+            onCloneTemplateToRestaurant={handleCloneTemplateToRestaurant}
           />
         )}
 

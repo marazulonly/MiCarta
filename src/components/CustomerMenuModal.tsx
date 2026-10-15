@@ -21,16 +21,11 @@ import { Restaurant, MenuItem, MenuCategory, Order, MenuAccessSettings } from '.
 import { getSafeBranding, generateSlug, normalizeBranding, resolveMenuCategoriesAndItemsForDisplay } from '../utils/restaurantUtils';
 import { normalizeSlug } from '../lib/cloudSync';
 import { processAndUploadImage } from '../lib/imageOptimizer';
-import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
-import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
-import { CostaMarinaMenu } from './CostaMarinaMenu';
-import { NeonStreetMenu } from './NeonStreetMenu';
-import { MinimalistBistroMenu } from './MinimalistBistroMenu';
+import { StandaloneDigitalMenu } from './StandaloneDigitalMenu';
 import { EditorialGrandMenu } from './EditorialGrandMenu';
 import { StartersEditorialMenu } from './StartersEditorialMenu';
 import { MedioPlatoMenu } from './MedioPlatoMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
-import { CanvasMenuRenderer } from './CanvasMenuRenderer';
 
 interface CustomerMenuModalProps {
   isOpen: boolean;
@@ -646,24 +641,6 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           onOpenActiveOrderModal,
         };
 
-        if (restaurant.branding?.canvasElements && Array.isArray(restaurant.branding.canvasElements) && restaurant.branding.canvasElements.length > 0) {
-          return (
-            <CanvasMenuRenderer
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
-        }
-
         if (isMedioPlatoTemplate) {
           return (
             <MedioPlatoMenu
@@ -696,73 +673,9 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
               {...liveEditProps}
             />
           );
-        } else if (isNeonTemplate) {
-          return (
-            <NeonStreetMenu
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
-        } else if (isMinimalTemplate) {
-          return (
-            <MinimalistBistroMenu
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
-        } else if (isMarineTemplate) {
-          return (
-            <CostaMarinaMenu
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
-        } else if (isCriolloTemplate) {
-          return (
-            <CriolloChalkboardMenu
-              isOpen={isOpen}
-              onClose={onClose}
-              restaurant={effectiveRestaurant}
-              categories={effectiveCategories}
-              items={effectiveItems}
-              onOrderCreated={onOrderCreated}
-              initialMode={initialMode}
-              initialTableNumber={initialTableNumber}
-              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
-              {...activeOrderProps}
-              {...liveEditProps}
-            />
-          );
         } else {
           return (
-            <BrasasLuxuryMenu
+            <StandaloneDigitalMenu
               isOpen={isOpen}
               onClose={onClose}
               restaurant={effectiveRestaurant}

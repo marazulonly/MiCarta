@@ -19,7 +19,7 @@ import {
   Layout
 } from 'lucide-react';
 import { Restaurant, MenuItem, MenuCategory, OrderItemUnit, Order } from '../types';
-import { getSafeBranding } from '../utils/restaurantUtils';
+import { getSafeBranding, matchesRestaurantRef } from '../utils/restaurantUtils';
 import { ItemOrderModal } from './ItemOrderModal';
 import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 import { ScheduleViewModal } from './ScheduleViewModal';
@@ -151,7 +151,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   }, [initialMode, isDineInEnabled, isDeliveryEnabled]);
 
   // Categories
-  const restaurantCategories = categories.filter(c => c.restaurantId === restaurant.id);
+  const restaurantCategories = categories.filter(c => c && (c.restaurantId === restaurant.id || matchesRestaurantRef(c.restaurantId, restaurant)));
   const currentCategories = restaurantCategories.length > 0 
     ? restaurantCategories 
     : [
@@ -179,7 +179,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
   const dishDescFont = branding.dishDescFont || "'Plus Jakarta Sans', sans-serif";
 
   // Filter Items by channel and category
-  const restaurantItems = items.filter(item => item.restaurantId === restaurant.id);
+  const restaurantItems = items.filter(item => item && (item.restaurantId === restaurant.id || matchesRestaurantRef(item.restaurantId, restaurant)));
   const channelItems = restaurantItems.filter(item => {
     if (activeChannel === 'DINE_IN' && item.targetMenuScope === 'DELIVERY') return false;
     if (activeChannel === 'DELIVERY' && item.targetMenuScope === 'DINE_IN') return false;
