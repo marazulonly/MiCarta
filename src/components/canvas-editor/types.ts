@@ -73,6 +73,7 @@ export interface CanvasConfig {
   height: number;         // Canonical canvas height (default 1500)
   backgroundColor: string;
   backgroundImage?: string;
+  backgroundOverlay?: string;
   showGrid?: boolean;
   gridSize?: number;      // e.g. 20px
   showSnapGuides?: boolean;

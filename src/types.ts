@@ -458,3 +458,20 @@ export const DEFAULT_FALLBACK_RESTAURANT: Restaurant = {
   shifts: [],
   weeklySchedule: []
 };
+
+export interface RestaurantCard {
+  id: string;
+  restaurantId: string;
+  restaurantSlug: string;
+  branding: RestaurantBranding;
+  canvasElements: any[];
+  canvasConfig: any;
+  logoUrl?: string;
+  headerImageUrl?: string;
+  backgroundImageUrl?: string;
+  version: number;
+  lastModified: string;
+  publishedAt?: string;
+  isPublished: boolean;
+}
+

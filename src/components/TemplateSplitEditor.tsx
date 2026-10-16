@@ -8,6 +8,7 @@ import {
   TemplateDesignLayer
 } from '../types';
 import { getSafeBranding } from '../utils/restaurantUtils';
+import { saveRestaurantCard } from '../lib/cardService';
 import { CanvasElement, CanvasConfig, HistoryState } from './canvas-editor/types';
 import { 
   createBlankCanvas,
@@ -533,7 +534,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   }, [selectedId, elements, clipboard, handleUndo, handleRedo, handleDuplicateElement, handleDeleteElement, showToast]);
 
   // 3. APLICAR EN CARTA (Guarda en la carta seleccionada con confirmación)
-  const handleConfirmApplyToRestaurant = useCallback(() => {
+  const handleConfirmApplyToRestaurant = useCallback(async () => {
     const targetRestId = selectedRestaurantToApply || loadedRestaurant?.id || restaurants[0]?.id;
     const targetRest = restaurants.find(r => r.id === targetRestId);
 
@@ -559,8 +560,23 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
       onUpdateRestaurant(updatedRestaurant);
       setLoadedRestaurant(updatedRestaurant);
+
+      // Save individual restaurant card
+      await saveRestaurantCard(targetRest.id, {
+        id: targetRest.id,
+        restaurantId: targetRest.id,
+        restaurantSlug: targetRest.slug,
+        branding: updatedRestaurant.branding,
+        canvasElements: elements,
+        canvasConfig: config,
+        logoUrl: safeLogo,
+        version: 1,
+        lastModified: new Date().toISOString(),
+        isPublished: true
+      });
+
       setIsApplyModalOpen(false);
-      showToast(`✓ Diseño gráfico aplicado exitosamente a la carta de "${targetRest.name}".`);
+      showToast(`✓ Diseño gráfico aplicado y guardado en la carta de "${targetRest.name}".`);
     } catch (err) {
       console.error('Error applying canvas template to restaurant:', err);
       showToast(`⚠️ Ocurrió un error al aplicar. Intenta nuevamente.`);

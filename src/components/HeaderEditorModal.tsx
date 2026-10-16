@@ -17,6 +17,7 @@ import {
 import { Restaurant, RestaurantBranding } from '../types';
 import { generateSlug, normalizeBranding } from '../utils/restaurantUtils';
 import { processAndUploadImage } from '../lib/imageOptimizer';
+import { uploadImage } from '../lib/imageService';
 
 interface HeaderEditorModalProps {
   isOpen: boolean;
@@ -130,15 +131,15 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
       return;
     }
 
-    uploadPromiseRef.current = processAndUploadImage(file, 'logo', restaurant.slug || 'header')
+    uploadPromiseRef.current = uploadImage(file, restaurant.id || 'rest', 'logo')
       .then(res => {
         setHeaderLogoUrl(res.url);
         setIsUploading(false);
-        showToast(res.isStorage ? '✓ Logo optimizado y guardado en la nube.' : '✓ Logo optimizado a WebP nítido.');
+        showToast(res.hasTransparency ? '✓ Logo con transparencia procesado y guardado en la nube.' : '✓ Logo optimizado y guardado en la nube.');
         return res.url;
       })
       .catch(err => {
-        console.warn('Error processing header logo:', err);
+        console.warn('Error uploading header logo:', err);
         setIsUploading(false);
         showToast('✓ Logotipo cargado correctamente.');
         return tempUrl;

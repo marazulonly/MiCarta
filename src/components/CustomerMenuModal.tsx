@@ -31,6 +31,8 @@ import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
 import { MinimalistBistroMenu } from './MinimalistBistroMenu';
 import { NeonStreetMenu } from './NeonStreetMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
+import { CanvasRenderer } from './CanvasRenderer';
+import { loadRestaurantCard, RestaurantCard } from '../lib/cardService';
 
 interface CustomerMenuModalProps {
   isOpen: boolean;
@@ -127,6 +129,15 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   
   // Modals for live editing
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [loadedCard, setLoadedCard] = useState<RestaurantCard | null>(null);
+
+  React.useEffect(() => {
+    if (restaurant?.id) {
+      loadRestaurantCard(restaurant.id).then(card => {
+        if (card) setLoadedCard(card);
+      });
+    }
+  }, [restaurant?.id]);
   const [quickPriceItem, setQuickPriceItem] = useState<MenuItem | null>(null);
   const [quickPriceVal, setQuickPriceVal] = useState<string>('');
   
@@ -646,7 +657,37 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
           onOpenActiveOrderModal,
         };
 
-        if (isMedioPlatoTemplate) {
+        if (loadedCard?.canvasElements && loadedCard.canvasElements.length > 0) {
+          return (
+            <div className="fixed inset-0 z-50 flex flex-col bg-black/90 overflow-y-auto select-none">
+              <div className="flex items-center justify-between p-4 bg-neutral-900 border-b border-neutral-800 text-white shrink-0">
+                <div className="flex items-center gap-3">
+                  {effectiveRestaurant.logoUrl && (
+                    <img src={effectiveRestaurant.logoUrl} alt={effectiveRestaurant.name} className="w-8 h-8 rounded-lg object-contain bg-transparent" />
+                  )}
+                  <h3 className="font-bold text-sm sm:text-base">{effectiveRestaurant.name}</h3>
+                </div>
+                <button onClick={onClose} className="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 p-4 sm:p-8 flex items-center justify-center">
+                <CanvasRenderer
+                  elements={loadedCard.canvasElements}
+                  config={loadedCard.canvasConfig || { width: 1200, height: 1600 }}
+                  restaurant={effectiveRestaurant}
+                  menuItems={effectiveItems}
+                  categories={effectiveCategories}
+                  mode="public"
+                  onAddToCart={(item) => {
+                    showToast(`✓ Plato "${item.name}" seleccionado.`);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        } else if (isMedioPlatoTemplate) {
           return (
             <MedioPlatoMenu
               isOpen={isOpen}
