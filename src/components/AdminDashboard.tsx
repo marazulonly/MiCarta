@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
 import { generateSlug, getTemplateDefaultBranding, normalizeBranding } from '../utils/restaurantUtils';
+import { restoreCoreRecordsToFirestore } from '../lib/firestoreSync';
 
 interface AdminDashboardProps {
   restaurants: Restaurant[];
@@ -435,14 +436,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onSwitchToOwnerView}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-50 border border-neutral-200 text-xs font-bold text-neutral-700 transition cursor-pointer self-start sm:self-auto shadow-sm"
-        >
-          <Building2 className="w-3.5 h-3.5 text-neutral-800" />
-          <span>Ir a Vista de Dueños</span>
-          <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              if (confirm('¿Forzar resincronización de datos de fábrica?')) {
+                await restoreCoreRecordsToFirestore();
+                window.location.reload();
+              }
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-xs font-bold text-amber-900 transition cursor-pointer self-start sm:self-auto shadow-sm"
+          >
+            Sincronizar Datos
+          </button>
+          <button
+            onClick={onSwitchToOwnerView}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-50 border border-neutral-200 text-xs font-bold text-neutral-700 transition cursor-pointer self-start sm:self-auto shadow-sm"
+          >
+            <Building2 className="w-3.5 h-3.5 text-neutral-800" />
+            <span>Ir a Vista de Dueños</span>
+            <ArrowRight className="w-3.5 h-3.5 text-neutral-400" />
+          </button>
+        </div>
       </div>
 
       {/* 6 Category Segment Selectors */}
