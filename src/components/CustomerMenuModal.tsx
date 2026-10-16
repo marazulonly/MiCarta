@@ -25,6 +25,11 @@ import { StandaloneDigitalMenu } from './StandaloneDigitalMenu';
 import { EditorialGrandMenu } from './EditorialGrandMenu';
 import { StartersEditorialMenu } from './StartersEditorialMenu';
 import { MedioPlatoMenu } from './MedioPlatoMenu';
+import { BrasasLuxuryMenu } from './BrasasLuxuryMenu';
+import { CostaMarinaMenu } from './CostaMarinaMenu';
+import { CriolloChalkboardMenu } from './CriolloChalkboardMenu';
+import { MinimalistBistroMenu } from './MinimalistBistroMenu';
+import { NeonStreetMenu } from './NeonStreetMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
 
 interface CustomerMenuModalProps {
@@ -673,9 +678,73 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
               {...liveEditProps}
             />
           );
+        } else if (isMarineTemplate) {
+          return (
+            <CostaMarinaMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={effectiveRestaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isCriolloTemplate) {
+          return (
+            <CriolloChalkboardMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={effectiveRestaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isNeonTemplate) {
+          return (
+            <NeonStreetMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={effectiveRestaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
+        } else if (isMinimalTemplate) {
+          return (
+            <MinimalistBistroMenu
+              isOpen={isOpen}
+              onClose={onClose}
+              restaurant={effectiveRestaurant}
+              categories={effectiveCategories}
+              items={effectiveItems}
+              onOrderCreated={onOrderCreated}
+              initialMode={initialMode}
+              initialTableNumber={initialTableNumber}
+              isOwnerOrAdmin={Boolean(isOwnerOrAdmin)}
+              {...activeOrderProps}
+              {...liveEditProps}
+            />
+          );
         } else {
           return (
-            <StandaloneDigitalMenu
+            <BrasasLuxuryMenu
               isOpen={isOpen}
               onClose={onClose}
               restaurant={effectiveRestaurant}

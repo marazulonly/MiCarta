@@ -537,7 +537,7 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredDishes.map(dish => {
               const inCart = cart[dish.id];
               const isAvailable = dish.isAvailable !== false;
@@ -683,12 +683,12 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
                           </div>
                         ) : (
                           <button
-                            onClick={() => handleAddToCart(dish)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-black transition flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-110 active:scale-95"
+                            onClick={() => setSelectedItemForCustomization(dish)}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-black transition flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-110 active:scale-95"
                             style={{ backgroundColor: primaryColor }}
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            <span>Agregar</span>
+                            <span>Pedir</span>
                           </button>
                         )
                       ) : (
@@ -768,6 +768,7 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
           isOpen={Boolean(selectedItemForCustomization)}
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
+          restaurant={restaurant}
           branding={branding}
           initialQuantity={cart[selectedItemForCustomization.id]?.quantity || 1}
           onConfirm={(item, qty, units) => handleConfirmCustomUnits(item, qty, units)}

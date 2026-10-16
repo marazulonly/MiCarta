@@ -429,7 +429,8 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
         {/*     Even rows: Text Left (Right-aligned), Photo Right                      */}
         {/* - Full description visible without cuts                                    */}
         {/* ========================================================================= */}
-        <main className="flex-1 px-3 sm:px-6 py-4 pb-44 space-y-6 sm:space-y-8 overflow-y-auto">
+        <main className="flex-1 px-3 sm:px-6 py-4 pb-44 overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {displayedItems.map((item, index) => {
             const isEven = branding.cardUniformStyles ? false : (index % 2 === 1);
 
@@ -618,14 +619,18 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
                 {!hideOrderButton && (
                   <button
                     type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedItemForCustomization(item);
+                    }}
                     style={{
                       backgroundColor: branding.buttonColor || '#D4AF37',
                       color: branding.buttonTextColor || '#000000',
                       borderRadius: '8px'
                     }}
-                    className="px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow active:scale-95"
+                    className="px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow active:scale-95 cursor-pointer hover:brightness-105"
                   >
-                    + Pedir
+                    Pedir
                   </button>
                 )}
               </div>
@@ -729,6 +734,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
               </div>
             );
           })}
+          </div>
         </main>
 
         {/* Floating Cart Button (Flush to bottom edge) */}
@@ -764,6 +770,7 @@ export const MedioPlatoMenu: React.FC<MedioPlatoMenuProps> = ({
           isOpen={Boolean(selectedItemForCustomization)}
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
+          restaurant={restaurant}
           onConfirmUnits={(qty, units) => {
             handleConfirmItemUnits(selectedItemForCustomization, qty, units);
             setSelectedItemForCustomization(null);

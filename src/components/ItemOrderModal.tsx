@@ -9,12 +9,13 @@ import {
   MessageSquare, 
   Layers 
 } from 'lucide-react';
-import { MenuItem, DishAddon, OrderItemUnit } from '../types';
+import { MenuItem, DishAddon, OrderItemUnit, Restaurant } from '../types';
 
-interface ItemOrderModalProps {
+export interface ItemOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: MenuItem | null;
+  restaurant?: Restaurant | null;
   onConfirm?: (item: MenuItem, quantity: number, units: OrderItemUnit[]) => void;
   onConfirmUnits?: (quantity: number, units: OrderItemUnit[]) => void;
   onConfirmOrder?: (item: MenuItem | null, quantity: number, units: OrderItemUnit[]) => void;
@@ -29,6 +30,9 @@ interface ItemOrderModalProps {
   dishNameFont?: string;
   dishDescFont?: string;
   dishPriceFont?: string;
+  fontDisplay?: string;
+  cardBorderRadius?: string;
+  cardShadow?: string;
 }
 
 function isLightColor(colorStr?: string): boolean {
@@ -49,18 +53,26 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   isOpen,
   onClose,
   item,
+  restaurant,
   onConfirm,
-  themeAccentColor = '#f5a519',
+  onConfirmUnits,
+  onConfirmOrder,
+  initialQuantity = 1,
+  branding: propBranding,
+  themeAccentColor,
   themeDarkBg,
   dishCardBgColor,
   buttonTextColor,
   textColor,
   secondaryColor,
-  dishNameFont,
-  dishDescFont,
-  dishPriceFont,
+  dishNameFont: propDishNameFont,
+  dishDescFont: propDishDescFont,
+  dishPriceFont: propDishPriceFont,
+  fontDisplay: propFontDisplay,
+  cardBorderRadius: propCardBorderRadius,
+  cardShadow: propCardShadow,
 }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity || 1);
   const [activeUnitTab, setActiveUnitTab] = useState(0);
   const [units, setUnits] = useState<OrderItemUnit[]>([
     { unitNumber: 1, observation: '', selectedAddons: [] }
@@ -69,19 +81,26 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
   const availableAddons = item?.availableAddons || [];
   const suggestedObs = item?.suggestedObservations || [];
 
-  // Color calculation for clean contrast & harmony
-  const modalBg = themeDarkBg || '#18181B';
+  // Branding inheritance: Restaurant > propBranding > direct props > defaults
+  const branding = restaurant?.branding || propBranding || {};
+  const modalBg = themeDarkBg || branding.darkBgColor || branding.backgroundColor || '#18181B';
   const bgIsLight = isLightColor(modalBg);
 
-  const primaryText = textColor || (bgIsLight ? '#18181B' : '#F9FAFB');
+  const accentColor = themeAccentColor || branding.buttonColor || branding.primaryColor || '#f5a519';
+  const primaryText = textColor || branding.textColor || (bgIsLight ? '#18181B' : '#F9FAFB');
   const textIsLight = isLightColor(primaryText);
-  const subText = secondaryColor || (bgIsLight ? '#4B5563' : '#9CA3AF');
-  const accentColor = themeAccentColor || '#f5a519';
-  const btnTextColor = buttonTextColor || (isLightColor(accentColor) ? '#000000' : '#FFFFFF');
+  const subText = secondaryColor || branding.secondaryColor || (bgIsLight ? '#4B5563' : '#9CA3AF');
+  const btnTextColor = buttonTextColor || branding.buttonTextColor || (isLightColor(accentColor) ? '#000000' : '#FFFFFF');
 
-  const cardBg = dishCardBgColor || (bgIsLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.07)');
+  const cardBg = dishCardBgColor || branding.dishCardBgColor || branding.cardBgColor || (bgIsLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.07)');
   const cardIsLight = isLightColor(cardBg) || bgIsLight;
   const cardBorder = bgIsLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)';
+  const cardRadius = propCardBorderRadius || branding.cardBorderRadius || '1.25rem';
+  
+  const dishNameFont = propDishNameFont || branding.dishNameFont || branding.fontDisplay || 'inherit';
+  const dishDescFont = propDishDescFont || branding.dishDescFont || 'inherit';
+  const dishPriceFont = propDishPriceFont || branding.dishPriceFont || 'monospace';
+  const fontDisplay = propFontDisplay || branding.fontDisplay || branding.restaurantNameFont;
   
   const inputBg = cardIsLight ? '#FFFFFF' : 'rgba(0, 0, 0, 0.45)';
   const inputBorder = cardIsLight ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.2)';
@@ -514,17 +533,20 @@ export const ItemOrderModal: React.FC<ItemOrderModalProps> = ({
             </button>
             <button
               onClick={() => {
-                onConfirm(item, quantity, units);
+                if (onConfirm) onConfirm(item, quantity, units);
+                if (onConfirmUnits) onConfirmUnits(quantity, units);
+                if (onConfirmOrder) onConfirmOrder(item, quantity, units);
                 onClose();
               }}
               style={{ 
                 backgroundColor: accentColor, 
-                color: btnTextColor 
+                color: btnTextColor,
+                fontFamily: fontDisplay || 'inherit'
               }}
               className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-extrabold transition shadow-lg flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 whitespace-nowrap"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>Agregar al Pedido</span>
+              <span>Pedir • S/ {grandTotal.toFixed(2)}</span>
             </button>
           </div>
         </div>
