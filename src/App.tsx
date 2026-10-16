@@ -271,9 +271,9 @@ function isFictitiousUser(u: any): boolean {
   }
   return false;
 }
-const FICTITIOUS_REST_IDS = new Set(['fuego-criollo']);
-const FICTITIOUS_CAT_IDS = new Set(['cat-mar-1', 'cat-mar-2', 'cat-mar-3', 'cat-fuego-1', 'cat-fuego-2', 'cat-fuego-3']);
-const FICTITIOUS_ITEM_IDS = new Set(['item-mar-1', 'item-mar-2', 'item-mar-3', 'item-mar-4', 'item-fuego-1', 'item-fuego-2', 'item-fuego-3', 'item-fuego-4']);
+const FICTITIOUS_REST_IDS = new Set<string>();
+const FICTITIOUS_CAT_IDS = new Set<string>();
+const FICTITIOUS_ITEM_IDS = new Set<string>();
 
 // Storage cache keys for session auth only (all menu/restaurant data lives strictly in Firestore)
 const STORAGE_KEYS = {
