@@ -5,7 +5,8 @@ import {
   KeyRound,
   Sparkles,
   LogOut,
-  SlidersHorizontal
+  SlidersHorizontal,
+  LayoutTemplate
 } from 'lucide-react';
 import { Restaurant, UserRole, TabType, User } from '../types';
 import { getSafeActiveRestaurant } from '../utils/restaurantUtils';
@@ -108,16 +109,33 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           {/* Controls */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end">
             
+            {/* Plantillas Library Navigation Button */}
+            {currentUser?.role === 'ADMIN' && (
+              <button
+                type="button"
+                onClick={() => onTabChange('templates')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer ${
+                  activeTab === 'templates'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-neutral-100 text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:text-black'
+                }`}
+                title="Explorar Biblioteca de Plantillas Visuales"
+              >
+                <LayoutTemplate className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Plantillas</span>
+              </button>
+            )}
+
             {/* Split-Screen Template Editor Trigger Button */}
             {onOpenTemplateSplitEditor && currentUser?.role === 'ADMIN' && activeRole === 'ADMIN' && (
               <button
                 type="button"
                 onClick={onOpenTemplateSplitEditor}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition cursor-pointer shadow-md"
                 title="Diseñar plantillas, colores y tarjetas en tiempo real"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
-                <span className="hidden sm:inline">Editor Pantalla Dividida</span>
+                <span className="hidden sm:inline">Editor Visual</span>
                 <span className="sm:hidden">Editor</span>
               </button>
             )}

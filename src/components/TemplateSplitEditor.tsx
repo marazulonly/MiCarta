@@ -4,7 +4,8 @@ import {
   MenuTemplate, 
   MenuItem, 
   MenuCategory, 
-  RestaurantBranding 
+  RestaurantBranding,
+  TemplateDesignLayer
 } from '../types';
 import { getSafeBranding } from '../utils/restaurantUtils';
 import { CanvasElement, CanvasConfig, HistoryState } from './canvas-editor/types';
@@ -39,6 +40,7 @@ import {
 interface TemplateSplitEditorProps {
   restaurants: Restaurant[];
   templates?: MenuTemplate[];
+  initialTemplateToLoad?: MenuTemplate | TemplateDesignLayer;
   menuItems: MenuItem[];
   categories: MenuCategory[];
   currentRestaurantId?: string;
@@ -52,6 +54,7 @@ interface TemplateSplitEditorProps {
 export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
   restaurants = [],
   templates = [],
+  initialTemplateToLoad,
   menuItems = [],
   categories = [],
   currentRestaurantId,
@@ -124,6 +127,82 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   }, []);
+
+  // Cargar Plantilla Visual (Desacoplada al 100% de los platos del restaurante)
+  const handleLoadVisualTemplate = useCallback((templateOrLayer: MenuTemplate | TemplateDesignLayer) => {
+    const designLayer: TemplateDesignLayer = (templateOrLayer as any).designLayer || (templateOrLayer as TemplateDesignLayer);
+    
+    // 1. Configurar lienzo
+    if (designLayer.canvasConfig) {
+      setConfig({
+        width: designLayer.canvasConfig.width || DEFAULT_CANVAS_WIDTH,
+        height: designLayer.canvasConfig.height || DEFAULT_CANVAS_HEIGHT,
+        backgroundColor: designLayer.canvasConfig.backgroundColor || designLayer.darkBgColor || '#0A0A0A',
+        backgroundImage: designLayer.canvasConfig.backgroundImage,
+        showGrid: true,
+        gridSize: 20,
+        showSnapGuides: true,
+        showSafetyMargins: false,
+        safetyMarginPadding: 40
+      });
+    } else {
+      setConfig(prev => ({
+        ...prev,
+        backgroundColor: designLayer.darkBgColor || '#0A0A0A'
+      }));
+    }
+
+    // 2. Cargar o sintetizar elementos del lienzo
+    if (designLayer.canvasElements && designLayer.canvasElements.length > 0) {
+      const sanitized = designLayer.canvasElements.map((el, idx) => sanitizeCanvasElement(el, idx));
+      setElements(sanitized);
+    } else {
+      const mockRest = {
+        id: loadedRestaurant?.id || 'mock-rest',
+        name: loadedRestaurant?.name || 'RESTAURANTE DE PRUEBA',
+        slug: loadedRestaurant?.slug || 'prueba',
+        currency: 'S/',
+        tablesCount: 10,
+        branding: {
+          primaryColor: designLayer.primaryColor,
+          darkBgColor: designLayer.darkBgColor,
+          cardBgColor: designLayer.cardBgColor || '#141414',
+          textColor: designLayer.textColor || '#FFFFFF',
+          fontDisplay: designLayer.fontDisplay,
+          priceColor: designLayer.priceColor,
+          cardBorderRadius: designLayer.cardBorderRadius,
+          buttonColor: designLayer.buttonColor,
+          buttonTextColor: designLayer.buttonTextColor,
+          cardStyle: designLayer.cardStyle,
+          layoutMode: designLayer.layoutMode,
+          dishNameFont: designLayer.dishNameFont,
+          dishDescFont: designLayer.dishDescFont,
+          dishPriceFont: designLayer.dishPriceFont,
+          dishCardBgColor: designLayer.dishCardBgColor,
+          dishCardBorderColor: designLayer.dishCardBorderColor,
+        } as any
+      } as unknown as Restaurant;
+
+      const generated = createInitialCanvasElements(
+        mockRest,
+        mockRest.branding,
+        sampleItem,
+        menuItems,
+        categories
+      );
+      setElements(generated.elements);
+    }
+
+    setIsInitialBlankState(false);
+    setSelectedId(null);
+    showToast(`✓ Plantilla visual "${designLayer.name}" cargada en el lienzo.`);
+  }, [loadedRestaurant, sampleItem, menuItems, categories, showToast]);
+
+  useEffect(() => {
+    if (initialTemplateToLoad) {
+      handleLoadVisualTemplate(initialTemplateToLoad);
+    }
+  }, [initialTemplateToLoad, handleLoadVisualTemplate]);
 
   // Commit state to history stack
   const commitHistory = useCallback(() => {
@@ -499,31 +578,61 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
 
     const primaryElem = elements.find(e => e.type === 'order_button' || e.type === 'shape_badge' || e.type === 'dish_price');
     const bgElem = elements.find(e => e.type === 'background');
-    const cardElem = elements.find(e => e.type === 'shape_rect' && (e.name.toLowerCase().includes('ficha') || e.name.toLowerCase().includes('plato')));
-    const nameElem = elements.find(e => e.type === 'dish_name' || e.type === 'restaurant_name');
+    const cardElem = elements.find(e => e.type === 'shape_rect' && (e.name.toLowerCase().includes('ficha') || e.name.toLowerCase().includes('plato') || e.name.toLowerCase().includes('tarjeta')));
+    const dishNameElem = elements.find(e => e.type === 'dish_name');
+    const dishDescElem = elements.find(e => e.type === 'dish_description');
+    const dishPriceElem = elements.find(e => e.type === 'dish_price');
+    const restNameElem = elements.find(e => e.type === 'restaurant_name');
+    const orderBtnElem = elements.find(e => e.type === 'order_button');
 
-    const createdTemplate: MenuTemplate = {
-      id: `custom-tpl-${Date.now()}`,
+    const primary = primaryElem?.backgroundColor || dishPriceElem?.textColor || '#D4AF37';
+    const darkBg = bgElem?.backgroundColor || config.backgroundColor || '#0A0A0A';
+    const cardBg = cardElem?.backgroundColor || '#141414';
+    const font = dishNameElem?.fontFamily || restNameElem?.fontFamily || "'Cinzel', serif";
+    const templateId = `custom-tpl-${Date.now()}`;
+
+    const designLayer: TemplateDesignLayer = {
+      id: templateId,
       name: newTemplateName.trim(),
       description: newTemplateDesc.trim() || 'Plantilla personalizada guardada desde el editor visual',
-      category: 'MODERN',
-      themeStyle: 'custom',
-      layoutMode: 'grid',
+      category: 'CUSTOM',
       thumbnailUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
       badge: 'Personalizado',
-      tags: ['Personalizado', 'Canvas'],
+      tags: ['Personalizado', 'Canvas', '2-Capas'],
+      canvasElements: elements,
+      canvasConfig: config,
+      fontDisplay: font,
+      primaryColor: primary,
+      darkBgColor: darkBg,
+      cardBgColor: cardBg,
+      textColor: dishNameElem?.textColor || '#FFFFFF',
+      buttonColor: orderBtnElem?.backgroundColor || primary,
+      buttonTextColor: orderBtnElem?.textColor || '#FFFFFF',
+      dishNameFont: dishNameElem?.fontFamily || font,
+      dishDescFont: dishDescElem?.fontFamily,
+      dishPriceFont: dishPriceElem?.fontFamily || font,
+      priceColor: dishPriceElem?.textColor || primary,
+      dishCardBgColor: cardBg,
+      dishCardBorderColor: cardElem?.borderColor,
+      cardBorderRadius: cardElem?.borderRadius ? `${cardElem.borderRadius}px` : '16px',
+      cardStyle: 'photo-hero',
+      layoutMode: 'grid',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       isCustomizable: true,
-      primaryColor: primaryElem?.backgroundColor || config.backgroundColor || '#D4AF37',
-      darkBgColor: bgElem?.backgroundColor || config.backgroundColor || '#071A14',
-      cardBgColor: cardElem?.backgroundColor || '#141E2E',
-      textColor: nameElem?.textColor || '#FFFFFF',
-      fontDisplay: nameElem?.fontFamily || "'Cinzel', serif"
+      activeRestaurantsCount: 0,
+    };
+
+    const createdTemplate: MenuTemplate = {
+      ...designLayer,
+      themeStyle: 'custom',
+      designLayer
     };
 
     setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
     if (onSaveTemplate) onSaveTemplate(createdTemplate);
     setIsSaveTemplateModalOpen(false);
-    showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito.`);
+    showToast(`✓ Plantilla "${createdTemplate.name}" guardada con éxito (Capa de diseño independiente).`);
   }, [newTemplateName, newTemplateDesc, elements, config, showToast, setSavedTemplates, onSaveTemplate]);
 
   // CARGAR CARTA COMPLETA A "MIS PLANTILLAS"
@@ -543,9 +652,9 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       name: `${restaurant.name} (Clonada)`,
       description: `Plantilla completa con todos los componentes y estilos de "${restaurant.name}"`,
       category: 'MODERN',
-      themeStyle: safeBranding.themePreset || 'custom',
+      themeStyle: (safeBranding as any).themePreset || 'custom',
       layoutMode: 'grid',
-      thumbnailUrl: safeBranding.coverImageUrl || restaurant.coverUrl || safeBranding.headerLogoUrl || restaurant.logoUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+      thumbnailUrl: restaurant.coverUrl || safeBranding.headerLogoUrl || restaurant.logoUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
       badge: 'Carta Clonada',
       tags: ['Clonada', restaurant.cuisineType || 'Restaurante'],
       isCustomizable: true,
@@ -553,7 +662,7 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       darkBgColor: safeBranding.darkBgColor || safeBranding.backgroundColor || '#0F172A',
       cardBgColor: safeBranding.cardBgColor || '#1E293B',
       textColor: safeBranding.textColor || '#FFFFFF',
-      fontDisplay: safeBranding.fontDisplay || safeBranding.fontFamily || "'Inter', sans-serif"
+      fontDisplay: safeBranding.fontDisplay || "'Inter', sans-serif"
     };
 
     setSavedTemplates(prev => [...prev.filter(t => t.id !== createdTemplate.id), createdTemplate]);
@@ -572,7 +681,6 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
         primaryColor: template.primaryColor || targetRestaurant.branding?.primaryColor || '#38BDF8',
         accentColor: template.primaryColor || targetRestaurant.branding?.accentColor || '#38BDF8',
         buttonColor: template.primaryColor || targetRestaurant.branding?.buttonColor || '#38BDF8',
-        fontFamily: template.fontDisplay || targetRestaurant.branding?.fontFamily || "'Inter', sans-serif",
         fontDisplay: template.fontDisplay || targetRestaurant.branding?.fontDisplay || "'Inter', sans-serif",
         textColor: template.textColor || targetRestaurant.branding?.textColor || '#FFFFFF',
         clonedFromTemplate: template.name,
@@ -615,6 +723,8 @@ export const TemplateSplitEditor: React.FC<TemplateSplitEditorProps> = ({
       {/* 1. TOP CONTROLS BAR */}
       <EditorTopBar
         loadedRestaurant={loadedRestaurant}
+        templates={templates}
+        onSelectVisualTemplate={handleLoadVisualTemplate}
         onOpenLoadMenuModal={() => setIsLoadMenuModalOpen(true)}
         onOpenApplyModal={() => {
           if (loadedRestaurant) {

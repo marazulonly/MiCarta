@@ -95,7 +95,7 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
   const cardBgColor = branding.cardBgColor || '#1E293B';
   const primaryColor = branding.buttonColor || branding.accentColor || '#38BDF8';
   const textColor = branding.textColor || '#F8FAFC';
-  const fontDisplay = branding.fontDisplay || branding.fontFamily || "'Inter', sans-serif";
+  const fontDisplay = branding.fontDisplay || "'Inter', sans-serif";
   const currency = restaurant.currency || 'S/.';
 
   // State
@@ -162,14 +162,14 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
 
   const totalCartAmount = useMemo(() => {
     return Object.values(cart).reduce((sum, entry) => {
-      const unitsPrice = entry.units?.reduce((uSum, u) => uSum + (u.extraPrice || 0), 0) || 0;
+      const unitsPrice = entry.units?.reduce((uSum, u: any) => uSum + (u.extraPrice || u.price || 0), 0) || 0;
       return sum + ((entry.item.price + unitsPrice) * entry.quantity);
     }, 0);
   }, [cart]);
 
   // Cart manipulation
   const handleAddToCart = (dish: MenuItem) => {
-    if (dish.options && dish.options.length > 0) {
+    if (dish.availableAddons && dish.availableAddons.length > 0) {
       setSelectedItemForCustomization(dish);
       return;
     }
@@ -237,7 +237,7 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
   if (!isOpen) return null;
 
   const headerLogo = branding.headerLogoUrl || restaurant.logoUrl;
-  const headerCover = branding.coverImageUrl || restaurant.coverUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&auto=format&fit=crop&q=80';
+  const headerCover = restaurant.coverUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&auto=format&fit=crop&q=80';
 
   return (
     <div 
@@ -741,19 +741,19 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
       <UnifiedCartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
-        cart={cart}
-        restaurant={restaurant}
-        channel={activeChannel}
-        tableNumber={tableNumber}
-        onUpdateQuantity={(dishId, delta) => {
-          if (delta > 0) {
-            const entry = cart[dishId];
-            if (entry) handleAddToCart(entry.item);
-          } else {
-            handleRemoveFromCart(dishId);
-          }
+        cart={Object.values(cart)}
+        onUpdateCart={(newCartList) => {
+          const nextCart: Record<string, CartEntry> = {};
+          newCartList.forEach(entry => {
+            if (entry && entry.item && entry.item.id) {
+              nextCart[entry.item.id] = entry;
+            }
+          });
+          setCart(nextCart);
         }}
-        onClearCart={handleClearCart}
+        restaurant={restaurant}
+        initialMode={activeChannel}
+        initialTableNumber={tableNumber}
         onOrderCreated={(newOrder) => {
           handleClearCart();
           setIsCartOpen(false);
@@ -768,10 +768,9 @@ export const StandaloneDigitalMenu: React.FC<StandaloneDigitalMenuProps> = ({
           isOpen={Boolean(selectedItemForCustomization)}
           onClose={() => setSelectedItemForCustomization(null)}
           item={selectedItemForCustomization}
-          restaurant={restaurant}
+          branding={branding}
           initialQuantity={cart[selectedItemForCustomization.id]?.quantity || 1}
-          initialUnits={cart[selectedItemForCustomization.id]?.units || []}
-          onConfirm={(qty, units) => handleConfirmCustomUnits(selectedItemForCustomization, qty, units)}
+          onConfirm={(item, qty, units) => handleConfirmCustomUnits(item, qty, units)}
         />
       )}
 

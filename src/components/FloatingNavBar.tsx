@@ -3,7 +3,8 @@ import {
   Home, 
   Store, 
   Users, 
-  ReceiptText 
+  ReceiptText,
+  LayoutTemplate
 } from 'lucide-react';
 import { TabType } from '../types';
 
@@ -32,6 +33,11 @@ export const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
       icon: Store,
     },
     {
+      id: 'templates' as TabType,
+      label: 'Plantillas',
+      icon: LayoutTemplate,
+    },
+    {
       id: 'users' as TabType,
       label: 'Usuarios',
       icon: Users,
@@ -50,7 +56,7 @@ export const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
       aria-label="Navegación principal"
       className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4"
     >
-      <div className="w-full max-w-[420px] bg-white border border-neutral-200/60 shadow-[0_16px_40px_rgba(0,0,0,0.06)] p-2 flex items-center justify-between rounded-[32px] select-none">
+      <div className="w-full max-w-[490px] bg-white border border-neutral-200/60 shadow-[0_16px_40px_rgba(0,0,0,0.06)] p-2 flex items-center justify-between rounded-[32px] select-none">
         {tabs.map((tab) => {
           const isActive = currentTabId === tab.id;
           const IconComp = tab.icon;

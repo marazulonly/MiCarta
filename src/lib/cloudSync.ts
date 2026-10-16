@@ -1,4 +1,5 @@
 import { Restaurant, MenuItem, MenuCategory, User, Order, MenuTemplate } from '../types';
+import { INITIAL_MENU_TEMPLATES } from '../data/menuTemplatesData';
 import { normalizeBranding, matchesRestaurantRef } from '../utils/restaurantUtils';
 import { 
   saveToFirestore,
@@ -624,11 +625,11 @@ export function getCachedTemplates(): MenuTemplate[] {
       const raw = window.localStorage.getItem(TEMPLATES_CACHE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
   }
-  return [];
+  return INITIAL_MENU_TEMPLATES;
 }
 
 export function setCachedTemplates(templates: MenuTemplate[]) {
@@ -641,9 +642,12 @@ export function setCachedTemplates(templates: MenuTemplate[]) {
 
 export async function fetchCloudTemplates(): Promise<MenuTemplate[]> {
   const remote = await fetchTemplatesFromFirestore();
-  if (remote !== null) {
-    setCachedTemplates(remote);
-    return remote;
+  if (remote !== null && remote.length > 0) {
+    // Merge remote with initial templates so defaults are always available
+    const remoteIds = new Set(remote.map(t => t.id));
+    const merged = [...remote, ...INITIAL_MENU_TEMPLATES.filter(t => !remoteIds.has(t.id))];
+    setCachedTemplates(merged);
+    return merged;
   }
   return getCachedTemplates();
 }

@@ -14,7 +14,7 @@ import {
   RIENDAS_DE_PLATA_LOGO_SVG
 } from './data/mockData';
 import { INITIAL_MENU_TEMPLATES } from './data/menuTemplatesData';
-import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding } from './types';
+import { Restaurant, MenuCategory, MenuItem, User, Order, TabType, UserRole, OrderStatus, MenuTemplate, RestaurantMetrics, RestaurantBranding, TemplateDesignLayer } from './types';
 import { deduplicateUsers } from './lib/userUtils';
 import { getBasePath } from './utils/urlBase';
 import { TopHeader } from './components/TopHeader';
@@ -24,6 +24,7 @@ import { RestaurantsView } from './components/RestaurantsView';
 import { UsersView } from './components/UsersView';
 import { OrdersView } from './components/OrdersView';
 import { ArchitectureView } from './components/ArchitectureView';
+import { TemplateLibrary } from './components/TemplateLibrary';
 import { CustomerMenuModal } from './components/CustomerMenuModal';
 import { WaiterView } from './components/WaiterView';
 import { DeliveryView } from './components/DeliveryView';
@@ -402,6 +403,7 @@ export default function App() {
   // Customer preview modal
   const [isMenuClosedByGuest, setIsMenuClosedByGuest] = useState<boolean>(false);
   const [isTemplateSplitEditorOpen, setIsTemplateSplitEditorOpen] = useState<boolean>(false);
+  const [templateToLoadInEditor, setTemplateToLoadInEditor] = useState<MenuTemplate | TemplateDesignLayer | undefined>(undefined);
   const [previewMode, setPreviewMode] = useState<'DINE_IN' | 'DELIVERY'>(initParams.mode);
   const [previewTableNumber, setPreviewTableNumber] = useState<string | undefined>(initParams.table);
   const [notFoundSlugError, setNotFoundSlugError] = useState<string | null>(null);
@@ -2282,10 +2284,14 @@ export default function App() {
               handleUpdateRestaurant(updated);
               showToast(`✓ Diseño guardado exitosamente en "${updated.name}".`);
             }}
+            initialTemplateToLoad={templateToLoadInEditor}
             onOpenCustomerPreview={(r) => handleOpenCustomerPreview(r)}
             onDeleteTemplate={handleDeleteTemplate}
             onSaveTemplate={handleSaveTemplate}
-            onClose={() => setIsTemplateSplitEditorOpen(false)}
+            onClose={() => {
+              setIsTemplateSplitEditorOpen(false);
+              setTemplateToLoadInEditor(undefined);
+            }}
           />
         )}
 
@@ -2331,7 +2337,10 @@ export default function App() {
           }
         }}
         onOpenCustomerPreview={() => handleOpenCustomerPreview()}
-        onOpenTemplateSplitEditor={() => setIsTemplateSplitEditorOpen(true)}
+        onOpenTemplateSplitEditor={() => {
+          setTemplateToLoadInEditor(undefined);
+          setIsTemplateSplitEditorOpen(true);
+        }}
         currentUser={currentUser}
         onLogout={handleLogout}
         isSimulationActive={isSimulationActive}
@@ -2447,6 +2456,23 @@ export default function App() {
 
             {activeTab === 'architecture' && (
               <ArchitectureView />
+            )}
+
+            {activeTab === 'templates' && (
+              <TemplateLibrary
+                templates={safeTemplates}
+                restaurants={safeRestaurants}
+                categories={safeCategories}
+                menuItems={safeMenuItems}
+                onOpenTemplateSplitEditor={(tmpl) => {
+                  setTemplateToLoadInEditor(tmpl);
+                  setIsTemplateSplitEditorOpen(true);
+                }}
+                onUpdateRestaurant={handleUpdateRestaurant}
+                onSaveTemplate={handleSaveTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
+                onOpenCustomerPreview={handleOpenCustomerPreview}
+              />
             )}
           </>
         )}
@@ -2595,10 +2621,14 @@ export default function App() {
             handleUpdateRestaurant(updated);
             showToast(`✓ Diseño guardado exitosamente en "${updated.name}".`);
           }}
+          initialTemplateToLoad={templateToLoadInEditor}
           onOpenCustomerPreview={(r) => handleOpenCustomerPreview(r)}
           onDeleteTemplate={handleDeleteTemplate}
           onSaveTemplate={handleSaveTemplate}
-          onClose={() => setIsTemplateSplitEditorOpen(false)}
+          onClose={() => {
+            setIsTemplateSplitEditorOpen(false);
+            setTemplateToLoadInEditor(undefined);
+          }}
         />
       )}
 

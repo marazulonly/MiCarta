@@ -137,12 +137,71 @@ export interface CustomerAccessSettings {
   wifiPassword?: string;
 }
 
+export interface TemplateDesignLayer {
+  id: string;
+  name: string;
+  description: string;
+  category: 'GOURMET_PREMIUM' | 'EDITORIAL_MODERNO' | 'CLASICO_VINTAGE' | 'FAST_FOOD' | 'MINIMALISTA' | 'ELEGANTE' | 'GASTRONOMICO_FOTOGRAFICO' | 'CUSTOM';
+  thumbnailUrl: string;
+  badge: string;
+  tags: string[];
+  // Canvas visual elements (positions, colors, typography, layout)
+  canvasElements?: any[];
+  canvasConfig?: {
+    width?: number;
+    height?: number;
+    backgroundColor?: string;
+    backgroundImage?: string;
+    backgroundOverlay?: string;
+  };
+  // Branding/design properties
+  fontDisplay: string;
+  primaryColor: string;
+  darkBgColor: string;
+  cardBgColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  textColor?: string;
+  cardBorderRadius?: string;
+  cardStyle?: 'horizontal' | 'grid' | 'compact' | 'minimal' | 'photo-hero';
+  headerStyle?: 'banner' | 'centered' | 'minimal' | 'split';
+  layoutMode: 'grid' | 'alternating' | 'book' | 'compact';
+  // Additional design properties
+  dishNameFont?: string;
+  dishDescFont?: string;
+  dishPriceFont?: string;
+  restaurantNameFont?: string;
+  restaurantNameColor?: string;
+  dishCardBgColor?: string;
+  dishCardBorderColor?: string;
+  cardLayout?: 'row' | 'column' | 'cover';
+  cardElementOrder?: 'image-first' | 'title-first' | 'price-first';
+  cardTextAlignment?: 'left' | 'center' | 'right';
+  cardPadding?: 'compact' | 'normal' | 'elegant';
+  cardShadow?: 'none' | 'sutil' | 'medium' | 'intense' | 'glow';
+  cardBorderWidth?: '0px' | '1px' | '2px' | '4px';
+  priceColor?: string;
+  headerLogoUrl?: string;
+  headerDisplayMode?: 'IMAGE_AND_TEXT' | 'IMAGE_ONLY';
+  showHeaderName?: boolean;
+  showHeaderTagline?: boolean;
+  showHeaderBadge?: boolean;
+  headerLogoFit?: 'contain' | 'cover' | 'auto';
+  headerBannerHeight?: number;
+  backgroundColor?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  isCustomizable: boolean;
+  activeRestaurantsCount?: number;
+}
+
 export interface MenuTemplate {
   id: string;
   name: string;
   description: string;
   category: string;
-  themeStyle: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist' | 'warm-trattoria' | 'green-organic' | 'editorial-zigzag' | 'medio-plato' | 'custom';
+  themeStyle?: 'luxury-gold' | 'chalkboard-dark' | 'marine-parchment' | 'neon-street' | 'minimalist' | 'warm-trattoria' | 'green-organic' | 'editorial-zigzag' | 'medio-plato' | 'custom' | string;
   fontDisplay: string;
   primaryColor: string;
   darkBgColor: string;
@@ -161,6 +220,7 @@ export interface MenuTemplate {
   activeRestaurantsCount?: number;
   canvasElements?: any[];
   canvasConfig?: any;
+  designLayer?: TemplateDesignLayer;
 }
 
 export interface DishAddon {

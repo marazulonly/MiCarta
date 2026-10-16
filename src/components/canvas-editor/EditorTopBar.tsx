@@ -16,13 +16,17 @@ import {
   Sparkles,
   BookmarkPlus,
   FilePlus2,
-  CheckCircle2
+  CheckCircle2,
+  LayoutTemplate,
+  ChevronDown
 } from 'lucide-react';
-import { Restaurant } from '../../types';
+import { Restaurant, MenuTemplate } from '../../types';
 import { getAssetUrl } from '../../utils/urlBase';
 
 interface EditorTopBarProps {
   loadedRestaurant: Restaurant | null;
+  templates?: MenuTemplate[];
+  onSelectVisualTemplate?: (template: MenuTemplate) => void;
   onOpenLoadMenuModal: () => void;
   onOpenApplyModal: () => void;
   onOpenSaveTemplateModal: () => void;
@@ -50,6 +54,8 @@ interface EditorTopBarProps {
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   loadedRestaurant,
+  templates = [],
+  onSelectVisualTemplate,
   onOpenLoadMenuModal,
   onOpenApplyModal,
   onOpenSaveTemplateModal,
@@ -138,6 +144,29 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <FilePlus2 className="w-3.5 h-3.5" />
           <span>Lienzo nuevo</span>
         </button>
+
+        {/* Quick Visual Template Switcher */}
+        {templates && templates.length > 0 && onSelectVisualTemplate && (
+          <div className="relative hidden xl:flex items-center bg-neutral-100 border border-neutral-300 rounded-xl px-2 py-1 hover:border-neutral-400 transition">
+            <LayoutTemplate className="w-3.5 h-3.5 text-neutral-600 mr-1.5 shrink-0" />
+            <select
+              onChange={(e) => {
+                const found = templates.find(t => t.id === e.target.value);
+                if (found) onSelectVisualTemplate(found);
+              }}
+              defaultValue=""
+              className="bg-transparent text-xs text-neutral-800 font-semibold focus:outline-none cursor-pointer pr-3"
+              title="Cargar estilo de plantilla predefinida"
+            >
+              <option value="" disabled>Cargar Plantilla Visual...</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.badge || t.category})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Center: Undo/Redo, Zoom & Viewport Tools */}
