@@ -389,6 +389,25 @@ export default function App() {
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   
+  useEffect(() => {
+    restoreCoreRecordsToFirestore().then(() => {
+      Promise.all([
+        fetchRestaurantsListFromFirestore(),
+        fetchLoginUsers(true)
+      ]).then(([rests, usrs]) => {
+        if (rests && rests.length > 0) {
+          restaurantsRef.current = rests;
+          setRestaurants(rests);
+        }
+        if (usrs && usrs.length > 0) {
+          const cleanUsrs = deduplicateUsers(usrs);
+          usersRef.current = cleanUsrs;
+          setUsers(cleanUsrs);
+        }
+      });
+    });
+  }, []);
+
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(() => {
     const authRestIds = (initialState.cachedAuth?.restaurantIds || []).filter(id => id && id !== 'all');
