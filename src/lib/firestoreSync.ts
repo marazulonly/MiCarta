@@ -114,7 +114,7 @@ export function isBypassingFirestore(): boolean {
  * Restores the 3 core restaurants and 3 core users directly into Firestore collections.
  * Ensures data is persisted in Firestore without being temporary frontend mock state.
  */
-export async function restoreCoreRecordsToFirestore(): Promise<boolean> {
+export async function seedCoreRecordsToFirestore(): Promise<boolean> {
   if (isBypassingFirestore()) return true;
   try {
     const nowIso = new Date().toISOString();
@@ -339,7 +339,7 @@ export async function restoreCoreRecordsToFirestore(): Promise<boolean> {
     await Promise.all(promises);
     return true;
   } catch (err) {
-    return handleFirestoreError(err, 'restoreCoreRecordsToFirestore');
+    return handleFirestoreError(err, 'seedCoreRecordsToFirestore');
   }
 }
 

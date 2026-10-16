@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Restaurant, User, MenuTemplate, UserRole } from '../types';
 import { generateSlug, getTemplateDefaultBranding, normalizeBranding } from '../utils/restaurantUtils';
-import { restoreCoreRecordsToFirestore } from '../lib/firestoreSync';
+import { seedCoreRecordsToFirestore } from '../lib/firestoreSync';
 
 interface AdminDashboardProps {
   restaurants: Restaurant[];
@@ -440,7 +440,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <button
             onClick={async () => {
               if (confirm('¿Forzar resincronización de datos de fábrica?')) {
-                await restoreCoreRecordsToFirestore();
+                await seedCoreRecordsToFirestore();
                 window.location.reload();
               }
             }}

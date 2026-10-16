@@ -73,7 +73,7 @@ import {
   autoSyncOrder,
   autoUpdateOrderStatus,
   setCloudSyncPaused,
-  restoreCoreRecordsToFirestore,
+  seedCoreRecordsToFirestore,
 } from './lib/cloudSync';
 
 // Helper function to normalize slugs for matching URLs, names, and IDs
@@ -389,25 +389,6 @@ export default function App() {
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   
-  useEffect(() => {
-    restoreCoreRecordsToFirestore().then(() => {
-      Promise.all([
-        fetchRestaurantsListFromFirestore(),
-        fetchLoginUsers(true)
-      ]).then(([rests, usrs]) => {
-        if (rests && rests.length > 0) {
-          restaurantsRef.current = rests;
-          setRestaurants(rests);
-        }
-        if (usrs && usrs.length > 0) {
-          const cleanUsrs = deduplicateUsers(usrs);
-          usersRef.current = cleanUsrs;
-          setUsers(cleanUsrs);
-        }
-      });
-    });
-  }, []);
-
   // Selected restaurant filter context (or 'all')
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(() => {
     const authRestIds = (initialState.cachedAuth?.restaurantIds || []).filter(id => id && id !== 'all');
@@ -725,11 +706,8 @@ export default function App() {
           ]);
 
           if ((!remoteRests || remoteRests.length === 0) || (!remoteUsers || remoteUsers.length === 0)) {
-            await restoreCoreRecordsToFirestore();
-            [remoteRests, remoteUsers] = await Promise.all([
-              fetchRestaurantsListFromFirestore(),
-              fetchLoginUsers(true)
-            ]);
+            // Data missing: do NOT auto-seed here. User must trigger manually from AdminDashboard.
+            console.warn('Core records missing. Manual sync required.');
           }
 
           if (!isMounted) return;

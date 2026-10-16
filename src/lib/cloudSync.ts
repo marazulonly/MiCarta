@@ -692,7 +692,7 @@ export function subscribeToOrdersFeed(
   return subscribeToRestaurantOrdersRealtime(restaurantId, onOrdersUpdate, onRestaurantDocUpdate);
 }
 
-export { fetchSpecificRestaurantDataFromFirestore, fetchRestaurantsListFromFirestore, restoreCoreRecordsToFirestore };
+export { fetchSpecificRestaurantDataFromFirestore, fetchRestaurantsListFromFirestore, seedCoreRecordsToFirestore };
 
 /**
  * Automatically saves a new order directly to Firestore.
