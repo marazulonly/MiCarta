@@ -20,13 +20,17 @@ interface CanvasObjectRendererProps {
   restaurant?: Restaurant;
   sampleItem?: MenuItem;
   isPreview?: boolean;
+  onAddToCart?: (item: MenuItem) => void;
+  onSelectCategory?: (categoryName: string) => void;
 }
 
 export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
   element,
   restaurant,
   sampleItem,
-  isPreview = false
+  isPreview = false,
+  onAddToCart,
+  onSelectCategory
 }) => {
   const {
     type,
@@ -342,6 +346,12 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
     case 'order_button': {
       return (
         <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isPreview && sampleItem && onAddToCart) {
+              onAddToCart(sampleItem);
+            }
+          }}
           style={{
             ...containerStyle,
             justifyContent: 'center',
@@ -408,8 +418,34 @@ export const CanvasObjectRenderer: React.FC<CanvasObjectRendererProps> = ({
       );
     }
 
+    case 'category_pill': {
+      return (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isPreview && resolvedText && onSelectCategory) {
+              onSelectCategory(resolvedText);
+            }
+          }}
+          style={{
+            ...containerStyle,
+            justifyContent: 'center',
+            alignItems: textAlign === 'center' ? 'center' : textAlign === 'right' ? 'flex-end' : 'flex-start',
+            padding: resolvedText ? '6px 12px' : 0,
+            cursor: isPreview ? 'pointer' : 'default'
+          }}
+          className="select-none transition-transform hover:scale-105"
+        >
+          {resolvedText && (
+            <span style={{ fontFamily, fontSize: `${fontSize}px`, color: textColor, fontWeight }}>
+              {resolvedText}
+            </span>
+          )}
+        </div>
+      );
+    }
+
     case 'shape_rect':
-    case 'category_pill':
     default: {
       return (
         <div 

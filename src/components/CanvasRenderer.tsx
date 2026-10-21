@@ -12,6 +12,7 @@ interface CanvasRendererProps {
   mode: 'editor' | 'public';
   onAddToCart?: (item: MenuItem) => void;
   onItemClick?: (item: MenuItem) => void;
+  onSelectCategory?: (categoryName: string) => void;
 }
 
 export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
@@ -22,7 +23,8 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
   categories = [],
   mode,
   onAddToCart,
-  onItemClick
+  onItemClick,
+  onSelectCategory
 }) => {
   const width = config?.width || 1200;
   const height = config?.height || 1600;
@@ -74,17 +76,14 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
                 height: `${heightPercent}%`,
                 zIndex: el.zIndex || 1
               }}
-              onClick={() => {
-                if (mode === 'public' && el.isDynamic && sampleItem && onItemClick) {
-                  onItemClick(sampleItem);
-                }
-              }}
             >
               <CanvasObjectRenderer
                 element={el}
                 restaurant={restaurant}
                 sampleItem={sampleItem}
                 isPreview={mode === 'public'}
+                onAddToCart={onAddToCart}
+                onSelectCategory={onSelectCategory}
               />
             </div>
           );

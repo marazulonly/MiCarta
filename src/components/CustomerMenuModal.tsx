@@ -132,12 +132,19 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   // Modals for live editing
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [loadedCard, setLoadedCard] = useState<RestaurantCard | null>(null);
+  const [isCardLoading, setIsCardLoading] = useState<boolean>(true);
 
   React.useEffect(() => {
     if (restaurant?.id) {
+      setIsCardLoading(true);
       loadRestaurantCard(restaurant.id).then(card => {
         if (card) setLoadedCard(card);
+        setIsCardLoading(false);
+      }).catch(() => {
+        setIsCardLoading(false);
       });
+    } else {
+      setIsCardLoading(false);
     }
   }, [restaurant?.id]);
 
@@ -632,7 +639,7 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
   return (
     <>
       {/* Preloader Overlay (Pantalla de precarga con fondo de la carta, logo limpio sin recuadros/efectos/textos y barra de precarga) */}
-      {isPreloading && (
+      {(isPreloading || isCardLoading) && (
         <div 
           className="fixed inset-0 z-[999999] flex flex-col items-center justify-center p-6 text-center select-none transition-opacity duration-300"
           style={{ backgroundColor: preloadBg }}
