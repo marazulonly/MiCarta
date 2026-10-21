@@ -177,9 +177,6 @@ export const HeaderEditorModal: React.FC<HeaderEditorModalProps> = ({
     }
 
     let cleanLogoUrl = headerLogoUrl.trim();
-    if (cleanLogoUrl.startsWith('blob:')) {
-      cleanLogoUrl = '';
-    }
     const updatedBranding: RestaurantBranding = normalizeBranding({
       ...restaurant.branding,
       headerLogoUrl: cleanLogoUrl,

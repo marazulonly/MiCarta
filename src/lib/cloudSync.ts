@@ -25,7 +25,7 @@ import {
   fetchTemplatesFromFirestore,
   saveTemplateToFirestore,
   deleteTemplateFromFirestore,
-  restoreCoreRecordsToFirestore
+  seedCoreRecordsToFirestore
 } from './firestoreSync';
 
 export interface CloudMenuPayload {

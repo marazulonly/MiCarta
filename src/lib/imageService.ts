@@ -100,6 +100,15 @@ export const convertToPNG = async (file: File): Promise<File> => {
   });
 };
 
+const fileToDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 /**
  * Uploads image file to Firebase Storage with proper folder structure and validation
  */
@@ -148,11 +157,11 @@ export const uploadImage = async (
       await uploadBytes(storageRef, processedFile);
       downloadUrl = await getDownloadURL(storageRef);
     } catch (e) {
-      console.warn('[ImageService] Firebase Storage upload failed, falling back to local object URL:', e);
-      downloadUrl = URL.createObjectURL(processedFile);
+      console.warn('[ImageService] Firebase Storage upload failed, falling back to base64 data URL:', e);
+      downloadUrl = await fileToDataUrl(processedFile);
     }
   } else {
-    downloadUrl = URL.createObjectURL(processedFile);
+    downloadUrl = await fileToDataUrl(processedFile);
   }
 
   let format: ImageUploadResult['format'] = 'JPG';
