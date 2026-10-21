@@ -33,6 +33,8 @@ import { NeonStreetMenu } from './NeonStreetMenu';
 import { HeaderEditorModal } from './HeaderEditorModal';
 import { CanvasRenderer } from './CanvasRenderer';
 import { loadRestaurantCard, RestaurantCard } from '../lib/cardService';
+import { ItemOrderModal } from './ItemOrderModal';
+import { UnifiedCartDrawer } from './UnifiedCartDrawer';
 
 interface CustomerMenuModalProps {
   isOpen: boolean;
@@ -138,6 +140,35 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
       });
     }
   }, [restaurant?.id]);
+
+  const [cart, setCart] = useState<any[]>([]);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>('ALL');
+
+  const handleAddToCart = (item: MenuItem) => {
+    if (item.availableAddons && item.availableAddons.length > 0) {
+      setSelectedItemForCustomization(item);
+      return;
+    }
+    setCart(prev => {
+      const existingIdx = prev.findIndex(ci => ci.item.id === item.id && (!ci.units || ci.units.length === 0));
+      if (existingIdx >= 0) {
+        const next = [...prev];
+        next[existingIdx] = { ...next[existingIdx], quantity: next[existingIdx].quantity + 1 };
+        return next;
+      }
+      return [...prev, { item, quantity: 1, units: [] }];
+    });
+    showToast(`✓ +1 ${item.name} agregado al pedido.`);
+    setIsCartDrawerOpen(true);
+  };
+
+  const cartTotalItemsCount = cart.reduce((sum, entry) => sum + entry.quantity, 0);
+  const cartTotalAmount = cart.reduce((sum, entry) => {
+    const unitsPrice = entry.units?.reduce((uSum: number, u: any) => uSum + (u.extraPrice || u.price || 0), 0) || 0;
+    return sum + ((entry.item.price + unitsPrice) * entry.quantity);
+  }, 0);
   const [quickPriceItem, setQuickPriceItem] = useState<MenuItem | null>(null);
   const [quickPriceVal, setQuickPriceVal] = useState<string>('');
   
@@ -658,8 +689,15 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
         };
 
         if (loadedCard?.canvasElements && loadedCard.canvasElements.length > 0) {
+          const displayedItems = selectedCategoryName === 'ALL' 
+            ? effectiveItems 
+            : effectiveItems.filter(i => {
+                const cat = effectiveCategories.find(c => c.id === i.categoryId);
+                return cat && cat.name.toLowerCase() === selectedCategoryName.toLowerCase();
+              });
+
           return (
-            <div className="fixed inset-0 z-50 flex flex-col bg-black/90 overflow-y-auto select-none">
+            <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950 overflow-y-auto select-none font-sans">
               <div className="flex items-center justify-between p-4 bg-neutral-900 border-b border-neutral-800 text-white shrink-0">
                 <div className="flex items-center gap-3">
                   {effectiveRestaurant.logoUrl && (
@@ -672,19 +710,141 @@ export const CustomerMenuModal: React.FC<CustomerMenuModalProps> = ({
                 </button>
               </div>
 
-              <div className="flex-1 p-4 sm:p-8 flex items-center justify-center">
-                <CanvasRenderer
-                  elements={loadedCard.canvasElements}
-                  config={loadedCard.canvasConfig || { width: 1200, height: 1600 }}
-                  restaurant={effectiveRestaurant}
-                  menuItems={effectiveItems}
-                  categories={effectiveCategories}
-                  mode="public"
-                  onAddToCart={(item) => {
-                    showToast(`✓ Plato "${item.name}" seleccionado.`);
-                  }}
-                />
+              {/* Category Pills Bar (Interactive Filtering) */}
+              <div className="px-4 py-3 bg-neutral-900/80 border-b border-neutral-800 flex items-center gap-2 overflow-x-auto shrink-0">
+                <button
+                  onClick={() => setSelectedCategoryName('ALL')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    selectedCategoryName === 'ALL'
+                      ? 'bg-amber-400 text-black shadow-md'
+                      : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                  }`}
+                >
+                  Todas las Categorías
+                </button>
+                {effectiveCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategoryName(cat.name)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      selectedCategoryName.toLowerCase() === cat.name.toLowerCase()
+                        ? 'bg-amber-400 text-black shadow-md'
+                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
               </div>
+
+              <div className="flex-1 p-4 sm:p-8 flex flex-col items-center max-w-5xl mx-auto w-full space-y-8 pb-28">
+                {/* Canvas Renderer for Header & Branding */}
+                <div className="w-full flex justify-center">
+                  <CanvasRenderer
+                    elements={loadedCard.canvasElements.filter(e => e.type !== 'category_pill')}
+                    config={loadedCard.canvasConfig || { width: 1200, height: 1600 }}
+                    restaurant={effectiveRestaurant}
+                    menuItems={effectiveItems}
+                    categories={effectiveCategories}
+                    mode="public"
+                    onAddToCart={handleAddToCart}
+                  />
+                </div>
+
+                {/* Dishes Grid */}
+                <div className="w-full space-y-4">
+                  <h4 className="text-sm font-mono text-neutral-400 uppercase tracking-widest px-2">
+                    Platos y Especialidades ({displayedItems.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {displayedItems.map(item => (
+                      <div 
+                        key={item.id}
+                        className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-4 hover:border-amber-400/50 transition group shadow-sm"
+                      >
+                        {item.imageUrl && (
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name} 
+                            className="w-20 h-20 rounded-xl object-cover shrink-0 border border-neutral-800"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-bold text-white text-base truncate group-hover:text-amber-400 transition">{item.name}</h5>
+                          <p className="text-xs text-neutral-400 line-clamp-2 mt-0.5">{item.description}</p>
+                          <span className="text-sm font-mono font-black text-amber-400 mt-2 block">
+                            S/ {item.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleAddToCart(item)}
+                          className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black shrink-0 shadow-lg transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Pedir</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Cart Bar ("Ver Pedido") */}
+              {cartTotalItemsCount > 0 && (
+                <div className="fixed bottom-4 left-4 right-4 z-[60] p-4 bg-neutral-900/95 border border-neutral-700/80 backdrop-blur-md flex items-center justify-between shadow-2xl max-w-xl mx-auto rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400 text-black font-black flex items-center justify-center text-sm">
+                      {cartTotalItemsCount}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Pedido en curso</div>
+                      <div className="text-sm font-mono font-black text-amber-400">S/ {cartTotalAmount.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsCartDrawerOpen(true)}
+                    className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs transition cursor-pointer shadow-lg active:scale-95"
+                  >
+                    Ver Pedido y Pagar
+                  </button>
+                </div>
+              )}
+
+              {/* Item Customization Modal */}
+              {selectedItemForCustomization && (
+                <ItemOrderModal
+                  isOpen={Boolean(selectedItemForCustomization)}
+                  onClose={() => setSelectedItemForCustomization(null)}
+                  item={selectedItemForCustomization}
+                  restaurant={effectiveRestaurant}
+                  onConfirmUnits={(qty, units) => {
+                    setCart(prev => [...prev, { item: selectedItemForCustomization, quantity: qty, units }]);
+                    setSelectedItemForCustomization(null);
+                    setIsCartDrawerOpen(true);
+                    showToast(`✓ ${selectedItemForCustomization.name} agregado al pedido.`);
+                  }}
+                  initialQuantity={1}
+                  branding={effectiveRestaurant.branding}
+                />
+              )}
+
+              {/* Unified Cart Drawer */}
+              <UnifiedCartDrawer
+                isOpen={isCartDrawerOpen}
+                onClose={() => setIsCartDrawerOpen(false)}
+                restaurant={effectiveRestaurant}
+                cart={cart}
+                onUpdateCart={setCart}
+                onEditCartEntry={(item) => setSelectedItemForCustomization(item)}
+                onOrderCreated={(order) => {
+                  if (onOrderCreated) onOrderCreated(order);
+                  setCart([]);
+                  setIsCartDrawerOpen(false);
+                  showToast('✓ ¡Pedido enviado con éxito a cocina!');
+                }}
+                initialMode={initialMode}
+                initialTableNumber={initialTableNumber}
+              />
             </div>
           );
         } else if (isMedioPlatoTemplate) {
